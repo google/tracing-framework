@@ -1,3 +1,5 @@
+// TODO(benvnaik): clean this test up
+
 function unscopedMethod(x) {
   x++;
   return x;
