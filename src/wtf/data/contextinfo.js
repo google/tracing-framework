@@ -1,0 +1,392 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @fileoverview Execution context information.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+goog.provide('wtf.data.ContextInfo');
+goog.provide('wtf.data.ContextType');
+goog.provide('wtf.data.ScriptContextInfo');
+goog.provide('wtf.data.UserAgent');
+
+goog.require('goog.asserts');
+goog.require('goog.json');
+goog.require('goog.userAgent');
+goog.require('goog.userAgent.platform');
+goog.require('goog.userAgent.product');
+goog.require('wtf');
+
+
+/**
+ * Context type.
+ * @enum {string}
+ */
+wtf.data.ContextType = {
+  /**
+   * Scripts; {@see wtf.data.ScriptContextInfo}.
+   */
+  SCRIPT: 'script'
+};
+
+
+
+/**
+ * Generic context information.
+ * Subclassed to provide information about execution contexts to tools.
+ *
+ * @constructor
+ */
+wtf.data.ContextInfo = function() {
+};
+
+
+/**
+ * Detects and sets the context information.
+ */
+wtf.data.ContextInfo.prototype.detect = goog.abstractMethod;
+
+
+/**
+ * Parses the context information from the given JSON object.
+ * @param {!Object} json Source JSON.
+ * @return {boolean} Whether the parse was successful.
+ */
+wtf.data.ContextInfo.prototype.parse = goog.abstractMethod;
+
+
+/**
+ * Serializes the context information into a JSON object.
+ * @return {!Object} JSON object.
+ */
+wtf.data.ContextInfo.prototype.serialize = goog.abstractMethod;
+
+
+/**
+ * Writes the context information to the given buffer.
+ * @param {!wtf.io.Buffer} buffer Target buffer.
+ * @return {boolean} True if the write succeeded.
+ */
+wtf.data.ContextInfo.prototype.write = function(buffer) {
+  var json = this.serialize();
+  var jsonString = goog.json.serialize(json);
+  buffer.writeUtf8String(jsonString);
+  return true;
+};
+
+
+/**
+ * Parses context information from the given buffer.
+ * The appropriate subclass type will be returned.
+ * @param {!wtf.io.Buffer} buffer Source buffer.
+ * @return {wtf.data.ContextInfo} Parsed context information.
+ */
+wtf.data.ContextInfo.parse = function(buffer) {
+  var jsonString = buffer.readUtf8String();
+  if (!jsonString) {
+    return null;
+  }
+  var json = goog.json.parse(jsonString);
+
+  // Create appropriate subclass.
+  var contextInfo;
+  var contextType = /** @type {wtf.data.ContextType} */ (json['contextType']);
+  switch (contextType) {
+    case wtf.data.ContextType.SCRIPT:
+      contextInfo = new wtf.data.ScriptContextInfo();
+      break;
+  }
+  if (!contextInfo) {
+    return null;
+  }
+
+  // Parse contents.
+  if (!contextInfo.parse(json)) {
+    return null;
+  }
+
+  return contextInfo;
+};
+
+
+/**
+ * Detects the current context information.
+ * @return {!wtf.data.ContextInfo} Current context information.
+ */
+wtf.data.ContextInfo.detect = function() {
+  var contextInfo;
+
+  // TODO(benvanik): support other context types?
+  contextInfo = new wtf.data.ScriptContextInfo();
+  goog.asserts.assert(contextInfo);
+
+  // Perform detection to populate the information.
+  contextInfo.detect();
+
+  return contextInfo;
+};
+
+
+/**
+ * User agent types.
+ * @enum {string}
+ */
+wtf.data.UserAgent.Type = {
+  UNKNOWN: 'unknown',
+  NODEJS: 'nodejs',
+  OPERA: 'opera',
+  IE: 'ie',
+  GECKO: 'gecko',
+  WEBKIT: 'webkit'
+};
+
+
+/**
+ * Operating system types.
+ * @enum {string}
+ */
+wtf.data.UserAgent.Platform = {
+  MAC: 'mac',
+  WINDOWS: 'windows',
+  LINUX: 'linux',
+  OTHER: 'other'
+};
+
+
+/**
+ * Device types.
+ * @enum {string}
+ */
+wtf.data.UserAgent.Device = {
+  DESKTOP: 'desktop',
+  SERVER: 'server',
+  CHROME: 'chrome',
+  IPHONE: 'iphone',
+  IPAD: 'ipad',
+  ANDROID: 'android',
+  OTHER_MOBILE: 'mobile'
+};
+
+
+
+/**
+ * Execution context information for scripts.
+ * These can be scripts in a browser page, worker, or node.js application.
+ *
+ * @constructor
+ * @extends {wtf.data.ContextInfo}
+ */
+wtf.data.ScriptContextInfo = function() {
+  goog.base(this);
+
+  /**
+   * Full script URI.
+   * @type {string}
+   */
+  this.uri = '';
+
+  /**
+   * Page/process title, if available.
+   * @type {string?}
+   */
+  this.title = null;
+
+  /**
+   * Icon URI, if available.
+   * @type {{
+   *   uri: string
+   * }?}
+   */
+  this.icon = null;
+
+  /**
+   * Process/task ID.
+   * @type {string?}
+   */
+  this.taskId = null;
+
+  /**
+   * Entire arguments list.
+   * @type {!Array.<string>}
+   */
+  this.args = [];
+
+  /**
+   * Full user-agent info.
+   * @type {{
+   *   value: string,
+   *   type: wtf.data.UserAgent.Type,
+   *   platform: wtf.data.UserAgent.Platform,
+   *   platformVersion: string,
+   *   device: wtf.data.UserAgent.Device
+   * }}
+   */
+  this.userAgent = {
+    value: '',
+    type: wtf.data.UserAgent.Type.UNKNOWN,
+    platform: wtf.data.UserAgent.Platform.OTHER,
+    platformVersion: '',
+    device: wtf.data.UserAgent.Device.DESKTOP
+  };
+};
+goog.inherits(wtf.data.ScriptContextInfo, wtf.data.ContextInfo);
+
+
+/**
+ * @override
+ */
+wtf.data.ScriptContextInfo.prototype.detect = function() {
+  // Full script URI.
+  if (wtf.NODE) {
+    this.uri = goog.global['process']['argv'][1];
+  } else {
+    this.uri = goog.global.location.href;
+  }
+
+  // Title.
+  if (wtf.NODE) {
+    // TODO(benvanik): a better title for node processes
+    this.title = null;
+  } else {
+    this.title = goog.global.document.title;
+  }
+
+  // Capture icon URI.
+  if (wtf.NODE) {
+    this.icon = null;
+  } else {
+    if (goog.global.document) {
+      var link = goog.global.document.querySelector('link[rel~="icon"]');
+      if (link && link.href) {
+        this.icon = {
+          uri: link.href
+        };
+      }
+    }
+  }
+
+  // Process/task ID.
+  this.taskId = '';
+  if (wtf.NODE) {
+    this.taskId = goog.global['process']['pid'];
+  }
+  // TODO(benvanik): find something meaningful for browsers
+
+  // Entire arguments list.
+  this.args = [];
+  if (wtf.NODE) {
+    var argv = /** @type {!Array.<string>} */ (goog.global['process']['argv']);
+    for (var n = 0; n < argv.length; n++) {
+      this.args.push(argv[n]);
+    }
+  }
+
+  // Full user-agent string.
+  this.userAgent.value = goog.userAgent.getUserAgentString() || '';
+
+  // User-agent type.
+  if (wtf.NODE) {
+    this.userAgent.type = wtf.data.UserAgent.Type.NODEJS;
+  } else if (goog.userAgent.OPERA) {
+    this.userAgent.type = wtf.data.UserAgent.Type.OPERA;
+  } else if (goog.userAgent.IE) {
+    this.userAgent.type = wtf.data.UserAgent.Type.IE;
+  } else if (goog.userAgent.GECKO) {
+    this.userAgent.type = wtf.data.UserAgent.Type.GECKO;
+  } else if (goog.userAgent.WEBKIT) {
+    this.userAgent.type = wtf.data.UserAgent.Type.WEBKIT;
+  } else {
+    this.userAgent.type = wtf.data.UserAgent.Type.UNKNOWN;
+  }
+
+  // Platform.
+  if (wtf.NODE) {
+    // TODO(benvanik): better detection/mapping
+    this.userAgent.platform = goog.global['process']['platform'];
+  } else if (goog.userAgent.MAC) {
+    this.userAgent.platform = wtf.data.UserAgent.Platform.MAC;
+  } else if (goog.userAgent.WINDOWS) {
+    this.userAgent.platform = wtf.data.UserAgent.Platform.WINDOWS;
+  } else if (goog.userAgent.LINUX) {
+    this.userAgent.platform = wtf.data.UserAgent.Platform.LINUX;
+  } else {
+    this.userAgent.platform = wtf.data.UserAgent.Platform.OTHER;
+  }
+
+  // Platform version.
+  if (wtf.NODE) {
+    this.userAgent.platformVersion = goog.global['process']['version'];
+  } else {
+    this.userAgent.platformVersion = goog.userAgent.platform.VERSION;
+  }
+
+  // Device.
+  if (wtf.NODE) {
+    this.userAgent.device = wtf.data.UserAgent.Device.SERVER;
+  } else if (goog.userAgent.product.CHROME) {
+    this.userAgent.device = wtf.data.UserAgent.Device.CHROME;
+  } else if (goog.userAgent.product.IPHONE) {
+    this.userAgent.device = wtf.data.UserAgent.Device.IPHONE;
+  } else if (goog.userAgent.product.IPAD) {
+    this.userAgent.device = wtf.data.UserAgent.Device.IPAD;
+  } else if (goog.userAgent.product.ANDROID) {
+    this.userAgent.device = wtf.data.UserAgent.Device.ANDROID;
+  } else if (goog.userAgent.MOBILE) {
+    this.userAgent.device = wtf.data.UserAgent.Device.OTHER_MOBILE;
+  } else {
+    this.userAgent.device = wtf.data.UserAgent.Device.DESKTOP;
+  }
+
+  // TODO(benvanik): browser features (webgl/touch/etc)
+  // TODO(benvanik): screen info (window size/dpi/etc)
+};
+
+
+/**
+ * @override
+ */
+wtf.data.ScriptContextInfo.prototype.parse = function(json) {
+  this.uri = json['uri'];
+  this.title = json['title'] || null;
+  this.icon = json['icon'] ? {
+    uri: json['icon']['uri']
+  } : null;
+  this.taskId = json['taskId'] || null;
+  this.args = json['args'];
+  this.userAgent.value = json['userAgent']['value'];
+  this.userAgent.type = json['userAgent']['type'];
+  this.userAgent.platform = json['userAgent']['platform'];
+  this.userAgent.platformVersion = json['userAgent']['platformVersion'];
+  this.userAgent.device = json['userAgent']['device'];
+  return true;
+};
+
+
+/**
+ * @override
+ */
+wtf.data.ScriptContextInfo.prototype.serialize = function() {
+  return {
+    'contextType': wtf.data.ContextType.SCRIPT,
+    'uri': this.uri,
+    'title': this.title,
+    'icon': this.icon ? {
+      'uri': this.icon.uri
+    } : null,
+    'taskId': this.taskId,
+    'args': this.args,
+    'userAgent': {
+      'value': this.userAgent.value,
+      'type': this.userAgent.type,
+      'platform': this.userAgent.platform,
+      'platformVersion': this.userAgent.platformVersion,
+      'device': this.userAgent.device
+    }
+  };
+};

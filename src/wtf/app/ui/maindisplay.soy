@@ -1,0 +1,28 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Main display DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.maindisplay}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css wtfAppUiMainDisplay}">
+    <div class="{css wtfAppUiMainDocumentView}">
+      <div class="{css wtfAppUiMainEmpty}">
+        Drag/drop a file in or CTRL+O to load.
+      </div>
+    </div>
+  </div>
+{/template}

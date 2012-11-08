@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+  <head>
+    <title>wtf test</title>
+    <link rel="stylesheet" href="../../../node_modules/mocha/mocha.css" />
+    <script src="../../../node_modules/mocha/mocha.js"></script>
+    <script src="../../../node_modules/chai/chai.js"></script>
+    <script>
+      mocha.setup({
+        'ui': 'tdd'
+      });
+    </script>
+    <script src="../../../third_party/closure-library/closure/goog/base.js"></script>
+    <script src="../../../wtf_js-deps.js"></script>
+    <script>goog.require('wtf.testing.mocha');</script>
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <script>
+
+/**
+ * Logs a test error.
+ * @param {string} msg Message.
+ */
+function testError(msg) {
+  if (window.console) {
+    window.console.log(msg);
+  }
+
+  var errorDiv = document.createElement('div');
+  errorDiv.id = 'error';
+  errorDiv.innerText = msg;
+  document.body.insertBefore(errorDiv, document.body.firstChild);
+};
+
+
+/**
+ * Injects a <script> tag into the document as early as possible.
+ * The hope is that the injected contents run before any of the user code.
+ * @param {!Element} script <script> element.
+ */
+function injectScriptTag(script) {
+  // Get some kind of target to put the script in.
+  // Only valid documents get body/head, so this is a nice way to ignore bad
+  // ones. Try to insert as early as possible.
+  var targetElement =
+      document.documentElement || document.head || document.body;
+  if (targetElement) {
+    if (targetElement.firstElementChild) {
+      targetElement.insertBefore(script, targetElement.firstElementChild);
+    } else {
+      targetElement.appendChild(script);
+    }
+    script.parentNode.removeChild(script);
+  }
+};
+
+
+/**
+ * Injects a function into the page.
+ * @param {!Function} fn Function to inject.
+ * @param {Array=} opt_args Arguments array. All must be string serializable.
+ */
+function injectScriptFunction(fn, opt_args) {
+  // Header to let users know what's up.
+  var header = [
+    '/* Web Tracing Framework injected testing function: ' + fn.name + ' */'
+  ].join('\n');
+
+  // Format args as strings that can go in the source.
+  var args = opt_args || [];
+  for (var n = 0; n < args.length; n++) {
+    if (typeof args[n] == 'string') {
+      // TODO(benvanik): escape
+      args[n] = '"' + args[n] + '"';
+    }
+  }
+  args = args.join(',');
+
+  // TODO(benvanik): escape fn source
+  var source = String(fn);
+
+  // Create script tag.
+  var script = document.createElement('script');
+  script.appendChild(
+      document.createTextNode(header + '\n\n(' + source + ')(' + args + ');'));
+
+  // Add to page.
+  injectScriptTag(script);
+};
+
+
+/**
+ * Sets up testing, loeading all required files and kicking off mocha.
+ */
+function setupTesting() {
+  // Get the list of tests to run.
+  var testNames = [];
+  var query = window.location.search;
+  if (query.length) {
+    query = query.substring(1);
+    query = query.split('&')
+  }
+  for (var n = 0; n < query.length; n++) {
+    var tuple = query[n].split('=');
+    switch (tuple[0]) {
+      case 'tests':
+        testNames = tuple[1].split(',');
+        break;
+      case 'grep':
+        var grep = tuple[1].split('%20');
+        testNames = [grep[0]];
+        break;
+    }
+  }
+
+  // Remove bad entries.
+  for (var n = testNames.length - 1; n >= 0; n--) {
+    if (!testNames[n].length) {
+      testNames.splice(n, 1);
+    }
+  }
+
+  // If nothing provided, run all tests.
+  var testjsRe = /_test.js$/;
+  var testnsRe = /wtf\..*_test$/;
+  if (!testNames.length) {
+    for (var path in goog.dependencies_.pathToNames) {
+      if (testjsRe.test(path)) {
+        var provides = goog.dependencies_.pathToNames[path];
+        for (var provide in provides) {
+          if (testnsRe.test(provide)) {
+            testNames.push(provide);
+          }
+        }
+      }
+    }
+  }
+
+  // TODO(benvanik): fuzzy search through testNames - if any contain *, lookup
+  // deps to find all matching namespaces.
+
+  // Append _test where required.
+  for (var n = 0; n < testNames.length; n++) {
+    var testName = testNames[n];
+    if (!testnsRe.test(testName)) {
+      testNames[n] = testName + '_test';
+    }
+  }
+
+  // Sort test names.
+  // TODO(benvanik): sort by namespaces?
+  testNames.sort(function(a, b) {
+    return a < b;
+  });
+
+  // Set page title.
+  var testPrettyNames = [];
+  for (var n = 0; n < testNames.length; n++) {
+    testPrettyNames.push(testNames[n].replace('_test', ''));
+  }
+  document.title = 'WTF Test: ' + testPrettyNames.join(', ');
+
+  // Require all test files.
+  // This is done via code injection to ensure proper load order.
+  function requireTestNamespacesFn(var_args) {
+    for (var n = 0; n < arguments.length; n++) {
+      try {
+        goog.require(arguments[n]);
+      } catch (e) {
+        testError('ERROR: test not found: ' + arguments[n]);
+      }
+    }
+  };
+  injectScriptFunction(requireTestNamespacesFn, testNames);
+
+  // Launch mocha on all tests.
+  // Also done via injection to ensure it occurs after all requires.
+  // All this does is call mocha.run(), but to prevent flakiness with the
+  // goog.requires occurring out of order above, this is done via the
+  // base.js loader.
+  injectScriptFunction(function() {
+    goog.require('wtf.testing.mocha.run');
+  });
+}
+
+
+setupTesting();
+
+    </script>
+  </body>
+</html>

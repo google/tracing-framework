@@ -1,0 +1,474 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * You could place common definitions or mixins here.
+ * Place this file first in the source list to the compile task to ensure the
+ * other files see the definitions.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+
+@defmixin noSelect() {
+  /* @alternate */ -moz-user-select: none;
+  /* @alternate */ -ms-user-select: none;
+  /* @alternate */ -webkit-user-select: none;
+}
+
+@defmixin allowSelect() {
+  /* @alternate */ -moz-user-select: auto !important;
+  /* @alternate */ -ms-user-select: auto !important;
+  /* @alternate */ -webkit-user-select: auto !important;
+}
+
+@defmixin fitParent() {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+@defmixin fitParentRelative() {
+  position: relative;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+@defmixin backgroundGradient(TOP_COLOR, BOTTOM_COLOR) {
+  background-color: TOP_COLOR;
+  /* @alternate */ background-image: -webkit-linear-gradient(top,TOP_COLOR,BOTTOM_COLOR);
+  /* @alternate */ background-image: -moz-linear-gradient(top,TOP_COLOR,BOTTOM_COLOR);
+  /* @alternate */ background-image: -ms-linear-gradient(top,TOP_COLOR,BOTTOM_COLOR);
+  /* @alternate */ background-image: -o-linear-gradient(top,TOP_COLOR,BOTTOM_COLOR);
+  /* @alternate */ background-image: linear-gradient(top,TOP_COLOR,BOTTOM_COLOR);
+}
+
+@defmixin boxShadow(H_SHADOW, V_SHADOW, BLUR_RADIUS, COLOR) {
+  /* @alternate */ -webkit-box-shadow: H_SHADOW V_SHADOW BLUR_RADIUS COLOR;
+  /* @alternate */ -moz-box-shadow: H_SHADOW V_SHADOW BLUR_RADIUS COLOR;
+  /* @alternate */ box-shadow: H_SHADOW V_SHADOW BLUR_RADIUS COLOR;
+}
+
+@defmixin insetBoxShadow(H_SHADOW, V_SHADOW, BLUR_RADIUS, COLOR) {
+  /* @alternate */ -webkit-box-shadow: inset H_SHADOW V_SHADOW BLUR_RADIUS COLOR;
+  /* @alternate */ -moz-box-shadow: inset H_SHADOW V_SHADOW BLUR_RADIUS COLOR;
+  /* @alternate */ box-shadow: inset H_SHADOW V_SHADOW BLUR_RADIUS COLOR;
+}
+
+@defmixin borderRadius(RADIUS) {
+  /* @alternate */ -webkit-border-radius: RADIUS;
+  /* @alternate */ -moz-border-radius: RADIUS;
+  /* @alternate */ border-radius: RADIUS;
+}
+
+@defmixin borderRadiusTRBL(TOP_RADIUS, RIGHT_RADIUS, BOTTOM_RADIUS, LEFT_RADIUS) {
+  /* @alternate */ -webkit-border-radius: TOP_RADIUS RIGHT_RADIUS BOTTOM_RADIUS LEFT_RADIUS;
+  /* @alternate */ -moz-border-radius: TOP_RADIUS RIGHT_RADIUS BOTTOM_RADIUS LEFT_RADIUS;
+  /* @alternate */ border-radius: TOP_RADIUS RIGHT_RADIUS BOTTOM_RADIUS LEFT_RADIUS;
+}
+
+@defmixin transition(PROPERTY, TIME) {
+  /* @alternate */ -webkit-transition: PROPERTY TIME;
+  /* @alternate */ -moz-transition: PROPERTY TIME;
+  /* @alternate */ -o-transition: PROPERTY TIME;
+  /* @alternate */ transition: PROPERTY TIME;
+}
+
+body {
+  margin: 0;
+
+  /* Disable over-scroll bounce on the body. */
+  overflow: hidden;
+}
+
+body, body input, body button, body td {
+  font-family: "Arial", "Helvetica", sans-serif;
+  color: #222222;
+  font-size: 13px;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+h1, h2, h3, h4, h5 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: normal;
+  color: #222222;
+}
+p {
+  margin: 0 0 1em;
+  font-size: 13px;
+  line-height: 18px;
+}
+li {
+  line-height: 17px;
+}
+a {
+  text-decoration: none;
+  color: #15c;
+  cursor: pointer;
+}
+a:visited {
+  color: #61c;
+}
+a:active {
+  color: #d14836;
+}
+a.secondary {
+  text-decoration: none;
+  color: #2D9AE3;
+}
+iframe {
+  border: 0px;
+}
+strong, b {
+  color: #000;
+  font-weight: bold;
+}
+em {
+  font-style: italic;
+}
+
+.kTitle {
+  color: #1155CC;
+  font-weight: normal;
+}
+
+.kGreyText {
+  color: #777777;
+}
+.kSecondaryText {
+  font-size: 11px;
+  color: #777777;
+}
+.kSourceText {
+  color: #009933;
+}
+
+.kBodyLink {
+  color: #1155CC;
+}
+.kVisitedLink {
+  color: #6611CC;
+}
+.kRedLink {
+  color: #DD4B39;
+}
+
+.kAppBar {
+  padding: 10px 0;
+  border-bottom: 1px solid #EBEBEB;
+  height: 29px;
+  background: white;
+}
+.kAppBarName {
+  font-size: 20px;
+  line-height: 29px;
+  color: #DD4B39;
+  width: 160px;
+  height: 29px;
+  margin: 0 44px 0 16px;
+  float: left;
+  white-space: nowrap;
+}
+
+.kButtonBar {
+  height: 29px;
+  line-height: 29px;
+}
+.kButtonBar.kRight {
+  float: right;
+  margin-right: 6px;
+}
+.kButtonBarVertical {
+  padding-left: 2px;
+  padding-top: 2px;
+}
+.kButton {
+  display: inline-block;
+  min-width: 54px;
+  /* @alternate */ border: 1px solid #DCDCDC;
+  /* @alternate */ border: 1px solid rgba(0,0,0,0.1);
+  text-align: center;
+  color: #444;
+  font-size: 11px;
+  font-weight: bold;
+  height: 27px;
+  padding: 0 8px;
+  line-height: 27px;
+  cursor: default;
+  @mixin transition(all, 0.218s);
+  @mixin borderRadius(2px);
+  @mixin backgroundGradient(#f5f5f5, #f1f1f1);
+  @mixin noSelect();
+}
+.kButton:hover {
+  border: 1px solid #C6C6C6;
+  color: #222;
+  @mixin transition(all, 0s);
+  @mixin backgroundGradient(#f8f8f8, #f1f1f1);
+  @mixin boxShadow(0px, 1px, 1px, rgba(0,0,0,0.1));
+}
+.kButton:active {
+  @mixin backgroundGradient(#f6f6f6, #f1f1f1);
+  @mixin insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+}
+.kButton:visited {
+  color: #666;
+}
+.kButton.kSelected {
+  @mixin backgroundGradient(#eeeeee, #e0e0e0);
+  @mixin insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+  border: 1px solid #CCC;
+  color: #333;
+}
+.kButtonAction {
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+  color: #FFF;
+  text-transform: uppercase;
+  letter-spacing:1;
+  @mixin backgroundGradient(#dd4b39, #d14836);
+}
+.kButtonAction:hover {
+  border-color: #b0281a;
+  border-bottom-color: #AF301F;
+  color: #FFF;
+  @mixin backgroundGradient(#dd4b39, #c53727);
+}
+.kButtonAction:active {
+  border-color: #992A1B;
+  @mixin backgroundGradient(#dd4b39, #b0281a);
+}
+.kButton.kDisabled, .kButton.kDisabled:hover, .kButton.kDisabled:active {
+  background: none;
+  color: #b8b8b8;
+  /* @alternate */ border: 1px solid #f3f3f3;
+  /* @alternate */ border: 1px solid rgba(0,0,0,0.05);
+  cursor: default;
+  pointer-events: none;
+}
+.kButtonAction.kDisabled, .kButtonAction.kDisabled:hover, .kButtonAction.kDisabled:active {
+  border: 1px solid #505050;
+  background-color: #666;
+  color: #FFF;
+  opacity: 0.5;
+}
+.kButtonAction.kDisabled, .kButtonAction.kDisabled:hover, .kButtonAction.kDisabled:active {
+  border-color: #b0281a;
+  background-color: #d14836;
+}
+.kButton input[type=checkbox] {
+  position: relative;
+  top: 3px;
+}
+.kButton img {
+  display: inline-block;
+  margin-top: -1px;
+  opacity: 0.55;
+  width: 21px;
+  height: 21px;
+  vertical-align: middle;
+}
+.kButton.kSelected img {
+  opacity: 0.9;
+}
+.kButton:hover img {
+  opacity: 0.72;
+}
+.kButton:active img {
+  opacity: 1.0;
+}
+.kDisabled img {
+  opacity: 0.2;
+}
+.kButtonAction:hover {
+  opacity: 1;
+}
+.kButtonAction img, .kButtonAction img:active, .kButtonAction img:hover,
+.kButtonAction:hover img, .kButtonAction:active img {
+  opacity: 1;
+}
+.kButtonBar .kButton,
+.kButtonBar .kComboButton,
+.kButtonBar .kExpandButton {
+  float: left;
+  margin: 0;
+  margin-left: 6px;
+  position: relative;
+  z-index: 1;
+}
+.kButtonBar .kButton:hover {
+  z-index: 2;
+}
+.kButtonBar .kButton:first-child,
+.kButtonBar .kComboButton:first-child,
+.kButtonBar .kExpandButton:first-child {
+  margin-left: 0;
+}
+.kButtonBarSmall .kButton {
+  min-width: 33px;
+}
+.kButtonBarVertical .kButton {
+  left: 0;
+  margin-left: 0px;
+  margin-bottom: 2px;
+}
+
+.kMenuButton .kButtonDisclosure {
+  float: right;
+  margin-top: 10px;
+  margin-left: 5px;
+  opacity: 0.8;
+}
+.kMenuButton img + .kButtonLabel {
+  margin-left: 5px;
+}
+.kMenuButton img {
+  display: inline-block;
+}
+.kMenuButton:hover .kButtonDisclosure {
+  border-left-color: #999;
+  opacity: 1;
+}
+.kMenuButton span.kButtonLabel {
+  display: inline-block;
+}
+.kComboButton .kMenuButton:first-child {
+  @mixin borderRadiusTRBL(2px, 0, 0, 2px);
+}
+.kComboButton .kMenuTrigger {
+  margin-left: -1px;
+  border-left-color: transparent;
+  padding: 0 7px 0 2px;
+  width: auto;
+  min-width: 0;
+  @mixin borderRadiusTRBL(0, 2px, 2px, 0);
+  z-index: 0;
+}
+.kComboButton .kMenuTrigger:hover {
+  border-left-color: #c6c6c6;
+}
+
+.kButton.kButtonLeft {
+  border-right-color: transparent;
+  margin-right: 0;
+  @mixin borderRadiusTRBL(2px, 0, 0, 2px);
+}
+.kButton.kButtonLeft:hover {
+  border-right: 1px solid #c6c6c6;
+}
+.kButton.kButtonMid {
+  margin-left:0;
+  margin-right:0;
+  @mixin borderRadius(0);
+}
+.kButton.kButtonMid + .kButton.kButtonMid,
+.kButton.kButtonLeft + .kButton.kButtonMid {
+  margin-left: -1px;
+}
+.kButton.kButtonRight {
+  margin-left: -1px;
+  @mixin borderRadiusTRBL(0, 2px, 2px, 0);
+}
+.kButton.kButtonRight:hover {
+  border-left: 1px solid #c6c6c6;
+}
+
+.kButtonDisclosure {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: url('../icons/arrow_dropdown.svg') center no-repeat;
+  @mixin transition(all, 0.218s);
+}
+.kDisabled .kButtonDisclosure {
+  opacity: 0.2;
+}
+
+
+.kScrollShadowTop {
+  position:absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 8px;
+  opacity: 0.3;
+  background: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,.2)), to(rgba(0,0,0,0)));
+  -webkit-mask-box-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, rgba(0,0,0,0.1)), color-stop(0.5, rgba(0,0,0,.8)), color-stop(1.0, rgba(0,0,0,0.1)));
+  pointer-events: none;
+}
+.kScrollShadowBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  opacity: 0.3;
+  background: -webkit-gradient(linear, left bottom, left top, from(rgba(0,0,0,.2)), to(rgba(0,0,0,0)));
+  -webkit-mask-box-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, rgba(0,0,0,0.1)), color-stop(0.5, rgba(0,0,0,.8)), color-stop(1.0, rgba(0,0,0,0.1)));
+  pointer-events: none;
+}
+
+
+.kTabControl {
+
+}
+.kTabHeader {
+  border-bottom: 1px solid #CCC;
+}
+.kTabHeaderTabs {
+  margin: 0;
+  float: left;
+  margin-left: 6px;
+}
+@def K_TAB_HEADER_HEIGHT        30px;
+.kTab {
+  display: inline-block;
+  min-width: 54px;
+  text-align: center;
+  color: #666;
+  font-size: 11px;
+  font-weight: bold;
+  height: 27px;
+  padding: 0 8px;
+  line-height: 27px;
+  cursor: default;
+  border: 1px solid transparent;
+  /* @alternate */ -webkit-border-top-left-radius: 2px;
+  /* @alternate */ -moz-border-radius-topleft: 2px;
+  /* @alternate */ border-top-left-radius: 2px;
+  /* @alternate */ -webkit-border-top-right-radius: 2px;
+  /* @alternate */ -moz-border-radius-topright: 2px;
+  /* @alternate */ border-top-right-radius: 2px;
+  @mixin transition(all, 0.100s);
+  @mixin noSelect();
+}
+.kTab:hover {
+  color: #222;
+}
+.kTabSelected {
+  color: #202020;
+  border: 1px solid #CCC;
+  border-bottom: 1px solid white;
+}
+.kTabSelected {
+
+}
+.kTabHeaderButtons {
+  float: right;
+}
+.kTabContents {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: K_TAB_HEADER_HEIGHT;
+  bottom: 0;
+}

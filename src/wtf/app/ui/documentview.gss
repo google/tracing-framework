@@ -1,0 +1,45 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Document view CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+@def WTF_APP_UI_DOCUMENTVIEW_TOOLBAR_HEIGHT     41px;
+@def WTF_APP_UI_DOCUMENTVIEW_STATUSBAR_HEIGHT   29px;
+
+/* Document view root. */
+.wtfAppUiDocumentView {
+  @mixin fitParent();
+  overflow: hidden;
+
+  background: white;
+}
+
+.wtfAppUiDocumentViewToolbar {
+  overflow: hidden;
+}
+
+.wtfAppUiDocumentViewInner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: WTF_APP_UI_DOCUMENTVIEW_TOOLBAR_HEIGHT;
+  bottom: WTF_APP_UI_DOCUMENTVIEW_STATUSBAR_HEIGHT;
+  overflow: hidden;
+}
+
+.wtfAppUiDocumentViewStatusbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: WTF_APP_UI_DOCUMENTVIEW_STATUSBAR_HEIGHT;
+  overflow: hidden;
+}

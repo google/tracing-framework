@@ -1,0 +1,28 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Timeline CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+/* Timeline root. */
+.wtfAppUiTimeline {
+  @mixin fitParent();
+  background: white;
+  border-bottom: 1px solid #EBEBEB;
+}
+
+.wtfAppUiTimelineOuter {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.wtfAppUiTimelineCanvas {
+}

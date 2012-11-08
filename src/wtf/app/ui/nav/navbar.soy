@@ -1,0 +1,26 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Navbar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.nav.navbar}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css wtfAppUiNavbar}">
+    <div class="{css wtfAppUiNavbarTimeline}"></div>
+    <div class="{css wtfAppUiNavbarFramebar}"></div>
+    <div class="{css wtfUiSplitterHorizontal} {css wtfAppUiNavbarSplitter}"></div>
+  </div>
+{/template}

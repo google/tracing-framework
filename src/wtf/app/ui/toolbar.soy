@@ -1,0 +1,54 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Toolbar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.toolbar}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css wtfAppUiToolbar}">
+    <table class="{css wtfAppUiToolbarInfo}">
+      <tr>
+        <td>
+          <img class="{css wtfAppUiToolbarInfoIcon}" src="">
+        </td>
+        <td class="{css wtfAppUiToolbarInfoTitle}">Loading...</td>
+        <td>
+          <a class="{css wtfAppUiToolbarInfoUrl}" target="_blank" href=""></a>
+        </td>
+        <td class="{css wtfAppUiToolbarInfoContext}">
+          <!--[context]-->
+        </td>
+      </tr>
+    </table>
+    <div class="{css wtfAppUiToolbarRight}">
+      <div class="{css wtfAppUiToolbarViewers}">
+        <!--[viewer info]-->
+      </div>
+      <div class="{css kButtonBar} {css kRight} {css wtfAppUiToolbarButtons}">
+        <div class="{css kButton} {css kMenuButton} {css kDisabled} {css wtfAppUiToolbarButtonShare}">
+          Share
+        </div>
+        <div class="{css kButton} {css kMenuButton} {css kDisabled} {css wtfAppUiToolbarButtonSave}">
+          Save
+        </div>
+        <a class="{css kButton} {css kMenuButton} {css wtfAppUiToolbarButtonSettings}"
+          title="Settings">
+          <img alt="Settings" src="icons/settings.svg">
+        </a>
+      </div>
+    </div>
+  </div>
+{/template}

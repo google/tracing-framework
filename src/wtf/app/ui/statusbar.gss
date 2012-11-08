@@ -1,0 +1,27 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Statusbar CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+/* Statusbar root. */
+.wtfAppUiStatusbar {
+  @mixin fitParent();
+
+  /* TEMPORARY */
+  padding-left: 45%;
+  padding-top: 4px;
+  color: #777777;
+  font-size: 12px;
+
+  background: white;
+
+  border-top: 1px solid #EBEBEB;
+}

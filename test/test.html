@@ -1,0 +1,146 @@
+<html>
+<head>
+  <title>WTF Test</title>
+  <script src="../wtf_trace_web_js_compiled.js"></script>
+</head>
+<body>
+  <script>
+    wtf.trace.prepare();
+    wtf.hud.prepare({
+      'dock': 'bottom'
+    });
+    wtf.trace.startSnapshottingSession({
+      'target': 'file://test'
+    });
+  </script>
+
+  <br/>
+  <br/>
+  <br/>
+  <a id="someLink" href="">Click!</a>
+  <a id="testPerfLink" href="">Perf!</a>
+
+  <script>
+    window.onload = function() {
+      var someLink = document.getElementById('someLink');
+      someLink.onclick = function(e) {
+        e.preventDefault();
+
+        // Enter scope
+        var scope = wtf.trace.enterScope('onclick');
+
+        // Start flow...
+        var flow = wtf.trace.branchFlow();
+        window.setTimeout(function() {
+          // Enter scope, resume flow
+          var scope = wtf.trace.enterScope('setTimeout callback', flow);
+
+          console.log('hi');
+
+          scope.leave();
+        }, 0);
+
+        scope.leave();
+      };
+
+      function unscopedMethod(x) {
+        x++;
+        return x;
+      };
+
+      function doLotsOfControls(count) {
+        var x = 0;
+        for (var n = 0; n < count; n++) {
+          x = unscopedMethod(x);
+        }
+        return x;
+      };
+
+      function scopedMethod(x) {
+        var scope = wtf.trace.enterScope();
+        x++;
+        return scope.leave(x);
+      };
+
+      function doLotsOfScopes(count) {
+        var x = 0;
+        for (var n = 0; n < count; n++) {
+          x = scopedMethod(x);
+        }
+        return x;
+      };
+
+      function consoleScopedMethod(x) {
+        console.time('a');
+        x++;
+        console.timeEnd('a');
+        return x;
+      }
+
+      function doLotsOfConsoleScopes(count) {
+        var x = 0;
+        for (var n = 0; n < count; n++) {
+          x = consoleScopedMethod(x);
+        }
+        return x;
+      }
+
+      var testPerfLink = document.getElementById('testPerfLink');
+      testPerfLink.onclick = function(e) {
+        e.preventDefault();
+
+        var runCount = 50;
+        var count = 100000;
+
+        for (var n = 0; n < 10; n++) {
+          var startTime = wtf.now();
+
+          doLotsOfControls(count);
+
+          var duration = wtf.now() - startTime;
+          console.log(
+              'control total: ' + duration + ', per fn: ' + (duration / count));
+        }
+
+        wtf.trace.startSnapshottingSession();
+
+        var meanDuration = 0;
+        for (var n = 0; n < runCount; n++) {
+          var startTime = wtf.now();
+
+          doLotsOfScopes(count);
+
+          var duration = wtf.now() - startTime;
+          meanDuration += duration;
+          console.log(
+              'total: ' + duration + ', per ~call: ' + (duration / count / 2));
+        }
+        meanDuration /= runCount;
+        console.log('scope mean duration: ' + meanDuration + ', per ~call: ' +
+            (meanDuration / count / 2));
+
+        wtf.trace.stop();
+        wtf.trace.startSnapshottingSession();
+
+        var meanDuration = 0;
+        for (var n = 0; n < runCount; n++) {
+          var startTime = wtf.now();
+
+          doLotsOfConsoleScopes(count);
+
+          var duration = wtf.now() - startTime;
+          meanDuration += duration;
+          console.log(
+              'total: ' + duration + ', per ~call: ' + (duration / count / 2));
+        }
+        meanDuration /= runCount;
+        console.log('console mean duration: ' + meanDuration + ', per ~call: ' +
+            (meanDuration / count / 2));
+
+        wtf.trace.stop();
+        wtf.trace.startSnapshottingSession();
+      };
+    };
+  </script>
+</body>
+</html>

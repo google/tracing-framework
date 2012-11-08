@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px">
+<path d="M5,6H4v11h11v-1H5V6z M6,5v10h10V5H6z"/>
+<polygon fill="#FFFFFF" points="10,7 10,8 12.293,8 7.793,12.5 8.5,13.207 13,8.707 13,11 14,11 14,7 "/>
+</svg>

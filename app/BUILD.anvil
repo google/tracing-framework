@@ -1,0 +1,148 @@
+# Copyright 2012 Google Inc. All Rights Reserved.
+
+__author__ = 'benvanik@google.com (Ben Vanik)'
+
+
+# Chrome app release output
+
+
+
+# ------------------------------------------------------------------------------
+# Javascript
+# ------------------------------------------------------------------------------
+
+file_set(
+    name='shared_js_srcs',
+    srcs=[
+        # soy
+        ])
+
+file_set(
+    name='debug_js_srcs',
+    srcs=[
+        ':shared_js_srcs',
+        'css:app_css_debug_compiled',
+        ])
+file_set(
+    name='release_js_srcs',
+    srcs=[
+        ':shared_js_srcs',
+        'css:app_css_compiled',
+        ])
+
+
+# ------------------------------------------------------------------------------
+# Modes
+# ------------------------------------------------------------------------------
+
+file_set(
+    name='exploded',
+    srcs=[
+        '../third_party:all_closure_js',
+        '..:wtf_src_js',
+        '..:all_soy_js',
+        '..:deps',
+        'css:app_css_debug_compiled',
+        'maindisplay-debug.html',
+        'scripts/debug-prefix.js',
+        'scripts/debug-postfix-maindisplay.js',
+        ])
+
+file_set(
+    name='debug',
+    srcs=[
+        '..:wtf_ui_js_uncompiled',
+        'css:app_css_debug_compiled',
+        'maindisplay-debug.html',
+        ])
+
+file_set(
+    name='release',
+    srcs=[
+        '..:wtf_ui_js_compiled',
+        'css:app_css_compiled_only',
+        'maindisplay.html',
+        'scripts/release-maindisplay.js',
+        ],
+    src_exclude_filter='*-deps.js')
+
+file_set(
+    name='fast',
+    srcs=[
+        'css:app_css_debug_compiled',
+        ])
+
+
+# ------------------------------------------------------------------------------
+# App
+# ------------------------------------------------------------------------------
+
+# Debug and release variants of the manifest
+preprocess(
+    name='debug_manifest',
+    srcs=['manifest.json'],
+    new_extension='.debug',
+    defines=['DEBUG'])
+preprocess(
+    name='release_manifest',
+    srcs=['manifest.json'],
+    defines=['RELEASE'])
+
+# CWS hates comments in extension manifests - strip them all
+strip_comments(
+    name='stripped_release_manifest',
+    srcs=[':release_manifest'])
+
+file_set(
+    name='app_files',
+    srcs=[
+        ':stripped_release_manifest',
+        'icons/popout_white.svg',
+        'icons/folder_open.svg',
+        'icons/link.svg',
+        'icons/settings.svg',
+        'maindisplay.html',
+        'scripts/release-background.js',
+        'scripts/release-maindisplay.js',
+
+        # This is bad - should prefix this.
+        'css:app_css_compiled_only',
+        '..:wtf_ui_js_compiled',
+        ] + glob('icons/**/*'),
+    src_exclude_filter='*-deps.js')
+
+archive_files(
+    name='wtf-chrome-app',
+    srcs=[':app_files'],
+    flatten_paths=['app/'])
+
+
+# ------------------------------------------------------------------------------
+# Debugging
+# ------------------------------------------------------------------------------
+
+# Use anvil build app:debug_view to update the debug view and replace the root
+# manifest.json with the debug variant. Load an unpacked extension from the
+# root to use!
+
+# Files relating to this app only, used when constructing the overlay view
+file_set(
+    name='view_files',
+    srcs=[
+        ':debug_manifest',
+        ':exploded',
+        'scripts/debug-postfix-background.js',
+        ] + glob('icons/**/*'))
+
+copy_file(
+    name='move_manifest',
+    srcs=':debug_manifest',
+    base_path='root',
+    target='../manifest.json')
+
+# Declarative overlay view
+overlay_view(
+    name='debug_view',
+    srcs=':view_files',
+    deps=[':move_manifest'],
+    out='../build-bin/debug/')

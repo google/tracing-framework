@@ -1,0 +1,23 @@
+<html>
+<head>
+  <title>WTF Test</title>
+</head>
+  <br/>
+  <br/>
+  <br/>
+  <a id="someLink" href="">Click!</a>
+
+  <script>
+    window.onload = function() {
+      var someLink = document.getElementById('someLink');
+      someLink.onclick = function(e) {
+        e.preventDefault();
+
+        window.setTimeout(function() {
+          console.log('hi');
+        }, 100);
+      };
+    };
+  </script>
+</body>
+</html>

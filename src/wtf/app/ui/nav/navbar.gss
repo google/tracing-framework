@@ -1,0 +1,48 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Navbar CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+@def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_DEFAULT_HEIGHT  230px;
+@def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT 80px;
+
+/* Navbar root. */
+.wtfAppUiNavbar {
+  position: relative;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_DEFAULT_HEIGHT;
+  overflow: hidden;
+  background: white;
+}
+
+.wtfAppUiNavbarTimeline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT;
+  overflow: hidden;
+  background-color: white;
+}
+
+.wtfAppUiNavbarFramebar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT;
+  bottom: 0;
+  overflow: hidden;
+  background-color: red;
+}
+
+.wtfAppUiNavbarSplitter {}

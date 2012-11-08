@@ -1,0 +1,28 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Timeline DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.nav.timeline}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css wtfAppUiTimeline}">
+    <div class="{css wtfAppUiTimelineOuter}">
+      <canvas class="{css wtfAppUiTimelineCanvas}" width="1" height="1"></canvas>
+      <div class="{css kScrollShadowTop}"></div>
+      <div class="{css kScrollShadowBottom}"></div>
+    </div>
+  </div>
+{/template}

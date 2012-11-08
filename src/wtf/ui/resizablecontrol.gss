@@ -1,0 +1,22 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Resizable control CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.wtfUiSplitterHorizontal {
+  position: absolute;
+  height: 8px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin-bottom: -3px;
+  cursor: ns-resize;
+}
