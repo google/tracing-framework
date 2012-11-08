@@ -13,8 +13,8 @@ going to be published.
 
 ## Setup
 
-See [building](https://github.com/benvanik/tracing-framework/blob/master/docs/building.md) for a quickstart, and
-[testing](https://github.com/benvanik/tracing-framework/blob/master/docs/testing.md) for information on running the various tests.
+See [building](https://github.com/google/tracing-framework/blob/master/docs/building.md) for a quickstart, and
+[testing](https://github.com/google/tracing-framework/blob/master/docs/testing.md) for information on running the various tests.
 
 ## License
 
@@ -23,7 +23,7 @@ All code except dependencies under third_party/ is licensed under the permissive
 ## Contributing
 
 Have a fix or feature? Submit a pull request - we love them!
-Note that we do keep to the [style_guide](https://github.com/benvanik/tracing-framework/blob/master/docs/style_guide.md),
+Note that we do keep to the [style_guide](https://github.com/google/tracing-framework/blob/master/docs/style_guide.md),
 so please check it out first!
 
 As this is a Google project, you *must* first e-sign the
