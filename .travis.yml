@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - 0.8
+
+# Fetch submodules and install all dependencies
+install: scripts/setup.sh
+
+# Build :fast and run all tests
+script: ./run-tests.sh
