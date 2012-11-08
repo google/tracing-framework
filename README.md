@@ -18,7 +18,7 @@ See [building](https://github.com/google/tracing-framework/blob/master/docs/buil
 
 ## License
 
-All code except dependencies under third_party/ is licensed under the permissive Apache 2.0 license. Feel free to fork/rip/etc and use as you wish!
+All code except dependencies under third_party/ is licensed under the permissive BSD license. Feel free to fork/rip/etc and use as you wish!
 
 ## Contributing
 
