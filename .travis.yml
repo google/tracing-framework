@@ -1,3 +1,18 @@
+# Only run against master branch
+branches:
+  only:
+    - master
+
+# TODO(benvanik): find a way to open a group to receive the mail
+notifications:
+  email:
+    recipients:
+      - benvanik@google.com
+      - rsturgell@google.com
+    on_success: change
+    on_failure: change
+
+# Test under all current versions
 language: node_js
 node_js:
   - 0.8
