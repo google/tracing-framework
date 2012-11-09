@@ -1,6 +1,8 @@
 Web Tracing Framework
 ================================================================================
 
+[![Build Status](https://travis-ci.org/google/tracing-framework.png)](https://travis-ci.org/google/tracing-framework)
+
 The Web Tracing Framework is an set of libraries, tools, and visualizers for
 the tracing and invegistation of complex web applications. You spend a small
 amount of time instrumenting your code and it helps you discover performance
