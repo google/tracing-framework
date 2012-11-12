@@ -65,7 +65,7 @@ wtf.util.FunctionBuilder.isSupported = function() {
   if (wtf.util.FunctionBuilder.isSupported_ === undefined) {
     wtf.util.FunctionBuilder.isSupported_ = true;
     try {
-      new Function('');
+      wtf.util.FunctionBuilder.isSupported_ = !!(new Function(''));
     } catch (e) {
       wtf.util.FunctionBuilder.isSupported_ = false;
     }

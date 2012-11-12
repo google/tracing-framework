@@ -19,7 +19,7 @@ goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
-goog.require('wtf.timing');
+goog.require('wtf.util.canvas');
 
 
 
@@ -65,6 +65,12 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   this.eh_ = null;
 
   /**
+   * Root paint context, if created.
+   * @type {wtf.ui.PaintContext}
+   */
+  this.paintContext_ = null;
+
+  /**
    * Whether a repaint has been requested and is pending the next frame.
    * @type {boolean}
    * @private
@@ -72,7 +78,7 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   this.repaintPending_ = false;
 
   // Add to page.
-  this.dom_.appendChild(this.parentElement_, this.rootElement_);
+  this.enterDocument(this.parentElement_);
 };
 goog.inherits(wtf.ui.Control, wtf.events.EventEmitter);
 
@@ -140,6 +146,16 @@ wtf.ui.Control.prototype.createDom = goog.abstractMethod;
 
 
 /**
+ * Adds the DOM tree into the document.
+ * @param {!Element} parentElement Parent DOM element.
+ * @protected
+ */
+wtf.ui.Control.prototype.enterDocument = function(parentElement) {
+  this.dom_.appendChild(this.parentElement_, this.rootElement_);
+};
+
+
+/**
  * Toggles a button enabled or disabled.
  * @param {string} cssName CSS name of the button.
  * @param {boolean} enabled Whether the button is enabled.
@@ -154,6 +170,31 @@ wtf.ui.Control.prototype.toggleButton = function(cssName, enabled) {
 
 
 /**
+ * Gets the root paint context, if any.
+ * @return {wtf.ui.PaintContext} Paint context, if any.
+ */
+wtf.ui.Control.prototype.getPaintContext = function() {
+  return this.paintContext_;
+};
+
+
+/**
+ * Sets the root paint context.
+ * This can only be called once.
+ * @param {!wtf.ui.PaintContext} value New paint context.
+ */
+wtf.ui.Control.prototype.setPaintContext = function(value) {
+  goog.asserts.assert(this.paintContext_);
+  if (this.paintContext_) {
+    return;
+  }
+  this.paintContext_ = value;
+  this.registerDisposable(this.paintContext_);
+  this.requestRepaint();
+};
+
+
+/**
  * Requests a repaint of the control on the next rAF.
  * This should be used instead of repainting inline in JS callbacks to help
  * the browser draw things optimally. Only call repaint directly if the results
@@ -161,29 +202,45 @@ wtf.ui.Control.prototype.toggleButton = function(cssName, enabled) {
  * @protected
  */
 wtf.ui.Control.prototype.requestRepaint = function() {
-  if (!this.repaintPending_) {
-    this.repaintPending_ = true;
-    wtf.timing.deferToNextFrame(this.repaintRequested_, this);
+  if (this.paintContext_) {
+    this.paintContext_.requestRepaint();
   }
 };
 
 
 /**
- * Handles repaint request callbacks.
- * This is called on the edge of a new rAF.
- * @private
+ * Repaints the control contents.
  */
-wtf.ui.Control.prototype.repaintRequested_ = function() {
-  if (!this.repaintPending_) {
-    return;
+wtf.ui.Control.prototype.repaint = function() {
+  if (this.paintContext_) {
+    this.paintContext_.repaint();
   }
-  this.repaintPending_ = false;
+};
+
+
+/**
+ * Updates the layout of the control.
+ */
+wtf.ui.Control.prototype.layout = function() {
+  // Reshape the canvas.
+  if (this.paintContext_) {
+    var canvas = this.paintContext_.getCanvas();
+    var ctx = this.paintContext_.getCanvasContext2d();
+    var currentSize = goog.style.getSize(goog.dom.getParentElement(canvas));
+    wtf.util.canvas.reshape(
+        canvas, ctx, currentSize.width, currentSize.height);
+  }
+
+  // Custom layout logic.
+  this.layoutInternal();
+
+  // Repaint immediately to prevent flicker.
   this.repaint();
 };
 
 
 /**
- * Repaints the controls contents.
+ * Updates custom layout of the control.
  * @protected
  */
-wtf.ui.Control.prototype.repaint = goog.nullFunction;
+wtf.ui.Control.prototype.layoutInternal = goog.nullFunction;

@@ -6,45 +6,43 @@
  */
 
 /**
- * Timeline CSS.
+ * TracksPanel CSS.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_TIMELINE_INFO_WIDTH   240px;
+@def WTF_APP_UI_TRACKSPANEL_INFO_WIDTH  240px;
 
-/* Timeline root. */
-.wtfAppUiTimeline {
-  @mixin fitParent();
-  background: white;
-  border-bottom: 1px solid #EBEBEB;
+/* TracksPanel root. */
+.wtfAppUiTracksPanel {
 }
 
-.wtfAppUiTimelineOuter {
+.wtfAppUiTracksPanelCanvasOuter {
   position: absolute;
   left: 0;
   right: 0;
-  height: 100%;
-  margin-right: WTF_APP_UI_TIMELINE_INFO_WIDTH;
+  top: 0;
+  bottom: 0;
+  margin-right: WTF_APP_UI_TRACKSPANEL_INFO_WIDTH;
   border-right: 1px solid #ebebeb;
 }
-
-.wtfAppUiTimelineCanvas {
+.wtfAppUiTracksPanelCanvas {
 }
 
-.wtfAppUiTimelineInfoOuter {
+.wtfAppUiTracksPanelInfoOuter {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
-  width: WTF_APP_UI_TIMELINE_INFO_WIDTH;
+  width: WTF_APP_UI_TRACKSPANEL_INFO_WIDTH;
 }
-.wtfAppUiTimelineInfo {
+.wtfAppUiTracksPanelInfo {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   bottom: 0;
   padding: 3px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }

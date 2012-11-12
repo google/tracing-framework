@@ -1,0 +1,53 @@
+{
+  // ---------------------------------------------------------------------------
+  // Common properties between the debug and release manifests.
+  // These can be copy/pasted directly between them.
+  // ---------------------------------------------------------------------------
+  "manifest_version": 2,
+  "version": "0.0.10",
+  "minimum_chrome_version": "21",
+  "offline_enabled": true,
+  "incognito": "spanning",
+  "permissions": [
+    "chrome://favicon/",
+    "cookies",
+    "management",
+    "storage",
+    "tabs",
+    "unlimitedStorage",
+    "http://*/*",
+    "https://*/*",
+    "*://*/*"
+  ],
+  "requirements": {
+  },
+  "page_action": {},
+  "icons": {
+  },
+  //"homepage_url": "",
+
+  // ---------------------------------------------------------------------------
+  // Release properties.
+  // ---------------------------------------------------------------------------
+  "name": "Web Tracing Framework (Injector)",
+  "description": "In-page injection of the Web Tracing Framework.",
+  "web_accessible_resources": [
+    // Injected tracing code:
+    "wtf_trace_web_js_compiled.js"
+  ],
+  //"options_page": "",
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": [
+        "wtf-injector.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

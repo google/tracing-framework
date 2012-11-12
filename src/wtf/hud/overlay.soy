@@ -45,6 +45,8 @@
   }
 
   .wtfHudGraphCanvas {
+    border: 0;
+    background-color: transparent;
   }
 
   .wtfHudButtons {
@@ -121,6 +123,10 @@
   .wtfHudButtonSave img {
     content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M15,3H4.5C3.672,3,3,3.672,3,4.5V9v6.5C3,16.328,3.672,17,4.5,17h11c0.828,0,1.5-0.672,1.5-1.5V5L15,3z M4,4.5 C4,4.223,4.225,4,4.5,4H6v3h2V4h7v5H4V4.5z M10,15.25c-1.242,0-2.25-1.008-2.25-2.25s1.008-2.25,2.25-2.25s2.25,1.008,2.25,2.25 S11.242,15.25,10,15.25z"/><rect opacity="0" fill="#4387FD" width="21" height="21"/></svg>');
   }
+  .wtfHudButtonSettings {}
+  .wtfHudButtonSettings img {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M16.895,11.64C16.96,11.269,17,10.89,17,10.5s-0.04-0.77-0.106-1.14l1.535-1.129l0.183-0.683l-1.5-2.598l-0.684-0.184 l-1.738,0.762c-0.581-0.49-1.25-0.875-1.979-1.138L12.5,2.5L12,2H9L8.5,2.499L8.29,4.395C7.562,4.658,6.896,5.043,6.314,5.531 L4.571,4.768L3.889,4.951l-1.5,2.598l0.183,0.684l1.535,1.129C4.04,9.731,4,10.111,4,10.5s0.04,0.769,0.106,1.139l-1.535,1.129 l-0.183,0.684l1.5,2.598l0.682,0.184l1.744-0.764c0.58,0.488,1.248,0.873,1.975,1.137l0.21,1.896L9,19h3l0.5-0.5l0.21-1.892 c0.729-0.263,1.398-0.648,1.979-1.138l1.738,0.762l0.684-0.184l1.499-2.598l-0.181-0.683L16.895,11.64z M14.15,10.5 c0,2.016-1.635,3.65-3.65,3.65c-2.016,0-3.65-1.635-3.65-3.65s1.635-3.65,3.65-3.65C12.515,6.85,14.15,8.484,14.15,10.5z"/></svg>');
+  }
 
   .wtfHudSplitter {
     position: absolute;
@@ -149,6 +155,9 @@
         </a>
         <a class="wtfHudButton wtfHudButtonSave" title="Save Snapshot">
           <img alt="Save" src="">
+        </a>
+        <a class="wtfHudButton wtfHudButtonSettings" title="Settings">
+          <img alt="Settings" src="">
         </a>
       </div>
     </div>

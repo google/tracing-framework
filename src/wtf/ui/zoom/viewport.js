@@ -174,8 +174,27 @@ wtf.ui.zoom.Viewport = function() {
    * @private
    */
   this.interval_ = null;
+
+  // This is such a hack. All of this needs to be redesigned.
+  /**
+   * A list of other viewports that are linked to this one.
+   * @type {!Array.<!wtf.ui.zoom.Viewport>}
+   * @private
+   */
+  this.peers_ = [];
 };
 goog.inherits(wtf.ui.zoom.Viewport, wtf.events.EventEmitter);
+
+
+/**
+ * Links two viewports together.
+ * @param {!wtf.ui.zoom.Viewport} a First viewport.
+ * @param {!wtf.ui.zoom.Viewport} b Second viewport.
+ */
+wtf.ui.zoom.Viewport.link = function(a, b) {
+  a.peers_.push(b);
+  b.peers_.push(a);
+};
 
 
 /**
@@ -361,8 +380,8 @@ wtf.ui.zoom.Viewport.prototype.emitInvalidate_ = function() {
  */
 wtf.ui.zoom.Viewport.prototype.startTicking_ = function() {
   if (!this.interval_) {
-    this.interval_ = wtf.timing.setInterval(wtf.timing.RunMode.RENDERING,
-        16, this.tick_, this);
+    this.interval_ = wtf.timing.setInterval(
+        wtf.timing.RunMode.RENDERING, 16, this.tick_, this);
     this.tick_(wtf.now());
   }
 };
@@ -446,8 +465,31 @@ wtf.ui.zoom.Viewport.prototype.tick_ = function(time) {
   this.wasChanging_ = changing;
 
   if (changing) {
+    for (var n = 0; n < this.peers_.length; n++) {
+      var peer = this.peers_[n];
+      peer.cameraX_.set(this.cameraX_.current, true);
+      peer.cameraY_.set(this.cameraY_.current, true);
+      peer.cameraScale_.set(this.cameraScale_.current, true);
+      peer.emitInvalidate_();
+    }
+
     this.emitInvalidate_();
   }
+};
+
+
+/**
+ * Sets the viewport camera.
+ * @param {number} x Camera X.
+ * @param {number} y Camera Y.
+ * @param {number} scale Camera scale.
+ */
+wtf.ui.zoom.Viewport.prototype.set = function(x, y, scale) {
+  this.stop();
+  this.cameraX_.set(x);
+  this.cameraY_.set(y);
+  this.cameraScale_.set(scale);
+  this.requestRender_();
 };
 
 
@@ -487,11 +529,19 @@ wtf.ui.zoom.Viewport.prototype.zoomToBounds = function(x, y, width, height,
  */
 wtf.ui.zoom.Viewport.prototype.zoomToRect = function(screenRect, sceneRect,
     opt_transitionMode) {
-  /** @type {boolean} */
+  if (!screenRect.width || !screenRect.height) {
+    return;
+  }
+
   var animated = goog.isDef(opt_transitionMode) ?
       (opt_transitionMode == wtf.ui.zoom.TransitionMode.ANIMATED) : true;
 
   this.stop();
+
+  if (sceneRect.width <= 0 ||
+      sceneRect.height <= 0) {
+    return;
+  }
 
   var canvasWidth = screenRect.width;
   var canvasHeight = screenRect.height;
@@ -626,8 +676,7 @@ wtf.ui.zoom.Viewport.prototype.zoomAboutCoordinate = function(x, y, scale,
   var bestFitScale = Math.min(
       this.screenWidth_ / this.sceneWidth_,
       this.screenHeight_ / this.sceneHeight_);
-  scale = Math.min(Math.max(scale,
-      Math.min(bestFitScale * 0.75, this.minScale_)), this.maxScale_);
+  scale = Math.min(Math.max(scale, Math.min(bestFitScale * 0.75, this.minScale_)), this.maxScale_);
 
   // TODO(benvanik): Keep the scene in view after zooming in.
 

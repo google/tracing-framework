@@ -203,6 +203,7 @@ wtf.app.ui.Tabbar.prototype.setSelectedPanel = function(value) {
   goog.dom.classes.enable(
       newTab.tabElement, goog.getCssName('kTabSelected'), true);
   newTab.panel.setVisible(true);
+  newTab.panel.layout();
 };
 
 
@@ -279,4 +280,7 @@ wtf.app.ui.Tabbar.prototype.getTabForPanel_ = function(panel) {
  * This is called by the document view when the control size changes.
  */
 wtf.app.ui.Tabbar.prototype.layout = function() {
+  if (this.selectedTab_) {
+    this.selectedTab_.panel.layout();
+  }
 };

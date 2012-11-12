@@ -92,7 +92,7 @@ wtf.data.ContextInfo.parse = function(buffer) {
   if (!jsonString) {
     return null;
   }
-  var json = goog.json.parse(jsonString);
+  var json = /** @type {Object} */ (goog.global.JSON.parse(jsonString));
 
   // Create appropriate subclass.
   var contextInfo;

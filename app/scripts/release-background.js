@@ -15,6 +15,6 @@
 // Launch the background page code.
 wtf.app.background.run({
   'endpoints': [
-    'http:8022'
+    'http:9023'
   ]
 });

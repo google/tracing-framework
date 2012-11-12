@@ -1,0 +1,32 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * TracksPanel DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.tracks.trackspanel}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css wtfAppUiTabPanel} {css wtfAppUiTracksPanel}">
+    <div class="{css wtfAppUiTracksPanelInfoOuter}">
+      <div class="{css kSrollBarInner} {css wtfAppUiTracksPanelInfo}">
+        [info]
+      </div>
+    </div>
+    <div class="{css wtfAppUiTracksPanelCanvasOuter}">
+      <canvas class="{css wtfAppUiTracksPanelCanvas}"></canvas>
+    </div>
+    <div class="{css kScrollShadowBottom}"></div>
+  </div>
+{/template}

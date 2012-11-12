@@ -69,6 +69,15 @@ goog.inherits(wtf.app.ui.TabPanel, wtf.ui.Control);
 
 
 /**
+ * Gets the parent document view.
+ * @return {!wtf.app.ui.DocumentView} Parent document view.
+ */
+wtf.app.ui.TabPanel.prototype.getDocumentView = function() {
+  return this.documentView_;
+};
+
+
+/**
  * Gets the path of the panel used for navigation.
  * @return {string} Panel path.
  */

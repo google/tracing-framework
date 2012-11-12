@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.TimingProvider');
 
+goog.require('goog.array');
 goog.require('wtf');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
@@ -30,59 +31,11 @@ goog.require('wtf.trace.Timing');
 wtf.trace.TimingProvider = function() {
   goog.base(this);
 
-  this.injectFrameMarker_();
   this.injectTimeouts_();
   this.injectSetImmediate_();
   this.injectRequestAnimationFrame_();
 };
 goog.inherits(wtf.trace.TimingProvider, wtf.trace.Provider);
-
-
-/**
- * Injects a frame marker that tries to guess render frames.
- * @private
- */
-wtf.trace.TimingProvider.prototype.injectFrameMarker_ = function() {
-  // Try rAF first - this is the most accurate way.
-  // It may cause side effects, but I'll ignore that for now.
-  var hasRaf = false;
-  for (var n = 0; n < wtf.trace.TimingProvider.RAF_NAMES_.length; n++) {
-    var name = wtf.trace.TimingProvider.RAF_NAMES_[n];
-    if (!goog.global[name]) {
-      continue;
-    }
-    hasRaf = true;
-    this.setupRafFrameMarker_(name);
-    break;
-  }
-
-  if (!hasRaf) {
-    // No rAF - fallback to setInterval guessing.
-    var frameNumber = 0;
-    goog.global.setInterval(function() {
-      frameNumber++;
-      wtf.trace.Timing.frameMarker.append(wtf.now(), frameNumber);
-    }, 16);
-  }
-};
-
-
-/**
- * Sets up a requestAnimationFrame-based frame marker.
- * @param {string} name Name of the requestAnimationFrame function.
- * @private
- */
-wtf.trace.TimingProvider.prototype.setupRafFrameMarker_ = function(name) {
-  var raf = goog.global[name];
-
-  var frameNumber = 0;
-  function appendFrameMarker(timestamp) {
-    raf.call(goog.global, appendFrameMarker);
-    frameNumber++;
-    wtf.trace.Timing.frameMarker.append(timestamp, frameNumber);
-  };
-  raf.call(goog.global, appendFrameMarker);
-};
 
 
 /**
@@ -270,32 +223,17 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
 
 
 /**
- * A list of names used for requestAnimationFrame.
+ * A list of names used for requestAnimationFrame and cancelAnimationFrame.
  * @const
  * @type {!Array.<string>}
  * @private
  */
 wtf.trace.TimingProvider.RAF_NAMES_ = [
-  'requestAnimationFrame',
-  'mozRequestAnimationFrame',
-  'msRequestAnimationFrame',
-  'oRequestAnimationFrame',
-  'webkitRequestAnimationFrame'
-];
-
-
-/**
- * A list of names used for cancelAnimationFrame.
- * @const
- * @type {!Array.<string>}
- * @private
- */
-wtf.trace.TimingProvider.CANCEL_RAF_NAMES_ = [
-  'cancelAnimationFrame',
-  'mozCancelAnimationFrame',
-  'msCAncelAnimationFrame',
-  'oCancelAnimationFrame',
-  'webkitCancelAnimationFrame'
+  'requestAnimationFrame', 'cancelAnimationFrame',
+  'mozRequestAnimationFrame', 'mozCancelAnimationFrame',
+  'msRequestAnimationFrame', 'msCAncelAnimationFrame',
+  'oRequestAnimationFrame', 'oCancelAnimationFrame',
+  'webkitRequestAnimationFrame', 'webkitCancelAnimationFrame'
 ];
 
 
@@ -307,18 +245,12 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrame_ = function() {
   // Due to fun JS closure capture rules these loops defer to other functions.
 
   // window.requestAnimationFrame
-  for (var n = 0; n < wtf.trace.TimingProvider.RAF_NAMES_.length; n++) {
-    var name = wtf.trace.TimingProvider.RAF_NAMES_[n];
-    if (goog.global[name]) {
-      this.injectRequestAnimationFrameFn_(name);
-    }
-  }
-
   // window.cancelAnimationFrame
-  for (var n = 0; n < wtf.trace.TimingProvider.CANCEL_RAF_NAMES_.length; n++) {
-    var name = wtf.trace.TimingProvider.CANCEL_RAF_NAMES_[n];
-    if (goog.global[name]) {
-      this.injectCancelAnimationFrameFn_(name);
+  for (var n = 0; n < wtf.trace.TimingProvider.RAF_NAMES_.length / 2; n += 2) {
+    var requestName = wtf.trace.TimingProvider.RAF_NAMES_[n];
+    var cancelName = wtf.trace.TimingProvider.RAF_NAMES_[n + 1];
+    if (goog.global[requestName]) {
+      this.injectRequestAnimationFrameFn_(requestName, cancelName);
     }
   }
 };
@@ -326,28 +258,58 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrame_ = function() {
 
 /**
  * Injects requestAnimationFrame.
- * @param {string} name Name of the requestAnimationFrame method.
+ * @param {string} requestName Name of the requestAnimationFrame method.
+ * @param {string} cancelName Name of the cancelAnimationFrame method.
  * @private
  */
 wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
-    function(name) {
-  var originalRequestAnimationFrame = goog.global[name];
-  this.injectFunction(goog.global, name, function requestAnimationFrame(cb) {
+    function(requestName, cancelName) {
+  var frameNumber = 0;
+  var frameStart = 0;
+  var pendingRafs = [];
+  var frameRafs = [];
+
+  var originalRequestAnimationFrame = goog.global[requestName];
+  var requestAnimationFrame = function requestAnimationFrame(cb) {
     // Hack to get the handle in the closure.
     var handleRef = [-1];
 
     // Flow-spanning logic.
     var flow; // NOTE: flow is branched below so event order is correct
     var handle = originalRequestAnimationFrame.call(goog.global, function() {
+      var now = wtf.now();
+
+      // If this is the first rAF of the frame, handle frame-start and list
+      // swapping.
+      if (!frameRafs.length) {
+        frameNumber++;
+        frameRafs.push.apply(frameRafs, pendingRafs);
+        pendingRafs.length = 0;
+        frameStart = now;
+        wtf.trace.Timing.frameStart.append(now, frameNumber);
+      }
+
       var scope = wtf.trace.Timing.requestAnimationFrameCallback.enterScope(
-          wtf.now(), flow, handleRef[0]);
+          now, flow, handleRef[0]);
       try {
         cb.apply(this, arguments);
       } finally {
+        // If this is the last rAF of the frame, handle frame-end and list
+        // resetting.
+        if (frameRafs[frameRafs.length - 1] == handleRef[0]) {
+          now = wtf.now();
+          var duration = ((now - frameStart) * 1000) >>> 0;
+          wtf.trace.Timing.frameEnd.append(now, frameNumber, duration);
+          frameRafs.length = 0;
+        }
+
         scope.leave();
       }
     });
     handleRef[0] = handle;
+
+    // Queue in pending rAF list.
+    pendingRafs.push(handle);
 
     // Append event (making it easy to identify requestAnimationFrames).
     wtf.trace.Timing.requestAnimationFrame.append(wtf.now(), handle);
@@ -357,23 +319,22 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
     flow = wtf.trace.branchFlow();
 
     return handle;
-  });
-};
+  };
+  this.injectFunction(goog.global, requestName, requestAnimationFrame);
 
+  var originalCancelAnimationFrame = goog.global[cancelName];
+  var cancelAnimationFrame = function cancelAnimationFrame(handle) {
+    // Remove from the rAF list.
+    goog.array.remove(pendingRafs, handle);
 
-/**
- * Injects cancelAnimationFrame.
- * @param {string} name Name of the cancelAnimationFrame method.
- * @private
- */
-wtf.trace.TimingProvider.prototype.injectCancelAnimationFrameFn_ =
-    function(name) {
-  var originalClearAnimationFrame = goog.global[name];
-  this.injectFunction(goog.global, name, function cancelAnimationFrame(handle) {
     // Clear the callback.
-    originalClearAnimationFrame.call(goog.global, handle);
+    originalCancelAnimationFrame.call(goog.global, handle);
 
     // Append event.
-    wtf.trace.Timing.clearAnimationFrame.append(wtf.now(), handle);
-  });
+    wtf.trace.Timing.cancelAnimationFrame.append(wtf.now(), handle);
+  };
+  // NOTE: some browsers don't implement cancel.
+  if (originalCancelAnimationFrame) {
+    this.injectFunction(goog.global, cancelName, cancelAnimationFrame);
+  }
 };

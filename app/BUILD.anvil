@@ -80,27 +80,29 @@ file_set(
 # Debug and release variants of the manifest
 preprocess(
     name='debug_manifest',
-    srcs=['manifest.json'],
+    srcs=['manifest.template'],
     new_extension='.debug',
     defines=['DEBUG'])
 preprocess(
     name='release_manifest',
-    srcs=['manifest.json'],
+    srcs=['manifest.template'],
+    new_extension='.release',
     defines=['RELEASE'])
 
 # CWS hates comments in extension manifests - strip them all
 strip_comments(
     name='stripped_release_manifest',
     srcs=[':release_manifest'])
+copy_file(
+    name='named_release_manifest',
+    srcs=[':stripped_release_manifest'],
+    base_path='out',
+    target='manifest.json')
 
 file_set(
     name='app_files',
     srcs=[
-        ':stripped_release_manifest',
-        'icons/popout_white.svg',
-        'icons/folder_open.svg',
-        'icons/link.svg',
-        'icons/settings.svg',
+        ':named_release_manifest',
         'maindisplay.html',
         'scripts/release-background.js',
         'scripts/release-maindisplay.js',

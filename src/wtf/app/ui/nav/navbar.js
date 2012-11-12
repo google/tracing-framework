@@ -14,7 +14,7 @@
 goog.provide('wtf.app.ui.nav.Navbar');
 
 goog.require('goog.soy');
-goog.require('goog.style');
+goog.require('wtf.app.ui.nav.Framebar');
 goog.require('wtf.app.ui.nav.Timeline');
 goog.require('wtf.app.ui.nav.navbar');
 goog.require('wtf.ui.ResizableControl');
@@ -51,6 +51,15 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   this.timeline_ = new wtf.app.ui.nav.Timeline(documentView,
       this.getChildElement(goog.getCssName('wtfAppUiNavbarTimeline')));
   this.registerDisposable(this.timeline_);
+
+  /**
+   * Framebar control.
+   * @type {!wtf.app.ui.nav.Framebar}
+   * @private
+   */
+  this.framebar_ = new wtf.app.ui.nav.Framebar(documentView,
+      this.getChildElement(goog.getCssName('wtfAppUiNavbarFramebar')));
+  this.registerDisposable(this.framebar_);
 };
 goog.inherits(wtf.app.ui.nav.Navbar, wtf.ui.ResizableControl);
 
@@ -85,9 +94,6 @@ wtf.app.ui.nav.Navbar.prototype.createDom = function(dom) {
  * This is called by the document view when the control size changes.
  */
 wtf.app.ui.nav.Navbar.prototype.layout = function() {
-  var currentSize = goog.style.getSize(this.getChildElement(
-      goog.getCssName('wtfAppUiNavbarFramebar')));
-  // TODO(benvanik): disable framebar if currentSize.height == 0
-
   this.timeline_.layout();
+  this.framebar_.layout();
 };

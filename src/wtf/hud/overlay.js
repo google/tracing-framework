@@ -178,14 +178,18 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   // Bind events.
   this.eh_.listen(this.graphCanvas_,
       goog.events.EventType.CLICK, this.graphClicked_, false);
-  var wtfHudButtonSave = this.dom_.getElementByClass(
-      wtf.hud.Overlay.CssName_.SAVE_BUTTON, this.rootElement_);
-  this.eh_.listen(wtfHudButtonSave,
-      goog.events.EventType.CLICK, this.saveSnapshotClicked_, false);
   var wtfHudButtonSend = this.dom_.getElementByClass(
       wtf.hud.Overlay.CssName_.SEND_BUTTON, this.rootElement_);
   this.eh_.listen(wtfHudButtonSend,
       goog.events.EventType.CLICK, this.sendSnapshotClicked_, false);
+  var wtfHudButtonSave = this.dom_.getElementByClass(
+      wtf.hud.Overlay.CssName_.SAVE_BUTTON, this.rootElement_);
+  this.eh_.listen(wtfHudButtonSave,
+      goog.events.EventType.CLICK, this.saveSnapshotClicked_, false);
+  var wtfHudButtonSettings = this.dom_.getElementByClass(
+      wtf.hud.Overlay.CssName_.SETTINGS_BUTTON, this.rootElement_);
+  this.eh_.listen(wtfHudButtonSettings,
+      goog.events.EventType.CLICK, this.settingsClicked_, false);
 
   // Setup keyboard shortcuts.
   var keyboard = wtf.events.Keyboard.getWindowKeyboard(this.dom_.getWindow());
@@ -296,8 +300,9 @@ wtf.hud.Overlay.MAX_WIDTH_ = 500;
 wtf.hud.Overlay.CssName_ = {
   SPLITTER: 'wtfHudSplitter',
   BUTTONS: 'wtfHudButtons',
+  SEND_BUTTON: 'wtfHudButtonSend',
   SAVE_BUTTON: 'wtfHudButtonSave',
-  SEND_BUTTON: 'wtfHudButtonSend'
+  SETTINGS_BUTTON: 'wtfHudButtonSettings'
 };
 
 
@@ -465,17 +470,7 @@ wtf.hud.Overlay.prototype.graphClicked_ = function(e) {
 
 
 /**
- * Handles clicks on the save button.
- * @param {!goog.events.BrowserEvent} e Event.
- * @private
- */
-wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function(e) {
-  wtf.trace.snapshot();
-};
-
-
-/**
- * Handles clicks on the UI button.
+ * Handles clicks on the send to UI button.
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
@@ -486,12 +481,33 @@ wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function(e) {
 
 
 /**
+ * Handles clicks on the save button.
+ * @param {!goog.events.BrowserEvent} e Event.
+ * @private
+ */
+wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function(e) {
+  wtf.trace.snapshot();
+};
+
+
+/**
+ * Handles clicks on the settings UI button.
+ * @param {!goog.events.BrowserEvent} e Event.
+ * @private
+ */
+wtf.hud.Overlay.prototype.settingsClicked_ = function(e) {
+  // Show settings dialog.
+  window.alert('TODO');
+};
+
+
+/**
  * Sends a snapshot to the UI.
  * @private
  */
 wtf.hud.Overlay.prototype.sendSnapshot_ = function() {
-  // TODO(benvanik): something more sophisticated?
-  var host = 'localhost:9024';
+  // TODO(benvanik): something more sophisticated
+  var host = COMPILED ? 'localhost:9023' : 'localhost:9024';
   if (this.options_['app']) {
     host = this.options_['app']['endpoint'] || host;
   }

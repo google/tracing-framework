@@ -56,13 +56,21 @@ wtf.ui.zoom.Spring = function(value) {
 /**
  * Immediately sets the spring value.
  * @param {number} value New value.
+ * @param {boolean=} opt_clean Mark as clean.
  */
-wtf.ui.zoom.Spring.prototype.set = function(value) {
+wtf.ui.zoom.Spring.prototype.set = function(value, opt_clean) {
+  if (this.target == value) {
+    return;
+  }
   this.target = value;
   this.current = value;
   this.velocity_ = 0;
   this.lastTime_ = wtf.now();
-  this.dirty_ = true;
+  if (!opt_clean) {
+    this.dirty_ = true;
+  } else {
+    this.dirty_ = false;
+  }
 };
 
 

@@ -15,6 +15,7 @@ goog.provide('wtf.events.Keyboard');
 goog.provide('wtf.events.KeyboardScope');
 
 goog.require('goog.Disposable');
+goog.require('goog.asserts');
 goog.require('goog.events.EventHandler');
 goog.require('goog.ui.KeyboardShortcutHandler');
 goog.require('wtf.events.EventEmitter');
@@ -52,6 +53,14 @@ wtf.events.Keyboard = function(targetWindow) {
   this.keyHandler_.setAlwaysStopPropagation(true);
   this.keyHandler_.setAllShortcutsAreGlobal(true);
 
+  /**
+   * Suspend/resume depth.
+   * When >0, keyboard shortcuts are ignored.
+   * @type {number}
+   * @private
+   */
+  this.suspendCount_ = 0;
+
   this.eh_.listen(
       this.keyHandler_,
       goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
@@ -59,6 +68,41 @@ wtf.events.Keyboard = function(targetWindow) {
       true);
 };
 goog.inherits(wtf.events.Keyboard, wtf.events.EventEmitter);
+
+
+/**
+ * Suspends listening for events.
+ * Must be matched with a resume.
+ */
+wtf.events.Keyboard.prototype.suspend = function() {
+  this.suspendCount_++;
+  if (this.suspendCount_ == 1) {
+    this.eh_.removeAll();
+    this.keyHandler_.setAlwaysPreventDefault(false);
+    this.keyHandler_.setAlwaysStopPropagation(false);
+    this.keyHandler_.setAllShortcutsAreGlobal(false);
+  }
+};
+
+
+/**
+ * Resumes listening for events.
+ * Must be matched with a suspend.
+ */
+wtf.events.Keyboard.prototype.resume = function() {
+  goog.asserts.assert(this.suspendCount_);
+  this.suspendCount_--;
+  if (!this.suspendCount_) {
+    this.eh_.listen(
+        this.keyHandler_,
+        goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
+        this.keyPressed_,
+        true);
+    this.keyHandler_.setAlwaysPreventDefault(true);
+    this.keyHandler_.setAlwaysStopPropagation(true);
+    this.keyHandler_.setAllShortcutsAreGlobal(true);
+  }
+};
 
 
 /**

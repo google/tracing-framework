@@ -68,5 +68,5 @@ build-bin/
 # WTF
 # ==============================================================================
 
-manifest*.json
+./manifest.json
 hydrogen.cfg

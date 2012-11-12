@@ -108,7 +108,12 @@ wtf.analysis.db.EventDatabase.EventType = {
   /**
    * The sources listing changed (source added/etc).
    */
-  SOURCES_CHANGED: goog.events.getUniqueId('sources_changed')
+  SOURCES_CHANGED: goog.events.getUniqueId('sources_changed'),
+
+  /**
+   * One or more zones was added. Args include a list of the added zones.
+   */
+  ZONES_ADDED: goog.events.getUniqueId('zones_added')
 };
 
 
@@ -252,6 +257,14 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
   this.insertedEventCount_ = 0;
 
   /**
+   * The number of zones when insertion began.
+   * Used to track new zones.
+   * @type {number}
+   * @private
+   */
+  this.beginningZoneCount_ = 0;
+
+  /**
    * Start-time of the dirty range.
    * @type {number}
    * @private
@@ -288,6 +301,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.beginEventBatch =
   goog.asserts.assert(!this.insertingEvents_);
   this.insertingEvents_ = true;
 
+  this.beginningZoneCount_ = this.db_.zoneIndices_.length;
   this.dirtyTimeStart_ = Number.MAX_VALUE;
   this.dirtyTimeEnd_ = Number.MIN_VALUE;
 
@@ -317,6 +331,13 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.endEventBatch = function() {
     this.eventTargets_[n].endInserting();
   }
 
+  // Track added zones and emit the event.
+  if (this.beginningZoneCount_ != this.db_.zoneIndices_.length) {
+    var addedZones = this.db_.zoneIndices_.slice(this.beginningZoneCount_);
+    this.db_.emitEvent(
+        wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED, addedZones);
+  }
+
   // Notify watchers.
   if (this.insertedEventCount_) {
     this.insertedEventCount_ = 0;
@@ -337,6 +358,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
   if (e.time > this.dirtyTimeEnd_) {
     this.dirtyTimeEnd_ = e.time;
   }
+  this.insertedEventCount_++;
 
   // Handle zone creation.
   // This happens first so that if we create a new zone it's added to the

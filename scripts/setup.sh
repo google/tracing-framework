@@ -11,7 +11,7 @@
 # - All:
 #   - Git 1.7.5+
 #   - Python 2.6+
-#   - Python easy_install: http://pypi.python.org/pypi/setuptools
+#   - Python pip
 #   - node.js v0.8.0+ (containing npm)
 
 # Ensure running as root (or on Cygwin, where it doesn't matter)
@@ -54,20 +54,35 @@ fi
 echo "     path: $(which python)"
 echo "  version: $PYTHON_VERSION"
 
-echo "- Python easy_install:"
-if [ ! -e "$(which easy_install)" ]; then
+echo "- Python pip:"
+if [ ! -e "$(which pip)" ]; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "! easy_install not found or not in PATH                                        !"
+  echo "! pip not found or not in PATH                                        !"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "Grab the latest version from: http://pypi.python.org/pypi/setuptools"
-  exit 1
+  echo "Attemping to install via the system package manager..."
+  if [ "$(which apt-get 2>/dev/null)" ]; then
+    # Linux (Ubuntu)
+    sudo apt-get install pip
+  elif [ "$(which port 2>/dev/null)" ]; then
+    # OS X (MacPorts)
+    sudo port selfupdate
+    sudo port install pip
+  else
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "! No supported package manager found!                                          !"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo " If on OS X ensure you install MacPorts (port) and run again"
+    echo " Or, manually install these packages:"
+    echo "   pip"
+    exit 1
+  fi
 fi
-echo "     path: $(which easy_install)"
+echo "     path: $(which pip)"
 
-echo "- node.js 0.6.10+:"
+echo "- node.js 0.8.0+:"
 if [ ! -e "$(which node)" ]; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "! node.js not found or not in PATH - at least version 0.6.10 is required       !"
+  echo "! node.js not found or not in PATH - at least version 0.8.0 is required       !"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   echo "Grab the latest version from: http://nodejs.org/#download"
   exit 1

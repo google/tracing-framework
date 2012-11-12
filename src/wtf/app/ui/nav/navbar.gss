@@ -12,7 +12,7 @@
  */
 
 @def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_DEFAULT_HEIGHT  230px;
-@def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT 80px;
+@def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT 40px;
 
 /* Navbar root. */
 .wtfAppUiNavbar {
@@ -42,7 +42,7 @@
   top: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT;
   bottom: 0;
   overflow: hidden;
-  background-color: red;
+  background-color: white;
 }
 
 .wtfAppUiNavbarSplitter {}

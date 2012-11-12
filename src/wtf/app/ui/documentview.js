@@ -23,8 +23,11 @@ goog.require('wtf.app.ui.Tabbar');
 goog.require('wtf.app.ui.Toolbar');
 goog.require('wtf.app.ui.documentview');
 goog.require('wtf.app.ui.nav.Navbar');
+goog.require('wtf.app.ui.tracks.TracksPanel');
+goog.require('wtf.events.EventType');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ResizableControl');
+goog.require('wtf.ui.zoom.Viewport');
 
 
 
@@ -54,6 +57,14 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.localView_ = doc.createView();
+
+  // HACK(benvanik): replace with shared camera
+  /**
+   * All viewports that have been created, for linking.
+   * @type {!Array.<!wtf.ui.zoom.Viewport>}
+   * @private
+   */
+  this.viewports_ = [];
 
   /**
    * Toolbar.
@@ -100,8 +111,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
       this.layout_, this);
 
-  this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
-      this, 'tracks', 'Tracks'));
+  this.tabbar_.addPanel(new wtf.app.ui.tracks.TracksPanel(this));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
       this, 'console', 'Console'));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
@@ -145,6 +155,25 @@ wtf.app.ui.DocumentView.prototype.getDatabase = function() {
  */
 wtf.app.ui.DocumentView.prototype.getLocalView = function() {
   return this.localView_;
+};
+
+
+/**
+ * Registers a viewport for linking.
+ * @param {!wtf.ui.zoom.Viewport} viewport Viewport.
+ */
+wtf.app.ui.DocumentView.prototype.registerViewport = function(viewport) {
+  for (var n = 0; n < this.viewports_.length; n++) {
+    wtf.ui.zoom.Viewport.link(
+        this.viewports_[n],
+        viewport);
+  }
+  this.viewports_.push(viewport);
+
+  var db = this.getDatabase();
+  db.addListener(wtf.events.EventType.INVALIDATED, function() {
+    viewport.invalidate();
+  });
 };
 
 

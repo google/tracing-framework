@@ -23,11 +23,20 @@ goog.require('wtf.trace.events');
  */
 wtf.trace.Timing = {
   /**
-   * Indicates a render frame has occurred. Maybe.
+   * Indicates a render frame has started.
    */
-  frameMarker: wtf.trace.events.createInstance(
-      'browser.timing.frameMarker', [
+  frameStart: wtf.trace.events.createInstance(
+      'browser.timing.frameStart', [
         new wtf.data.Variable.Uint32('number')
+      ]),
+
+  /**
+   * Indicates a render frame has ended. Maybe.
+   */
+  frameEnd: wtf.trace.events.createInstance(
+      'browser.timing.frameEnd', [
+        new wtf.data.Variable.Uint32('number'),
+        new wtf.data.Variable.Uint32('duration')
       ]),
 
   /**
@@ -113,10 +122,10 @@ wtf.trace.Timing = {
       ]),
 
   /**
-   * Call to clearAnimationFrame.
+   * Call to cancelAnimationFrame.
    */
-  clearAnimationFrame: wtf.trace.events.createInstance(
-      'browser.timing.clearAnimationFrame', [
+  cancelAnimationFrame: wtf.trace.events.createInstance(
+      'browser.timing.cancelAnimationFrame', [
         new wtf.data.Variable.Uint32('handle')
       ]),
 
