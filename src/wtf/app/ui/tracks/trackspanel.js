@@ -14,6 +14,7 @@
 goog.provide('wtf.app.ui.tracks.TracksPanel');
 
 goog.require('goog.array');
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.soy');
 goog.require('goog.style');
@@ -58,13 +59,8 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('wtfAppUiTracksPanelCanvas')));
 
-  /**
-   * Paint context.
-   * @type {!wtf.ui.PaintContext}
-   * @private
-   */
-  this.paintContext_ = new wtf.ui.PaintContext(this.trackCanvas_);
-  this.setPaintContext(this.paintContext_);
+  var paintContext = new wtf.ui.PaintContext(this.trackCanvas_);
+  this.setPaintContext(paintContext);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
@@ -75,13 +71,13 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    */
   this.timeRangePainters_ = [];
 
-  var gridPainter = new wtf.ui.GridPainter(this.paintContext_);
+  var gridPainter = new wtf.ui.GridPainter(paintContext);
   gridPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(this.paintContext_);
+  var rulerPainter = new wtf.ui.RulerPainter(paintContext);
   rulerPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
@@ -193,7 +189,10 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
  * @private
  */
 wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
+  var paintContext = this.getPaintContext();
+  goog.asserts.assert(paintContext);
+
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
-      this.paintContext_, this.db_, zoneIndex);
+      paintContext, this.db_, zoneIndex);
   this.timeRangePainters_.push(zonePainter);
 };

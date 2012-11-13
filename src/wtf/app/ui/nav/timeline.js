@@ -72,13 +72,8 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
         }
       }, this);
 
-  /**
-   * Paint context.
-   * @type {!wtf.ui.PaintContext}
-   * @private
-   */
-  this.paintContext_ = new wtf.ui.PaintContext(this.timelineCanvas_);
-  this.setPaintContext(this.paintContext_);
+  var paintContext = new wtf.ui.PaintContext(this.timelineCanvas_);
+  this.setPaintContext(paintContext);
 
   /**
    * Timeline painter.
@@ -86,7 +81,7 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
    * @private
    */
   this.timelinePainter_ = new wtf.app.ui.nav.TimelinePainter(
-      this.paintContext_, documentView);
+      paintContext, documentView);
 
   this.requestRepaint();
 };

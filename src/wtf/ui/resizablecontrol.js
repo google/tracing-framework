@@ -13,13 +13,13 @@
 
 goog.provide('wtf.ui.ResizableControl');
 
-goog.require('goog.Timer');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.fx.Dragger');
 goog.require('goog.math');
 goog.require('goog.math.Rect');
 goog.require('goog.style');
+goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 
 
@@ -46,12 +46,19 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
   this.orientation_ = orientation;
 
   /**
+   * Direction the control sizes from.
+   * @type {wtf.ui.ResizableControl.SizeFrom}
+   * @private
+   */
+  this.sizeFrom_ = wtf.ui.ResizableControl.SizeFrom.TOP_LEFT;
+
+  /**
    * Current size in the orientation-defined dimension.
    * @type {number}
    * @private
    */
   this.currentSize_ = 0;
-  goog.Timer.callOnce(function() {
+  wtf.timing.setImmediate(function() {
     var currentSize = goog.style.getSize(this.getRootElement());
     switch (orientation) {
       case wtf.ui.ResizableControl.Orientation.HORIZONTAL:
@@ -61,7 +68,7 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
         this.currentSize_ = currentSize.width;
         break;
     }
-  }, undefined, this);
+  }, this);
 
   /**
    * Minimum size value. If undefined the minimum size is not limited.
@@ -86,6 +93,30 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
       splitterClassName, this.getRootElement()));
   goog.asserts.assert(this.splitterDiv_);
 
+  // Styles are set in code so that no GSS is required.
+  goog.style.setStyle(this.splitterDiv_, {
+    'position': 'absolute'
+  });
+  switch (this.orientation_) {
+    case wtf.ui.ResizableControl.Orientation.HORIZONTAL:
+      goog.style.setStyle(this.splitterDiv_, {
+        'height': '8px',
+        'left': 0,
+        'right': 0,
+        'cursor': 'ns-resize'
+      });
+      break;
+    case wtf.ui.ResizableControl.Orientation.VERTICAL:
+      goog.style.setStyle(this.splitterDiv_, {
+        'width': '8px',
+        'top': 0,
+        'bottom': 0,
+        'cursor': 'ew-resize'
+      });
+      break;
+  }
+  this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+
   /**
    * Splitter dragger controller.
    * @type {!goog.fx.Dragger}
@@ -101,6 +132,13 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
       goog.fx.Dragger.EventType.END, this.splitterDragEnd_, false);
 
   /**
+   * Size of the control when the drag started.
+   * @type {number}
+   * @private
+   */
+  this.startSize_ = 0;
+
+  /**
    * Document body cursor at the start of a drag, if any.
    * @type {string|undefined}
    * @private
@@ -108,9 +146,9 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
   this.previousDragCursor_ = undefined;
 
   // Always trigger a resize once style is available.
-  goog.Timer.callOnce(function() {
+  wtf.timing.setImmediate(function() {
     this.sizeChanged();
-  }, undefined, this);
+  }, this);
 };
 goog.inherits(wtf.ui.ResizableControl, wtf.ui.Control);
 
@@ -131,6 +169,64 @@ wtf.ui.ResizableControl.EventType = {
 wtf.ui.ResizableControl.Orientation = {
   HORIZONTAL: 0,
   VERTICAL: 1
+};
+
+
+/**
+ * Control direction.
+ * @enum {number}
+ */
+wtf.ui.ResizableControl.SizeFrom = {
+  TOP_LEFT: 0,
+  BOTTOM_RIGHT: 1
+};
+
+
+/**
+ * Sets the direction the control sizes from.
+ * @param {wtf.ui.ResizableControl.SizeFrom} value New value.
+ */
+wtf.ui.ResizableControl.prototype.setSizeFrom = function(value) {
+  this.sizeFrom_ = value;
+
+  switch (this.orientation_) {
+    case wtf.ui.ResizableControl.Orientation.HORIZONTAL:
+      switch (this.sizeFrom_) {
+        case wtf.ui.ResizableControl.SizeFrom.TOP_LEFT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'bottom': 0,
+            'top': undefined,
+            'margin-bottom': '-3px'
+          });
+          break;
+        case wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'top': 0,
+            'bottom': undefined,
+            'margin-top': '-3px'
+          });
+          break;
+      }
+      break;
+    case wtf.ui.ResizableControl.Orientation.VERTICAL:
+      switch (this.sizeFrom_) {
+        case wtf.ui.ResizableControl.SizeFrom.TOP_LEFT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'left': undefined,
+            'right': 0,
+            'margin-right': '-3px'
+          });
+          break;
+        case wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'left': 0,
+            'right': undefined,
+            'margin-left': '-3px'
+          });
+          break;
+      }
+      break;
+  }
 };
 
 
@@ -216,6 +312,8 @@ wtf.ui.ResizableControl.prototype.splitterDragStart_ = function(e) {
   var body = this.getDom().getDocument().body;
   this.previousDragCursor_ = goog.style.getStyle(body, 'cursor');
   goog.style.setStyle(body, 'cursor', cursorName);
+
+  this.startSize_ = this.currentSize_;
 };
 
 
@@ -229,14 +327,24 @@ wtf.ui.ResizableControl.prototype.splitterDragMove_ = function(e) {
   e.browserEvent.preventDefault();
 
   // Calculate new size and resize.
-  var newSize;
+  var newSize = 0;
+  var scalar = 1;
+  switch (this.sizeFrom_) {
+    case wtf.ui.ResizableControl.SizeFrom.TOP_LEFT:
+      newSize = 4;
+      break;
+    case wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT:
+      newSize = this.startSize_;
+      scalar = -1;
+      break;
+  }
   switch (this.orientation_) {
     default:
     case wtf.ui.ResizableControl.Orientation.HORIZONTAL:
-      newSize = e.top + 4;
+      newSize += e.top * scalar;
       break;
     case wtf.ui.ResizableControl.Orientation.VERTICAL:
-      newSize = e.left + 4;
+      newSize += e.left * scalar;
       break;
   }
   this.setSplitterSize(newSize);
@@ -261,5 +369,6 @@ wtf.ui.ResizableControl.prototype.splitterDragEnd_ = function(e) {
  * @protected
  */
 wtf.ui.ResizableControl.prototype.sizeChanged = function() {
+  this.layout();
   this.emitEvent(wtf.ui.ResizableControl.EventType.SIZE_CHANGED);
 };
