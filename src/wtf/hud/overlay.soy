@@ -24,6 +24,7 @@
 
   .wtfHudOuter {
     position: fixed;
+    height: 40px;
     margin: 3px;
     z-index: 99999;
     background-color: #DFDFDF;
@@ -129,11 +130,6 @@
   }
 
   .wtfHudSplitter {
-    position: absolute;
-    width: 4px;
-    top: 0;
-    bottom: 0;
-    cursor: ew-resize;
   }
 
   {/literal}</style>
@@ -146,21 +142,9 @@
 {template .control}
   <div class="wtfHudOuter">
     <div class="wtfHudControl">
-      <div class="wtfHudGraph">
-        <canvas class="wtfHudGraphCanvas" width="1" height="1"></canvas>
-      </div>
-      <div class="wtfHudButtons">
-        <a class="wtfHudButton wtfHudButtonSend" title="Send Snapshot to UI">
-          <img alt="Send" src="">
-        </a>
-        <a class="wtfHudButton wtfHudButtonSave" title="Save Snapshot">
-          <img alt="Save" src="">
-        </a>
-        <a class="wtfHudButton wtfHudButtonSettings" title="Settings">
-          <img alt="Settings" src="">
-        </a>
-      </div>
+      <div class="wtfHudGraph"></div>
+      <div class="wtfHudButtons"></div>
     </div>
-    <div class="wtfHudSplitter">&nbsp;</div>
+    <div class="wtfHudSplitter"></div>
   </div>
 {/template}
