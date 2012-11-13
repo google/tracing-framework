@@ -72,13 +72,8 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   this.framebarCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('wtfAppUiFramebarCanvas')));
 
-  /**
-   * Paint context.
-   * @type {!wtf.ui.PaintContext}
-   * @private
-   */
-  this.paintContext_ = new wtf.ui.PaintContext(this.framebarCanvas_);
-  this.setPaintContext(this.paintContext_);
+  var paintContext = new wtf.ui.PaintContext(this.framebarCanvas_);
+  this.setPaintContext(paintContext);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
@@ -89,21 +84,21 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    */
   this.timeRangePainters_ = [];
 
-  var gridPainter = new wtf.ui.GridPainter(this.paintContext_);
+  var gridPainter = new wtf.ui.GridPainter(paintContext);
   gridPainter.setGranularities(
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
   var framebarPainter = new wtf.app.ui.nav.FramebarPainter(
-      this.paintContext_, db);
+      paintContext, db);
   this.timeRangePainters_.push(framebarPainter);
 
   var heatmapPainter = new wtf.app.ui.nav.HeatmapPainter(
-      this.paintContext_, db);
+      paintContext, db);
   this.timeRangePainters_.push(heatmapPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(this.paintContext_);
+  var rulerPainter = new wtf.ui.RulerPainter(paintContext);
   rulerPainter.setGranularities(
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
