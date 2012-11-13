@@ -76,22 +76,45 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
    * @type {wtf.hud.Overlay.DockPosition_}
    * @private
    */
-  this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP;
-  if (options['dock'] == 'bottom') {
-    this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM;
+  this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
+  switch (options['dock']) {
+    case 'tl':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_LEFT;
+      break;
+    case 'bl':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT;
+      break;
+    case 'tr':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_RIGHT;
+      break;
+    case 'br':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
+      break;
   }
 
   // Adjust position on page.
   var rootElement = this.getRootElement();
   switch (this.dockPosition_) {
     default:
-    case wtf.hud.Overlay.DockPosition_.TOP:
+    case wtf.hud.Overlay.DockPosition_.TOP_LEFT:
+      goog.style.setStyle(rootElement, 'top', '0');
+      goog.style.setStyle(rootElement, 'left', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT:
+      goog.style.setStyle(rootElement, 'bottom', '0');
+      goog.style.setStyle(rootElement, 'left', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.TOP_RIGHT:
       goog.style.setStyle(rootElement, 'top', '0');
       goog.style.setStyle(rootElement, 'right', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
-    case wtf.hud.Overlay.DockPosition_.BOTTOM:
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT:
       goog.style.setStyle(rootElement, 'bottom', '0');
       goog.style.setStyle(rootElement, 'right', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
   }
 
@@ -122,7 +145,6 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.registerDisposable(this.keyboardScope_);
 
   // Initial resize.
-  this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
   this.setSplitterLimits(59, 500);
   this.setSplitterSize(80);
 
@@ -170,19 +192,29 @@ goog.inherits(wtf.hud.Overlay, wtf.ui.ResizableControl);
 
 /**
  * Overlay docking position.
- * @enum {number}
+ * @enum {string}
  * @private
  */
 wtf.hud.Overlay.DockPosition_ = {
   /**
-   * Dock at the top of the screen.
+   * Dock at the top-left of the screen.
    */
-  TOP: 0,
+  TOP_LEFT: 'tl',
 
   /**
-   * Dock at the bottom of the screen.
+   * Dock at the bottom-left of the screen.
    */
-  BOTTOM: 1
+  BOTTOM_LEFT: 'bl',
+
+  /**
+   * Dock at the top-right of the screen.
+   */
+  TOP_RIGHT: 'tr',
+
+  /**
+   * Dock at the bottom-right of the screen.
+   */
+  BOTTOM_RIGHT: 'br'
 };
 
 

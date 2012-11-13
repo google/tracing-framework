@@ -103,20 +103,19 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
         'height': '8px',
         'left': 0,
         'right': 0,
-        'bottom': 0,
-        'margin-bottom': '-3px',
         'cursor': 'ns-resize'
       });
       break;
     case wtf.ui.ResizableControl.Orientation.VERTICAL:
       goog.style.setStyle(this.splitterDiv_, {
-        'width': '4px',
+        'width': '8px',
         'top': 0,
         'bottom': 0,
         'cursor': 'ew-resize'
       });
       break;
   }
+  this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
 
   /**
    * Splitter dragger controller.
@@ -189,6 +188,45 @@ wtf.ui.ResizableControl.SizeFrom = {
  */
 wtf.ui.ResizableControl.prototype.setSizeFrom = function(value) {
   this.sizeFrom_ = value;
+
+  switch (this.orientation_) {
+    case wtf.ui.ResizableControl.Orientation.HORIZONTAL:
+      switch (this.sizeFrom_) {
+        case wtf.ui.ResizableControl.SizeFrom.TOP_LEFT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'bottom': 0,
+            'top': undefined,
+            'margin-bottom': '-3px'
+          });
+          break;
+        case wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'top': 0,
+            'bottom': undefined,
+            'margin-top': '-3px'
+          });
+          break;
+      }
+      break;
+    case wtf.ui.ResizableControl.Orientation.VERTICAL:
+      switch (this.sizeFrom_) {
+        case wtf.ui.ResizableControl.SizeFrom.TOP_LEFT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'left': undefined,
+            'right': 0,
+            'margin-right': '-3px'
+          });
+          break;
+        case wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT:
+          goog.style.setStyle(this.splitterDiv_, {
+            'left': 0,
+            'right': undefined,
+            'margin-left': '-3px'
+          });
+          break;
+      }
+      break;
+  }
 };
 
 

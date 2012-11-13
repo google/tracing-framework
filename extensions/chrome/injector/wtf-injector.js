@@ -85,7 +85,7 @@ function prepareTracing(appEndpoint, filePrefix) {
 
   // Show HUD.
   wtf.hud.prepare({
-    'dock': 'bottom',
+    'dock': 'br',
     'app': {
       'endpoint': appEndpoint
     }
