@@ -19,6 +19,7 @@ goog.require('goog.events.EventType');
 goog.require('wtf');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.PaintContext');
+goog.require('wtf.util.canvas');
 
 
 
@@ -42,14 +43,10 @@ wtf.hud.LiveGraph = function(session, options, parentElement) {
    */
   this.enabled_ = true;
 
-  var canvas = /** @type {!HTMLCanvasElement} */ (this.getRootElement());
-  goog.dom.classes.add(canvas, 'wtfHudGraphCanvas');
-
-  //
-  this.setPaintContext(new wtf.ui.PaintContext(canvas));
-
-  this.getHandler().listen(canvas,
+  this.getHandler().listen(this.getRootElement(),
       goog.events.EventType.CLICK, this.graphClicked_, false);
+
+  this.setupPainter_();
 };
 goog.inherits(wtf.hud.LiveGraph, wtf.ui.Control);
 
@@ -59,6 +56,24 @@ goog.inherits(wtf.hud.LiveGraph, wtf.ui.Control);
  */
 wtf.hud.LiveGraph.prototype.createDom = function(dom) {
   return dom.createElement(goog.dom.TagName.CANVAS);
+};
+
+
+/**
+ * Sets up the graph painter.
+ * @private
+ */
+wtf.hud.LiveGraph.prototype.setupPainter_ = function() {
+  if (wtf.util.canvas.isSupported()) {
+    this.enabled_ = false;
+    // TODO(benvanik): show 'canvas disabled' message.
+    return;
+  }
+
+  var canvas = /** @type {!HTMLCanvasElement} */ (this.getRootElement());
+  goog.dom.classes.add(canvas, 'wtfHudGraphCanvas');
+
+  this.setPaintContext(new wtf.ui.PaintContext(canvas));
 };
 
 
