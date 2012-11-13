@@ -184,7 +184,7 @@ wtf.ui.Control.prototype.getPaintContext = function() {
  * @param {!wtf.ui.PaintContext} value New paint context.
  */
 wtf.ui.Control.prototype.setPaintContext = function(value) {
-  goog.asserts.assert(this.paintContext_);
+  goog.asserts.assert(!this.paintContext_);
   if (this.paintContext_) {
     return;
   }

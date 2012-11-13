@@ -13,22 +13,20 @@
 
 goog.provide('wtf.hud.Overlay');
 
-goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.events.EventHandler');
+goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
-goog.require('goog.fx.Dragger');
-goog.require('goog.math.Rect');
-goog.require('goog.net.cookies');
 goog.require('goog.soy');
+goog.require('goog.string');
 goog.require('goog.style');
-goog.require('wtf');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.overlay');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.trace');
+goog.require('wtf.ui.ResizableControl');
 
 
 
@@ -39,10 +37,25 @@ goog.require('wtf.trace');
  * @param {!Object} options Options.
  * @param {Element=} opt_parentElement Element to display in.
  * @constructor
- * @extends {goog.Disposable}
+ * @extends {wtf.ui.ResizableControl}
  */
 wtf.hud.Overlay = function(session, options, opt_parentElement) {
-  goog.base(this);
+  var dom = goog.dom.getDomHelper(opt_parentElement);
+  var parentElement = /** @type {!Element} */ (
+      opt_parentElement || dom.getDocument().body);
+  goog.base(
+      this,
+      wtf.ui.ResizableControl.Orientation.VERTICAL,
+      'wtfHudSplitter',
+      parentElement,
+      dom);
+
+  // Add stylesheet to page.
+  // Note that we don't use GSS so that we can avoid another file dependency
+  // and renaming issues.
+  dom.appendChild(this.parentElement_,
+      /** @type {!Element} */ (goog.soy.renderAsFragment(
+          wtf.hud.overlay.style, undefined, undefined, this.dom_)));
 
   /**
    * Tracing session.
@@ -59,144 +72,92 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.options_ = options;
 
   /**
-   * DOM helper.
-   * @type {!goog.dom.DomHelper}
-   * @private
-   */
-  this.dom_ = goog.dom.getDomHelper(opt_parentElement);
-
-  /**
-   * Parent DOM element.
-   * @type {!Element}
-   * @private
-   */
-  this.parentElement_ = /** @type {!Element} */ (
-      opt_parentElement || this.dom_.getDocument().body);
-
-  /**
-   * Event handler.
-   * @type {!goog.events.EventHandler}
-   * @private
-   */
-  this.eh_ = new goog.events.EventHandler(this);
-  this.registerDisposable(this.eh_);
-
-  /**
-   * <style> from template.
-   * Note that we don't use GSS so that we can avoid another file dependency
-   * and renaming issues.
-   * @type {!Element}
-   * @private
-   */
-  this.styleElement_ = /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.hud.overlay.style, undefined, undefined, this.dom_));
-
-  /**
-   * Root control UI.
-   * @type {!Element}
-   * @private
-   */
-  this.rootElement_ = /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.hud.overlay.control, undefined, undefined, this.dom_));
-  goog.style.setUnselectable(this.rootElement_, true);
-
-  /**
-   * Graph canvas.
-   * @type {!HTMLCanvasElement}
-   * @private
-   */
-  this.graphCanvas_ = this.dom_.getElementsByTagNameAndClass(
-      goog.dom.TagName.CANVAS, undefined, this.rootElement_)[0];
-
-  /**
-   * Graph canvas 2D context.
-   * This will be the unhooked 2D context.
-   * @type {!CanvasRenderingContext2D}
-   * @private
-   */
-  this.graphContext2d_ =
-      this.graphCanvas_.getContext('raw-2d') ||
-      this.graphCanvas_.getContext('2d');
-
-  /**
-   * True if the overlay is in the DOM and should be updated.
-   * @type {boolean}
-   * @private
-   */
-  this.isActive_ = false;
-
-  /**
    * Docking position.
    * @type {wtf.hud.Overlay.DockPosition_}
    * @private
    */
-  this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP;
-  if (options['dock'] == 'bottom') {
-    this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM;
+  this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
+  switch (options['dock']) {
+    case 'tl':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_LEFT;
+      break;
+    case 'bl':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT;
+      break;
+    case 'tr':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_RIGHT;
+      break;
+    case 'br':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
+      break;
+  }
+
+  // Adjust position on page.
+  var rootElement = this.getRootElement();
+  switch (this.dockPosition_) {
+    default:
+    case wtf.hud.Overlay.DockPosition_.TOP_LEFT:
+      goog.style.setStyle(rootElement, 'top', '0');
+      goog.style.setStyle(rootElement, 'left', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT:
+      goog.style.setStyle(rootElement, 'bottom', '0');
+      goog.style.setStyle(rootElement, 'left', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.TOP_RIGHT:
+      goog.style.setStyle(rootElement, 'top', '0');
+      goog.style.setStyle(rootElement, 'right', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT:
+      goog.style.setStyle(rootElement, 'bottom', '0');
+      goog.style.setStyle(rootElement, 'right', '0');
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
   }
 
   /**
-   * Current width, in px.
+   * The number of buttons currently added.
    * @type {number}
    * @private
    */
-  this.width_ =
-      Number(goog.net.cookies.get(wtf.hud.Overlay.SPLITTER_WIDTH_COOKIE_,
-      String(wtf.hud.Overlay.DEFAULT_WIDTH_)));
-
-  var splitter = this.dom_.getElementByClass(
-      wtf.hud.Overlay.CssName_.SPLITTER, this.rootElement_);
-  /**
-   * Splitter dragger controller.
-   * @type {!goog.fx.Dragger}
-   * @private
-   */
-  this.dragger_ = new goog.fx.Dragger(splitter);
-  this.registerDisposable(this.dragger_);
-  this.eh_.listen(this.dragger_,
-      goog.fx.Dragger.EventType.START, this.dragStart_, false);
-  this.eh_.listen(this.dragger_,
-      goog.fx.Dragger.EventType.BEFOREDRAG, this.dragMove_, false);
-  this.eh_.listen(this.dragger_,
-      goog.fx.Dragger.EventType.END, this.dragEnd_, false);
+  this.buttonCount_ = 0;
 
   /**
-   * Width of the overlay when starting a drag.
-   * Used to calculate new widths based on deltas from the drag events.
-   * @type {number}
+   * Graph canvas.
+   * @type {!wtf.hud.LiveGraph}
    * @private
    */
-  this.startDragWidth_ = this.width_;
+  this.liveGraph_ = new wtf.hud.LiveGraph(
+      session, options, this.getChildElement('wtfHudGraph'));
+  this.registerDisposable(this.liveGraph_);
+
+  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
 
   /**
-   * Document body cursor at the start of a drag, if any.
-   * @type {string|undefined}
+   * Keyboard shortcut scope.
+   * @type {!wtf.events.KeyboardScope}
    * @private
    */
-  this.previousCursor_ = undefined;
+  this.keyboardScope_ = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(this.keyboardScope_);
 
-  // Bind events.
-  this.eh_.listen(this.graphCanvas_,
-      goog.events.EventType.CLICK, this.graphClicked_, false);
-  var wtfHudButtonSend = this.dom_.getElementByClass(
-      wtf.hud.Overlay.CssName_.SEND_BUTTON, this.rootElement_);
-  this.eh_.listen(wtfHudButtonSend,
-      goog.events.EventType.CLICK, this.sendSnapshotClicked_, false);
-  var wtfHudButtonSave = this.dom_.getElementByClass(
-      wtf.hud.Overlay.CssName_.SAVE_BUTTON, this.rootElement_);
-  this.eh_.listen(wtfHudButtonSave,
-      goog.events.EventType.CLICK, this.saveSnapshotClicked_, false);
-  var wtfHudButtonSettings = this.dom_.getElementByClass(
-      wtf.hud.Overlay.CssName_.SETTINGS_BUTTON, this.rootElement_);
-  this.eh_.listen(wtfHudButtonSettings,
-      goog.events.EventType.CLICK, this.settingsClicked_, false);
+  // Initial resize.
+  this.setSplitterLimits(59, 500);
+  this.setSplitterSize(80);
 
-  // Setup keyboard shortcuts.
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(this.dom_.getWindow());
-  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
-  this.registerDisposable(keyboardScope);
-  keyboardScope.addShortcut('f9', this.saveSnapshotClicked_, this);
-  keyboardScope.addShortcut('f10', this.sendSnapshotClicked_, this);
+  // Add buttons.
+  this.addButton(
+      'wtfHudButtonSend', 'Send to UI', 'f9',
+      this.sendSnapshotClicked_, this);
+  this.addButton(
+      'wtfHudButtonSave', 'Save Snapshot', 'f10',
+      this.saveSnapshotClicked_, this);
+  this.addButton(
+      'wtfHudButtonSettings', 'Settings', null,
+      this.settingsClicked_, this);
 
   // TODO(benvanik): generate counter code
   /*
@@ -226,210 +187,69 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   //   //
   // }
 };
-goog.inherits(wtf.hud.Overlay, goog.Disposable);
+goog.inherits(wtf.hud.Overlay, wtf.ui.ResizableControl);
+
+
+/**
+ * Overlay docking position.
+ * @enum {string}
+ * @private
+ */
+wtf.hud.Overlay.DockPosition_ = {
+  /**
+   * Dock at the top-left of the screen.
+   */
+  TOP_LEFT: 'tl',
+
+  /**
+   * Dock at the bottom-left of the screen.
+   */
+  BOTTOM_LEFT: 'bl',
+
+  /**
+   * Dock at the top-right of the screen.
+   */
+  TOP_RIGHT: 'tr',
+
+  /**
+   * Dock at the bottom-right of the screen.
+   */
+  BOTTOM_RIGHT: 'br'
+};
 
 
 /**
  * @override
  */
-wtf.hud.Overlay.prototype.disposeInternal = function() {
-  this.exitDocument();
-  goog.base(this, 'disposeInternal');
+wtf.hud.Overlay.prototype.createDom = function(dom) {
+  return /** @type {!Element} */ (goog.soy.renderAsFragment(
+      wtf.hud.overlay.control, undefined, undefined, dom));
 };
 
 
 /**
- * Overlay docking position.
- * @enum {number}
- * @private
+ * @override
  */
-wtf.hud.Overlay.DockPosition_ = {
-  /**
-   * Dock at the top of the screen.
-   */
-  TOP: 0,
-
-  /**
-   * Dock at the bottom of the screen.
-   */
-  BOTTOM: 1
+wtf.hud.Overlay.prototype.layoutInternal = function() {
+  this.liveGraph_.layout();
 };
 
 
 /**
- * Default width, in px.
- * @const
- * @type {number}
- * @private
+ * Shows the overlay.
  */
-wtf.hud.Overlay.DEFAULT_WIDTH_ = 140;
-
-
-/**
- * Default height, in px.
- * @const
- * @type {number}
- * @private
- */
-wtf.hud.Overlay.DEFAULT_HEIGHT_ = 40;
-
-
-/**
- * Minimum width, in px.
- * @const
- * @type {number}
- * @private
- */
-wtf.hud.Overlay.MIN_WIDTH_ = 59;
-
-
-/**
- * Maximum width, in px.
- * @const
- * @type {number}
- * @private
- */
-wtf.hud.Overlay.MAX_WIDTH_ = 500;
-
-
-/**
- * CSS names used in the soy templates.
- * @enum {string}
- * @private
- */
-wtf.hud.Overlay.CssName_ = {
-  SPLITTER: 'wtfHudSplitter',
-  BUTTONS: 'wtfHudButtons',
-  SEND_BUTTON: 'wtfHudButtonSend',
-  SAVE_BUTTON: 'wtfHudButtonSave',
-  SETTINGS_BUTTON: 'wtfHudButtonSettings'
+wtf.hud.Overlay.prototype.show = function() {
+  goog.style.setStyle(this.getRootElement(), 'display', '');
+  this.liveGraph_.setEnabled(true);
 };
 
 
 /**
- * Name of the cookie used to set the splitter width.
- * @const
- * @type {string}
- * @private
+ * Hides the overlay.
  */
-wtf.hud.Overlay.SPLITTER_WIDTH_COOKIE_ = 'wtfHW';
-
-
-/**
- * Adds the overlay to the DOM.
- */
-wtf.hud.Overlay.prototype.enterDocument = function() {
-  // Adjust position on page.
-  switch (this.dockPosition_) {
-    default:
-    case wtf.hud.Overlay.DockPosition_.TOP:
-      goog.style.setStyle(this.rootElement_, 'top', '0');
-      goog.style.setStyle(this.rootElement_, 'right', '0');
-      break;
-    case wtf.hud.Overlay.DockPosition_.BOTTOM:
-      goog.style.setStyle(this.rootElement_, 'bottom', '0');
-      goog.style.setStyle(this.rootElement_, 'right', '0');
-      break;
-  }
-
-  // TODO(benvanik): bind click event to bring up UI/etc
-
-  // Add to page.
-  this.dom_.appendChild(this.parentElement_, this.styleElement_);
-  this.dom_.appendChild(this.parentElement_, this.rootElement_);
-  this.isActive_ = true;
-
-  // Perform initial resize.
-  this.setWidth(this.width_);
-};
-
-
-/**
- * Removes the overlay to the DOM.
- */
-wtf.hud.Overlay.prototype.exitDocument = function() {
-  this.dom_.removeNode(this.rootElement_);
-  this.dom_.removeNode(this.styleElement_);
-  this.isActive_ = false;
-};
-
-
-/**
- * Sets the width of the overlay, in px.
- * @param {number} value New width, in px.
- */
-wtf.hud.Overlay.prototype.setWidth = function(value) {
-  // Store width in the cookie.
-  if (value != wtf.hud.Overlay.DEFAULT_WIDTH_) {
-    goog.net.cookies.set(wtf.hud.Overlay.SPLITTER_WIDTH_COOKIE_, String(value));
-  } else {
-    goog.net.cookies.remove(wtf.hud.Overlay.SPLITTER_WIDTH_COOKIE_);
-  }
-
-  // Resize control.
-  this.width_ = value;
-  goog.style.setSize(this.rootElement_, value, wtf.hud.Overlay.DEFAULT_HEIGHT_);
-
-  // Resize canvas.
-  var graphCanvasSize = goog.style.getSize(this.graphCanvas_.parentElement);
-  this.graphCanvas_.width = graphCanvasSize.width;
-  this.graphCanvas_.height = wtf.hud.Overlay.DEFAULT_HEIGHT_;
-
-  // Redraw after resize.
-  this.redraw();
-};
-
-
-/**
- * Handles splitter drag start events.
- * @param {!goog.fx.DragEvent} e Event.
- * @private
- */
-wtf.hud.Overlay.prototype.dragStart_ = function(e) {
-  // Stash width for delta calculations.
-  this.startDragWidth_ = this.width_;
-
-  // Set dragger limits.
-  this.dragger_.setLimits(new goog.math.Rect(
-      -wtf.hud.Overlay.MAX_WIDTH_,
-      0,
-      wtf.hud.Overlay.MAX_WIDTH_ + (this.width_ - wtf.hud.Overlay.MIN_WIDTH_),
-      0));
-
-  // Reset document cursor to resize so it doesn't flicker.
-  goog.style.setStyle(this.graphCanvas_, 'cursor', 'ew-resize');
-  var body = this.dom_.getDocument().body;
-  this.previousCursor_ = goog.style.getStyle(body, 'cursor');
-  goog.style.setStyle(body, 'cursor', 'ew-resize');
-};
-
-
-/**
- * Handles splitter drag move events.
- * @param {!goog.fx.DragEvent} e Event.
- * @return {boolean} False to prevent default behavior.
- * @private
- */
-wtf.hud.Overlay.prototype.dragMove_ = function(e) {
-  e.browserEvent.preventDefault();
-
-  // Calculate new width and resize.
-  var newWidth = this.startDragWidth_ - e.left;
-  this.setWidth(newWidth);
-  return false;
-};
-
-
-/**
- * Handles splitter drag end events.
- * @param {!goog.fx.DragEvent} e Event.
- * @private
- */
-wtf.hud.Overlay.prototype.dragEnd_ = function(e) {
-  // Restore document cursor.
-  goog.style.setStyle(this.graphCanvas_, 'cursor', '');
-  var body = this.dom_.getDocument().body;
-  goog.style.setStyle(body, 'cursor', this.previousCursor_);
+wtf.hud.Overlay.prototype.hide = function() {
+  goog.style.setStyle(this.getRootElement(), 'display', 'none');
+  this.liveGraph_.setEnabled(false);
 };
 
 
@@ -438,43 +258,65 @@ wtf.hud.Overlay.prototype.dragEnd_ = function(e) {
  * @param {number=} opt_time New time. Prefer using {@see wtf#now}.
  */
 wtf.hud.Overlay.prototype.advance = function(opt_time) {
-  var time = opt_time || wtf.now();
-  // TODO(benvanik): advance time, update the overlay
-
-  // Redraw after update.
-  this.redraw();
+  this.liveGraph_.advance(opt_time);
 };
 
 
 /**
- * Redraws the graph.
+ * Adds a button to the overlay button bar.
+ * @param {string} icon Data URI of an icon file or a CSS class name.
+ * @param {string} title Title name for tooltips.
+ * @param {string?} shortcut Shortcut key.
+ * @param {function()} callback Callback function.
+ * @param {Object=} opt_scope Callback scope.
  */
-wtf.hud.Overlay.prototype.redraw = function() {
-  // Ignore if at min width.
-  if (this.width_ == wtf.hud.Overlay.MIN_WIDTH_) {
-    return;
+wtf.hud.Overlay.prototype.addButton = function(
+    icon, title, shortcut, callback, opt_scope) {
+  // Create button.
+  var dom = this.getDom();
+  var el = dom.createElement(goog.dom.TagName.A);
+  goog.dom.classes.add(el, 'wtfHudButton');
+  el['title'] = title;
+  var img = dom.createElement(goog.dom.TagName.IMG);
+  img['alt'] = title;
+  img['src'] = '';
+  dom.appendChild(el, img);
+
+  // Set icon.
+  if (goog.string.startsWith(icon, 'data:')) {
+    img['src'] = icon;
+  } else {
+    goog.dom.classes.add(el, icon);
   }
 
-  // this.graphContext2d_
-};
+  // Add to DOM.
+  var buttonBar = this.getChildElement('wtfHudButtons');
+  dom.appendChild(buttonBar, el);
+  this.buttonCount_++;
 
+  // Keyboard shortcut handler.
+  if (shortcut) {
+    this.keyboardScope_.addShortcut(shortcut, callback, opt_scope || this);
+  }
 
-/**
- * Handles clicks on the graph.
- * @param {!goog.events.BrowserEvent} e Event.
- * @private
- */
-wtf.hud.Overlay.prototype.graphClicked_ = function(e) {
-  // TODO(benvanik): embiggen graph? config dialog?
+  // Click handler.
+  this.getHandler().listen(el,
+      goog.events.EventType.CLICK, callback, false, opt_scope || this);
+
+  // Measure and update extents.
+  var splitterSize = this.getSplitterSize();
+  var oldMinWidth = (this.buttonCount_ - 1) * 27 + 4;
+  var newMinWidth = this.buttonCount_ * 27 + 4;
+  this.setSplitterLimits(newMinWidth, 500);
+  this.setSplitterSize((splitterSize - oldMinWidth) + newMinWidth);
 };
 
 
 /**
  * Handles clicks on the send to UI button.
- * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function(e) {
+wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function() {
   // Send snapshot.
   this.sendSnapshot_();
 };
@@ -482,20 +324,18 @@ wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function(e) {
 
 /**
  * Handles clicks on the save button.
- * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function(e) {
+wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function() {
   wtf.trace.snapshot();
 };
 
 
 /**
  * Handles clicks on the settings UI button.
- * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.hud.Overlay.prototype.settingsClicked_ = function(e) {
+wtf.hud.Overlay.prototype.settingsClicked_ = function() {
   // Show settings dialog.
   window.alert('TODO');
 };

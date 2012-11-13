@@ -93,7 +93,6 @@ wtf.hud.SessionListener_.prototype.sessionStarted = function(session) {
   // Create overlay and add to the DOM.
   var overlay = new wtf.hud.Overlay(
       session, this.options_, this.parentElement_);
-  overlay.enterDocument();
   wtf.hud.overlay_ = overlay;
 };
 
@@ -113,7 +112,7 @@ wtf.hud.SessionListener_.prototype.sessionStopped = function(session) {
 wtf.hud.show = function() {
   var overlay = wtf.hud.overlay_;
   if (overlay) {
-    overlay.enterDocument();
+    overlay.show();
   }
 };
 
@@ -124,7 +123,7 @@ wtf.hud.show = function() {
 wtf.hud.hide = function() {
   var overlay = wtf.hud.overlay_;
   if (overlay) {
-    overlay.exitDocument();
+    overlay.hide();
   }
 };
 
