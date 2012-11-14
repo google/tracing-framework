@@ -36,7 +36,7 @@
 
     # Build a full release
     anvil build :release
-    # Upload build-out/extensions/chrome/wtf-chrome-extension.zip
+    # Upload build-out/extensions/chrome/injector/wtf-chrome-extension.zip
 
 ### App
 
