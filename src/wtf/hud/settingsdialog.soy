@@ -178,6 +178,30 @@
     overflow: hidden;
   }
 
+  .wtfHudSettingsPane {
+    padding: 16px 32px;
+    height: auto;
+    overflow: auto;
+  }
+  .wtfHudSettingsSection {
+    clear: both;
+    border-bottom: 1px solid #ebebeb;
+    padding: 20px 0;
+  }
+  .wtfHudSettingsSectionLabel {
+    display: block;
+    width: 185px;
+    float: left;
+    font-weight: bold;
+  }
+  .wtfHudSettingsSectionContent {
+    margin-left: 210px;
+  }
+  .wtfHudSettingsSectionContent p {
+    margin: 0 0 1em;
+    line-height: 13px;
+  }
+
   {/literal}</style>
 {/template}
 
@@ -201,6 +225,31 @@
       </ul>
     </div>
     <div class="wtfHudSettingsContent">
+      <div class="wtfHudSettingsPane">
+        <div class="wtfHudSettingsSection">
+          <div class="wtfHudSettingsSectionLabel">
+            ...
+          </div>
+          <div class="wtfHudSettingsSectionContent">
+            TODO: make this a real dialog :)
+          </div>
+        </div>
+        <div class="wtfHudSettingsSection">
+          <div class="wtfHudSettingsSectionLabel">
+            HUD
+          </div>
+          <div class="wtfHudSettingsSectionContent">
+            <p>
+              Dock at: <select class="wtfHudSettingsHudDockLocation">
+                <option value="tl">Top Left</option>
+                <option value="tr">Top Right</option>
+                <option value="bl">Bottom Left</option>
+                <option value="br">Bottom Right</option>
+              </select>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 {/template}

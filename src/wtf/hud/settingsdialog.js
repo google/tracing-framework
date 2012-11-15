@@ -45,14 +45,14 @@ wtf.hud.SettingsDialog = function(parentElement, opt_dom) {
       this.getChildElement('wtfHudSettingsButtonSave'),
       goog.events.EventType.CLICK,
       function() {
-        this.save_();
+        this.saveSettings();
         this.close();
       }, false, this);
   eh.listen(
       this.getChildElement('wtfHudSettingsButtonCancel'),
       goog.events.EventType.CLICK, this.close, false, this);
 
-  this.load_();
+  this.loadSettings();
 };
 goog.inherits(wtf.hud.SettingsDialog, wtf.ui.Dialog);
 
@@ -72,6 +72,19 @@ wtf.hud.SettingsDialog.prototype.createDom = function(dom) {
  */
 wtf.hud.SettingsDialog.prototype.loadSettings = function() {
   // TODO(benvanik): load settings
+
+  var options = {};
+
+  var dockOption = options['dock'] || 'br';
+  var wtfHudSettingsHudDockLocation = this.getChildElement(
+      'wtfHudSettingsHudDockLocation');
+  for (var n = 0; n < wtfHudSettingsHudDockLocation.options.length; n++) {
+    var option = wtfHudSettingsHudDockLocation.options[n];
+    if (option.value == dockOption) {
+      wtfHudSettingsHudDockLocation.selectedIndex = n;
+      break;
+    }
+  }
 };
 
 
@@ -81,4 +94,12 @@ wtf.hud.SettingsDialog.prototype.loadSettings = function() {
  */
 wtf.hud.SettingsDialog.prototype.saveSettings = function() {
   // TODO(benvanik): save settings
+
+  var options = {};
+
+  var wtfHudSettingsHudDockLocation = this.getChildElement(
+      'wtfHudSettingsHudDockLocation');
+  var dockOption = wtfHudSettingsHudDockLocation.options[
+      wtfHudSettingsHudDockLocation.selectedIndex].value || 'br';
+  options['dock'] = dockOption;
 };
