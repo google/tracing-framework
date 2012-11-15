@@ -156,9 +156,12 @@ wtf.util.Options.prototype.endChanging = function() {
 /**
  * Mixin the given map of key-value option pairs.
  * If values are already present they will be overwritten.
- * @param {!Object} obj Key-value option map.
+ * @param {Object|undefined} obj Key-value option map.
  */
 wtf.util.Options.prototype.mixin = function(obj) {
+  if (!obj) {
+    return;
+  }
   this.beginChanging();
   for (var key in obj) {
     if (obj.hasOwnProperty(key)) {

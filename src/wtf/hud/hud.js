@@ -43,13 +43,8 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
 
   // Get options; global with local overriding.
   var options = new wtf.util.Options();
-  var globalOptions = goog.global['wtf_hud_options'];
-  if (globalOptions) {
-    options.mixin(globalOptions);
-  }
-  if (opt_options) {
-    options.mixin(opt_options);
-  }
+  options.mixin(opt_options);
+  options.mixin(goog.global['wtf_hud_options']);
 
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(function() {

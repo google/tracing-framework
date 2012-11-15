@@ -27,7 +27,7 @@ goog.require('wtf.trace.Builtin');
  * events from all sources flowing through it.
  *
  * @param {!wtf.trace.TraceManager} traceManager Trace manager.
- * @param {!Object} options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @param {number} defaultBufferSize Default buffer size.
  * @constructor
  * @extends {goog.Disposable}
@@ -43,11 +43,11 @@ wtf.trace.Session = function(traceManager, options, defaultBufferSize) {
   this.traceManager_ = traceManager;
 
   /**
-   * Raw options object.
-   * @type {!Object}
+   * Options object.
+   * @type {!wtf.util.Options}
    * @private
    */
-  this.options_ = traceManager.getSessionOptions(options);
+  this.options_ = options;
 
   /**
    * Maximum memory usage, in bytes.
@@ -57,9 +57,9 @@ wtf.trace.Session = function(traceManager, options, defaultBufferSize) {
    * @type {number}
    * @protected
    */
-  this.maximumMemoryUsage =
-      Number(options['maximumMemoryUsage']) ||
-      wtf.trace.Session.DEFAULT_MAX_MEMORY_USAGE_;
+  this.maximumMemoryUsage = this.options_.getNumber(
+      'wtf.trace.session.maximumMemoryUsage',
+      wtf.trace.Session.DEFAULT_MAX_MEMORY_USAGE_);
 
   /**
    * Buffer size, in bytes.
@@ -69,7 +69,9 @@ wtf.trace.Session = function(traceManager, options, defaultBufferSize) {
    * @type {number}
    * @protected
    */
-  this.bufferSize = Number(options['bufferSize']) || defaultBufferSize;
+  this.bufferSize = this.options_.getNumber(
+      'wtf.trace.session.bufferSize',
+      defaultBufferSize);
 
   /**
    * Current write buffer.
@@ -124,9 +126,9 @@ wtf.trace.Session.prototype.disposeInternal = function() {
 
 
 /**
- * Gets the raw options object.
+ * Gets the options object.
  * The return value should not be modified.
- * @return {!Object} Options object.
+ * @return {!wtf.util.Options} Options object.
  */
 wtf.trace.Session.prototype.getOptions = function() {
   return this.options_;

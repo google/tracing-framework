@@ -90,7 +90,7 @@ function prepareTracing(appEndpoint, filePrefix) {
 
   // Start recording.
   wtf.trace.startSnapshottingSession({
-    'target': 'file://' + filePrefix
+    'wtf.trace.target': 'file://' + filePrefix
   });
   // wtf.trace.startStreamingSession({
   //   'target': 'http://localhost:9024'
