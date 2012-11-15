@@ -223,7 +223,22 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.prepare = function(color) {
  */
 wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
     ctx, width, height, y, h, timeOffset, timeLeft, timeRight) {
-  var bucketWidth = 10;
+  // We use a bucket size that is an integral power of 2 in ms. So .5ms, 1ms,
+  // 8ms, etc. We choose the power of 2 such that the screen size width of a
+  // bucket is between 6 and 12 pixels. With this scheme we get relatively
+  // smooth transitions during zoom since buckets cleanly split or join by
+  // factors 2 instead having data slide between neighboring buckets (which
+  // can flicker).
+  var pixelsPerMs = width / (timeRight - timeLeft);
+  var minBucketWidthPx = 6;
+  // This is the bucket duration we would use for exactly 6px bucket
+  // width.
+  var unsnappedBucketDuration = minBucketWidthPx / pixelsPerMs;
+  // Now snap that to a greater of equal integral power of 2.
+  var log2 = Math.log(unsnappedBucketDuration) / Math.LN2;
+  var bucketDuration = Math.pow(2, Math.ceil(log2));
+  var bucketWidth = bucketDuration * pixelsPerMs;
+
   var buckets = this.cachedBuckets_;
   var bucketCount = Math.ceil(width / bucketWidth) + 1;
   if (buckets.length != bucketCount) {
@@ -234,22 +249,11 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
     }
   }
 
-  // TODO(benvanik): fix precision issues, somehow...
-  timeLeft -= timeOffset;
-  timeRight -= timeOffset;
-
-  var duration = timeRight - timeLeft;
-  var bucketDuration = duration / (bucketCount - 1);
   var bucketTimeLeft = timeLeft - timeLeft % bucketDuration;
   var bucketTimeRight = bucketTimeLeft + bucketDuration * bucketCount;
   var bucketLeft = wtf.math.remap(
       bucketTimeLeft, timeLeft, timeRight, 0, width);
   var bucketMax = 0;
-
-  timeLeft += timeOffset;
-  timeRight += timeOffset;
-  bucketTimeLeft += timeOffset;
-  bucketTimeRight += timeOffset;
 
   for (var n = 0; n < this.indicies_.length; n++) {
     var index = this.indicies_[n];
@@ -272,7 +276,6 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
     var value = buckets[n] / bucketMax;
     if (value) {
       var bx = wtf.math.remap(bucketTime, timeLeft, timeRight, 0, width);
-      bx = Math.ceil(bx);
       ctx.globalAlpha = value;
       ctx.fillRect(bx, y, bucketWidth, h);
     }

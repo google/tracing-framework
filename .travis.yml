@@ -22,6 +22,8 @@ node_js:
 before_script:
   - "./scripts/setup.sh"
 
-# Build :fast and run all tests
 script:
+  # Do a full build to ensure things all work
+  - "./third_party/anvil-build/anvil-local.sh build :debug :release"
+  # Build :fast and run all tests
   - "./run-tests.sh"
