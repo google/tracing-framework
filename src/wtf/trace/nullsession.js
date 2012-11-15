@@ -23,12 +23,11 @@ goog.require('wtf.trace.Session');
  * Useful for testing the performance impact of the framework in isolation.
  *
  * @param {!wtf.trace.TraceManager} traceManager Trace manager.
- * @param {Object=} opt_options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Session}
  */
-wtf.trace.NullSession = function(traceManager, opt_options) {
-  var options = opt_options || {};
+wtf.trace.NullSession = function(traceManager, options) {
   goog.base(this, traceManager, options, 0);
 };
 goog.inherits(wtf.trace.NullSession, wtf.trace.Session);

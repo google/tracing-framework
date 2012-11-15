@@ -25,6 +25,15 @@ wtf.util.canvas.ENABLE_HIGH_DPI = false;
 
 
 /**
+ * Checks whether <canvas> is supported.
+ * @return {boolean} True if <canvas> can be used.
+ */
+wtf.util.canvas.isSupported = function() {
+  return !!window.HTMLCanvasElement;
+};
+
+
+/**
  * Gets the window device pixel ratio.
  * @return {number} The current windows device pixel ratio.
  */

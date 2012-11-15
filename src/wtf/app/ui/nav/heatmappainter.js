@@ -173,6 +173,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_ = function(db, name, eventTypes) {
    * This is used to prevent reallocating the list every frame. Whenever the
    * number of buckets changes it must be reallocated.
    * @type {!Uint32Array}
+   * @private
    */
   this.cachedBuckets_ = new Uint32Array(0);
 };

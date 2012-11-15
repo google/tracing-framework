@@ -66,6 +66,7 @@ wtf.ext.Manifest = function(json) {
   /**
    * Tracing information.
    * @type {!wtf.ext.Manifest.TracingInfo}
+   * @private
    */
   this.tracing_ = {
     scripts: []
@@ -79,6 +80,7 @@ wtf.ext.Manifest = function(json) {
   /**
    * UI information.
    * @type {!wtf.ext.Manifest.AppInfo}
+   * @private
    */
   this.app_ = {
     scripts: [],

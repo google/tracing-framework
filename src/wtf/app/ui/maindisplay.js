@@ -37,7 +37,7 @@ goog.require('wtf.ui.Control');
  * Main WTF UI.
  * Manages the main UI (menus/etc), active traces (and their trace views), etc.
  *
- * @param {!Object} options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @param {Element=} opt_parentElement Element to display in.
  * @param {goog.dom.DomHelper=} opt_dom DOM helper.
  * @constructor
@@ -51,7 +51,7 @@ wtf.app.ui.MainDisplay = function(options, opt_parentElement, opt_dom) {
 
   /**
    * Options overrides.
-   * @type {!Object}
+   * @type {!wtf.util.Options}
    * @private
    */
   this.options_ = options;

@@ -52,9 +52,8 @@ wtf.ext.AppExtension.prototype.getManifest = function() {
  * Begins asynchronously setting up the extension by loading all required
  * resources.
  * @return {!goog.result.Result} Setup result.
- * @private
  */
-wtf.ext.AppExtension.prototype.setup_ = function() {
+wtf.ext.AppExtension.prototype.setup = function() {
   var result = new goog.result.SimpleResult();
   result.setValue(true);
   return result;

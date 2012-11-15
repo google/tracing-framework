@@ -15,6 +15,7 @@ goog.provide('wtf.app.ui');
 
 goog.require('wtf.app.ui.MainDisplay');
 goog.require('wtf.util');
+goog.require('wtf.util.Options');
 
 
 /**
@@ -37,14 +38,9 @@ wtf.app.ui.show = function(opt_options) {
   wtf.app.ui.mainDisplay_ = null;
 
   // Get options; global with local overriding.
-  var options = {};
-  var globalOptions = goog.global['wtf_app_ui_options'];
-  if (globalOptions) {
-    goog.mixin(options, globalOptions);
-  }
-  if (opt_options) {
-    goog.mixin(options, opt_options);
-  }
+  var options = new wtf.util.Options();
+  options.mixin(opt_options);
+  options.mixin(goog.global['wtf_app_ui_options']);
 
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(function() {
@@ -55,7 +51,7 @@ wtf.app.ui.show = function(opt_options) {
 
 /**
  * Completes preparation of any UI after the DOM is ready.
- * @param {!Object} options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @private
  */
 wtf.app.ui.showWhenDomLoaded_ = function(options) {

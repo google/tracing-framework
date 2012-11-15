@@ -31,12 +31,11 @@ goog.require('wtf.trace.Session');
  *     snapshots without discontinuities)
  *
  * @param {!wtf.trace.TraceManager} traceManager Trace manager.
- * @param {Object=} opt_options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Session}
  */
-wtf.trace.SnapshottingSession = function(traceManager, opt_options) {
-  var options = opt_options || {};
+wtf.trace.SnapshottingSession = function(traceManager, options) {
   goog.base(this, traceManager, options,
       wtf.trace.SnapshottingSession.DEFAULT_BUFFER_SIZE_);
 
@@ -50,7 +49,8 @@ wtf.trace.SnapshottingSession = function(traceManager, opt_options) {
    * @type {boolean}
    * @private
    */
-  this.resetOnSnapshot_ = this.options_['resetOnSnapshot'] || false;
+  this.resetOnSnapshot_ = options.getBoolean(
+      'wtf.trace.snapshotting.resetOnSnapshot', false);
 
   /**
    * A list of buffers in the queue.

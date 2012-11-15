@@ -16,6 +16,8 @@ goog.provide('wtf.trace.StreamingSession');
 goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.io.Buffer');
+goog.require('wtf.timing');
+goog.require('wtf.timing.RunMode');
 goog.require('wtf.trace.Session');
 
 
@@ -26,12 +28,11 @@ goog.require('wtf.trace.Session');
  *
  * @param {!wtf.trace.TraceManager} traceManager Trace manager.
  * @param {!wtf.io.WriteStream} stream Target stream.
- * @param {Object=} opt_options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Session}
  */
-wtf.trace.StreamingSession = function(traceManager, stream, opt_options) {
-  var options = opt_options || {};
+wtf.trace.StreamingSession = function(traceManager, stream, options) {
   goog.base(this, traceManager, options,
       wtf.trace.StreamingSession.DEFAULT_BUFFER_SIZE_);
 
@@ -64,16 +65,16 @@ wtf.trace.StreamingSession = function(traceManager, stream, opt_options) {
    * @type {number}
    * @private
    */
-  this.flushIntervalMs_ = goog.isDef(options['flushIntervalMs']) ?
-      Number(options['flushIntervalMs']) :
-      wtf.trace.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_;
+  this.flushIntervalMs_ = options.getNumber(
+      'wtf.trace.streaming.flushIntervalMs',
+      wtf.trace.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_);
 
   /**
    * setInterval handle for the automatic flush timer.
-   * @type {number}
+   * @type {wtf.timing.Handle}
    * @private
    */
-  this.flushIntervalId_ = 0;
+  this.flushIntervalId_ = null;
 
   // Determine the number of buffers to use.
   var bufferCount = Math.max(1, Math.floor(
@@ -98,10 +99,10 @@ wtf.trace.StreamingSession = function(traceManager, stream, opt_options) {
 
   // Setup a periodic flush - this ensures data streams nicely.
   if (this.flushIntervalMs_) {
-    var setInterval = goog.global.setInterval['raw'] || goog.global.setInterval;
-    this.flushIntervalId_ = setInterval.call(goog.global, goog.bind(function() {
-      this.flush();
-    }, this), this.flushIntervalMs_);
+    this.flushIntervalId_ = wtf.timing.setInterval(
+        wtf.timing.RunMode.DEFAULT,
+        this.flushIntervalMs_,
+        this.flush, this);
   }
 };
 goog.inherits(wtf.trace.StreamingSession, wtf.trace.Session);
@@ -132,9 +133,8 @@ wtf.trace.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_ = 1000;
 wtf.trace.StreamingSession.prototype.disposeInternal = function() {
   // Cancel timer.
   if (this.flushIntervalId_) {
-    var clearInterval =
-        goog.global.clearInterval['raw'] || goog.global.clearInterval;
-    clearInterval.call(goog.global, this.flushIntervalId_);
+    wtf.timing.clearInterval(this.flushIntervalId_);
+    this.flushIntervalId_ = null;
   }
 
   // Stop the stream.

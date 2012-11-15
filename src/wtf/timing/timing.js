@@ -69,10 +69,11 @@ wtf.timing.RunMode = {
  *
  * @param {wtf.timing.RunMode} runMode Timing mode to run the interval in.
  * @param {number} delay Number of milliseconds to wait between callbacks.
- * @param {function(number): void} callback Callback issued on every interval
- *     tick and supplied with the current time.
- * @param {Object=} opt_scope Optional scope to call the callback in.
+ * @param {function(this:T, number): void} callback Callback issued on every
+ *     interval tick and supplied with the current time.
+ * @param {T=} opt_scope Optional scope to call the callback in.
  * @return {!wtf.timing.Handle} New interval handle.
+ * @template T
  */
 wtf.timing.setInterval = function(runMode, delay, callback, opt_scope) {
   var func = opt_scope ? goog.bind(callback, opt_scope) : callback;
@@ -108,6 +109,40 @@ wtf.timing.clearInterval = function(handle) {
 
 
 /**
+ * Sets a cancellable timeout.
+ * @param {number} delay Delay, in ms.
+ * @param {function(this:T)} callback Callback function.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.timing.setTimeout = (function() {
+  var setTimeout = goog.global.setTimeout['raw'] || goog.global.setTimeout;
+  return function(delay, callback, opt_scope) {
+    setTimeout.call(goog.global, function() {
+      callback.call(opt_scope);
+    }, delay);
+  };
+})();
+
+
+// TODO(benvanik): better setImmediate implementation
+/**
+ * Calls the given function as soon as possible.
+ * @param {function(this:T)} callback Function to call.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.timing.setImmediate = (function() {
+  var setTimeout = goog.global.setTimeout['raw'] || goog.global.setTimeout;
+  return function(callback, opt_scope) {
+    setTimeout.call(goog.global, function() {
+      callback.call(opt_scope || goog.global);
+    }, 0);
+  };
+})();
+
+
+/**
  * A list of callbacks waiting for the next frame.
  * @type {!Array.<!{callback: !Function, scope: Object}>}
  * @private
@@ -118,8 +153,9 @@ wtf.timing.waitingFrameCallbacks_ = [];
 /**
  * Defers a call until the next frame.
  * On browsers that support it this will use {@code requestAnimationFrame}.
- * @param {!Function} callback Callback function.
- * @param {Object=} opt_scope Callback scope.
+ * @param {function(this:T)} callback Callback function.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
  */
 wtf.timing.deferToNextFrame = function(callback, opt_scope) {
   if (!wtf.timing.renderTimer_) {
@@ -152,19 +188,3 @@ wtf.timing.runDeferredCallbacks_ = function() {
   }
   wtf.timing.waitingFrameCallbacks_.length = 0;
 };
-
-
-// TODO(benvanik): better setImmediate implementation
-/**
- * Calls the given function as soon as possible.
- * @param {Function} callback Function to call.
- * @param {Object=} opt_scope Callback scope.
- */
-wtf.timing.setImmediate = (function() {
-  var setTimeout = goog.global.setTimeout['raw'] || goog.global.setTimeout;
-  return function(callback, opt_scope) {
-    setTimeout.call(goog.global, function() {
-      callback.call(opt_scope || goog.global);
-    }, 0);
-  }
-})();

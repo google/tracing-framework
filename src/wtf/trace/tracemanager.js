@@ -295,24 +295,6 @@ wtf.trace.TraceManager.prototype.getCurrentZone = function() {
 
 
 /**
- * Gets session options by mixing user defined values with defined globals.
- * @param {Object=} opt_options Options overrides.
- * @return {!Object} Options object.
- */
-wtf.trace.TraceManager.prototype.getSessionOptions = function(opt_options) {
-  var options = {};
-  var globalOptions = goog.global['wtf_trace_options'];
-  if (globalOptions) {
-    goog.mixin(options, globalOptions);
-  }
-  if (opt_options) {
-    goog.mixin(options, opt_options);
-  }
-  return options;
-};
-
-
-/**
  * Gets the current tracing session.
  * Only valid if a recording session has been setup.
  * @return {wtf.trace.Session} The current trace session, if any.
