@@ -85,10 +85,7 @@ function prepareTracing(appEndpoint, filePrefix) {
 
   // Show HUD.
   wtf.hud.prepare({
-    'dock': 'br',
-    'app': {
-      'endpoint': appEndpoint
-    }
+    'wtf.app.endpoint': appEndpoint
   });
 
   // Start recording.

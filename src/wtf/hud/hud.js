@@ -17,6 +17,7 @@ goog.require('wtf.hud.Overlay');
 goog.require('wtf.trace');
 goog.require('wtf.trace.ISessionListener');
 goog.require('wtf.util');
+goog.require('wtf.util.Options');
 
 
 /**
@@ -41,13 +42,13 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
   wtf.hud.overlay_ = null;
 
   // Get options; global with local overriding.
-  var options = {};
+  var options = new wtf.util.Options();
   var globalOptions = goog.global['wtf_hud_options'];
   if (globalOptions) {
-    goog.mixin(options, globalOptions);
+    options.mixin(globalOptions);
   }
   if (opt_options) {
-    goog.mixin(options, opt_options);
+    options.mixin(opt_options);
   }
 
   // Add to DOM when it is ready.
@@ -61,7 +62,7 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
 
 /**
  * Session listener, showing and hiding HUDs.
- * @param {!Object} options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @param {Element=} opt_parentElement Element to display in.
  * @constructor
  * @implements {wtf.trace.ISessionListener}
@@ -70,7 +71,7 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
 wtf.hud.SessionListener_ = function(options, opt_parentElement) {
   /**
    * Options overrides.
-   * @type {!Object}
+   * @type {!wtf.util.Options}
    * @private
    */
   this.options_ = options;

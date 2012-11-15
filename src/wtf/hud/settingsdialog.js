@@ -22,15 +22,23 @@ goog.require('wtf.ui.Dialog');
 
 /**
  * Settings dialog control.
+ * @param {!wtf.util.Options} options Options.
  * @param {!Element} parentElement Element to display in.
  * @param {goog.dom.DomHelper=} opt_dom DOM helper.
  * @constructor
  * @extends {wtf.ui.Dialog}
  */
-wtf.hud.SettingsDialog = function(parentElement, opt_dom) {
+wtf.hud.SettingsDialog = function(options, parentElement, opt_dom) {
   goog.base(this, {
     modal: true
   }, parentElement, opt_dom);
+
+  /**
+   * Options.
+   * @type {!wtf.util.Options}
+   * @private
+   */
+  this.options_ = options;
 
   // Add stylesheet to page.
   // Note that we don't use GSS so that we can avoid another file dependency
@@ -71,11 +79,11 @@ wtf.hud.SettingsDialog.prototype.createDom = function(dom) {
  * @protected
  */
 wtf.hud.SettingsDialog.prototype.loadSettings = function() {
+  var options = this.options_;
+
   // TODO(benvanik): load settings
 
-  var options = {};
-
-  var dockOption = options['dock'] || 'br';
+  var dockOption = options.getString('wtf.hud.dock', 'br');
   var wtfHudSettingsHudDockLocation = this.getChildElement(
       'wtfHudSettingsHudDockLocation');
   for (var n = 0; n < wtfHudSettingsHudDockLocation.options.length; n++) {
@@ -93,13 +101,16 @@ wtf.hud.SettingsDialog.prototype.loadSettings = function() {
  * @protected
  */
 wtf.hud.SettingsDialog.prototype.saveSettings = function() {
-  // TODO(benvanik): save settings
+  var options = this.options_;
+  options.beginChanging();
 
-  var options = {};
+  // TODO(benvanik): save settings
 
   var wtfHudSettingsHudDockLocation = this.getChildElement(
       'wtfHudSettingsHudDockLocation');
   var dockOption = wtfHudSettingsHudDockLocation.options[
-      wtfHudSettingsHudDockLocation.selectedIndex].value || 'br';
-  options['dock'] = dockOption;
+      wtfHudSettingsHudDockLocation.selectedIndex].value;
+  options.setString('wtf.hud.dock', dockOption || 'br');
+
+  options.endChanging();
 };

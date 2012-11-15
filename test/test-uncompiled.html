@@ -13,10 +13,7 @@
   <script>
     wtf.trace.prepare();
     wtf.hud.prepare({
-      'dock': 'br',
-      'app': {
-        'endpoint': 'localhost:9024'
-      }
+      'wtf.app.endpoint': 'localhost:9024'
     });
     wtf.trace.startSnapshottingSession({
       'target': 'file://test'
