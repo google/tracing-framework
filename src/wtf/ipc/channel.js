@@ -86,15 +86,6 @@ wtf.ipc.Channel.EventType = {
 
 
 /**
- * Milliseconds between checks to see if the port is closed.
- * @const
- * @type {number}
- * @private
- */
-wtf.ipc.Channel.CHECK_INTERNVAL_ = 100;
-
-
-/**
  * @typedef {{
  *   data: !Object
  * }}

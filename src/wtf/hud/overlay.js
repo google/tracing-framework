@@ -340,6 +340,7 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function() {
   // Show settings dialog.
   var dom = this.getDom();
   var body = dom.getDocument().body;
+  goog.asserts.assert(body);
   var dialog = new wtf.hud.SettingsDialog(
       body, dom);
 };
