@@ -18,12 +18,13 @@ goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
+goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 
 
 /**
  * @typedef {{
- *   modal: boolean|undefined
+ *   modal: (boolean|undefined)
  * }}
  */
 wtf.ui.DialogOptions;
@@ -53,29 +54,59 @@ goog.inherits(wtf.ui.Dialog, wtf.ui.Control);
 
 
 /**
- * @override
- */
-wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
-  var dom = this.getDom();
-
-  // Wrap root element in dialog DOM.
-
-  // Add dialog DOM to parent element instead of root user element.
-};
-
-
-/**
  * Z-index of the dialog.
  * @type {number}
  * @const
  * @private
  */
-wtf.ui.Dialog.ZINDEX_ = 99999;
+wtf.ui.Dialog.ZINDEX_ = 999999;
+
+
+/**
+ * @override
+ */
+wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
+  var dom = this.getDom();
+
+  // Create dialog DOM.
+  var el = dom.createElement(goog.dom.TagName.DIV);
+  goog.style.setStyle(el, {
+    'position': 'fixed',
+    'left': '50%',
+    'top': '50%',
+    'z-index': wtf.ui.Dialog.ZINDEX_
+  });
+
+  // Wrap root element in dialog DOM.
+  var rootElement = this.getRootElement();
+  dom.appendChild(el, rootElement);
+
+  // Add dialog DOM to parent element instead of root user element.
+  dom.appendChild(parentElement, el);
+
+  // Offset by size after layout occurs.
+  wtf.timing.setImmediate(function() {
+    var size = goog.style.getSize(rootElement);
+    goog.style.setStyle(el, {
+      'margin-left': -(size.width / 2) + 'px',
+      'margin-top': -(size.height / 2) + 'px'
+    });
+  }, this);
+};
+
+
+/**
+ * Closes the dialog.
+ */
+wtf.ui.Dialog.prototype.close = function() {
+  goog.dispose(this);
+};
 
 
 
 /**
  * Modal dialog shield wrapper.
+ * @param {!goog.dom.DomHelper} dom DOM helper.
  * @constructor
  * @extends {goog.Disposable}
  * @private
@@ -94,7 +125,7 @@ wtf.ui.Dialog.Shield_ = function(dom) {
     'top': 0,
     'bottom': 0,
     'z-index': wtf.ui.Dialog.ZINDEX_ - 1,
-    'transition', 'all 0.218s'
+    'transition': 'all 0.218s'
   });
 
   /**

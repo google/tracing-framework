@@ -23,6 +23,7 @@ goog.require('goog.style');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
+goog.require('wtf.hud.SettingsDialog');
 goog.require('wtf.hud.overlay');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.trace');
@@ -53,9 +54,9 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   // Add stylesheet to page.
   // Note that we don't use GSS so that we can avoid another file dependency
   // and renaming issues.
-  dom.appendChild(this.parentElement_,
+  dom.appendChild(this.getParentElement(),
       /** @type {!Element} */ (goog.soy.renderAsFragment(
-          wtf.hud.overlay.style, undefined, undefined, this.dom_)));
+          wtf.hud.overlay.style, undefined, undefined, dom)));
 
   /**
    * Tracing session.
@@ -337,7 +338,10 @@ wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function() {
  */
 wtf.hud.Overlay.prototype.settingsClicked_ = function() {
   // Show settings dialog.
-  window.alert('TODO');
+  var dom = this.getDom();
+  var body = dom.getDocument().body;
+  var dialog = new wtf.hud.SettingsDialog(
+      body, dom);
 };
 
 
