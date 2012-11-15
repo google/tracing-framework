@@ -13,6 +13,7 @@
 
 goog.provide('wtf.hud.Overlay');
 
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');

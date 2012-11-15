@@ -13,6 +13,7 @@
 
 goog.provide('wtf.hud.SettingsDialog');
 
+goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.hud.settingsdialog');
 goog.require('wtf.ui.Dialog');
@@ -38,6 +39,20 @@ wtf.hud.SettingsDialog = function(parentElement, opt_dom) {
   dom.appendChild(this.getParentElement(),
       /** @type {!Element} */ (goog.soy.renderAsFragment(
           wtf.hud.settingsdialog.style, undefined, undefined, dom)));
+
+  var eh = this.getHandler();
+  eh.listen(
+      this.getChildElement('wtfHudSettingsButtonSave'),
+      goog.events.EventType.CLICK,
+      function() {
+        this.save_();
+        this.close();
+      }, false, this);
+  eh.listen(
+      this.getChildElement('wtfHudSettingsButtonCancel'),
+      goog.events.EventType.CLICK, this.close, false, this);
+
+  this.load_();
 };
 goog.inherits(wtf.hud.SettingsDialog, wtf.ui.Dialog);
 
@@ -48,4 +63,22 @@ goog.inherits(wtf.hud.SettingsDialog, wtf.ui.Dialog);
 wtf.hud.SettingsDialog.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.hud.settingsdialog.control, undefined, undefined, dom));
+};
+
+
+/**
+ * Loads settings and updates the UI.
+ * @protected
+ */
+wtf.hud.SettingsDialog.prototype.loadSettings = function() {
+  // TODO(benvanik): load settings
+};
+
+
+/**
+ * Saves settings from the UI.
+ * @protected
+ */
+wtf.hud.SettingsDialog.prototype.saveSettings = function() {
+  // TODO(benvanik): save settings
 };
