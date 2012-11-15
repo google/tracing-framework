@@ -83,18 +83,18 @@ function prepareTracing(appEndpoint, filePrefix) {
   // Setup tracing library.
   wtf.trace.prepare();
 
+  var options = {
+    'wtf.app.endpoint': appEndpoint,
+    'wtf.trace.target': 'file://' + filePrefix
+    //'wtf.trace.target': 'http://localhost:9024'
+  };
+
   // Show HUD.
-  wtf.hud.prepare({
-    'wtf.app.endpoint': appEndpoint
-  });
+  wtf.hud.prepare(options);
 
   // Start recording.
-  wtf.trace.startSnapshottingSession({
-    'wtf.trace.target': 'file://' + filePrefix
-  });
-  // wtf.trace.startStreamingSession({
-  //   'target': 'http://localhost:9024'
-  // });
+  wtf.trace.startSnapshottingSession(options);
+  //wtf.trace.startStreamingSession(options);
 };
 
 

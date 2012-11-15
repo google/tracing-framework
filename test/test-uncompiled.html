@@ -11,17 +11,16 @@
     goog.require('wtf.hud.exports');
   </script>
   <script>
+    var options = {
+      'wtf.app.endpoint': 'localhost:9024',
+      'wtf.trace.target': 'file://test',
+      //'wtf.trace.target': 'http://localhost:9024',
+      'wtf.trace.streaming.flushIntervalMs': 100
+    };
     wtf.trace.prepare();
-    wtf.hud.prepare({
-      'wtf.app.endpoint': 'localhost:9024'
-    });
-    wtf.trace.startSnapshottingSession({
-      'wtf.trace.target': 'file://test'
-    });
-    // wtf.trace.startStreamingSession({
-    //   'target': 'http://localhost:9024',
-    //   'flushIntervalMs': 100
-    // });
+    wtf.hud.prepare(options);
+    wtf.trace.startSnapshottingSession(options);
+    //wtf.trace.startStreamingSession(options);
   </script>
 
   <br/>
