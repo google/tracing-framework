@@ -9,6 +9,13 @@ not allowed to change them once the component is initialized. Some components
 have the ability to change their options at runtime but this is an opt-in
 behavior.
 
+## Extensions
+
+### wtf.extensions
+
+An array of extension manifest URLs. These extensions will be either injected or
+loaded at runtime and can provide tracing or visualization functionality.
+
 ## Tracing
 
 Tracing options change the behavior of the core tracing library and
