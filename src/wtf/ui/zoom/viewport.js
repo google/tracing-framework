@@ -676,7 +676,8 @@ wtf.ui.zoom.Viewport.prototype.zoomAboutCoordinate = function(x, y, scale,
   var bestFitScale = Math.min(
       this.screenWidth_ / this.sceneWidth_,
       this.screenHeight_ / this.sceneHeight_);
-  scale = Math.min(Math.max(scale, Math.min(bestFitScale * 0.75, this.minScale_)), this.maxScale_);
+  scale = Math.min(Math.max(
+      scale, Math.min(bestFitScale * 0.75, this.minScale_)), this.maxScale_);
 
   // TODO(benvanik): Keep the scene in view after zooming in.
 

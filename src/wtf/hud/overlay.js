@@ -13,6 +13,7 @@
 
 goog.provide('wtf.hud.Overlay');
 
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
@@ -23,10 +24,12 @@ goog.require('goog.style');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
+goog.require('wtf.hud.SettingsDialog');
 goog.require('wtf.hud.overlay');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.trace');
 goog.require('wtf.ui.ResizableControl');
+goog.require('wtf.util.Options');
 
 
 
@@ -34,7 +37,7 @@ goog.require('wtf.ui.ResizableControl');
  * HUD overlay control UI.
  *
  * @param {!wtf.trace.Session} session Current tracing session.
- * @param {!Object} options Options.
+ * @param {!wtf.util.Options} options Options.
  * @param {Element=} opt_parentElement Element to display in.
  * @constructor
  * @extends {wtf.ui.ResizableControl}
@@ -53,9 +56,9 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   // Add stylesheet to page.
   // Note that we don't use GSS so that we can avoid another file dependency
   // and renaming issues.
-  dom.appendChild(this.parentElement_,
+  dom.appendChild(this.getParentElement(),
       /** @type {!Element} */ (goog.soy.renderAsFragment(
-          wtf.hud.overlay.style, undefined, undefined, this.dom_)));
+          wtf.hud.overlay.style, undefined, undefined, dom)));
 
   /**
    * Tracing session.
@@ -66,7 +69,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
 
   /**
    * Options.
-   * @type {!Object}
+   * @type {!wtf.util.Options}
    * @private
    */
   this.options_ = options;
@@ -77,46 +80,6 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
    * @private
    */
   this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
-  switch (options['dock']) {
-    case 'tl':
-      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_LEFT;
-      break;
-    case 'bl':
-      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT;
-      break;
-    case 'tr':
-      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_RIGHT;
-      break;
-    case 'br':
-      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
-      break;
-  }
-
-  // Adjust position on page.
-  var rootElement = this.getRootElement();
-  switch (this.dockPosition_) {
-    default:
-    case wtf.hud.Overlay.DockPosition_.TOP_LEFT:
-      goog.style.setStyle(rootElement, 'top', '0');
-      goog.style.setStyle(rootElement, 'left', '0');
-      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
-      break;
-    case wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT:
-      goog.style.setStyle(rootElement, 'bottom', '0');
-      goog.style.setStyle(rootElement, 'left', '0');
-      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
-      break;
-    case wtf.hud.Overlay.DockPosition_.TOP_RIGHT:
-      goog.style.setStyle(rootElement, 'top', '0');
-      goog.style.setStyle(rootElement, 'right', '0');
-      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
-      break;
-    case wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT:
-      goog.style.setStyle(rootElement, 'bottom', '0');
-      goog.style.setStyle(rootElement, 'right', '0');
-      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
-      break;
-  }
 
   /**
    * The number of buttons currently added.
@@ -159,6 +122,11 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
       'wtfHudButtonSettings', 'Settings', null,
       this.settingsClicked_, this);
 
+  // Listen for options changes and reload.
+  this.options_.addListener(
+      wtf.util.Options.EventType.CHANGED, this.reloadOptions_, this);
+  this.reloadOptions_();
+
   // TODO(benvanik): generate counter code
   /*
   'counters': [
@@ -188,6 +156,16 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   // }
 };
 goog.inherits(wtf.hud.Overlay, wtf.ui.ResizableControl);
+
+
+/**
+ * @override
+ */
+wtf.hud.Overlay.prototype.disposeInternal = function() {
+  this.options_.removeListener(
+      wtf.util.Options.EventType.CHANGED, this.reloadOptions_, this);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -232,6 +210,72 @@ wtf.hud.Overlay.prototype.createDom = function(dom) {
  */
 wtf.hud.Overlay.prototype.layoutInternal = function() {
   this.liveGraph_.layout();
+};
+
+
+/**
+ * Reloads options.
+ * @private
+ */
+wtf.hud.Overlay.prototype.reloadOptions_ = function() {
+  var options = this.options_;
+
+  switch (options.getString('wtf.hud.dock', 'br')) {
+    case 'tl':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_LEFT;
+      break;
+    case 'bl':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT;
+      break;
+    case 'tr':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_RIGHT;
+      break;
+    case 'br':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
+      break;
+  }
+
+  // Adjust position on page.
+  var rootElement = this.getRootElement();
+  switch (this.dockPosition_) {
+    default:
+    case wtf.hud.Overlay.DockPosition_.TOP_LEFT:
+      goog.style.setStyle(rootElement, {
+        'top': 0,
+        'bottom': null,
+        'left': 0,
+        'right': null
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_LEFT:
+      goog.style.setStyle(rootElement, {
+        'top': null,
+        'bottom': 0,
+        'left': 0,
+        'right': null
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.TOP_RIGHT:
+      goog.style.setStyle(rootElement, {
+        'top': 0,
+        'bottom': null,
+        'left': null,
+        'right': 0
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT:
+      goog.style.setStyle(rootElement, {
+        'top': null,
+        'bottom': 0,
+        'left': null,
+        'right': 0
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
+  }
 };
 
 
@@ -337,7 +381,11 @@ wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function() {
  */
 wtf.hud.Overlay.prototype.settingsClicked_ = function() {
   // Show settings dialog.
-  window.alert('TODO');
+  var dom = this.getDom();
+  var body = dom.getDocument().body;
+  goog.asserts.assert(body);
+  var dialog = new wtf.hud.SettingsDialog(
+      this.options_, body, dom);
 };
 
 
@@ -348,9 +396,7 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function() {
 wtf.hud.Overlay.prototype.sendSnapshot_ = function() {
   // TODO(benvanik): something more sophisticated
   var host = COMPILED ? 'localhost:9023' : 'localhost:9024';
-  if (this.options_['app']) {
-    host = this.options_['app']['endpoint'] || host;
-  }
+  host = this.options_.getString('wtf.app.endpoint', host);
   var url = 'http://' + host + '/snapshot/upload';
 
   // Capture snapshot into memory buffers.

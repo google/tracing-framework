@@ -31,6 +31,7 @@ goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
+goog.require('wtf.util.Options');
 
 
 /**
@@ -111,17 +112,31 @@ wtf.trace.addSessionListener = wtf.ENABLE_TRACING ? function(listener) {
 
 
 /**
+ * Gets an initialized options object.
+ * @param {Object=} opt_options Raw options overrides.
+ * @return {!wtf.util.Options} Options object.
+ * @private
+ */
+wtf.trace.getOptions_ = function(opt_options) {
+  var options = new wtf.util.Options();
+  options.mixin(opt_options);
+  options.mixin(goog.global['wtf_trace_options']);
+  return options;
+};
+
+
+/**
  * Creates a write stream based on the given options.
- * @param {Object=} opt_options Options overrides.
+ * @param {!wtf.util.Options} options Options.
  * @param {wtf.io.WriteStream|*=} opt_targetValue Target value. May be anything,
  *     pretty much. If a stream is given that will be used directly. This
  *     overrides any options specified.
  * @return {!wtf.io.WriteStream} Write stream.
  * @private
  */
-wtf.trace.createStream_ = function(opt_options, opt_targetValue) {
-  var options = opt_options || {};
-  var targetValue = opt_targetValue || options['target'];
+wtf.trace.createStream_ = function(options, opt_targetValue) {
+  var targetValue =
+      opt_targetValue || options.getOptionalString('wtf.trace.target');
   if (targetValue instanceof wtf.io.WriteStream) {
     return targetValue;
   } else if (goog.isObject(targetValue) && targetValue['write']) {
@@ -162,9 +177,10 @@ wtf.trace.createStream_ = function(opt_options, opt_targetValue) {
  * @param {Object=} opt_options Options overrides.
  */
 wtf.trace.startNullSession = wtf.ENABLE_TRACING ? function(opt_options) {
+  var options = wtf.trace.getOptions_(opt_options);
   var traceManager = wtf.trace.getTraceManager();
   traceManager.stop();
-  var session = new wtf.trace.NullSession(traceManager, opt_options);
+  var session = new wtf.trace.NullSession(traceManager, options);
   traceManager.start(session);
 } : goog.nullFunction;
 
@@ -178,11 +194,12 @@ wtf.trace.startNullSession = wtf.ENABLE_TRACING ? function(opt_options) {
  */
 wtf.trace.startStreamingSession = wtf.ENABLE_TRACING ? function(
     opt_options, opt_targetValue) {
+      var options = wtf.trace.getOptions_(opt_options);
       var traceManager = wtf.trace.getTraceManager();
       traceManager.stop();
-      var stream = wtf.trace.createStream_(opt_options, opt_targetValue);
+      var stream = wtf.trace.createStream_(options, opt_targetValue);
       traceManager.start(new wtf.trace.StreamingSession(
-          traceManager, stream, opt_options));
+          traceManager, stream, options));
     } : goog.nullFunction;
 
 
@@ -195,10 +212,11 @@ wtf.trace.startStreamingSession = wtf.ENABLE_TRACING ? function(
  */
 wtf.trace.startSnapshottingSession = wtf.ENABLE_TRACING ? function(
     opt_options) {
+      var options = wtf.trace.getOptions_(opt_options);
       var traceManager = wtf.trace.getTraceManager();
       traceManager.stop();
       traceManager.start(new wtf.trace.SnapshottingSession(
-          traceManager, opt_options));
+          traceManager, options));
     } : goog.nullFunction;
 
 

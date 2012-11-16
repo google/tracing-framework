@@ -75,16 +75,6 @@ wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ = 18;
 
 
 /**
- * Height of a zone (including border), in px.
- * @const
- * @type {number}
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.ZONE_HEIGHT_ =
-    wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ * 16;
-
-
-/**
  * @override
  */
 wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(

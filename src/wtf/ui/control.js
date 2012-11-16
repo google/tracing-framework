@@ -67,15 +67,9 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   /**
    * Root paint context, if created.
    * @type {wtf.ui.PaintContext}
-   */
-  this.paintContext_ = null;
-
-  /**
-   * Whether a repaint has been requested and is pending the next frame.
-   * @type {boolean}
    * @private
    */
-  this.repaintPending_ = false;
+  this.paintContext_ = null;
 
   // Add to page.
   this.enterDocument(this.parentElement_);

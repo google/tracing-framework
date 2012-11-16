@@ -1,0 +1,257 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * HUD settings dialog DOM.
+ * Note: all CSS names are exported publicly to enable theming and prevent
+ * on-page conflicts.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.hud.settingsdialog}
+
+
+/**
+ * Style tag.
+ */
+{template .style}
+  <style>{literal}
+
+  .wtfHudSettingsDialog {
+    width: 800px;
+    height: 400px;
+    overflow: hidden;
+
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-style: normal;
+
+    color: black;
+    background-color: white;
+    border: 1px solid rgba(0,0,0,0.2);;
+    /* @alternate */ -webkit-box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    /* @alternate */ -moz-box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    /* @alternate */ box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .wtfHudSettingsHeader {
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ccc;
+    height: 71px;
+  }
+  .wtfHudSettingsHeader h1 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: normal;
+    color: #222;
+    margin: 0;
+    padding: 0;
+    padding-top: 26px;
+    padding-left: 42px;
+  }
+  .wtfHudSettingsHeaderButtons {
+    float: right;
+    padding-right: 26px;
+    padding-top: 22px;
+    margin: 0;
+  }
+  .wtfHudSettingsHeaderButton {
+    display: inline-block;
+    min-width: 54px;
+    border: 1px solid #DCDCDC;
+    border: 1px solid rgba(0,0,0,0.1);
+    color: #444;
+    background-color: #f5f5f5;
+    text-align: center;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: bold;
+    height: 27px;
+    padding: 0 8px;
+    line-height: 27px;
+    /* @alternate */ -webkit-border-radius: 2px;
+    /* @alternate */ -moz-border-radius: 2px;
+    /* @alternate */ border-radius: 2px;
+    /* @alternate */ -webkit-transition: all 0.218s;
+    /* @alternate */ -moz-transition: all 0.218s;
+    /* @alternate */ -o-transition: all 0.218s;
+    /* @alternate */ transition: all 0.218s;
+    cursor: default;
+  }
+  .wtfHudSettingsHeaderButton:hover {
+    border: 1px solid #C6C6C6;
+    color: #222;
+    -webkit-transition: all 0.0s;
+    -moz-transition: all 0.0s;
+    -o-transition: all 0.0s;
+    transition: all 0.0s;
+    background-color: #f8f8f8;
+    background-image: -webkit-gradient(linear,left top,left bottom,from(#f8f8f8),to(#f1f1f1));
+    background-image: -webkit-linear-gradient(top,#f8f8f8,#f1f1f1);
+    background-image: -moz-linear-gradient(top,#f8f8f8,#f1f1f1);
+    background-image: -ms-linear-gradient(top,#f8f8f8,#f1f1f1);
+    background-image: -o-linear-gradient(top,#f8f8f8,#f1f1f1);
+    background-image: linear-gradient(top,#f8f8f8,#f1f1f1);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorStr='#f8f8f8',EndColorStr='#f1f1f1');
+    -webkit-box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+    -moz-box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+    box-shadow: 0px 1px 1px rgba(0,0,0,0.1);
+  }
+  .wtfHudSettingsHeaderButton:active {
+    -webkit-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.3);
+    -moz-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.3);
+    box-shadow: inset 0px 1px 2px rgba(0,0,0,0.3);
+  }
+  .wtfHudSettingsButtonSave {
+    border: 1px solid #3079ed;
+    color: #FFF;
+    background-color: #4d90fe;
+    background-image: -webkit-gradient(linear,left top,left bottom,from(#4d90fe),to(#4787ed));
+    background-image: -webkit-linear-gradient(top,#4d90fe,#4787ed);
+    background-image: -moz-linear-gradient(top,#4d90fe,#4787ed);
+    background-image: -ms-linear-gradient(top,#4d90fe,#4787ed);
+    background-image: -o-linear-gradient(top,#4d90fe,#4787ed);
+    background-image: linear-gradient(top,#4d90fe,#4787ed);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorStr='#4d90fe',EndColorStr='#4787ed');
+    float: left;
+    margin-right: 16px;
+  }
+  .wtfHudSettingsButtonSave:hover {
+    color: #FFF;
+    border-color: #2f5bb7;
+    background-color: #357ae8;
+    background-image: -webkit-gradient(linear,left top,left bottom,from(#4d90fe),to(#357ae8));
+    background-image: -webkit-linear-gradient(top,#4d90fe,#357ae8);
+    background-image: -moz-linear-gradient(top,#4d90fe,#357ae8);
+    background-image: -ms-linear-gradient(top,#4d90fe,#357ae8);
+    background-image: -o-linear-gradient(top,#4d90fe,#357ae8);
+    background-image: linear-gradient(top,#4d90fe,#357ae8);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorStr='#4d90fe',EndColorStr='#357ae8');
+  }
+  .wtfHudSettingsButtonCancel {
+  }
+
+  .wtfHudSettingsNav {
+    position: absolute;
+    top: 72px;
+    bottom: 0;
+    left: 0;
+    width: 108px;
+    padding: 36px 20px 36px 42px;
+    border-right: 1px solid #ebebeb;
+    overflow: auto;
+  }
+  .wtfHudSettingsNav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .wtfHudSettingsNav li {
+    line-height: 17px;
+    margin-bottom: 13px;
+  }
+  .wtfHudSettingsNav li a {
+    display: block;
+    color: #333;
+    cursor: default;
+    text-decoration: none;
+  }
+  .wtfHudSettingsNav li a:hover {
+    color: #111;
+  }
+  .wtfHudSettingsNav li a.wtfHudSettingsNavSelected {
+    color: #DD4B39;
+    font-weight: bold;
+  }
+
+  .wtfHudSettingsContent {
+    position: absolute;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-left: 171px;
+    height: auto;
+    overflow: hidden;
+  }
+
+  .wtfHudSettingsPane {
+    padding: 16px 32px;
+    height: auto;
+    overflow: auto;
+  }
+  .wtfHudSettingsSection {
+    clear: both;
+    border-bottom: 1px solid #ebebeb;
+    padding: 20px 0;
+  }
+  .wtfHudSettingsSectionLabel {
+    display: block;
+    width: 185px;
+    float: left;
+    font-weight: bold;
+  }
+  .wtfHudSettingsSectionContent {
+    margin-left: 210px;
+  }
+  .wtfHudSettingsSectionContent p {
+    margin: 0 0 1em;
+    line-height: 13px;
+  }
+
+  {/literal}</style>
+{/template}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="wtfHudSettingsDialog">
+    <div class="wtfHudSettingsHeader">
+      <div class="wtfHudSettingsHeaderButtons">
+        <a class="wtfHudSettingsHeaderButton wtfHudSettingsButtonSave">Save</a>
+        <a class="wtfHudSettingsHeaderButton wtfHudSettingsButtonCancel">Cancel</a>
+      </div>
+      <h1>Tracing Settings</h1>
+    </div>
+    <div class="wtfHudSettingsNav">
+      <ul>
+        <li><a class="wtfHudSettingsNavSelected">General</a></li>
+        <li><a>TODO</a></li>
+      </ul>
+    </div>
+    <div class="wtfHudSettingsContent">
+      <div class="wtfHudSettingsPane">
+        <div class="wtfHudSettingsSection">
+          <div class="wtfHudSettingsSectionLabel">
+            ...
+          </div>
+          <div class="wtfHudSettingsSectionContent">
+            TODO: make this a real dialog :)
+          </div>
+        </div>
+        <div class="wtfHudSettingsSection">
+          <div class="wtfHudSettingsSectionLabel">
+            HUD
+          </div>
+          <div class="wtfHudSettingsSectionContent">
+            <p>
+              Dock at: <select class="wtfHudSettingsHudDockLocation">
+                <option value="tl">Top Left</option>
+                <option value="tr">Top Right</option>
+                <option value="bl">Bottom Left</option>
+                <option value="br">Bottom Right</option>
+              </select>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{/template}

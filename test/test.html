@@ -5,13 +5,12 @@
 </head>
 <body>
   <script>
+    var options = {
+      'wtf.trace.target': 'file://test'
+    };
     wtf.trace.prepare();
-    wtf.hud.prepare({
-      'dock': 'br'
-    });
-    wtf.trace.startSnapshottingSession({
-      'target': 'file://test'
-    });
+    wtf.hud.prepare(options);
+    wtf.trace.startSnapshottingSession(options);
   </script>
 
   <br/>
