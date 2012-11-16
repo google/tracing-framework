@@ -245,8 +245,10 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#FFFFFF';
 
-        // Draw label - clip to center of screen-visible region.
-        var x = screenLeft + labelScreenWidth / 2 - labelWidth / 2;
+        // Center the label within the box then clamp to the screen.
+        var x = left + (right - left) / 2 - labelWidth / 2;
+        x = goog.math.clamp(x, 0, width - labelWidth);
+
         var y = scopeTop + 12;
         ctx.fillText(label, x, y);
         ctx.globalAlpha = 1;
