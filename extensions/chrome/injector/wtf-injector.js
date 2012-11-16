@@ -43,6 +43,20 @@ for (var n = 0; n < cookies.length; n++) {
   }
 }
 
+// Pick an app URL.
+var appEndpoint = 'localhost:9024';
+
+// Setup default options.
+var options = {
+  'wtf.app.endpoint': appEndpoint,
+  'wtf.extensions': [
+    //'http://localhost:8080/test/extension.json'
+  ]
+};
+
+// TODO(benvanik): load other options
+
+
 // Perform injection.
 if (isEnabled) {
   if (window.WTF_EXTENSION_DEBUG) {
@@ -55,15 +69,46 @@ if (isEnabled) {
         WTF_PATH_ROOT + '/wtf_trace_web_js_compiled.js'));
   }
 
-  // Pick an app URL.
-  var appEndpoint = 'localhost:9024';
+  // Inject extensions.
+  var manifestUrls = options['wtf.extensions'] || [];
+  var extensions = {};
+  for (var n = 0; n < manifestUrls.length; n++) {
+    // Fetch Manifest JSON.
+    var url = manifestUrls[n];
+    var json = getUrl(url);
+    if (!json) {
+      console.log('Unable to fetch manifest JSON: ' + url);
+      continue;
+    }
+    json = JSON.parse(json);
+    extensions[url] = json;
+
+    // If it has a tracing node, inject scripts.
+    var tracingInfo = json['tracing'];
+    if (tracingInfo && tracingInfo['scripts']) {
+      var tracingScripts = tracingInfo['scripts'];
+      for (var n = 0; n < tracingScripts.length; n++) {
+        var scriptUrl = resolveUrl(url, tracingScripts[n]);
+        if (!injectScriptFile(scriptUrl)) {
+          console.log('Error loading extension ' + url + ':');
+          console.log('Tracing script file not found: ' + scriptUrl);
+        }
+      }
+    }
+  }
+
+  // Snapshotting:
+  options['wtf.trace.mode'] = 'snapshotting';
+  // TODO(benvanik): make something up based on page title/domain/etc?
+  options['wtf.trace.target'] = 'file://' + 'trace';
+  // Streaming:
+  // options['wtf.trace.mode'] = 'streaming';
+  // options['wtf.trace.target'] = 'http://' + appEndpoint;
 
   // Inject preparation code to start tracing with the desired options.
-  // TODO(benvanik): make something up based on page title/domain/etc?
-  var filePrefix = 'trace';
   injectScriptFunction(prepareTracing, [
-    appEndpoint,
-    filePrefix
+    options,
+    extensions
   ]);
 }
 
@@ -78,23 +123,83 @@ if (isEnabled) {
  *
  * @param {string|undefined} appEndpoint App endpoint in 'host:port' form.
  * @param {string} filePrefix Trace filename prefix.
+ * @param {!Object.<!Object>} extensions A map of URL to extension JSON.
  */
-function prepareTracing(appEndpoint, filePrefix) {
+function prepareTracing(options, extensions) {
   // Setup tracing library.
   wtf.trace.prepare();
 
-  var options = {
-    'wtf.app.endpoint': appEndpoint,
-    'wtf.trace.target': 'file://' + filePrefix
-    //'wtf.trace.target': 'http://localhost:9024'
-  };
+  // Register extensions.
+  for (var url in extensions) {
+    wtf.ext.registerExtension(url, extensions[url]);
+  }
 
   // Show HUD.
   wtf.hud.prepare(options);
 
   // Start recording.
-  wtf.trace.startSnapshottingSession(options);
-  //wtf.trace.startStreamingSession(options);
+  switch (options['wtf.trace.mode']) {
+    default:
+    case 'snapshotting':
+      wtf.trace.startSnapshottingSession(options);
+      break;
+    case 'streaming':
+      wtf.trace.startStreamingSession(options);
+      break;
+  }
+};
+
+
+/**
+ * Synchronously fetch the given URL.
+ * If the URL is a reference to an extension resource it must be in the
+ * web_accessible_resources manifest group.
+ * @param {string} url URL to fetch.
+ * @return {string|null} URL contents.
+ */
+function getUrl(url) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, false);
+  xhr.send('');
+  if (xhr.status != 200) {
+    return null;
+  }
+  return xhr.responseText;
+};
+
+
+/**
+ * Hackily resolves a URL relative to a base.
+ * @param {string} base Base URL.
+ * @param {string} url Relative or absolute URL.
+ * @return {string} Resolved URL.
+ */
+function resolveUrl(base, url) {
+  var value = '';
+  if (url.indexOf('://') != -1) {
+    // Likely absolute...
+    value = url;
+  } else {
+    // Combine by smashing together and letting the browser figure it out.
+    if (url.length && url[0] == '/') {
+      // URL is absolute, so strip base to just host.
+      var i = url.indexOf('://') + 3;
+      i = url.indexOf('/', i);
+      if (i != -1) {
+        value = base + url;
+      } else {
+        value = base.substr(0, i) + url;
+      }
+    } else {
+      // URL is relative, so combine with base.
+      if (base[base.length] == '/') {
+        value = base + '/' + url;
+      } else {
+        value = base + '/../' + url;
+      }
+    }
+  }
+  return value;
 };
 
 
@@ -141,6 +246,8 @@ function injectScriptFunction(fn, opt_args) {
     } else if (typeof args[n] == 'string') {
       // TODO(benvanik): escape
       args[n] = '"' + args[n] + '"';
+    } else if (typeof args[n] == 'object') {
+      args[n] = JSON.stringify(args[n]);
     }
   }
   args = args.join(',');
@@ -163,6 +270,7 @@ function injectScriptFunction(fn, opt_args) {
  * If the URL is to a chrome:// path it must be in the web_accessible_resources
  * manifest group.
  * @param {string} url Script URL.
+ * @return {boolean} Whether the source file was found.
  */
 function injectScriptFile(url) {
   // Header to let users know what's up.
@@ -171,11 +279,10 @@ function injectScriptFile(url) {
   ].join('\n');
 
   // Synchronous read of the source.
-  // The target path must be in the web_accessible_resources manifest group.
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, false);
-  xhr.send('');
-  var rawText = xhr.responseText;
+  var rawText = getUrl(url);
+  if (!rawText) {
+    return false;
+  }
 
   // Setup script tag with the raw source.
   var script = document.createElement('script');
@@ -184,6 +291,8 @@ function injectScriptFile(url) {
 
   // Add to page.
   injectScriptTag(script);
+
+  return true;
 };
 
 

@@ -22,6 +22,14 @@ Tracing options change the behavior of the core tracing library and
 instrumentation providers. They can be specified as a value to any one of the
 `wtf.trace.start*` methods or by the global override object `wtf_trace_options`.
 
+### wtf.trace.mode
+
+The target mode for tracing.
+
+* `snapshotting`: click to take a snapshot and open it in the UI or save to a
+file.
+* `streaming`: stream all events to the UI or a file.
+
 ### wtf.trace.target
 
 A string value indicating the target for the tracing session.
