@@ -17,38 +17,19 @@ goog.provide('wtf.ext.Manifest');
 
 /**
  * Parsed extension manifest file.
- * <code>
-  {
-    "name": "My Extension",
-    "required_version": "1.0.5", // required version of WTF
-    "tracing": {
-      "scripts": [
-        // Scripts that are inserted into the page, in order
-        "some/file.js"
-      ]
-    },
-    "app": {
-      "scripts": [
-        // Scripts that are inserted into the iframe, in order
-        "some/file.js"
-      ],
-      "stylesheets": [
-        // Stylesheets inserted into the iframe, in order
-        "some/file.css"
-      ],
-      "triggers": [
-        {
-          "type": "event",
-          "name": "my.custom.event"
-        }
-      ]
-    }
-  }
- * </code>
+ * For information on the format see `docs/extensions.md`.
+ * @param {string} url Manifest URL.
  * @param {!Object} json JSON object.
  * @constructor
  */
-wtf.ext.Manifest = function(json) {
+wtf.ext.Manifest = function(url, json) {
+  /**
+   * The URL of the manifest.
+   * @type {string}
+   * @private
+   */
+  this.url_ = url;
+
   /**
    * Extension name as shown in UIs.
    * @type {string}
@@ -65,33 +46,32 @@ wtf.ext.Manifest = function(json) {
 
   /**
    * Tracing information.
-   * @type {!wtf.ext.Manifest.TracingInfo}
+   * @type {wtf.ext.Manifest.TracingInfo?}
    * @private
    */
-  this.tracing_ = {
-    scripts: []
-  };
+  this.tracing_ = null;
 
   var jsonTracing = json['tracing'];
   if (jsonTracing) {
-    this.tracing_.scripts = jsonTracing['scripts'] || [];
+    this.tracing_ = {
+      scripts: jsonTracing['scripts'] || []
+    };
   }
 
   /**
    * UI information.
-   * @type {!wtf.ext.Manifest.AppInfo}
+   * @type {wtf.ext.Manifest.AppInfo?}
    * @private
    */
-  this.app_ = {
-    scripts: [],
-    stylesheets: [],
-    triggers: []
-  };
+  this.app_ = null;
 
   var jsonApp = json['app'];
   if (jsonApp) {
-    this.app_.scripts = jsonApp['scripts'] || [];
-    this.app_.stylesheets = jsonApp['stylesheets'] || [];
+    this.app_ = {
+      scripts: jsonApp['scripts'] || [],
+      stylesheets: jsonApp['stylesheets'] || [],
+      triggers: []
+    };
     var jsonTriggers = jsonApp['triggers'];
     if (jsonTriggers) {
       for (var n = 0; n < jsonTriggers.length; n++) {
@@ -118,10 +98,19 @@ wtf.ext.Manifest.TracingInfo;
  * @typedef {{
  *   scripts: !Array.<string>,
  *   stylesheets: !Array.<string>,
- *   triggers: !Array.<{{type: string, name: string}}>
+ *   triggers: !Array.<{type: string, name: string}>
  * }}
  */
 wtf.ext.Manifest.AppInfo;
+
+
+/**
+ * Gets the URL the manifest was loaded from.
+ * @return {string} Extension manifest URL.
+ */
+wtf.ext.Manifest.prototype.getUrl = function() {
+  return this.url_;
+};
 
 
 /**
@@ -143,8 +132,8 @@ wtf.ext.Manifest.prototype.getRequiredVersion = function() {
 
 
 /**
- * Gets the tracing information section of the manifest.
- * @return {!wtf.ext.Manifest.TracingInfo} Tracing information.
+ * Gets the tracing information section of the manifest, if defined.
+ * @return {wtf.ext.Manifest.TracingInfo?} Tracing information.
  */
 wtf.ext.Manifest.prototype.getTracingInfo = function() {
   return this.tracing_;
@@ -152,8 +141,8 @@ wtf.ext.Manifest.prototype.getTracingInfo = function() {
 
 
 /**
- * Gets the application information section of the manifest.
- * @return {!wtf.ext.Manifest.AppInfo} Application information.
+ * Gets the application information section of the manifest, if defined.
+ * @return {wtf.ext.Manifest.AppInfo?} Application information.
  */
 wtf.ext.Manifest.prototype.getAppInfo = function() {
   return this.app_;

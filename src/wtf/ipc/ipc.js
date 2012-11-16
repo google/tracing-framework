@@ -17,7 +17,7 @@ goog.provide('wtf.ipc');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('wtf.ipc.Channel');
+goog.require('wtf.ipc.MessageChannel');
 
 
 /**
@@ -28,7 +28,7 @@ wtf.ipc.connectToParentWindow = function() {
   if (!window.opener) {
     return null;
   }
-  var channel = new wtf.ipc.Channel(window, window.opener);
+  var channel = new wtf.ipc.MessageChannel(window, window.opener);
   channel.postMessage({
     'hello': true
   });
@@ -51,12 +51,12 @@ wtf.ipc.listenForChildWindows = function(callback, opt_scope) {
        */
       function(browserEvent) {
         var e = browserEvent.getBrowserEvent();
-        if (e.data && e.data[wtf.ipc.Channel.PACKET_TOKEN] &&
+        if (e.data && e.data[wtf.ipc.MessageChannel.PACKET_TOKEN] &&
             e.data.data && e.data.data['hello'] == true) {
           e.stopPropagation();
 
           goog.asserts.assert(e.source);
-          var channel = new wtf.ipc.Channel(window, e.source);
+          var channel = new wtf.ipc.MessageChannel(window, e.source);
           callback.call(opt_scope, channel);
         }
       },

@@ -90,6 +90,11 @@ wtf.hud.SessionListener_.prototype.sessionStarted = function(session) {
   var overlay = new wtf.hud.Overlay(
       session, this.options_, this.parentElement_);
   wtf.hud.overlay_ = overlay;
+
+  for (var n = 0; n < wtf.hud.buttons_.length; n++) {
+    var info = wtf.hud.buttons_[n];
+    overlay.insertButton(info);
+  }
 };
 
 
@@ -132,5 +137,29 @@ wtf.hud.advance = function(opt_time) {
   var overlay = wtf.hud.overlay_;
   if (overlay) {
     overlay.advance(opt_time);
+  }
+};
+
+
+/**
+ * A list of buttons that have been added to the HUD.
+ * This allows buttons to be registered before the HUD is shown and across
+ * instantiations.
+ * @type {!Array.<!wtf.hud.Overlay.ButtonInfo>}
+ * @private
+ */
+wtf.hud.buttons_ = [];
+
+
+/**
+ * Adds a button to the overlay button bar.
+ * @param {!wtf.hud.Overlay.ButtonInfo} info Button info.
+ */
+wtf.hud.addButton = function(info) {
+  wtf.hud.buttons_.push(info);
+
+  var overlay = wtf.hud.overlay_;
+  if (overlay) {
+    overlay.insertButton(info);
   }
 };

@@ -112,14 +112,14 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.setSplitterSize(80);
 
   // Add buttons.
-  this.addButton(
-      'wtfHudButtonSend', 'Send to UI', 'f9',
+  this.addButton_(
+      true, 'wtfHudButtonSend', 'Send to UI', 'f9',
       this.sendSnapshotClicked_, this);
-  this.addButton(
-      'wtfHudButtonSave', 'Save Snapshot', 'f10',
+  this.addButton_(
+      true, 'wtfHudButtonSave', 'Save Snapshot', 'f10',
       this.saveSnapshotClicked_, this);
-  this.addButton(
-      'wtfHudButtonSettings', 'Settings', null,
+  this.addButton_(
+      true, 'wtfHudButtonSettings', 'Settings', null,
       this.settingsClicked_, this);
 
   // Listen for options changes and reload.
@@ -307,15 +307,46 @@ wtf.hud.Overlay.prototype.advance = function(opt_time) {
 
 
 /**
+ * @typedef {{
+ *   title: string,
+ *   icon: string,
+ *   shortcut: string?,
+ *   callback: function(),
+ *   scope: (Object|undefined)
+ * }}
+ */
+wtf.hud.Overlay.ButtonInfo;
+
+
+/**
+ * Inserts a button to the left of the system buttons.
+ * @param {!wtf.hud.Overlay.ButtonInfo} info Button info data.
+ */
+wtf.hud.Overlay.prototype.insertButton = function(info) {
+  this.addButton_(
+      false,
+      info['icon'] || '',
+      info['title'] || 'Action',
+      info['shortcut'] || null,
+      info['callback'],
+      info['scope'] || undefined);
+};
+
+
+// TODO(benvanik): support toggleable actions
+/**
  * Adds a button to the overlay button bar.
+ * @param {boolean} isSystem System button.
  * @param {string} icon Data URI of an icon file or a CSS class name.
  * @param {string} title Title name for tooltips.
- * @param {string?} shortcut Shortcut key.
- * @param {function()} callback Callback function.
- * @param {Object=} opt_scope Callback scope.
+ * @param {string?} shortcut Shortcut key or null if not used.
+ * @param {!function(this:T)} callback Callback when the action is invoked.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ * @private
  */
-wtf.hud.Overlay.prototype.addButton = function(
-    icon, title, shortcut, callback, opt_scope) {
+wtf.hud.Overlay.prototype.addButton_ = function(
+    isSystem, icon, title, shortcut, callback, opt_scope) {
   // Create button.
   var dom = this.getDom();
   var el = dom.createElement(goog.dom.TagName.A);
@@ -335,7 +366,11 @@ wtf.hud.Overlay.prototype.addButton = function(
 
   // Add to DOM.
   var buttonBar = this.getChildElement('wtfHudButtons');
-  dom.appendChild(buttonBar, el);
+  if (isSystem) {
+    dom.appendChild(buttonBar, el);
+  } else {
+    dom.insertChildAt(buttonBar, el, 0);
+  }
   this.buttonCount_++;
 
   // Keyboard shortcut handler.

@@ -13,7 +13,7 @@
 
 goog.provide('wtf.ext.AppExtension');
 
-goog.require('goog.result.SimpleResult');
+goog.require('goog.asserts');
 goog.require('wtf.events.EventEmitter');
 
 
@@ -29,12 +29,22 @@ goog.require('wtf.events.EventEmitter');
 wtf.ext.AppExtension = function(manifest) {
   goog.base(this);
 
+  var info = manifest.getAppInfo();
+  goog.asserts.assert(info);
+
   /**
    * Manifest.
    * @type {!wtf.ext.Manifest}
    * @private
    */
   this.manifest_ = manifest;
+
+  /**
+   * App info from the manifest.
+   * @type {!wtf.ext.Manifest.AppInfo}
+   * @private
+   */
+  this.info_ = info;
 };
 goog.inherits(wtf.ext.AppExtension, wtf.events.EventEmitter);
 
@@ -49,28 +59,9 @@ wtf.ext.AppExtension.prototype.getManifest = function() {
 
 
 /**
- * Begins asynchronously setting up the extension by loading all required
- * resources.
- * @return {!goog.result.Result} Setup result.
+ * Gets the app information associated with the extension.
+ * @return {!wtf.ext.Manifest.AppInfo} App information.
  */
-wtf.ext.AppExtension.prototype.setup = function() {
-  var result = new goog.result.SimpleResult();
-  result.setValue(true);
-  return result;
-};
-
-
-/**
- * Begins loading the extension and setting it up.
- * @param {[type]} manifestUrl [description].
- * @return {[type]} [description].
- */
-wtf.ext.AppExtension.load = function(manifestUrl) {
-  // TODO(benvanik): XHR load manifestUrl
-  // TODO(benvanik): create wtf.ext.Manifest from the result
-  // TODO(benvanik): create AppExtension
-  // TODO(benvanik): setup and return result
-  var result = new goog.result.SimpleResult();
-  result.setValue(true);
-  return result;
+wtf.ext.AppExtension.prototype.getInfo = function() {
+  return this.info_;
 };

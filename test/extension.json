@@ -1,0 +1,9 @@
+{
+  "name": "My Extension",
+  "required_version": "1.0.5",
+  "tracing": {
+    "scripts": [
+      "extension-trace.js"
+    ]
+  }
+}

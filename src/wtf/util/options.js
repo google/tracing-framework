@@ -13,6 +13,7 @@
 
 goog.provide('wtf.util.Options');
 
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.object');
@@ -67,7 +68,7 @@ wtf.util.Options.EventType = {
 
 
 /**
- * @typedef {boolean|number|string}
+ * @typedef {boolean|number|string|Array}
  */
 wtf.util.Options.Value;
 
@@ -166,7 +167,17 @@ wtf.util.Options.prototype.mixin = function(obj) {
   for (var key in obj) {
     if (obj.hasOwnProperty(key)) {
       if (this.obj_[key] !== obj[key]) {
-        this.obj_[key] = obj[key];
+        if (goog.isArray(obj[key])) {
+          // Merge arrays.
+          var target = /** @type {Array} */ (this.obj_[key]) || [];
+          var source = obj[key];
+          for (var n = 0; n < source.length; n++) {
+            goog.array.insert(target, source[n]);
+          }
+          this.obj_[key] = target;
+        } else {
+          this.obj_[key] = obj[key];
+        }
         this.changedKeys_[key] = true;
       }
     }
@@ -326,4 +337,65 @@ wtf.util.Options.prototype.getOptionalString = function(key, opt_defaultValue) {
  */
 wtf.util.Options.prototype.setString = function(key, value) {
   this.setValue_(key, value);
+};
+
+
+/**
+ * Gets the string option with the given key.
+ * The result will be a clone of the array value.
+ * @param {string} key Option key.
+ * @param {!Array} defaultValue Default value.
+ * @return {!Array} The value.
+ */
+wtf.util.Options.prototype.getArray = function(key, defaultValue) {
+  var value = this.obj_[key];
+  if (value === undefined) {
+    value = defaultValue;
+  } else {
+    goog.asserts.assert(goog.isArray(value));
+  }
+  return value.slice();
+};
+
+
+/**
+ * Gets the array option with the given key.
+ * The result will be a clone of the array value.
+ * @param {string} key Option key.
+ * @param {Array=} opt_defaultValue Default value, if any.
+ * @return {Array|undefined} The value, if defined.
+ */
+wtf.util.Options.prototype.getOptionalArray = function(key, opt_defaultValue) {
+  var value = this.obj_[key];
+  if (value === undefined) {
+    value = opt_defaultValue;
+  } else {
+    goog.asserts.assert(goog.isArray(value));
+  }
+  return value ? value.slice() : value;
+};
+
+
+/**
+ * Adds the given value to the array with the given key.
+ * If the value already exists in the array it will not be added again.
+ * @param {string} key Option key.
+ * @param {boolean|number|string} value Value to add to the array.
+ */
+wtf.util.Options.prototype.addArrayValue = function(key, value) {
+  var array = this.getArray(key, []);
+  goog.array.insert(array, value);
+  this.setValue_(key, array);
+};
+
+
+/**
+ * Removes the given value to the array with the given key.
+ * @param {string} key Option key.
+ * @param {boolean|number|string} value Value to remove from the array.
+ */
+wtf.util.Options.prototype.removeArrayValue = function(key, value) {
+  var array = this.getArray(key, []);
+  goog.array.remove(array, value);
+  this.setValue_(key, array.length ? array : undefined);
 };

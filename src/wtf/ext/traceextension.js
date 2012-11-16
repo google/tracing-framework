@@ -13,6 +13,7 @@
 
 goog.provide('wtf.ext.TraceExtension');
 
+goog.require('goog.asserts');
 goog.require('wtf.events.EventEmitter');
 
 
@@ -26,12 +27,22 @@ goog.require('wtf.events.EventEmitter');
 wtf.ext.TraceExtension = function(manifest) {
   goog.base(this);
 
+  var info = manifest.getTracingInfo();
+  goog.asserts.assert(info);
+
   /**
    * Manifest.
    * @type {!wtf.ext.Manifest}
    * @private
    */
   this.manifest_ = manifest;
+
+  /**
+   * Tracing info from the manifest.
+   * @type {!wtf.ext.Manifest.TracingInfo}
+   * @private
+   */
+  this.info_ = info;
 };
 goog.inherits(wtf.ext.TraceExtension, wtf.events.EventEmitter);
 
@@ -42,4 +53,13 @@ goog.inherits(wtf.ext.TraceExtension, wtf.events.EventEmitter);
  */
 wtf.ext.TraceExtension.prototype.getManifest = function() {
   return this.manifest_;
+};
+
+
+/**
+ * Gets the tracing information associated with the extension.
+ * @return {!wtf.ext.Manifest.TracingInfo} Tracing information.
+ */
+wtf.ext.TraceExtension.prototype.getInfo = function() {
+  return this.info_;
 };
