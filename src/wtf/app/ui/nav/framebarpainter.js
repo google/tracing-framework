@@ -122,7 +122,11 @@ wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
             labelScreenWidth, labelWidth, labelWidth + 15 * 2, 0, 1);
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#FFFFFF';
-        var labelX = screenLeft + labelScreenWidth / 2 - labelWidth / 2;
+
+        // Attempt to center the text within the box, but clamp to the screen.
+        var labelX = lx + (rx - lx) / 2 - labelWidth / 2;
+        labelX = goog.math.clamp(labelX, 0, width - labelWidth);
+
         ctx.fillText(label, labelX, y + h - 4);
         ctx.globalAlpha = 1;
       }
