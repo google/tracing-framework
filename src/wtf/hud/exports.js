@@ -42,4 +42,7 @@ if (wtf.hud.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.hud.advance',
       wtf.hud.advance);
+  goog.exportSymbol(
+      'wtf.hud.addButton',
+      wtf.hud.addButton);
 }

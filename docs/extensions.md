@@ -95,6 +95,16 @@ a set of actions that will be shown as buttons next the standard ones. When the
 action is invoked, either by a button press or an optional shortcut key, the
 given global function will be called.
 
+Buttons are added with the `wtf.hud.addButton` API:
+
+    wtf.hud.addButton({
+      title: 'Do something!',
+      icon: 'data:...', // (21x21 icon - prefer a data URI of SVG content)
+      shortcut: 'shift+f3', // optional,
+      callback: this.buttonClicked_,
+      scope: this
+    });
+
 TODO(benvanik): enable togglable actions via result-like objects returned from
 the call.
 
