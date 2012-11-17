@@ -14,6 +14,7 @@
 goog.provide('wtf.exports');
 
 goog.require('wtf');
+goog.require('wtf.ext');
 
 
 /**
@@ -38,4 +39,15 @@ if (wtf.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.now',
       wtf.now);
+
+  // wtf.ext controls
+  goog.exportSymbol(
+      'wtf.ext.registerExtension',
+      wtf.ext.registerExtension);
+  goog.exportSymbol(
+      'wtf.ext.getTraceExtensions',
+      wtf.ext.getTraceExtensions);
+  goog.exportSymbol(
+      'wtf.ext.getAppExtensions',
+      wtf.ext.getAppExtensions);
 }

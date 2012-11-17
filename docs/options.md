@@ -9,11 +9,26 @@ not allowed to change them once the component is initialized. Some components
 have the ability to change their options at runtime but this is an opt-in
 behavior.
 
+## Extensions
+
+### wtf.extensions
+
+An array of extension manifest URLs. These extensions will be either injected or
+loaded at runtime and can provide tracing or visualization functionality.
+
 ## Tracing
 
 Tracing options change the behavior of the core tracing library and
 instrumentation providers. They can be specified as a value to any one of the
 `wtf.trace.start*` methods or by the global override object `wtf_trace_options`.
+
+### wtf.trace.mode
+
+The target mode for tracing.
+
+* `snapshotting`: click to take a snapshot and open it in the UI or save to a
+file.
+* `streaming`: stream all events to the UI or a file.
 
 ### wtf.trace.target
 
