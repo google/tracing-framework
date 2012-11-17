@@ -30,12 +30,19 @@ goog.require('wtf.io');
  * @return {string?} Member name, if found.
  */
 wtf.util.getCompiledMemberName = function(obj, memberValue) {
+  // This does not early-exit to ensure that duplicates throw errors instead of
+  // behaving unpredictably.
+  var foundName = null;
   for (var name in obj) {
     if (obj[name] === memberValue) {
-      return name;
+      if (foundName) {
+        goog.asserts.fail('duplicate members found');
+        return null;
+      }
+      foundName = name;
     }
   }
-  return null;
+  return foundName;
 };
 
 

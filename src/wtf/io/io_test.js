@@ -71,13 +71,45 @@ wtf.io_test = suite('wtf.io', function() {
       assert.equal(targetArray[5], 0);
     });
 
+    test('#combineByteArrays', function() {
+      var result;
+
+      var array0 = wtf.io.createByteArray(4);
+      var array1 = wtf.io.createByteArray(2);
+      array0[0] = 0;
+      array0[1] = 1;
+      array0[2] = 2;
+      array0[3] = 3;
+      array1[0] = 4;
+      array1[1] = 5;
+
+      result = wtf.io.combineByteArrays([]);
+      assert.lengthOf(result, 0);
+
+      result = wtf.io.combineByteArrays([array1]);
+      assert.lengthOf(result, 2);
+      assert.arraysEqual(result, array1);
+
+      result = wtf.io.combineByteArrays([array0, array1]);
+      assert.lengthOf(result, 6);
+      assert.arraysEqual(result, [
+        0, 1, 2, 3, 4, 5
+      ]);
+
+      result = wtf.io.combineByteArrays([array1, array1]);
+      assert.lengthOf(result, 4);
+      assert.arraysEqual(result, [
+        4, 5, 4, 5
+      ]);
+    });
+
     test('#sliceByteArray', function() {
       var array = wtf.io.createByteArray(4);
       array[0] = 0; array[1] = 1; array[2] = 2; array[3] = 3;
 
       var result = wtf.io.sliceByteArray(array, 0, 4);
       assert.notStrictEqual(array, result);
-      assert.isTrue(wtf.io.byteArraysEqual(array, result));
+      assert.arraysEqual(array, result);
 
       result = wtf.io.sliceByteArray(array, 0, 0);
       assert.notStrictEqual(array, result);
@@ -109,7 +141,7 @@ wtf.io_test = suite('wtf.io', function() {
       var targetArray = wtf.io.createByteArray(4);
       var length = wtf.io.stringToByteArray('AAECAw==', targetArray);
       assert.equal(length, 4);
-      assert.isTrue(wtf.io.byteArraysEqual(targetArray, [0, 1, 2, 3]));
+      assert.arraysEqual(targetArray, [0, 1, 2, 3]);
 
       length = wtf.io.stringToByteArray('', targetArray);
       assert.equal(length, 0);
@@ -118,7 +150,11 @@ wtf.io_test = suite('wtf.io', function() {
       targetArray[4] = 123;
       length = wtf.io.stringToByteArray('AAECAw==', targetArray);
       assert.equal(length, 4);
-      assert.isTrue(wtf.io.byteArraysEqual(targetArray, [0, 1, 2, 3, 123]));
+      assert.arraysEqual(targetArray, [0, 1, 2, 3, 123]);
     });
   });
+
+  // TODO(benvanik): test the float converters
+  // wtf.io.JavaScriptFloatConverter_
+  // wtf.io.TypedArrayFloatConverter_
 });

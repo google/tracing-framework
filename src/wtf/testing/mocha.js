@@ -30,6 +30,15 @@ wtf.testing.mocha.setup_ = function() {
   // Note: if we wanted to augment the assertion library, this would be the
   // place to do it.
   // See: http://chaijs.com/guide/helpers/
+  var assert = goog.global['assert'];
+  assert.arraysEqual = function(a, b) {
+    assert.lengthOf(a, b.length, 'byte arrays differ in length');
+    for (var n = 0; n < a.length; n++) {
+      if (a[n] != b[n]) {
+        assert.fail(a, b, 'byte arrays differ');
+      }
+    }
+  };
 };
 
 wtf.testing.mocha.setup_();
