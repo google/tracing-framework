@@ -17,6 +17,7 @@ goog.provide('wtf.ipc');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
+goog.require('wtf.ipc.ExtensionChannel');
 goog.require('wtf.ipc.MessageChannel');
 
 
@@ -61,4 +62,20 @@ wtf.ipc.listenForChildWindows = function(callback, opt_scope) {
         }
       },
       true);
+};
+
+
+/**
+ * Connects to the extension with the given ID.
+ * @param {string} extensionId Target extension ID.
+ * @return {wtf.ipc.ExtensionChannel} Extension channel, if the other extension
+ *     is installed.
+ */
+wtf.ipc.connectToExtension = function(extensionId) {
+  var port = chrome.extension.connect(extensionId);
+  if (!port) {
+    return null;
+  }
+  var channel = new wtf.ipc.ExtensionChannel(port);
+  return channel;
 };
