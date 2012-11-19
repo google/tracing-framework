@@ -13,6 +13,7 @@
 
 goog.provide('wtf.util');
 
+goog.require('goog.asserts');
 /** @suppress {extraRequire} */
 goog.require('goog.debug.ErrorHandler');
 goog.require('goog.dom');

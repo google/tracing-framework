@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui.tracks.ZonePainter');
 
+goog.require('goog.math');
 goog.require('goog.string');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.ScopeEvent');

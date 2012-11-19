@@ -7,6 +7,7 @@
 
 goog.provide('wtf.util_test');
 
+goog.require('wtf.io');
 goog.require('wtf.util');
 
 
@@ -50,7 +51,7 @@ wtf.util_test = suite('wtf.util', function() {
     var SubType = function() {
       goog.base(this);
       this.subValue = 6;
-    }
+    };
     goog.inherits(SubType, SuperType);
     SubType.prototype.subMethod = function() { return this.subValue + 1; };
     var subType = new SubType();

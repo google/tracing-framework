@@ -15,6 +15,7 @@ goog.provide('wtf.app.ui.nav.FramebarPainter');
 
 goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
+goog.require('goog.math');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimeRangePainter');

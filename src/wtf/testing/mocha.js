@@ -31,6 +31,12 @@ wtf.testing.mocha.setup_ = function() {
   // place to do it.
   // See: http://chaijs.com/guide/helpers/
   var assert = goog.global['assert'];
+
+  /**
+   * Compares two arrays, either of which may be byte arrays.
+   * @param {!wtf.io.ByteArray} a First array.
+   * @param {!wtf.io.ByteArray} b Second array.
+   */
   assert.arraysEqual = function(a, b) {
     assert.lengthOf(a, b.length, 'byte arrays differ in length');
     for (var n = 0; n < a.length; n++) {
@@ -38,6 +44,64 @@ wtf.testing.mocha.setup_ = function() {
         assert.fail(a, b, 'byte arrays differ');
       }
     }
+  };
+
+  /**
+   * Begins an async event check, ensuring that the given event is fired.
+   * This will ensure that the given event fires with the given arguments.
+   * The returned function *must* be called.
+   * <code>
+   * // Assert that MY_EVENT is fired with the single argument 'a':
+   * var check = assert.expectEvent(obj, EventType.MY_EVENT, ['a']);
+   * doSomething();
+   * check();
+   * </code>
+   * @param {!wtf.events.EventEmitter} target Event emitter.
+   * @param {string} eventType Event type name.
+   * @param {Array=} opt_eventArgs Arguments that are required. Omit to not
+   *     check.
+   * @return {!function()} A function that must be called after the event scope.
+   */
+  assert.expectEvent = function(target, eventType, opt_eventArgs) {
+    var didFire = false;
+    var handler = function() {
+      target.removeListener(eventType, handler);
+      if (opt_eventArgs) {
+        assert.deepEqual(arguments, opt_eventArgs);
+      }
+      didFire = true;
+    };
+    target.addListener(eventType, handler);
+    return function() {
+      target.removeListener(eventType, handler);
+      if (!didFire) {
+        assert.fail('Event ' + eventType + ' did not fire');
+      }
+    };
+  };
+
+  /**
+   * Begins an async no-event check, ensuring that the given event is not fired.
+   * The returned function *must* be called.
+   * <code>
+   * // Assert that MY_EVENT is not fired.
+   * var check = assert.expectNoEvent(obj, EventType.MY_EVENT);
+   * doSomething();
+   * check();
+   * </code>
+   * @param {!wtf.events.EventEmitter} target Event emitter.
+   * @param {string} eventType Event type name.
+   * @return {!function()} A function that must be called after the event scope.
+   */
+  assert.expectNoEvent = function(target, eventType) {
+    var handler = function() {
+      target.removeListener(eventType, handler);
+      assert.fail('Event ' + eventType + ' fired when it shouldn\'t have');
+    };
+    target.addListener(eventType, handler);
+    return function() {
+      target.removeListener(eventType, handler);
+    };
   };
 };
 

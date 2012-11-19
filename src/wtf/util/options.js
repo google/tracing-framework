@@ -384,7 +384,10 @@ wtf.util.Options.prototype.getOptionalArray = function(key, opt_defaultValue) {
  */
 wtf.util.Options.prototype.addArrayValue = function(key, value) {
   var array = this.getArray(key, []);
-  goog.array.insert(array, value);
+  if (goog.array.contains(array, value)) {
+    return;
+  }
+  array.push(value);
   this.setValue_(key, array);
 };
 
@@ -396,6 +399,7 @@ wtf.util.Options.prototype.addArrayValue = function(key, value) {
  */
 wtf.util.Options.prototype.removeArrayValue = function(key, value) {
   var array = this.getArray(key, []);
-  goog.array.remove(array, value);
-  this.setValue_(key, array.length ? array : undefined);
+  if (goog.array.remove(array, value)) {
+    this.setValue_(key, array.length ? array : undefined);
+  }
 };
