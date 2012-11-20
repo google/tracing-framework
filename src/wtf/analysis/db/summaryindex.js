@@ -155,7 +155,7 @@ wtf.analysis.db.SummaryIndex.prototype.getLastEventTime = function() {
  */
 wtf.analysis.db.SummaryIndex.prototype.growToInclude_ = function(time) {
   var rootNode = this.rootNode_;
-  while (time < rootNode.timeStart_ || time > rootNode.timeEnd_) {
+  while (time < rootNode.timeStart_ || time >= rootNode.timeEnd_) {
     var granularity = rootNode.granularity_ * 10;
     var startTime = rootNode.timeStart_ - (rootNode.timeStart_ % granularity);
     var newRoot = new wtf.analysis.db.SummaryIndexNode_(
@@ -192,7 +192,7 @@ wtf.analysis.db.SummaryIndex.prototype.insertEvent = function(e) {
   }
 
   // Grow tree, if required.
-  if (e.time < this.rootNode_.timeStart_ || e.time > this.rootNode_.timeEnd_) {
+  if (e.time < this.rootNode_.timeStart_ || e.time >= this.rootNode_.timeEnd_) {
     this.growToInclude_(e.time);
   }
 
