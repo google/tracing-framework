@@ -123,7 +123,9 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
    * Dummy scope.
    * @type {!wtf.trace.Scope}
    */
-  this.dummyScope = /** @type {!wtf.trace.Scope} */ ({});
+  this.dummyScope = /** @type {!wtf.trace.Scope} */ ({
+    leave: function(result) { return result; }
+  });
 };
 
 
