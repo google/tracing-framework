@@ -14,7 +14,6 @@
 goog.provide('wtf.trace.instrument');
 goog.provide('wtf.trace.instrumentType');
 
-goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.data.Variable');
 goog.require('wtf.trace');
@@ -247,76 +246,4 @@ wtf.trace.instrumentTypeSimple = function(prefix, classPrototype, methodMap) {
           classPrototype[functionName], methodName, prefix + '#');
     }
   }
-};
-
-
-/**
- * Automatically instruments a DOM object that implements the EventTarget
- * interface.
- * This follows the spec at http://www.w3.org/TR/DOM-Level-3-Events/.
- *
- * <code>
- * wtf.trace.instrumentDomEventTarget(
- *     'HTMLCanvasElement', HTMLCanvasElement.prototype);
- * </code>
- *
- * @param {string} prefix A common prefix to use for all trace labels.
- * @param {!Object} classPrototype The prototype of the class.
- * @return {!function()} A function that will uninstrument the given type when
- *     called.
- */
-wtf.trace.instrumentDomEventTarget = function(prefix, classPrototype) {
-  /**
-   * A map of event type names to custom trace scope events.
-   * @type {!Object.<!wtf.trace.EventType>}
-   */
-  var eventMap = {};
-
-  // TODO(benvanik): allow for extraction of event properties
-  // Maybe use signature like args? eg:
-  // ['mousemove(int32 clientX, int32 clientY)', 'mousedown(...)']
-
-  var originalAddEventListener = classPrototype['addEventListener'];
-  classPrototype['addEventListener'] =
-      function addEventListener(type, listener, opt_useCapture) {
-    var eventType = eventMap[type];
-    if (!eventType) {
-      eventType = wtf.trace.events.createScope(prefix + '#on' + type);
-      goog.asserts.assert(eventType);
-      eventMap[type] = eventType;
-    }
-    var wrappedEventListener = function wrappedEventListener(e) {
-      var scope = eventType.enterScope(wtf.now(), null);
-      try {
-        if (listener['handleEvent']) {
-          // Listener is an EventListener.
-          listener.handleEvent(e);
-        } else {
-          // Listener is a function.
-          return listener.apply(this, arguments);
-        }
-      } finally {
-        scope.leave();
-      }
-    };
-    listener['__wrapped__'] = wrappedEventListener;
-    originalAddEventListener.call(
-        this, type, wrappedEventListener, opt_useCapture);
-  };
-
-  var originalRemoveEventListener = classPrototype['removeEventListener'];
-  classPrototype['removeEventListener'] =
-      function removeEventListener(type, listener, opt_useCapture) {
-    if (listener && listener['__wrapped__']) {
-      listener = listener['__wrapped__'];
-    }
-    originalRemoveEventListener.call(this, type, listener, opt_useCapture);
-  };
-
-  // TODO(benvanik): instrument dispatchEvent for flows?
-
-  return function uninstrumentDomEventTarget() {
-    classPrototype['addEventListener'] = originalAddEventListener;
-    classPrototype['removeEventListener'] = originalRemoveEventListener;
-  };
 };

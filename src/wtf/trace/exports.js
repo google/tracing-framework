@@ -156,7 +156,4 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.instrumentTypeSimple',
       wtf.trace.instrumentTypeSimple);
-  goog.exportSymbol(
-      'wtf.trace.instrumentDomEventTarget',
-      wtf.trace.instrumentDomEventTarget);
 }
