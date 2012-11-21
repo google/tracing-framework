@@ -19,7 +19,6 @@ goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
-goog.require('wtf.ui.Tooltip');
 goog.require('wtf.util.canvas');
 
 

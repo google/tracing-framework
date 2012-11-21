@@ -36,10 +36,10 @@ goog.inherits(wtf.ui.Tooltip, wtf.ui.Control);
  */
 wtf.ui.Tooltip.prototype.createDom = function(dom) {
   var dom = this.getDom();
-  var elem = dom.createElement('div');
+  var elem = dom.createElement(goog.dom.TagName.DIV);
+  goog.style.showElement(elem, false);
   goog.style.setStyle(elem, {
     'position': 'absolute',
-    'display': 'none',
     'color': 'white',
     'backgroundColor': 'rgba(0,0,0,.7)',
     'padding': '5px'
@@ -50,15 +50,15 @@ wtf.ui.Tooltip.prototype.createDom = function(dom) {
 
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var elem = this.getRootElement();
-  elem.innerHTML = content;
+  goog.dom.setTextContent(elem, content);
   goog.style.setStyle(elem, {
-    'display': 'block',
     'left': x + 10 + 'px',
     'top': y + 10 + 'px'
   });
+  goog.style.showElement(this.getRootElement(), true);
 };
 
 
 wtf.ui.Tooltip.prototype.hide = function() {
-  this.getRootElement().style.display = 'none';
+  goog.style.showElement(this.getRootElement(), false);
 };
