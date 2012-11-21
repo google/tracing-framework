@@ -51,6 +51,9 @@ wtf.analysis.db.EventIndex.prototype.getEventName = function() {
  */
 wtf.analysis.db.EventIndex.prototype.insertEvent = function(e) {
   if (e.eventType.name == this.eventName_) {
-    goog.base(this, 'insertEvent', e);
+    // We manually call base method instead of using goog.base because this
+    // method is called often enough to have a major impact on load time in
+    // debug mode.
+    wtf.analysis.db.EventList.prototype.insertEvent.call(this, e);
   }
 };
