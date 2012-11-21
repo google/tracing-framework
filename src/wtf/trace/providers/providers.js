@@ -13,8 +13,10 @@
 
 goog.provide('wtf.trace.providers');
 
+goog.require('wtf');
 goog.require('wtf.trace');
 goog.require('wtf.trace.ConsoleProvider');
+goog.require('wtf.trace.DomProvider');
 goog.require('wtf.trace.TimingProvider');
 
 
@@ -25,4 +27,11 @@ wtf.trace.providers.setup = function() {
   var traceManager = wtf.trace.getTraceManager();
   traceManager.addProvider(new wtf.trace.ConsoleProvider());
   traceManager.addProvider(new wtf.trace.TimingProvider());
+
+  // Browser only:
+  if (!wtf.NODE) {
+    traceManager.addProvider(new wtf.trace.DomProvider());
+  }
+
+  // Node only:
 };

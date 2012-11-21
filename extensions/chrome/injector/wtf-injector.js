@@ -69,6 +69,13 @@ if (isEnabled) {
         WTF_PATH_ROOT + '/wtf_trace_web_js_compiled.js'));
   }
 
+  // Inject prepare.
+  // This must be called before any extension code executes.
+  injectScriptFunction(function() {
+    // Setup tracing library.
+    wtf.trace.prepare();
+  });
+
   // Inject extensions.
   var manifestUrls = options['wtf.extensions'] || [];
   var extensions = {};
@@ -106,7 +113,7 @@ if (isEnabled) {
   // options['wtf.trace.target'] = 'http://' + appEndpoint;
 
   // Inject preparation code to start tracing with the desired options.
-  injectScriptFunction(prepareTracing, [
+  injectScriptFunction(startTracing, [
     options,
     extensions
   ]);
@@ -125,10 +132,7 @@ if (isEnabled) {
  * @param {string} filePrefix Trace filename prefix.
  * @param {!Object.<!Object>} extensions A map of URL to extension JSON.
  */
-function prepareTracing(options, extensions) {
-  // Setup tracing library.
-  wtf.trace.prepare();
-
+function startTracing(options, extensions) {
   // Register extensions.
   for (var url in extensions) {
     wtf.ext.registerExtension(url, extensions[url]);

@@ -15,7 +15,8 @@
 
 /**
  * @typedef {{
- *   addListener: function(!Function)
+ *   addListener: function(!Function),
+ *   removeListener: function(!Function)
  * }}
  */
 var ChromeEvent;
@@ -113,3 +114,52 @@ chrome.socket.read = function(socketId, bufferSize, callback) {};
  * @param {!function(!{bytesWritten: number})} callback
  */
 chrome.socket.write = function(socketId, buffer, callback) {};
+
+
+
+/**
+ * @noalias
+ * @constructor
+ */
+var ChromePort;
+
+
+/**
+ * @type {string}
+ */
+ChromePort.prototype.name;
+
+
+/**
+ * @param {!Object} msg
+ */
+ChromePort.prototype.postMessage = function(msg) {};
+
+
+/**
+ * @type {!ChromeEvent}
+ */
+ChromePort.prototype.onMessage;
+
+
+/**
+ * @type {!ChromeEvent}
+ */
+ChromePort.prototype.onDisconnect;
+
+
+
+chrome.extension;
+
+
+/**
+ * @param {string} extensionId
+ * @param {Object=} opt_connectInfo
+ */
+chrome.extension.connect = function(extensionId, opt_connectInfo) {};
+
+
+/**
+ * @type {!ChromeEvent}
+ */
+chrome.extension.onConnectExternal;

@@ -120,7 +120,7 @@ wtf.ipc.MessageChannel.prototype.handleMessage_ = function(browserEvent) {
   }
   e.stopPropagation();
 
-  this.emitEvent(wtf.ipc.Channel.EventType.MESSAGE, packet.data);
+  this.emitEvent(wtf.ipc.Channel.EventType.MESSAGE, packet['data']);
 };
 
 
@@ -136,7 +136,7 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(
 
   // Create packet with callback ID so that we can track things.
   var packet = /** @type {!wtf.ipc.MessageChannel.Packet} */ ({
-    data: data
+    'data': data
   });
   packet[wtf.ipc.MessageChannel.PACKET_TOKEN] = true;
 

@@ -18,6 +18,7 @@
 goog.provide('wtf.trace.exports');
 
 goog.require('wtf.trace');
+goog.require('wtf.trace.EventType');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
@@ -109,6 +110,16 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.spanFlow',
       wtf.trace.spanFlow);
+
+  // wtf.trace.EventType
+  goog.exportProperty(
+      wtf.trace.EventType.prototype,
+      'append',
+      wtf.trace.EventType.prototype.appendExternal);
+  goog.exportProperty(
+      wtf.trace.EventType.prototype,
+      'enterScope',
+      wtf.trace.EventType.prototype.enterScopeExternal);
 
   // wtf.trace.Scope
   goog.exportProperty(
