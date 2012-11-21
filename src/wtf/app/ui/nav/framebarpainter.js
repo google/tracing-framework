@@ -86,6 +86,15 @@ wtf.app.ui.nav.FramebarPainter.FRAME_COLOR_PALETTE_ = [
 
 
 /**
+ * Top pixel for drawing.
+ * @type {number}
+ * @const
+ * @private
+ */
+wtf.app.ui.nav.FramebarPainter.FRAME_TOP_ = 16;
+
+
+/**
  * @override
  */
 wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
@@ -94,7 +103,7 @@ wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
   var timeRight = this.timeRight;
   var palette = wtf.app.ui.nav.FramebarPainter.FRAME_COLOR_PALETTE_;
 
-  var y = 16;
+  var y = wtf.app.ui.nav.FramebarPainter.FRAME_TOP_;
   var h = Math.floor(0.5 * (height - y));
 
   // Draw frames.
@@ -148,4 +157,34 @@ wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
   // Splitter border.
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, y + h - 1, width, 1);
+};
+
+
+/**
+ * @override
+ */
+wtf.app.ui.nav.FramebarPainter.prototype.getInfoStringInternal = function(
+    x, y, width, height) {
+  var timeLeft = this.timeLeft;
+  var timeRight = this.timeRight;
+
+  var top = wtf.app.ui.nav.FramebarPainter.FRAME_TOP_;
+  var bottom = top + Math.floor(0.5 * (height - top));
+
+  if (y < top || y > bottom) return undefined;
+
+  var time = wtf.math.remap(x, 0, width, timeLeft, timeRight);
+
+  var result = undefined;
+  this.frameIndex_.forEach(timeLeft, timeRight + 100, function(e) {
+    var duration = e.args['duration'] / 1000;
+    var startTime = e.time - duration;
+    var endTime = e.time;
+    if (startTime <= time && time <= endTime) {
+      result = 'frame #' + e.args['number'] + ' (' +
+          (Math.round(duration * 100) / 100) + 'ms)';
+    }
+  });
+
+  return result;
 };

@@ -30,6 +30,7 @@ goog.require('wtf.ui.Control');
 goog.require('wtf.ui.GridPainter');
 goog.require('wtf.ui.PaintContext');
 goog.require('wtf.ui.RulerPainter');
+goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
 
 
@@ -74,6 +75,15 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
 
   var paintContext = new wtf.ui.PaintContext(this.framebarCanvas_);
   this.setPaintContext(paintContext);
+
+  /**
+   * Framebar tooltip.
+   * @type {!wtf.ui.Tooltip}
+   * @private
+   */
+  this.tooltip_ = new wtf.ui.Tooltip(dom.getDocument().body);
+  this.registerDisposable(this.tooltip_);
+  this.setupCanvasTooltipEvents(this.framebarCanvas_, this.tooltip_);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
