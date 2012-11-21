@@ -51,6 +51,9 @@ wtf.analysis.db.ZoneIndex.prototype.getZone = function() {
  */
 wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
   if (e.zone == this.zone_) {
-    goog.base(this, 'insertEvent', e);
+    // We manually call base method instead of using goog.base because this
+    // method is called often enough to have a major impact on load time
+    // in debug mode.
+    wtf.analysis.db.EventList.prototype.insertEvent.call(this, e);
   }
 };
