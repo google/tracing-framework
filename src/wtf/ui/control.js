@@ -17,6 +17,7 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
+goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.util.canvas');

@@ -13,6 +13,9 @@
 
 goog.provide('wtf.ui.Tooltip');
 
+goog.require('goog.dom');
+goog.require('goog.dom.TagName');
+goog.require('goog.style');
 goog.require('wtf.ui.Control');
 
 
@@ -21,7 +24,7 @@ goog.require('wtf.ui.Control');
  * Tooltip control.
  *
  * @param {!Element} parentElement Element to display in.
- * @param {goog.dom.DomHelper} opt_dom DOM helper.
+ * @param {goog.dom.DomHelper=} opt_dom DOM helper.
  * @constructor
  * @extends {wtf.ui.Control}
  */
