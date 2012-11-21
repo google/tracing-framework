@@ -137,7 +137,9 @@ wtf.analysis.Event.comparer = function(a, b) {
  * @extends {wtf.analysis.Event}
  */
 wtf.analysis.ScopeEvent = function(eventType, zone, scope, time, args) {
-  goog.base(this, eventType, zone, scope, time, args);
+  // We manually call base method instead of using goog.base because this method
+  // is called often enough to have a major impact on load time in debug mode.
+  wtf.analysis.Event.call(this, eventType, zone, scope, time, args);
 };
 goog.inherits(wtf.analysis.ScopeEvent, wtf.analysis.Event);
 
