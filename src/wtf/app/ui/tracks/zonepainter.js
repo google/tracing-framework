@@ -172,6 +172,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     var enter = scope.getEnterEvent();
     var leave = scope.getLeaveEvent();
 
+    // TODO(benvanik): better handle broken scopes
+    // TODO(benvanik): identify why this happens frequently
+    if (!enter || !leave) {
+      continue;
+    }
+
     // Ignore if a leave and we already handled the scope.
     if (e == leave && enter.time >= timeLeft) {
       continue;

@@ -71,6 +71,11 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
   var builder = wtf.trace.EventType.getBuilder_();
   var fn = builder.generate(this);
 
+  // V8 optimization - always force to null before setting to a function.
+  this.append = /** @type {wtf.trace.EventType.AppendFunction} */ (null);
+  this.enterScope =
+      /** @type {wtf.trace.EventType.EnterScopeFunction} */ (null);
+
   /**
    * Append function.
    * Only set on INSTANCE classes.
@@ -118,7 +123,9 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
    * Dummy scope.
    * @type {!wtf.trace.Scope}
    */
-  this.dummyScope = /** @type {!wtf.trace.Scope} */ ({});
+  this.dummyScope = /** @type {!wtf.trace.Scope} */ ({
+    leave: function(result) { return result; }
+  });
 };
 
 
@@ -236,4 +243,27 @@ wtf.trace.EventType.getNameMap = function() {
     enterTypedScope: reflectedNames[2],
     dummyScope: reflectedNames[3]
   };
+};
+
+
+/**
+ * Exported method that calls into {@see #append}.
+ * @param {number} time Time for the enter.
+ * @param {...} var_args Scope data arguments.
+ */
+wtf.trace.EventType.prototype.appendExternal = function(time, var_args) {
+  this.append.apply(this, arguments);
+};
+
+
+/**
+ * Exported method that calls into {@see #enterScope}.
+ * @param {number} time Time for the enter.
+ * @param {wtf.trace.Flow} flow A flow to terminate on scope leave, if any.
+ * @param {...} var_args Scope data arguments.
+ * @return {!wtf.trace.Scope} An initialized scope object.
+ */
+wtf.trace.EventType.prototype.enterScopeExternal = function(
+    time, flow, var_args) {
+  return this.enterScope.apply(this, arguments);
 };

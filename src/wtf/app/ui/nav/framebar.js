@@ -235,9 +235,13 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
   }, this);
 
   keyboardScope.addShortcut('ctrl+g', function() {
-    keyboard.suspend();
-    var result = goog.global.prompt('Frame number:');
-    keyboard.resume();
+    var result;
+    try {
+      keyboard.suspend();
+      result = goog.global.prompt('Frame number:');
+    } finally {
+      keyboard.resume();
+    }
     if (!result) {
       return;
     }
