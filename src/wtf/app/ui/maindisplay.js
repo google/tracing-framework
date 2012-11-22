@@ -19,6 +19,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.fs.FileReader');
+goog.require('goog.net.XhrIo');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
@@ -82,6 +83,13 @@ wtf.app.ui.MainDisplay = function(options, opt_parentElement, opt_dom) {
   keyboardScope.addShortcut('ctrl+o', this.requestTraceLoad, this);
 
   this.setupDragDropLoading_();
+
+  // If there's a fragment identifier, use it as the url to load.
+  var hash = dom.getWindow().location.hash;
+  if (hash) {
+    var url = hash.substring(1);
+    this.loadNetworkTrace(url);
+  }
 };
 goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
 
@@ -307,4 +315,27 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
         // TODO(benvanik): handle errors better
         window.alert('Unable to load files');
       }, this);
+};
+
+
+/**
+ * Loads a trace file by url.
+ * @param {!string} url Resource to load.
+ */
+wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
+  var doc = new wtf.doc.Document();
+  this.openDocument(doc);
+
+  var xhr = new goog.net.XhrIo();
+  xhr.setResponseType(goog.net.XhrIo.ResponseType.ARRAY_BUFFER);
+  goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
+    var success = xhr.isSuccess();
+    if (!success) {
+      window.alert('Unable to load url: ' + url);
+      return;
+    }
+    var data = xhr.getResponse();
+    doc.addBinaryEventSource(new Uint8Array(data));
+  });
+  xhr.send(url);
 };
