@@ -362,3 +362,56 @@ wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
   scope.setRenderData(colorIndex);
   return colorIndex;
 };
+
+
+/**
+ * @override
+ */
+wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal = function(x, y, width, height) {
+  var zoneIndex = this.zoneIndex_;
+  var timeLeft = this.timeLeft;
+  var timeRight = this.timeRight;
+
+  var time = wtf.math.remap(x, 0, width, timeLeft, timeRight);
+
+  var count = 0;
+  var scope = null;
+  // Search back for the scope event before "time".
+  var scopeEvent = zoneIndex.search(time, function(e) {
+    return e instanceof wtf.analysis.ScopeEvent;
+  });
+
+  if (!scopeEvent) {
+    return undefined;
+  }
+
+  // The scope we're looking for must be this scope or some ancestor scope of
+  // this scope. Look up the parent chain until we find a parent of the correct
+  // depth.
+  for (var scope = scopeEvent.scope; scope; scope = scope.getParent()) {
+    var depth = scope.getDepth();
+    var enter = scope.getEnterEvent();
+    var leave = scope.getLeaveEvent();
+    var scopeHeight = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+    var scopeTop = 25 + depth * scopeHeight;
+    var scopeBottom = scopeTop + scopeHeight;
+    if (scopeTop <= y && y <= scopeBottom) {
+      if (leave.time >= time) {
+        var elapsed = leave.time - enter.time;
+        if (elapsed > 0) {
+          // Round to just a few significant digits.
+          // largest power of 10 <= value
+          var magnitude = Math.floor(Math.log(elapsed) / Math.LN10);
+          // a number which will shift elapsed (in base 10) so that
+          // there are 4 digits to the left of the decimal.
+          var mult = Math.pow(10, 3 - magnitude);
+          elapsed = Math.round(elapsed * mult) / mult;
+        }
+        return elapsed + 'ms: ' + enter.eventType.name;
+      }
+      break;
+    }
+  }
+
+  return undefined;
+};

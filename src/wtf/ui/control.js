@@ -17,6 +17,7 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
+goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.util.canvas');
@@ -238,3 +239,32 @@ wtf.ui.Control.prototype.layout = function() {
  * @protected
  */
 wtf.ui.Control.prototype.layoutInternal = goog.nullFunction;
+
+
+/**
+ * @protected
+ */
+wtf.ui.Control.prototype.setupCanvasTooltipEvents = function(canvas, tooltip) {
+  this.getHandler().listen(
+      canvas,
+      goog.events.EventType.MOUSEMOVE,
+      function(e) {
+        var width = canvas.width;
+        var height = canvas.height;
+        var infoString = this.getPaintContext().getInfoString(
+            e.offsetX, e.offsetY, width, height);
+        if (infoString) {
+          tooltip.show(e.clientX, e.clientY, infoString);
+        } else {
+          tooltip.hide();
+        }
+      }, false, this);
+  this.getHandler().listen(
+      canvas,
+      goog.events.EventType.MOUSEOUT,
+      function(e) {
+        tooltip.hide();
+      }, false, this);
+
+
+};

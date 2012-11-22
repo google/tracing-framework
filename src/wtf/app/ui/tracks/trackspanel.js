@@ -27,6 +27,7 @@ goog.require('wtf.events.EventType');
 goog.require('wtf.ui.GridPainter');
 goog.require('wtf.ui.PaintContext');
 goog.require('wtf.ui.RulerPainter');
+goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
 
 
@@ -61,6 +62,15 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   var paintContext = new wtf.ui.PaintContext(this.trackCanvas_);
   this.setPaintContext(paintContext);
+
+  /**
+   * Tooltip.
+   * @type {!wtf.ui.Tooltip}
+   * @private
+   */
+  this.tooltip_ = new wtf.ui.Tooltip(this.getDom().getDocument().body);
+  this.registerDisposable(this.tooltip_);
+  this.setupCanvasTooltipEvents(this.trackCanvas_, this.tooltip_);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.

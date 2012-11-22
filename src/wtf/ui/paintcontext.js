@@ -253,3 +253,37 @@ wtf.ui.PaintContext.prototype.clear = function(x, y, w, h, opt_color) {
     ctx.fillRect(x, y, w, h);
   }
 };
+
+
+/**
+ * Queries the tree of painters for information about the pixel at x,y. Used to
+ * populate a tooltip.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Width of the paint canvas.
+ * @param {number} height Height of the paint canvas.
+ * @return {string|undefined} Info string or undefined for none.
+ */
+wtf.ui.PaintContext.prototype.getInfoString = function(x, y, width, height) {
+  var info = this.getInfoStringInternal(x, y, width, height);
+  if (info) return info;
+
+  for (var n = 0; n < this.childContexts_.length; n++) {
+    var childContext = this.childContexts_[n];
+    info = childContext.getInfoString(x, y, width, height);
+    if (info) return info;
+  }
+
+  return undefined;
+};
+
+
+/**
+ * Attempt to describe the pixel at x,y.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Width of the paint canvas.
+ * @param {number} height Height of the paint canvas.
+ * @return {string|undefined} Info string or undefined for none.
+ */
+wtf.ui.PaintContext.prototype.getInfoStringInternal = goog.nullFunction;
