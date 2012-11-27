@@ -53,3 +53,11 @@ To debug the app features:
     # Build a debug overlay, required with new files/requires/soy/gss
     anvil build app:debug_view
     # Load unpacked from the tracing-framework/ root
+
+## Platform Notes
+
+### OS X
+
+On the first build attempt (`anvil build :debug :release`) you will be
+prompted to install Java if it is not already present. Follow the
+dialogs and try again and it should work.

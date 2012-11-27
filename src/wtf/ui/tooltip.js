@@ -13,10 +13,13 @@
 
 goog.provide('wtf.ui.Tooltip');
 
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
+goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.ui.Control');
+goog.require('wtf.util.canvas');
 
 
 
@@ -38,7 +41,6 @@ goog.inherits(wtf.ui.Tooltip, wtf.ui.Control);
  * @override
  */
 wtf.ui.Tooltip.prototype.createDom = function(dom) {
-  var dom = this.getDom();
   var elem = dom.createElement(goog.dom.TagName.DIV);
   goog.style.showElement(elem, false);
   goog.style.setStyle(elem, {
@@ -51,6 +53,48 @@ wtf.ui.Tooltip.prototype.createDom = function(dom) {
 };
 
 
+/**
+ * Sets up the input events for showing/hiding the given tooltip on a control.
+ * The control must have an initialized paint context.
+ * @param {!wtf.ui.Control} control Target control.
+ */
+wtf.ui.Tooltip.prototype.bindEvents = function(control) {
+  var paintContext = control.getPaintContext();
+  goog.asserts.assert(paintContext);
+  var canvas = paintContext.getCanvas();
+  var ctx = paintContext.getCanvasContext2d();
+  var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
+
+  this.getHandler().listen(
+      canvas,
+      goog.events.EventType.MOUSEMOVE,
+      function(e) {
+        var width = canvas.width / scale;
+        var height = canvas.height / scale;
+        var infoString = paintContext.getInfoString(
+            e.offsetX, e.offsetY, width, height);
+        if (infoString) {
+          this.show(e.clientX, e.clientY, infoString);
+        } else {
+          this.hide();
+        }
+      });
+
+  this.getHandler().listen(
+      canvas,
+      goog.events.EventType.MOUSEOUT,
+      function(e) {
+        this.hide();
+      });
+};
+
+
+/**
+ * Show the tooltip at the given location.
+ * @param {number} x Parent-relative X, in DOM units.
+ * @param {number} y Parent-relative Y, in DOM units.
+ * @param {string} content Tooltip content.
+ */
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var elem = this.getRootElement();
   goog.dom.setTextContent(elem, content);
@@ -62,6 +106,9 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
 };
 
 
+/**
+ * Hides the tooltip.
+ */
 wtf.ui.Tooltip.prototype.hide = function() {
   goog.style.showElement(this.getRootElement(), false);
 };
