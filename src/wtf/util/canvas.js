@@ -21,7 +21,7 @@ goog.require('goog.style');
  * @const
  * @type {boolean}
  */
-wtf.util.canvas.ENABLE_HIGH_DPI = false;
+wtf.util.canvas.ENABLE_HIGH_DPI = true;
 
 
 /**
