@@ -252,9 +252,15 @@ wtf.ui.Control.prototype.setupCanvasTooltipEvents = function(canvas, tooltip) {
       canvas,
       goog.events.EventType.MOUSEMOVE,
       function(e) {
-        var width = canvas.width;
-        var height = canvas.height;
-        var infoString = this.getPaintContext().getInfoString(
+        var paintContext = this.getPaintContext();
+        if (!paintContext) {
+          return;
+        }
+        var ctx = paintContext.getCanvasContext2d();
+        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
+        var width = canvas.width / scale;
+        var height = canvas.height / scale;
+        var infoString = paintContext.getInfoString(
             e.offsetX, e.offsetY, width, height);
         if (infoString) {
           tooltip.show(e.clientX, e.clientY, infoString);
