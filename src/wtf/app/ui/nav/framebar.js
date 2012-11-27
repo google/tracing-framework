@@ -86,7 +86,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    */
   this.tooltip_ = new wtf.ui.Tooltip(body);
   this.registerDisposable(this.tooltip_);
-  this.setupCanvasTooltipEvents(this.framebarCanvas_, this.tooltip_);
+  this.tooltip_.bindEvents(this);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.

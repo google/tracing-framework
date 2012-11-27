@@ -43,9 +43,7 @@ wtf.ui.PaintContext = function(canvas, opt_parentContext) {
    * @type {!CanvasRenderingContext2D}
    * @private
    */
-  this.canvasContext2d_ = /** @type {!CanvasRenderingContext2D} */ (
-      canvas.getContext('raw-2d') ||
-      canvas.getContext('2d'));
+  this.canvasContext2d_ = wtf.util.canvas.getContext2d(canvas);
 
   /**
    * Parent painting context.

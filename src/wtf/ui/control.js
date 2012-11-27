@@ -17,7 +17,6 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
-goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.util.canvas');
@@ -239,39 +238,3 @@ wtf.ui.Control.prototype.layout = function() {
  * @protected
  */
 wtf.ui.Control.prototype.layoutInternal = goog.nullFunction;
-
-
-/**
- * Sets up the input events for showing/hiding the given tooltip.
- * @param {!HTMLCanvasElement} canvas Target <canvas> element.
- * @param {!wtf.ui.Tooltip} tooltip Tooltip control.
- * @protected
- */
-wtf.ui.Control.prototype.setupCanvasTooltipEvents = function(canvas, tooltip) {
-  this.getHandler().listen(
-      canvas,
-      goog.events.EventType.MOUSEMOVE,
-      function(e) {
-        var paintContext = this.getPaintContext();
-        if (!paintContext) {
-          return;
-        }
-        var ctx = paintContext.getCanvasContext2d();
-        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
-        var width = canvas.width / scale;
-        var height = canvas.height / scale;
-        var infoString = paintContext.getInfoString(
-            e.offsetX, e.offsetY, width, height);
-        if (infoString) {
-          tooltip.show(e.clientX, e.clientY, infoString);
-        } else {
-          tooltip.hide();
-        }
-      });
-  this.getHandler().listen(
-      canvas,
-      goog.events.EventType.MOUSEOUT,
-      function(e) {
-        tooltip.hide();
-      });
-};

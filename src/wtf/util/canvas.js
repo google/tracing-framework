@@ -34,6 +34,19 @@ wtf.util.canvas.isSupported = function() {
 
 
 /**
+ * Gets a 2D rendering context from the given canvas.
+ * This will return an uninstrumented canvas.
+ * @param {!HTMLCanvasElement} canvas Target canvas.
+ * @return {!CanvasRenderingContext2D} Canvas 2D context.
+ */
+wtf.util.canvas.getContext2d = function(canvas) {
+  return /** @type {!CanvasRenderingContext2D} */ (
+      canvas.getContext('raw-2d') ||
+      canvas.getContext('2d'));
+};
+
+
+/**
  * Gets the window device pixel ratio.
  * @return {number} The current windows device pixel ratio.
  */
