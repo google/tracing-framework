@@ -362,3 +362,16 @@ wtf.trace.mark = wtf.ENABLE_TRACING ? function(opt_msg, opt_time) {
   var time = opt_time || wtf.now();
   wtf.trace.Builtin.mark.append(time, opt_msg);
 } : goog.nullFunction;
+
+
+/**
+ * Marks an event listener as being ignored, meaning that it will not show up
+ * in traces.
+ * @param {!T} listener Event listener.
+ * @return {!T} The parameter, for chaining.
+ * @template T
+ */
+wtf.trace.ignoreListener = function(listener) {
+  listener['__wtf_ignore__'] = true;
+  return listener;
+};

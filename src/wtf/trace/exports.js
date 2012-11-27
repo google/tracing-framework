@@ -90,11 +90,6 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
       'wtf.trace.popZone',
       wtf.trace.popZone);
 
-  // wtf.trace logging operations
-  goog.exportSymbol(
-      'wtf.trace.mark',
-      wtf.trace.mark);
-
   // wtf.trace scope operations
   goog.exportSymbol(
       'wtf.trace.enterScope',
@@ -110,6 +105,16 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.spanFlow',
       wtf.trace.spanFlow);
+
+  // wtf.trace logging operations
+  goog.exportSymbol(
+      'wtf.trace.mark',
+      wtf.trace.mark);
+
+  // wtf.trace utilities
+  goog.exportSymbol(
+      'wtf.trace.ignoreListener',
+      wtf.trace.ignoreListener);
 
   // wtf.trace.EventType
   goog.exportProperty(

@@ -14,6 +14,7 @@
 goog.provide('wtf.trace.instrument');
 goog.provide('wtf.trace.instrumentType');
 
+goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.data.Variable');
 goog.require('wtf.trace');
@@ -97,11 +98,16 @@ wtf.trace.SIGNATURE_REGEX_ = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/;
  * @param {Function} value Target function.
  * @param {string} signature Method signature.
  * @param {string=} opt_namePrefix String to prepend to the name.
+ * @param {(function(Function, !wtf.trace.EventType):Function)=} opt_generator
+ *     A custom function generator that is responsible for taking the given
+ *     {@code value} and returning a wrapped function that emits the given
+ *     event type.
+ * @param {(function())=} opt_pre Code to execute before the scope is entered.
+ *     This is only called if {@code opt_generator} is not provided.
  * @return {Function} The instrumented input value.
  */
-wtf.trace.instrument = function(value, signature, opt_namePrefix) {
-  var traceManager = wtf.trace.getTraceManager();
-
+wtf.trace.instrument = function(value, signature, opt_namePrefix,
+    opt_generator, opt_pre) {
   // Parse signature.
   //var signatureParts = wtf.trace.SIGNATURE_REGEX_.exec(signature);
   var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(signature);
@@ -124,13 +130,19 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix) {
     signatureName = opt_namePrefix + signatureName;
   }
   var customEvent = wtf.trace.events.createScope(signatureName, argList);
+  goog.asserts.assert(customEvent);
 
   // TODO(benvanik): use a FunctionBuilder to generate the argument stuff from
   //     the signature.
   var result;
-  if (!argMap || !argMap.length) {
+  if (opt_generator) {
+    result = opt_generator(value, customEvent);
+  } else if (!argMap || !argMap.length) {
     // Simple function - no custom data.
     result = function() {
+      if (opt_pre) {
+        opt_pre.call(this);
+      }
       var scope = customEvent.enterScope(wtf.now(), null);
       var result = value.apply(this, arguments);
       return scope.leave(result);
@@ -141,6 +153,9 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix) {
     eventArgs[0] = 0;
     eventArgs[1] = null; // no flow
     result = function() {
+      if (opt_pre) {
+        opt_pre.call(this);
+      }
       eventArgs[0] = wtf.now();
       for (var n = 0; n < argMap.length; n++) {
         eventArgs[n + 2] = arguments[argMap[n].ordinal];

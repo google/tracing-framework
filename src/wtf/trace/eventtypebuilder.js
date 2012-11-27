@@ -99,7 +99,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
       var dataArg = args[n];
       if (!dataArg.isFixedSize) {
         // Calculate variable size at runtime.
-        var sizeSource = dataArg.getSizeCalculationSource();
+        var sizeSource = dataArg.getSizeCalculationSource(dataArg.name + '_');
         this.append(
             'argSize += ' + sizeSource + ';');
       }
@@ -136,8 +136,9 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
   // Append data arguments.
   for (var n = 0; n < args.length; n++) {
     var dataArg = args[n];
+    this.append('/* arg ' + n + ': ' + dataArg.name + ' */');
     this.append(
-        dataArg.getWriteSource(this.bufferNames_) + ';');
+        dataArg.getWriteSource(this.bufferNames_, dataArg.name + '_') + ';');
   }
 
   // Count.

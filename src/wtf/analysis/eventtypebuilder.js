@@ -69,9 +69,8 @@ wtf.analysis.EventTypeBuilder.prototype.generate = function(eventType) {
   // Parse data arguments.
   for (var n = 0; n < eventType.args.length; n++) {
     var arg = eventType.args[n];
-    this.append(
-        'value["' + arg.name + '"] = ' +
-            arg.getReadSource(this.bufferNames_) + ';');
+    var targetName = 'value["' + arg.name + '"]';
+    this.append(arg.getReadSource(this.bufferNames_, targetName) + ';');
   }
 
   this.append('return value;');
