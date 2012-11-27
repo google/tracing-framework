@@ -54,18 +54,25 @@ wtf.util.getCompiledMemberName = function(obj, memberValue) {
  * @param {Object=} opt_scope Scope to call the function in.
  */
 wtf.util.callWhenDomReady = function(callback, opt_scope) {
+  // TODO(benvanik): prevent leaking these events.
   if (document.readyState == 'complete' ||
       document.readyState == 'interactive') {
     callback.call(opt_scope);
   } else {
     if (document.addEventListener) {
-      document.addEventListener('DOMContentLoaded', function() {
+      var listener = function() {
+        document.removeEventListener('DOMContentLoaded', listener, false);
         callback.call(opt_scope);
-      }, false);
+      };
+      listener['__wtf_ignore__'] = true;
+      document.addEventListener('DOMContentLoaded', listener, false);
     } else if (document.attachEvent) {
-      document.attachEvent('onload', function() {
+      var listener = function() {
+        document.detachEvent('onload', listener);
         callback.call(opt_scope);
-      });
+      };
+      listener['__wtf_ignore__'] = true;
+      document.attachEvent('onload', listener);
     }
   }
 };

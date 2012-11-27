@@ -136,6 +136,17 @@ wtf.trace.DomProvider.prototype.injectEvents_ = function() {
   instrumentedTypeMap['Window'].injectObjectEvents(
       goog.global['Window'].prototype);
 
+  // Inject document, as it's already existing, and body if it's there.
+  instrumentedTypeMap['Document'].injectObjectEvents(
+      goog.global['document']);
+  if (goog.global['document']['body']) {
+    // TODO(benvanik): this doesn't really work - the DOM has been initialized
+    //     and if an event has already been set then it will be queued for
+    //     dispatch unwrapped. Need to find a better way.
+    instrumentedTypeMap['HTMLBodyElement'].injectObjectEvents(
+        goog.global['document']['body']);
+  }
+
   // Special case a few types.
   // Rewrite constructors for non-HTML elements.
   //'Audio'
@@ -279,6 +290,12 @@ wtf.trace.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
   var originalAddEventListener = classPrototype['addEventListener'];
   this.injectFunction_(classPrototype, 'addEventListener',
       function addEventListener(type, listener, opt_useCapture) {
+        if (listener['__wtf_ignore__']) {
+          // Ignored - do a normal add.
+          originalAddEventListener.call(this, type, listener, opt_useCapture);
+          return;
+        }
+
         var eventType = eventMap[type];
         if (!eventType) {
           eventType = wtf.trace.events.createScope(prefix + '#on' + type);
