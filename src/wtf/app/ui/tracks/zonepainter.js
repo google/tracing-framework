@@ -367,7 +367,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
 /**
  * @override
  */
-wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal = function(x, y, width, height) {
+wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
+    function(x, y, width, height) {
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -388,7 +389,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal = function(x, y, w
   // The scope we're looking for must be this scope or some ancestor scope of
   // this scope. Look up the parent chain until we find a parent of the correct
   // depth.
-  for (var scope = scopeEvent.scope; scope; scope = scope.getParent()) {
+  for (scope = scopeEvent.scope; scope; scope = scope.getParent()) {
     var depth = scope.getDepth();
     var enter = scope.getEnterEvent();
     var leave = scope.getLeaveEvent();

@@ -63,14 +63,16 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   var paintContext = new wtf.ui.PaintContext(this.trackCanvas_);
   this.setPaintContext(paintContext);
 
+  var body = this.getDom().getDocument().body;
+  goog.asserts.assert(body);
   /**
    * Tooltip.
    * @type {!wtf.ui.Tooltip}
    * @private
    */
-  this.tooltip_ = new wtf.ui.Tooltip(this.getDom().getDocument().body);
+  this.tooltip_ = new wtf.ui.Tooltip(body);
   this.registerDisposable(this.tooltip_);
-  this.setupCanvasTooltipEvents(this.trackCanvas_, this.tooltip_);
+  this.tooltip_.bindEvents(this);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.

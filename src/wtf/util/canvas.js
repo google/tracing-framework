@@ -21,7 +21,7 @@ goog.require('goog.style');
  * @const
  * @type {boolean}
  */
-wtf.util.canvas.ENABLE_HIGH_DPI = false;
+wtf.util.canvas.ENABLE_HIGH_DPI = true;
 
 
 /**
@@ -30,6 +30,19 @@ wtf.util.canvas.ENABLE_HIGH_DPI = false;
  */
 wtf.util.canvas.isSupported = function() {
   return !!window.HTMLCanvasElement;
+};
+
+
+/**
+ * Gets a 2D rendering context from the given canvas.
+ * This will return an uninstrumented canvas.
+ * @param {!HTMLCanvasElement} canvas Target canvas.
+ * @return {!CanvasRenderingContext2D} Canvas 2D context.
+ */
+wtf.util.canvas.getContext2d = function(canvas) {
+  return /** @type {!CanvasRenderingContext2D} */ (
+      canvas.getContext('raw-2d') ||
+      canvas.getContext('2d'));
 };
 
 

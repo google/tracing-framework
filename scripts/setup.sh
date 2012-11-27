@@ -53,14 +53,17 @@ if [ "$PYTHON_CHECK" = "0" ]; then
 fi
 echo "     path: $(which python)"
 echo "  version: $PYTHON_VERSION"
-
+echo ""
 echo "- Python pip:"
 if [ ! -e "$(which pip)" ]; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   echo "! pip not found or not in PATH                                        !"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   echo "Attemping to install via the system package manager..."
-  if [ "$(which apt-get 2>/dev/null)" ]; then
+  if [ "$(which easy_install)" ]; then
+    # Anything with easy_install (on OS X by default)
+    sudo easy_install pip
+  elif [ "$(which apt-get 2>/dev/null)" ]; then
     # Linux (Ubuntu)
     sudo apt-get install pip
   elif [ "$(which port 2>/dev/null)" ]; then
@@ -78,7 +81,7 @@ if [ ! -e "$(which pip)" ]; then
   fi
 fi
 echo "     path: $(which pip)"
-
+echo ""
 echo "- node.js 0.8.0+:"
 if [ ! -e "$(which node)" ]; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
