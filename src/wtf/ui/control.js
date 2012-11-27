@@ -242,6 +242,9 @@ wtf.ui.Control.prototype.layoutInternal = goog.nullFunction;
 
 
 /**
+ * Sets up the input events for showing/hiding the given tooltip.
+ * @param {!HTMLCanvasElement} canvas Target <canvas> element.
+ * @param {!wtf.ui.Tooltip} tooltip Tooltip control.
  * @protected
  */
 wtf.ui.Control.prototype.setupCanvasTooltipEvents = function(canvas, tooltip) {
@@ -258,13 +261,11 @@ wtf.ui.Control.prototype.setupCanvasTooltipEvents = function(canvas, tooltip) {
         } else {
           tooltip.hide();
         }
-      }, false, this);
+      });
   this.getHandler().listen(
       canvas,
       goog.events.EventType.MOUSEOUT,
       function(e) {
         tooltip.hide();
-      }, false, this);
-
-
+      });
 };

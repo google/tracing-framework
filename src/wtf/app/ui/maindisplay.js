@@ -13,12 +13,14 @@
 
 goog.provide('wtf.app.ui.MainDisplay');
 
+goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.fs.FileReader');
+goog.require('goog.net.EventType');
 goog.require('goog.net.XhrIo');
 goog.require('goog.soy');
 goog.require('goog.string');
@@ -334,7 +336,8 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
       window.alert('Unable to load url: ' + url);
       return;
     }
-    var data = xhr.getResponse();
+    var data = /** @type {ArrayBuffer} */ (xhr.getResponse());
+    goog.asserts.assert(data);
     doc.addBinaryEventSource(new Uint8Array(data));
   });
   xhr.send(url);

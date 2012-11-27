@@ -38,7 +38,6 @@ goog.inherits(wtf.ui.Tooltip, wtf.ui.Control);
  * @override
  */
 wtf.ui.Tooltip.prototype.createDom = function(dom) {
-  var dom = this.getDom();
   var elem = dom.createElement(goog.dom.TagName.DIV);
   goog.style.showElement(elem, false);
   goog.style.setStyle(elem, {
@@ -51,6 +50,12 @@ wtf.ui.Tooltip.prototype.createDom = function(dom) {
 };
 
 
+/**
+ * Show the tooltip at the given location.
+ * @param {number} x Parent-relative X, in DOM units.
+ * @param {number} y Parent-relative Y, in DOM units.
+ * @param {string} content Tooltip content.
+ */
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var elem = this.getRootElement();
   goog.dom.setTextContent(elem, content);
@@ -62,6 +67,9 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
 };
 
 
+/**
+ * Hides the tooltip.
+ */
 wtf.ui.Tooltip.prototype.hide = function() {
   goog.style.showElement(this.getRootElement(), false);
 };
