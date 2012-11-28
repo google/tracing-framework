@@ -536,7 +536,9 @@ function instrumentContext(raw) {
         }
       } else {
         // DOM element variant.
+        var traceScope = wtf.trace.enterTracingScope(wtf.now());
         var imageData = extractImageData(arguments[5], internalformat);
+        traceScope.leave();
         scope = eventType(
             wtf.now(), null,
             target,
@@ -571,7 +573,9 @@ function instrumentContext(raw) {
         }
       } else {
         // DOM element variant.
+        var traceScope = wtf.trace.enterTracingScope(wtf.now());
         var imageData = extractImageData(arguments[6], arguments[4]);
+        traceScope.leave();
         scope = eventType(
             wtf.now(), null,
             target,

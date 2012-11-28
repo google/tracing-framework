@@ -88,6 +88,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.enterScope',
       wtf.trace.enterScope);
+  goog.exportSymbol(
+      'wtf.trace.enterTracingScope',
+      wtf.trace.enterTracingScope);
 
   // wtf.trace flow operations
   goog.exportSymbol(

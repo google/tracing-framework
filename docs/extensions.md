@@ -145,6 +145,24 @@ Automatic instrumentation of an entire type:
         foo: 'foo(uint8 a)'
       });
 
+If you need to do any expensive work that you don't want to show up as user
+time, use the built-in helper scope:
+
+  var traceScope = wtf.trace.enterTracingScope(wtf.now());
+  // Expensive work...
+  traceScope.leave();
+
+To prevent DOM event listeners from appearing in the trace, wrap them with
+`wtf.trace.ignoreListener` before attaching them:
+
+  var el = document.createElement('a');
+  el.onclick = wtf.trace.ignoreListener(function(e) {
+    // Clicked and untraced
+  });
+  el.addEventListener('click', wtf.trace.ignoreListener(function(e) {
+    // Clicked and untraced
+  }), false);
+
 Supported types in event signatures:
 
 * int8/uint8

@@ -63,6 +63,14 @@ wtf.trace.BuiltinEvents = {
       'wtf.scope.enter(ascii msg)'),
 
   /**
+   * Enters a tracing framework overhead tracking scope.
+   * This is used by the tracing framework to indicate a region of time
+   * that is being consumed by the framework for internal work.
+   */
+  enterTracingScope: wtf.trace.events.createScope(
+      'wtf.scope.enterTracing()'),
+
+  /**
    * Leaves an execution scope.
    */
   leaveScope: wtf.trace.events.createInstance(
