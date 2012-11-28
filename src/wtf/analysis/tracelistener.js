@@ -104,7 +104,11 @@ wtf.analysis.TraceListener.prototype.createOrGetZone = function(
  * @param {number} timebase Timebase.
  * @param {!wtf.data.ContextInfo} contextInfo Context information.
  */
-wtf.analysis.TraceListener.prototype.sourceAdded = goog.nullFunction;
+wtf.analysis.TraceListener.prototype.sourceAdded = function(
+    timebase, contextInfo) {
+  this.emitEvent(wtf.analysis.TraceListener.EventType.SOURCE_ADDED,
+      timebase, contextInfo);
+};
 
 
 /**
@@ -147,6 +151,11 @@ wtf.analysis.TraceListener.prototype.traceEvent = goog.nullFunction;
  * @enum {string}
  */
 wtf.analysis.TraceListener.EventType = {
+  /**
+   * Args: [timebase, wtf.data.ContextInfo]
+   */
+  SOURCE_ADDED: 'sourceAdded',
+
   /**
    * Args: [wtf.analysis.Event]
    */
