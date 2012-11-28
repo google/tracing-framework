@@ -62,30 +62,6 @@ goog.inherits(wtf.ui.Dialog, wtf.ui.Control);
 
 
 /**
- * @override
- */
-wtf.ui.Dialog.prototype.disposeInternal = function() {
-  // Remove the dialog DOM root.
-  var dom = this.getDom();
-  var rootElement = this.getRootElement();
-  if (rootElement) {
-    var el = dom.getParentElement(rootElement);
-    goog.style.setStyle(el, {
-      'opacity': 0,
-      '-webkit-transform': 'scale(1.05)',
-      '-moz-transform': 'scale(1.05)',
-      'transform': 'scale(1.05)'
-    });
-    wtf.timing.setTimeout(218, function() {
-      dom.removeNode(el);
-    });
-  }
-
-  goog.base(this, 'disposeInternal');
-};
-
-
-/**
  * Z-index of the dialog.
  * @type {number}
  * @const
@@ -149,7 +125,22 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
  * Closes the dialog.
  */
 wtf.ui.Dialog.prototype.close = function() {
-  goog.dispose(this);
+  // Remove the dialog DOM root.
+  var dom = this.getDom();
+  var rootElement = this.getRootElement();
+  if (rootElement) {
+    var el = dom.getParentElement(rootElement);
+    goog.style.setStyle(el, {
+      'opacity': 0,
+      '-webkit-transform': 'scale(1.05)',
+      '-moz-transform': 'scale(1.05)',
+      'transform': 'scale(1.05)'
+    });
+    wtf.timing.setTimeout(218, function() {
+      dom.removeNode(el);
+      goog.dispose(this);
+    }, this);
+  }
 };
 
 
