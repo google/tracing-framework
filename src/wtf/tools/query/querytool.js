@@ -46,7 +46,7 @@ wtf.tools.query.QueryTool.prototype.run = function(args) {
 
   // Create database for querying.
   var db = new wtf.analysis.db.EventDatabase();
-  db.createEventIndex('browser.timing.frameEnd');
+  db.createEventIndex('timing.frameEnd');
 
   // Run to populate the db.
   var traceListener = db.getTraceListener();
@@ -55,7 +55,7 @@ wtf.tools.query.QueryTool.prototype.run = function(args) {
     return -1;
   }
 
-  var markerIndex = db.getEventIndex('browser.timing.frameEnd');
+  var markerIndex = db.getEventIndex('timing.frameEnd');
   // markerIndex.forEach(0, Number.MAX_VALUE, function(e) {
   //   wtf.tools.util.logEvent(
   //       e.zone, e.time, e.eventType.name, undefined, e.data);

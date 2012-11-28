@@ -69,7 +69,7 @@ wtf.tools.webglgen.WebGLGenTool.prototype.run = function(args) {
       frameStart = timebase;
     },
 
-    'browser.timing.requestAnimationFrame.callback': function(e) {
+    'timing.requestAnimationFrame.callback': function(e) {
       log('}, [' + resources.join(', ') + ']);');
       resources.length = 0;
       log('frame(' +

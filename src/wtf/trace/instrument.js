@@ -70,20 +70,6 @@ if (!COMPILED) {
 }
 
 
-// TODO(benvanik): figure out why this doesn't work in compiled mode
-/**
- * Regex for parsing signatures into names and parameters.
- * <code>
- * 'a.b.c(<params>)'
- * ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
- * </code>
- * @const
- * @type {RegExp}
- * @private
- */
-wtf.trace.SIGNATURE_REGEX_ = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/;
-
-
 /**
  * Automatically instruments a method.
  * This will likely produce code slower than manually instrumenting, but is
@@ -109,8 +95,9 @@ wtf.trace.SIGNATURE_REGEX_ = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/;
 wtf.trace.instrument = function(value, signature, opt_namePrefix,
     opt_generator, opt_pre) {
   // Parse signature.
-  //var signatureParts = wtf.trace.SIGNATURE_REGEX_.exec(signature);
-  var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(signature);
+  // 'a.b.c(<params>)'
+  // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
+  var signatureParts = /^([a-zA-Z0-9_\.:]+)(\((.*)\)$)?/.exec(signature);
   var signatureName = signatureParts[1]; // entire name before ()
   var signatureArgs = signatureParts[3]; // contents of () (excluding ())
 
@@ -222,7 +209,7 @@ wtf.trace.instrumentType = function(value, constructorSignature, methodMap) {
 
   // Parse signature to get the type name.
   //var signatureParts = wtf.trace.SIGNATURE_REGEX_.exec(constructorSignature);
-  var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(
+  var signatureParts = /^([a-zA-Z0-9_\.:]+)(\((.*)\)$)?/.exec(
       constructorSignature);
   var typeName = signatureParts[1]; // entire name before ()
 
