@@ -1,7 +1,5 @@
 (function() {
 
-console.log('Extension enabled: WebGL Capture');
-
 // Add a HUD button:
 wtf.hud.addButton({
   title: 'Capture WebGL',
@@ -77,7 +75,7 @@ function setCurrentContext(ctx) {
 
 function instrumentContext(raw) {
   function instrumentMethod(signature, opt_generator) {
-    var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(signature);
+    var signatureParts = /^([a-zA-Z0-9_\.:]+)(\((.*)\)$)?/.exec(signature);
     var signatureName = signatureParts[1]; // entire name before ()
     raw.prototype[signatureName] = wtf.trace.instrument(
         raw.prototype[signatureName],

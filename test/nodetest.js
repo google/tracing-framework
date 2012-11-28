@@ -55,7 +55,7 @@ for (var n = 0; n < 10; n++) {
       'control total: ' + duration + ', per fn: ' + (duration / count));
 }
 
-wtf.trace.startSnapshottingSession();
+//wtf.trace.start();
 
 var meanDuration = 0;
 for (var n = 0; n < runCount; n++) {
@@ -72,8 +72,8 @@ meanDuration /= runCount;
 console.log('scope mean duration: ' + meanDuration + ', per ~call: ' +
     (meanDuration / count / 2));
 
-wtf.trace.stop();
-// wtf.trace.startSnapshottingSession();
+//wtf.trace.stop();
+// wtf.trace.start();
 
 // var meanDuration = 0;
 // for (var n = 0; n < runCount; n++) {

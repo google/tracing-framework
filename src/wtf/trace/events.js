@@ -40,9 +40,9 @@ wtf.trace.events.create_ = wtf.ENABLE_TRACING ?
       // Support defining args in the name string.
       // This overrides any manually provided arguments.
       if (!opt_args && name.indexOf('(') > 0) {
-        var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(name);
-        name = signatureParts[1]; // entire name before ()
-        opt_args = signatureParts[3]; // contents of () (excluding ())
+        var parsedSignature = wtf.data.Variable.parseSignature(name);
+        name = parsedSignature.name;
+        opt_args = parsedSignature.args;
       }
 
       // Parse arguments, if required.

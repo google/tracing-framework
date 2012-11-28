@@ -53,14 +53,8 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
 
   // wtf.trace session control
   goog.exportSymbol(
-      'wtf.trace.startNullSession',
-      wtf.trace.startNullSession);
-  goog.exportSymbol(
-      'wtf.trace.startStreamingSession',
-      wtf.trace.startStreamingSession);
-  goog.exportSymbol(
-      'wtf.trace.startSnapshottingSession',
-      wtf.trace.startSnapshottingSession);
+      'wtf.trace.start',
+      wtf.trace.start);
   goog.exportSymbol(
       'wtf.trace.snapshot',
       wtf.trace.snapshot);
