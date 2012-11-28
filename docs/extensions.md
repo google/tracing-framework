@@ -102,7 +102,60 @@ nothing about the global environment and try not to pollute it at the risk of
 breaking the page. Scripts may use the global `wtf` object to add event
 providers, control the operation of the tracing system, etc.
 
-TODO(benvanik): describe the execution environment.
+#### Tracing API
+
+Get a time compatible with the tracing framework:
+
+  // Consistent time; high-resolution if available
+  var time = wtf.now();
+
+Emitting an instance event:
+
+  // Create the event and cache the event object:
+  var myEvent = wtf.trace.events.createInstance('myEvent(uint32 foo)');
+  // At some point in the future, append it:
+  myEvent.append(wtf.now(), 12345);
+
+Emitting a scope event:
+
+  // Create the event and cache the event object:
+  var myScopeEvent = wtf.trace.events.createScope('myScopeEvent(utf8 bar)');
+  // Enter/leave the scope:
+  var scope = myScopeEvent.enterScope(wtf.now(), null, 'hello world');
+  // ...
+  return scope.leave(someResult);
+
+Automatic instrumentation of a function:
+
+  // Instrument an individual method:
+  var someCall = wtf.trace.instrument(function(a, b) {
+    return a + b;
+  }, 'someCall(uint32 a, uint32 b)');
+  // Instrument an individual method on a prototype:
+  myType.prototype['someCall'] = wtf.trace.instrument(
+      myType.prototype['someCall'],
+      'someCall(uint32 a, uint32 b)',
+      'MyType#');
+
+Automatic instrumentation of an entire type:
+
+  // Instrument a type:
+  my.Type = wtf.trace.instrumentType(
+      my.Type, 'my.Type(uint8 a, uint8 b)', {
+        foo: 'foo(uint8 a)'
+      });
+
+Supported types in event signatures:
+
+* int8/uint8
+* int16/uint16
+* int32/uint32
+* float32
+* ascii
+* utf8
+* any of the int/float types as type[] for an array
+
+TODO: add more types (float64/number, typed arrays, etc)
 
 ### Actions
 
@@ -123,6 +176,10 @@ Buttons are added with the `wtf.hud.addButton` API:
 
 TODO(benvanik): enable togglable actions via result-like objects returned from
 the call.
+
+If building an extension that should work both under node and the browser be
+sure to check if `wtf.hud` is defined before attempting to call any methods
+on it.
 
 ## App Extensions
 
