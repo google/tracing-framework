@@ -14,7 +14,7 @@
 goog.provide('wtf.trace.Scope');
 
 goog.require('wtf');
-goog.require('wtf.trace.Builtin');
+goog.require('wtf.trace.BuiltinEvents');
 
 
 
@@ -101,7 +101,7 @@ wtf.trace.Scope.enter = function(opt_msg, opt_flow, opt_time) {
 
   // Append event.
   var time = opt_time || wtf.now();
-  wtf.trace.Builtin.enterScope.enterScope(time, opt_flow, opt_msg);
+  wtf.trace.BuiltinEvents.enterScope(time, opt_flow, opt_msg);
 
   // Extend flow, if present.
   if (opt_flow) {
@@ -170,7 +170,7 @@ wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(opt_result) {
   }
 
   // Append event.
-  wtf.trace.Builtin.leaveScope.append(time);
+  wtf.trace.BuiltinEvents.leaveScope(time);
 
   // Return the scope to the pool.
   // Note that we have no thresholding here and will grow forever.

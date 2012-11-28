@@ -78,11 +78,12 @@ wtf.trace.events.create_ = wtf.ENABLE_TRACING ?
  * @param {(string|Array.<!wtf.data.Variable>)=} opt_args Additional arguments
  *     encoded with the event. This can be either variable instances or a string
  *     describing the argument list.
- * @return {wtf.trace.EventType} New event type.
+ * @return {Function} New event type.
  */
 wtf.trace.events.createInstance = function(name, opt_args) {
-  return wtf.trace.events.create_(
+  var eventType = wtf.trace.events.create_(
       name, wtf.data.EventClass.INSTANCE, 0, opt_args);
+  return eventType.append;
 };
 
 
@@ -93,9 +94,10 @@ wtf.trace.events.createInstance = function(name, opt_args) {
  * @param {(string|Array.<!wtf.data.Variable>)=} opt_args Additional arguments
  *     encoded with the event. This can be either variable instances or a string
  *     describing the argument list.
- * @return {wtf.trace.EventType} New event type.
+ * @return {Function} New event type.
  */
 wtf.trace.events.createScope = function(name, opt_args) {
-  return wtf.trace.events.create_(
+  var eventType = wtf.trace.events.create_(
       name, wtf.data.EventClass.SCOPE, 0, opt_args);
+  return eventType.append;
 };

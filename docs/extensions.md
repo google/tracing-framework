@@ -114,14 +114,14 @@ Emitting an instance event:
   // Create the event and cache the event object:
   var myEvent = wtf.trace.events.createInstance('myEvent(uint32 foo)');
   // At some point in the future, append it:
-  myEvent.append(wtf.now(), 12345);
+  myEvent(wtf.now(), 12345);
 
 Emitting a scope event:
 
   // Create the event and cache the event object:
   var myScopeEvent = wtf.trace.events.createScope('myScopeEvent(utf8 bar)');
   // Enter/leave the scope:
-  var scope = myScopeEvent.enterScope(wtf.now(), null, 'hello world');
+  var scope = myScopeEvent(wtf.now(), null, 'hello world');
   // ...
   return scope.leave(someResult);
 

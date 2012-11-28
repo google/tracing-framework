@@ -228,7 +228,7 @@ wtf.trace.providers.DomProvider.InstrumentedType = function(
 
   /**
    * A map of event type names to custom trace scope events.
-   * @type {!Object.<!wtf.trace.EventType>}
+   * @type {!Object.<Function>}
    * @private
    */
   this.eventMap_ = {};
@@ -306,7 +306,7 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
           eventMap[type] = eventType;
         }
         var wrappedEventListener = function wrappedEventListener(e) {
-          var scope = eventType.enterScope(wtf.now(), null);
+          var scope = eventType(wtf.now(), null);
           try {
             if (listener['handleEvent']) {
               // Listener is an EventListener.

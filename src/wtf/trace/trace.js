@@ -24,7 +24,7 @@ goog.require('wtf.io.MemoryWriteStream');
 goog.require('wtf.io.NullWriteStream');
 goog.require('wtf.io.StreamingHttpWriteStream');
 goog.require('wtf.io.WriteStream');
-goog.require('wtf.trace.Builtin');
+goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.NullSession');
 goog.require('wtf.trace.Scope');
@@ -349,7 +349,7 @@ wtf.trace.spanFlow = wtf.ENABLE_TRACING ?
  */
 wtf.trace.mark = wtf.ENABLE_TRACING ? function(opt_msg, opt_time) {
   var time = opt_time || wtf.now();
-  wtf.trace.Builtin.mark.append(time, opt_msg);
+  wtf.trace.BuiltinEvents.mark(time, opt_msg);
 } : goog.nullFunction;
 
 
