@@ -1,7 +1,5 @@
 (function() {
 
-console.log('Extension enabled: WebGL Capture');
-
 // Add a HUD button:
 wtf.hud.addButton({
   title: 'Capture WebGL',

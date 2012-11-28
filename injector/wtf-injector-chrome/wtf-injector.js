@@ -17,6 +17,12 @@
 (function() {
 
 
+// console.log utility that doesn't explode when it's not present.
+var log = window.console ?
+    window.console.log.bind(window.console) :
+    function() {};
+
+
 /**
  * Name of the cookie that is used to indicate injection should occur.
  * @const
@@ -85,7 +91,7 @@ if (isEnabled) {
     var url = manifestUrls[n];
     var json = getUrl(url);
     if (!json) {
-      console.log('Unable to fetch manifest JSON: ' + url);
+      log('Unable to fetch manifest JSON: ' + url);
       continue;
     }
     json = JSON.parse(json);
@@ -98,8 +104,8 @@ if (isEnabled) {
       for (var n = 0; n < tracingScripts.length; n++) {
         var scriptUrl = resolveUrl(url, tracingScripts[n]);
         if (!injectScriptFile(scriptUrl)) {
-          console.log('Error loading extension ' + url + ':');
-          console.log('Tracing script file not found: ' + scriptUrl);
+          log('Error loading extension ' + url + ':');
+          log('Tracing script file not found: ' + scriptUrl);
         }
       }
     }
@@ -136,6 +142,10 @@ if (isEnabled) {
 function startTracing(options, extensions) {
   // Register extensions.
   for (var url in extensions) {
+    var name = extensions[url]['name'];
+    if (window.console) {
+      console.log('WTF Extension Installed: ' + name + ' (' + url + ')');
+    }
     wtf.ext.registerExtension(url, extensions[url]);
   }
 
