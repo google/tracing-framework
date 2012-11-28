@@ -51,8 +51,8 @@ var options = {
   'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
   'wtf.app.endpoint': appEndpoint,
   'wtf.extensions': [
-    //'http://localhost:8080/test/extension.json'
-    //'http://localhost:8080/test/webglcapture.json'
+    //'http://localhost:8080/extensions/test/extension.json'
+    //'http://localhost:8080/extensions/webglcapture/webglcapture.json'
   ]
 };
 
