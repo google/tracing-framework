@@ -16,7 +16,6 @@ goog.provide('wtf.trace.EventType');
 goog.require('goog.asserts');
 goog.require('goog.object');
 goog.require('goog.reflect');
-goog.require('wtf.data.EventClass');
 
 
 
@@ -71,26 +70,19 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
   var builder = wtf.trace.EventType.getBuilder_();
   var fn = builder.generate(this);
 
-  // V8 optimization - always force to null before setting to a function.
-  this.append = /** @type {wtf.trace.EventType.AppendFunction} */ (null);
-  this.enterScope =
-      /** @type {wtf.trace.EventType.EnterScopeFunction} */ (null);
-
   /**
    * Append function.
-   * Only set on INSTANCE classes.
-   * @type {wtf.trace.EventType.AppendFunction}
+   * @type {Function}
    */
-  this.append =
-      eventClass == wtf.data.EventClass.INSTANCE ? fn : goog.nullFunction;
+  this.append = null;
+  // V8 optimization: always set to null before setting to a function.
+  var self = this;
+  this.append = function() {
+    return fn.apply(self, arguments);
+  };
 
-  /**
-   * Enter scope function.
-   * Only set on SCOPE classes.
-   * @type {wtf.trace.EventType.EnterScopeFunction}
-   */
-  this.enterScope =
-      eventClass == wtf.data.EventClass.SCOPE ? fn : goog.nullFunction;
+  // Expose us on the event function for others to use, if they want reflection.
+  fn['eventType'] = this;
 
   /**
    * Current count.
@@ -145,22 +137,6 @@ wtf.trace.EventType.MAX_EVENT_WIRE_ID_ = 0xFFFF;
  * @private
  */
 wtf.trace.EventType.nextEventWireId_ = 1;
-
-
-/**
- * Takes as its first argument the current time.
- * All other arguments are defined by the event.
- * @typedef {function(number, ...)}
- */
-wtf.trace.EventType.AppendFunction;
-
-
-/**
- * Takes the current time and an optional flow.
- * All other arguments are defined by the event.
- * @typedef {function(number, wtf.trace.Flow, ...):!wtf.trace.Scope}
- */
-wtf.trace.EventType.EnterScopeFunction;
 
 
 /**
@@ -243,27 +219,4 @@ wtf.trace.EventType.getNameMap = function() {
     enterTypedScope: reflectedNames[2],
     dummyScope: reflectedNames[3]
   };
-};
-
-
-/**
- * Exported method that calls into {@see #append}.
- * @param {number} time Time for the enter.
- * @param {...} var_args Scope data arguments.
- */
-wtf.trace.EventType.prototype.appendExternal = function(time, var_args) {
-  this.append.apply(this, arguments);
-};
-
-
-/**
- * Exported method that calls into {@see #enterScope}.
- * @param {number} time Time for the enter.
- * @param {wtf.trace.Flow} flow A flow to terminate on scope leave, if any.
- * @param {...} var_args Scope data arguments.
- * @return {!wtf.trace.Scope} An initialized scope object.
- */
-wtf.trace.EventType.prototype.enterScopeExternal = function(
-    time, flow, var_args) {
-  return this.enterScope.apply(this, arguments);
 };

@@ -51,9 +51,7 @@ goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
 /**
  * Generates an event tracing function.
  * @param {!wtf.trace.EventType} eventType Event type.
- * @return {(wtf.trace.EventType.AppendFunction|
- *     wtf.trace.EventType.EnterScopeFunction)} Generated function based on
- *     class.
+ * @return {Function} Generated function based on class.
  */
 wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
   // Begin building the function with default args.

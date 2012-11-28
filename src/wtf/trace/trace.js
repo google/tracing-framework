@@ -24,7 +24,7 @@ goog.require('wtf.io.MemoryWriteStream');
 goog.require('wtf.io.NullWriteStream');
 goog.require('wtf.io.StreamingHttpWriteStream');
 goog.require('wtf.io.WriteStream');
-goog.require('wtf.trace.Builtin');
+goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.NullSession');
 goog.require('wtf.trace.Scope');
@@ -307,6 +307,20 @@ wtf.trace.enterScope = wtf.ENABLE_TRACING ?
 
 
 /**
+ * Enters a tracing implementation overhead scope.
+ * This should only be used by the tracing framework and extension to indicate
+ * time used by non-user tasks.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
+ * @return {!wtf.trace.Scope} An initialized scope object.
+ */
+wtf.trace.enterTracingScope = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinEvents.enterTracingScope : function(time, opt_flow) {
+      return wtf.trace.Scope.dummy;
+    };
+
+
+/**
  * Branches the flow.
  * If no parent flow is given then the current global flow is used.
  * @param {string=} opt_msg Optional message string.
@@ -349,7 +363,7 @@ wtf.trace.spanFlow = wtf.ENABLE_TRACING ?
  */
 wtf.trace.mark = wtf.ENABLE_TRACING ? function(opt_msg, opt_time) {
   var time = opt_time || wtf.now();
-  wtf.trace.Builtin.mark.append(time, opt_msg);
+  wtf.trace.BuiltinEvents.mark(time, opt_msg);
 } : goog.nullFunction;
 
 
