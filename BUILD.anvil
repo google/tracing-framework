@@ -391,6 +391,14 @@ file_set(
         ':wtf-trace-web-api',
         ':injector',
         ],
+    src_exclude_filter='*-deps.js',
     deps=[
         #':all_js_lint',
+        ])
+
+file_set(
+    name='gh-pages',
+    srcs=[
+        ':wtf_trace_web_release',
+        'app:app_files'
         ])
