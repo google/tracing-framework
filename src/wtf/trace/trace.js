@@ -103,6 +103,7 @@ wtf.trace.shutdown = wtf.ENABLE_TRACING ? function() {
 
 /**
  * Adds a session event listener.
+ * These are retained by the trace manager for the life of the runtime.
  * @param {!wtf.trace.ISessionListener} listener Event listener.
  */
 wtf.trace.addSessionListener = wtf.ENABLE_TRACING ? function(listener) {
@@ -172,52 +173,40 @@ wtf.trace.createStream_ = function(options, opt_targetValue) {
 
 
 /**
- * Starts a new null session.
- *
+ * Starts a new tracing session.
+ * The session mode is determined by the options provided, defaulting to
+ * snapshotting. See {@code wtf.trace.mode} and {@code wtf.trace.target} for
+ * more information.
  * @param {Object=} opt_options Options overrides.
  */
-wtf.trace.startNullSession = wtf.ENABLE_TRACING ? function(opt_options) {
-  var options = wtf.trace.getOptions_(opt_options);
+wtf.trace.start = wtf.ENABLE_TRACING ? function(opt_options) {
   var traceManager = wtf.trace.getTraceManager();
-  traceManager.stop();
-  var session = new wtf.trace.NullSession(traceManager, options);
-  traceManager.start(session);
+
+  // Get combined options.
+  var options = wtf.trace.getOptions_(opt_options);
+
+  // Stop any existing sessions.
+  traceManager.stopSession();
+
+  // Create the session.
+  var session = null;
+  switch (options.getOptionalString('wtf.trace.mode')) {
+    case 'null':
+      session = new wtf.trace.NullSession(traceManager, options);
+      break;
+    default:
+    case 'snapshotting':
+      session = new wtf.trace.SnapshottingSession(traceManager, options);
+      break;
+    case 'streaming':
+      var stream = wtf.trace.createStream_(options);
+      session = new wtf.trace.StreamingSession(traceManager, stream, options);
+      break;
+  }
+
+  // Begin session.
+  traceManager.startSession(session);
 } : goog.nullFunction;
-
-
-/**
- * Starts a new streaming session.
- * The session will stream the trace log to the given stream target.
- *
- * @param {Object=} opt_options Options overrides.
- * @param {wtf.io.WriteStream|*=} opt_targetValue Stream target value.
- */
-wtf.trace.startStreamingSession = wtf.ENABLE_TRACING ? function(
-    opt_options, opt_targetValue) {
-      var options = wtf.trace.getOptions_(opt_options);
-      var traceManager = wtf.trace.getTraceManager();
-      traceManager.stop();
-      var stream = wtf.trace.createStream_(options, opt_targetValue);
-      traceManager.start(new wtf.trace.StreamingSession(
-          traceManager, stream, options));
-    } : goog.nullFunction;
-
-
-/**
- * Starts a new snapshotting session.
- * The session will snapshot the trace log when {@see wtf.trace#snapshot} is
- * called.
- *
- * @param {Object=} opt_options Options overrides.
- */
-wtf.trace.startSnapshottingSession = wtf.ENABLE_TRACING ? function(
-    opt_options) {
-      var options = wtf.trace.getOptions_(opt_options);
-      var traceManager = wtf.trace.getTraceManager();
-      traceManager.stop();
-      traceManager.start(new wtf.trace.SnapshottingSession(
-          traceManager, options));
-    } : goog.nullFunction;
 
 
 /**
@@ -246,7 +235,7 @@ wtf.trace.snapshot = wtf.ENABLE_TRACING ? function(opt_targetValue) {
  */
 wtf.trace.stop = function() {
   var traceManager = wtf.trace.getTraceManager();
-  traceManager.stop();
+  traceManager.stopSession();
 };
 
 // TODO(benvanik): add an onunload to flush the session

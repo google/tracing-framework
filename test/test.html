@@ -10,7 +10,7 @@
     };
     wtf.trace.prepare();
     wtf.hud.prepare(options);
-    wtf.trace.startSnapshottingSession(options);
+    wtf.trace.start(options);
   </script>
 
   <br/>
@@ -101,7 +101,7 @@
               'control total: ' + duration + ', per fn: ' + (duration / count));
         }
 
-        wtf.trace.startSnapshottingSession();
+        wtf.trace.start();
 
         var meanDuration = 0;
         for (var n = 0; n < runCount; n++) {
@@ -119,7 +119,7 @@
             (meanDuration / count / 2));
 
         wtf.trace.stop();
-        wtf.trace.startSnapshottingSession();
+        wtf.trace.start();
 
         var meanDuration = 0;
         for (var n = 0; n < runCount; n++) {
@@ -137,7 +137,7 @@
             (meanDuration / count / 2));
 
         wtf.trace.stop();
-        wtf.trace.startSnapshottingSession();
+        wtf.trace.start();
       };
     };
   </script>

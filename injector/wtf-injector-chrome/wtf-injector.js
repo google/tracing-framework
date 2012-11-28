@@ -143,15 +143,7 @@ function startTracing(options, extensions) {
   wtf.hud.prepare(options);
 
   // Start recording.
-  switch (options['wtf.trace.mode']) {
-    default:
-    case 'snapshotting':
-      wtf.trace.startSnapshottingSession(options);
-      break;
-    case 'streaming':
-      wtf.trace.startStreamingSession(options);
-      break;
-  }
+  wtf.trace.start(options);
 };
 
 
