@@ -17,7 +17,6 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
-goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
@@ -384,8 +383,10 @@ wtf.hud.Overlay.prototype.addButton_ = function(
   }
 
   // Click handler.
-  this.getHandler().listen(el,
-      goog.events.EventType.CLICK, callback, false, opt_scope || this);
+  // We add this event directly to ensure we don't accidentally log it.
+  el.onclick = wtf.trace.ignoreListener(function() {
+    callback.call(opt_scope);
+  });
 
   // Measure and update extents.
   var splitterSize = this.getSplitterSize();
