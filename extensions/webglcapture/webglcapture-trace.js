@@ -12,6 +12,12 @@ wtf.hud.addButton({
 });
 
 
+// When enabled compressed images (via XHR) will be placed in the trace instead
+// of raw ones. This will cost a signficant amount of time but result in smaller
+// trace files. Do not use this when performance matters.
+var SUPPORT_COMPRESSED_UPLOADS = false;
+
+
 function loseContext(context) {
   context['__forcedLost'] = true;
   var e = new WebGLContextEvent('webglcontextlost', {
@@ -441,10 +447,12 @@ function instrumentContext(raw) {
     }
     return pixels;
   };
+  var canvasCache = {};
   function extractImageData(el, internalformat) {
     var width = el.width;
     var height = el.height;
-    if ((el instanceof HTMLImageElement || el instanceof Image) &&
+    if (SUPPORT_COMPRESSED_UPLOADS &&
+        (el instanceof HTMLImageElement || el instanceof Image) &&
         el.src.indexOf('blob:') != 0) {
       // Synchronous XHR to get the image in compressed form.
       // HEAD first to get the mime type.
@@ -507,10 +515,19 @@ function instrumentContext(raw) {
       };
     } else {
       // Canvas/video/etc need to be encoded as pixels.
-      var canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      var key = width + 'x' + height;
+      var canvas = canvasCache[key];
+      var needsClear = !!canvas;
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvasCache[key] = canvas;
+      }
       var ctx = canvas.getContext('raw-2d');
+      if (needsClear) {
+        ctx.clearRect(0, 0, width, height);
+      }
       ctx.drawImage(el, 0, 0);
       var id = ctx.getImageData(0, 0, width, height);
       var pixels = getPixelsFromImageData(
