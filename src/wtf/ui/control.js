@@ -57,6 +57,13 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   goog.style.setUnselectable(this.rootElement_, true);
 
   /**
+   * DOM elements that should be removed when this control is removed.
+   * @type {!Array.<!Element>}
+   * @private
+   */
+  this.relatedElements_ = [];
+
+  /**
    * Event handler.
    * Lazily initialized.
    * @type {goog.events.EventHandler}
@@ -75,6 +82,18 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   this.enterDocument(this.parentElement_);
 };
 goog.inherits(wtf.ui.Control, wtf.events.EventEmitter);
+
+
+/**
+ * @override
+ */
+wtf.ui.Control.prototype.disposeInternal = function() {
+  for (var n = 0; n < this.relatedElements_.length; n++) {
+    this.dom_.removeNode(this.relatedElements_[n]);
+  }
+  this.dom_.removeNode(this.rootElement_);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -114,6 +133,17 @@ wtf.ui.Control.prototype.getChildElement = function(className) {
   var value = this.dom_.getElementByClass(className, this.rootElement_);
   goog.asserts.assert(value);
   return /** @type {!Element} */ (value);
+};
+
+
+/**
+ * Registers a related DOM element that will be removed from the DOM when
+ * this control is disposed.
+ * @param {!Element} el Element to remove.
+ * @protected
+ */
+wtf.ui.Control.prototype.addRelatedElement = function(el) {
+  this.relatedElements_.push(el);
 };
 
 

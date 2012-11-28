@@ -44,9 +44,10 @@ wtf.hud.SettingsDialog = function(options, parentElement, opt_dom) {
   // Note that we don't use GSS so that we can avoid another file dependency
   // and renaming issues.
   var dom = this.getDom();
-  dom.appendChild(this.getParentElement(),
-      /** @type {!Element} */ (goog.soy.renderAsFragment(
-          wtf.hud.settingsdialog.style, undefined, undefined, dom)));
+  var styleEl = /** @type {!Element} */ (goog.soy.renderAsFragment(
+      wtf.hud.settingsdialog.style, undefined, undefined, dom));
+  this.addRelatedElement(styleEl);
+  dom.appendChild(this.getParentElement(), styleEl);
 
   var eh = this.getHandler();
   eh.listen(
