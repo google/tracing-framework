@@ -37,6 +37,9 @@ wtf.hud.overlay_ = null;
  * @param {Element=} opt_parentElement Element to display in.
  */
 wtf.hud.prepare = function(opt_options, opt_parentElement) {
+  // Always call tracing prepare to ensure it's ready before we run.
+  wtf.trace.prepare();
+
   // Only one HUD per page.
   goog.dispose(wtf.hud.overlay_);
   wtf.hud.overlay_ = null;

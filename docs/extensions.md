@@ -58,18 +58,29 @@ the scripts and wiring up the runtime features.
 When manually embedding the tracing framework (via a `<script>` tag) one must
 also manually embed the extension scripts and register their manifests:
 
-    <script src="wtf_tracing_embed.js"></script>
+    <script src="wtf_trace_web_js_compiled.js"></script>
+    <script>
+      wtf.trace.prepare();
+    </script>
     <script src="my/extension1/fileA.js"></script>
     <script src="my/extension1/fileB.js"></script>
     <script>
       wtf.ext.registerExtension('my/extension1/extension1.json');
+    </script>
+    <script>
+      var options = {...};
+      wtf.hud.prepare(options);
+      wtf.trace.start(options);
     </script>
 
 Note that `registerExtension` will only accept URLs that are either on the same
 domain or have proper CORS headers. If you need to use cross-origin manifests
 you can also pass the JSON object directly to `registerExtension`:
 
-    <script src="wtf_tracing_embed.js"></script>
+    <script src="wtf_trace_web_js_compiled.js"></script>
+    <script>
+      wtf.trace.prepare();
+    </script>
     <script src="my/extension1/fileA.js"></script>
     <script src="my/extension1/fileB.js"></script>
     <script>
@@ -77,6 +88,11 @@ you can also pass the JSON object directly to `registerExtension`:
         "name": "My Extension",
         ...
       });
+    </script>
+    <script>
+      var options = {...};
+      wtf.hud.prepare(options);
+      wtf.trace.start(options);
     </script>
 
 ### Scripts
