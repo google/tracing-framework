@@ -41,7 +41,7 @@ tried to run it uncompiled in a page with its own content.
 
     # Build release and deploy a zip
     anvil deploy -o build-bin/ :injector
-    # Load build-bin/wtf-injector-chrome/wtf-injector-chrome.zip as an unpacked extension in Chrome or uplaod to the CWS
+    # Load build-bin/wtf-injector-chrome/wtf-injector-chrome.zip as an unpacked extension in Chrome or upload to the CWS
 
 ### App
 
