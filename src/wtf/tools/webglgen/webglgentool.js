@@ -50,7 +50,6 @@ wtf.tools.webglgen.WebGLGenTool.prototype.run = function(args) {
 
   var argTable = this.buildArgTable_();
 
-  var currentFrame = null;
   var frameStart = 0;
   var frameNumber = 0;
 
@@ -69,28 +68,24 @@ wtf.tools.webglgen.WebGLGenTool.prototype.run = function(args) {
       frameStart = timebase;
     },
 
-    'timing.requestAnimationFrame.callback': function(e) {
+    'timing.frameStart': function(e) {
       log('}, [' + resources.join(', ') + ']);');
       resources.length = 0;
+      frameNumber = e.args['number'];
       log('frame(' +
           frameNumber + ', ' +
           '"' + wtf.tools.util.formatTime(e.time) + '"' +
           ', function(ctxs, objs, resources) {');
       log('  var result;');
       log('  var gl = ctxs[' + currentContext + '];');
-      currentFrame = e.scope;
       frameStart = e.time;
-      frameNumber++;
     },
-    'wtf.scope.leave': function(e) {
-      if (e.scope == currentFrame) {
-        log('}, [' + resources.join(', ') + '], "' + wtf.tools.util.formatTime(e.time) + '");');
-        resources.length = 0;
-        currentFrame = null;
-        log('intraFrame(function(ctxs, objs, resources) {');
-        log('  var result;');
-        log('  var gl = ctxs[' + currentContext + '];');
-      }
+    'timing.frameEnd': function(e) {
+      log('}, [' + resources.join(', ') + '], "' + wtf.tools.util.formatTime(e.time) + '");');
+      resources.length = 0;
+      log('intraFrame(function(ctxs, objs, resources) {');
+      log('  var result;');
+      log('  var gl = ctxs[' + currentContext + '];');
     },
 
     'webglcapture.createContext': function(e) {
