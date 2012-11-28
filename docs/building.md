@@ -26,17 +26,13 @@
 
 ### Injector
 
-#### Debug
+The only way to use the injector is to compile a release build. This is because
+of all the namespace conflicts and other issues that would come about if you
+tried to run it uncompiled in a page with its own content.
 
-    # Deploy a debug build
-    anvil deploy -o build-bin/injector/ extensions/chrome/injector:deploy
-    # Load build-bin/injector/ as an unpacked extension in Chrome
-
-#### Release
-
-    # Build a full release
-    anvil build :release
-    # Upload build-out/extensions/chrome/injector/wtf-chrome-extension.zip
+    # Build release and deploy a zip
+    anvil deploy -o build-bin/ :injector
+    # Load build-bin/wtf-injector-chrome/wtf-injector-chrome.zip as an unpacked extension in Chrome or uplaod to the CWS
 
 ### App
 
