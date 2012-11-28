@@ -11,13 +11,13 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.trace.TimingProvider');
+goog.provide('wtf.trace.providers.TimingProvider');
 
 goog.require('goog.array');
 goog.require('wtf');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
-goog.require('wtf.trace.Timing');
+goog.require('wtf.trace.events');
 
 
 
@@ -28,26 +28,30 @@ goog.require('wtf.trace.Timing');
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.TimingProvider = function() {
+wtf.trace.providers.TimingProvider = function() {
   goog.base(this);
 
   this.injectTimeouts_();
   this.injectSetImmediate_();
   this.injectRequestAnimationFrame_();
 };
-goog.inherits(wtf.trace.TimingProvider, wtf.trace.Provider);
+goog.inherits(wtf.trace.providers.TimingProvider, wtf.trace.Provider);
 
 
 /**
  * Injects setTimeout/setInterval/related functions.
  * @private
  */
-wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
+wtf.trace.providers.TimingProvider.prototype.injectTimeouts_ = function() {
   // TODO(benvanik): would be nice to track timeoutIds so we could cancel
   // the flow that was started when the timeout was scheduled (or link it
   // to here so the user knows why).
 
   // window.setTimeout
+  var setTimeoutEvent = wtf.trace.events.createInstance(
+      'window#setTimeout(uint32 delay, uint32 timeoutId)');
+  var setTimeoutCallbackEvent = wtf.trace.events.createScope(
+      'window#setTimeout:callback(uint32 timeoutId)');
   var originalSetTimeout = goog.global['setTimeout'];
   this.injectFunction(goog.global, 'setTimeout',
       function setTimeout(funcOrCode, delay) {
@@ -61,7 +65,7 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
         // Flow-spanning logic.
         var flow; // NOTE: flow is branched below so event order is correct
         var timeoutId = originalSetTimeout.call(goog.global, function() {
-          var scope = wtf.trace.Timing.setTimeoutCallback.enterScope(
+          var scope = setTimeoutEvent.enterScope(
               wtf.now(), flow, timeoutIdRef[0]);
           try {
             // Support both functions and strings as callbacks.
@@ -79,7 +83,7 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
         timeoutIdRef[0] = timeoutId;
 
         // Append event (making it easy to identify setTimeouts).
-        wtf.trace.Timing.setTimeout.append(wtf.now(), delay, timeoutId);
+        setTimeoutEvent.append(wtf.now(), delay, timeoutId);
 
         // Branch flow after the setTimeout so that the event order looks right.
         flow = wtf.trace.branchFlow();
@@ -88,6 +92,8 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
       });
 
   // window.clearTimeout
+  var clearTimeoutEvent = wtf.trace.events.createInstance(
+      'window#clearTimeout(uint32 timeoutId)');
   var originalClearTimeout = goog.global['clearTimeout'];
   this.injectFunction(goog.global, 'clearTimeout',
       function clearTimeout(timeoutId) {
@@ -95,10 +101,14 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
         originalClearTimeout.call(goog.global, timeoutId);
 
         // Append event.
-        wtf.trace.Timing.clearTimeout.append(wtf.now(), timeoutId);
+        clearTimeoutEvent.append(wtf.now(), timeoutId);
       });
 
   // window.setInterval
+  var setIntervalEvent = wtf.trace.events.createInstance(
+      'window#setInterval(uint32 delay, uint32 intervalId)');
+  var setIntervalCallbackEvent = wtf.trace.events.createScope(
+      'window#setInterval:callback(uint32 intervalId)');
   var originalSetInterval = goog.global['setInterval'];
   this.injectFunction(goog.global, 'setInterval',
       function setInterval(funcOrCode, delay) {
@@ -115,7 +125,7 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
         // NOTE: flow is branched below so event order is correct
         var flowRef = [];
         var intervalId = originalSetInterval.call(goog.global, function() {
-          var scope = wtf.trace.Timing.setIntervalCallback.enterScope(
+          var scope = setIntervalCallbackEvent.enterScope(
               wtf.now(), flowRef[0], intervalIdRef[0]);
           try {
             // Support both functions and strings as callbacks.
@@ -136,7 +146,7 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
         intervalIdRef[0] = intervalId;
 
         // Append event (making it easy to identify setTimeouts).
-        wtf.trace.Timing.setInterval.append(wtf.now(), delay, intervalId);
+        setIntervalEvent.append(wtf.now(), delay, intervalId);
 
         // Branch flow after the setInterval so that the event order looks
         // right.
@@ -146,6 +156,8 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
       });
 
   // window.clearInterval
+  var clearIntervalEvent = wtf.trace.events.createInstance(
+      'window#clearInterval(uint32 intervalId)');
   var originalClearInterval = goog.global['clearInterval'];
   this.injectFunction(goog.global, 'clearInterval',
       function clearInterval(intervalId) {
@@ -153,7 +165,7 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
         originalClearInterval.call(goog.global, intervalId);
 
         // Append event.
-        wtf.trace.Timing.clearInterval.append(wtf.now(), intervalId);
+        clearIntervalEvent.append(wtf.now(), intervalId);
       });
 };
 
@@ -162,7 +174,7 @@ wtf.trace.TimingProvider.prototype.injectTimeouts_ = function() {
  * Injects setImmediate functions.
  * @private
  */
-wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
+wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
   // Only IE now, prefixed 'msSetImmediate'
 
   // window.setImmediate
@@ -170,6 +182,10 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
   if (!originalSetImmediate) {
     return;
   }
+  var setImmediateEvent = wtf.trace.events.createInstance(
+      'window#setImmediate(uint32 immediateId)');
+  var setImmediateCallbackEvent = wtf.trace.events.createScope(
+      'window#setImmediate:callback(uint32 immediateId)');
   this.injectFunction(goog.global, 'msSetImmediate',
       function msSetImmediate(funcOrCode) {
         // Some people pass args to setImmediate - this unfortunately
@@ -182,7 +198,7 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
         // Flow-spanning logic.
         var flow; // NOTE: flow is branched below so event order is correct
         var immediateId = originalSetImmediate.call(goog.global, function() {
-          var scope = wtf.trace.Timing.setImmediateCallback.enterScope(
+          var scope = setImmediateCallbackEvent.enterScope(
               wtf.now(), flow, immediateIdRef[0]);
           try {
             // Support both functions and strings as callbacks.
@@ -200,7 +216,7 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
         immediateIdRef[0] = immediateId;
 
         // Append event (making it easy to identify setImmediates).
-        wtf.trace.Timing.setImmediate.append(wtf.now(), immediateId);
+        setImmediateEvent.append(wtf.now(), immediateId);
 
         // Branch flow after the setImmediate so that the event order looks
         // right.
@@ -210,6 +226,8 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
       });
 
   // window.clearImmediate
+  var clearImmediateEvent = wtf.trace.events.createInstance(
+      'window#clearImmediate(uint32 immediateId)');
   var originalClearImmediate = goog.global['msClearInterval'];
   this.injectFunction(goog.global, 'msClearImmediate',
       function msClearImmediate(immediateId) {
@@ -217,7 +235,7 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
         originalClearImmediate.call(goog.global, immediateId);
 
         // Append event.
-        wtf.trace.Timing.clearImmediate.append(wtf.now(), immediateId);
+        clearImmediateEvent.append(wtf.now(), immediateId);
       });
 };
 
@@ -228,7 +246,7 @@ wtf.trace.TimingProvider.prototype.injectSetImmediate_ = function() {
  * @type {!Array.<string>}
  * @private
  */
-wtf.trace.TimingProvider.RAF_NAMES_ = [
+wtf.trace.providers.TimingProvider.RAF_NAMES_ = [
   'requestAnimationFrame', 'cancelAnimationFrame',
   'mozRequestAnimationFrame', 'mozCancelAnimationFrame',
   'msRequestAnimationFrame', 'msCAncelAnimationFrame',
@@ -241,16 +259,32 @@ wtf.trace.TimingProvider.RAF_NAMES_ = [
  * Injects rAF functions.
  * @private
  */
-wtf.trace.TimingProvider.prototype.injectRequestAnimationFrame_ = function() {
+wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrame_ =
+    function() {
   // Due to fun JS closure capture rules these loops defer to other functions.
+
+  // Events used by rAF - created once to prevent duplicates.
+  var events = {
+    frameStart: wtf.trace.events.createInstance(
+        'timing.frameStart(uint32 number)'),
+    frameEnd: wtf.trace.events.createInstance(
+        'timing.frameEnd(uint32 number, uint32 duration)'),
+    requestAnimationFrame: wtf.trace.events.createInstance(
+        'window#requestAnimationFrame(uint32 handle)'),
+    requestAnimationFrameCallback: wtf.trace.events.createScope(
+        'window#requestAnimationFrame:callback(uint32 handle)'),
+    cancelAnimationFrame: wtf.trace.events.createInstance(
+        'window#cancelAnimationFrame(uint32 handle)')
+  };
 
   // window.requestAnimationFrame
   // window.cancelAnimationFrame
-  for (var n = 0; n < wtf.trace.TimingProvider.RAF_NAMES_.length / 2; n += 2) {
-    var requestName = wtf.trace.TimingProvider.RAF_NAMES_[n];
-    var cancelName = wtf.trace.TimingProvider.RAF_NAMES_[n + 1];
+  var rafNames = wtf.trace.providers.TimingProvider.RAF_NAMES_;
+  for (var n = 0; n < rafNames.length / 2; n += 2) {
+    var requestName = rafNames[n];
+    var cancelName = rafNames[n + 1];
     if (goog.global[requestName]) {
-      this.injectRequestAnimationFrameFn_(requestName, cancelName);
+      this.injectRequestAnimationFrameFn_(requestName, cancelName, events);
     }
   }
 };
@@ -260,10 +294,11 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrame_ = function() {
  * Injects requestAnimationFrame.
  * @param {string} requestName Name of the requestAnimationFrame method.
  * @param {string} cancelName Name of the cancelAnimationFrame method.
+ * @param {!Object.<!wtf.trace.EventType>} events rAF events.
  * @private
  */
-wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
-    function(requestName, cancelName) {
+wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
+    function(requestName, cancelName, events) {
   var frameNumber = 0;
   var frameStart = 0;
   var pendingRafs = [];
@@ -286,10 +321,10 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
         frameRafs.push.apply(frameRafs, pendingRafs);
         pendingRafs.length = 0;
         frameStart = now;
-        wtf.trace.Timing.frameStart.append(now, frameNumber);
+        events.frameStart.append(now, frameNumber);
       }
 
-      var scope = wtf.trace.Timing.requestAnimationFrameCallback.enterScope(
+      var scope = events.requestAnimationFrameCallback.enterScope(
           now, flow, handleRef[0]);
       try {
         cb.apply(this, arguments);
@@ -299,7 +334,7 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
         if (frameRafs[frameRafs.length - 1] == handleRef[0]) {
           now = wtf.now();
           var duration = ((now - frameStart) * 1000) >>> 0;
-          wtf.trace.Timing.frameEnd.append(now, frameNumber, duration);
+          events.frameEnd.append(now, frameNumber, duration);
           frameRafs.length = 0;
         }
 
@@ -312,7 +347,7 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
     pendingRafs.push(handle);
 
     // Append event (making it easy to identify requestAnimationFrames).
-    wtf.trace.Timing.requestAnimationFrame.append(wtf.now(), handle);
+    events.requestAnimationFrame.append(wtf.now(), handle);
 
     // Branch flow after the requestAnimationFrame so that the event order looks
     // right.
@@ -331,7 +366,7 @@ wtf.trace.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
     originalCancelAnimationFrame.call(goog.global, handle);
 
     // Append event.
-    wtf.trace.Timing.cancelAnimationFrame.append(wtf.now(), handle);
+    events.cancelAnimationFrame.append(wtf.now(), handle);
   };
   // NOTE: some browsers don't implement cancel.
   if (originalCancelAnimationFrame) {

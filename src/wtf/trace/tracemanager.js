@@ -57,6 +57,8 @@ wtf.trace.ISessionListener.prototype.sessionStopped = goog.nullFunction;
  * @extends {goog.Disposable}
  */
 wtf.trace.TraceManager = function() {
+  goog.base(this);
+
   /**
    * Session event listeners.
    * @type {!Array.<!wtf.trace.ISessionListener>}
@@ -311,7 +313,7 @@ wtf.trace.TraceManager.prototype.getCurrentSession = function() {
  *
  * @param {!wtf.trace.Session} session New session.
  */
-wtf.trace.TraceManager.prototype.start = function(session) {
+wtf.trace.TraceManager.prototype.startSession = function(session) {
   goog.asserts.assert(!this.currentSession_);
 
   this.currentSession_ = session;
@@ -340,7 +342,7 @@ wtf.trace.TraceManager.prototype.start = function(session) {
 /**
  * Stops the current session.
  */
-wtf.trace.TraceManager.prototype.stop = function() {
+wtf.trace.TraceManager.prototype.stopSession = function() {
   // Notify listeners.
   if (this.currentSession_) {
     for (var n = 0; n < this.listeners_.length; n++) {

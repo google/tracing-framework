@@ -70,20 +70,6 @@ if (!COMPILED) {
 }
 
 
-// TODO(benvanik): figure out why this doesn't work in compiled mode
-/**
- * Regex for parsing signatures into names and parameters.
- * <code>
- * 'a.b.c(<params>)'
- * ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
- * </code>
- * @const
- * @type {RegExp}
- * @private
- */
-wtf.trace.SIGNATURE_REGEX_ = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/;
-
-
 /**
  * Automatically instruments a method.
  * This will likely produce code slower than manually instrumenting, but is
@@ -109,27 +95,16 @@ wtf.trace.SIGNATURE_REGEX_ = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/;
 wtf.trace.instrument = function(value, signature, opt_namePrefix,
     opt_generator, opt_pre) {
   // Parse signature.
-  //var signatureParts = wtf.trace.SIGNATURE_REGEX_.exec(signature);
-  var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(signature);
-  var signatureName = signatureParts[1]; // entire name before ()
-  var signatureArgs = signatureParts[3]; // contents of () (excluding ())
-
-  // Build argument mapping.
-  var argMap = null;
-  var argList = null;
-  if (signatureArgs) {
-    argMap = wtf.data.Variable.parseSignatureArguments(signatureArgs);
-    argList = [];
-    for (var n = 0; n < argMap.length; n++) {
-      argList.push(argMap[n].variable);
-    }
-  }
-
-  // Define a custom event type at runtime.
+  var parsedSignature = wtf.data.Variable.parseSignature(signature);
+  var signatureName = parsedSignature.name;
+  var argMap = parsedSignature.argMap;
   if (opt_namePrefix) {
     signatureName = opt_namePrefix + signatureName;
   }
-  var customEvent = wtf.trace.events.createScope(signatureName, argList);
+
+  // Define a custom event type at runtime.
+  var customEvent = wtf.trace.events.createScope(
+      signatureName, parsedSignature.args);
   goog.asserts.assert(customEvent);
 
   // TODO(benvanik): use a FunctionBuilder to generate the argument stuff from
@@ -221,10 +196,8 @@ wtf.trace.instrumentType = function(value, constructorSignature, methodMap) {
   newValue['uninstrumented'] = value;
 
   // Parse signature to get the type name.
-  //var signatureParts = wtf.trace.SIGNATURE_REGEX_.exec(constructorSignature);
-  var signatureParts = /^([a-zA-Z0-9_\.]+)(\((.*)\)$)?/.exec(
-      constructorSignature);
-  var typeName = signatureParts[1]; // entire name before ()
+  var parsedSignature = wtf.data.Variable.parseSignature(constructorSignature);
+  var typeName = parsedSignature.name;
 
   // Instrument all methods.
   var proto = newValue.prototype;

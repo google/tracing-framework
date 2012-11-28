@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.trace.DomProvider');
+goog.provide('wtf.trace.providers.DomProvider');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
@@ -27,19 +27,19 @@ goog.require('wtf.trace.events');
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.DomProvider = function() {
+wtf.trace.providers.DomProvider = function() {
   goog.base(this);
 
   this.injectEvents_();
 };
-goog.inherits(wtf.trace.DomProvider, wtf.trace.Provider);
+goog.inherits(wtf.trace.providers.DomProvider, wtf.trace.Provider);
 
 
 /**
  * Injects event handler overrides on DOM event targets.
  * @private
  */
-wtf.trace.DomProvider.prototype.injectEvents_ = function() {
+wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   var domTypes = [
     'Audio',
     'Document',
@@ -125,8 +125,9 @@ wtf.trace.DomProvider.prototype.injectEvents_ = function() {
     var classConstructor = goog.global[typeName];
     if (classConstructor) {
       var classPrototype = classConstructor.prototype;
-      var instrumentedType = new wtf.trace.DomProvider.InstrumentedType(
-          typeName, classConstructor, classPrototype);
+      var instrumentedType =
+          new wtf.trace.providers.DomProvider.InstrumentedType(
+              typeName, classConstructor, classPrototype);
       this.registerDisposable(instrumentedType);
       instrumentedTypeMap[typeName] = instrumentedType;
     }
@@ -192,7 +193,7 @@ wtf.trace.DomProvider.prototype.injectEvents_ = function() {
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.trace.DomProvider.InstrumentedType = function(
+wtf.trace.providers.DomProvider.InstrumentedType = function(
     name, classConstructor, classPrototype) {
   goog.base(this);
 
@@ -237,13 +238,15 @@ wtf.trace.DomProvider.InstrumentedType = function(
     this.injectEventTarget_();
   }
 };
-goog.inherits(wtf.trace.DomProvider.InstrumentedType, goog.Disposable);
+goog.inherits(wtf.trace.providers.DomProvider.InstrumentedType,
+    goog.Disposable);
 
 
 /**
  * @override
  */
-wtf.trace.DomProvider.InstrumentedType.prototype.disposeInternal = function() {
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.disposeInternal =
+    function() {
   // Restore all injections.
   for (var n = 0; n < this.injections_.length; n++) {
     var injection = this.injections_[n];
@@ -260,7 +263,7 @@ wtf.trace.DomProvider.InstrumentedType.prototype.disposeInternal = function() {
  * @param {!Function} value New value.
  * @private
  */
-wtf.trace.DomProvider.InstrumentedType.prototype.injectFunction_ =
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectFunction_ =
     function(target, name, value) {
   var original = target[name];
   this.injections_.push({
@@ -277,7 +280,7 @@ wtf.trace.DomProvider.InstrumentedType.prototype.injectFunction_ =
  * Injects the EventTarget methods such as addEventListener.
  * @private
  */
-wtf.trace.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
     function() {
   // TODO(benvanik): allow for extraction of event properties
   // Maybe use signature like args? eg:
@@ -338,7 +341,7 @@ wtf.trace.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
  * Adds on* event hooks to the given object.
  * @param {!Object} target Target object.
  */
-wtf.trace.DomProvider.InstrumentedType.prototype.injectObjectEvents =
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectObjectEvents =
     function(target) {
   var prefix = this.name_;
   var eventMap = this.eventMap_;

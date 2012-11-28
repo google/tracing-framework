@@ -17,31 +17,65 @@ var fs = require('fs');
 var path = require('path');
 var vm = require('vm');
 
+// Load WTF binary. Search a few paths.
+// TODO(benvanik): look in ENV?
+var searchPaths = [
+  '.',
+  './build-out',
+  '../build-out'
+];
+var wtfPath = null;
+for (var n = 0; n < searchPaths.length; n++) {
+  var searchPath = path.join(searchPaths[n], 'wtf_trace_node_js_compiled.js');
+  if (fs.existsSync(searchPath)) {
+    wtfPath = searchPath;
+    break;
+  }
+}
+if (!wtfPath) {
+  console.log('Unable to find wtf_trace_node_js_compiled.js');
+  process.exit(-1);
+  return;
+}
+require(path.join(process.cwd(), wtfPath.replace('.js', '')));
 
-// // Import Closure Library and deps.js.
-// require('../src/wtf/bootstrap/node').importClosureLibrary([
-//   'wtf_js-deps.js'
-// ]);
-
-// // Disable asserts to reduce performance impact.
-// goog.DEBUG = false;
-// goog.require('goog.asserts');
-// goog.asserts.assert = function(condition) {
-//   return condition;
-// };
-
-// // Load WTF and configure options.
-// goog.require('wtf');
-// wtf.NODE = true;
-// goog.require('wtf.trace.exports');
-
-require('../build-out/wtf_trace_node_js_compiled');
-console.log(wtf);
-
+// Load the target script file.
 var filename = path.join(process.cwd(), process.argv[2]);
-var args = process.argv.slice(3);
 var code = fs.readFileSync(filename, 'utf8');
 
-vm.runInThisContext(code, filename);
+// Setup process arguments to strip our run script.
+// TODO(benvanik): look for -- to split args/etc
+var args = process.argv.slice(3);
+process.argv = args;
+// TODO(benvanik): setup options from command line/etc?
+var options = {
+  'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
+  'wtf.trace.mode': 'snapshotting',
+  'wtf.trace.target': 'file://node'
+};
 
-process.exit(0);
+// Prepare tracing framework.
+wtf.trace.prepare();
+wtf.trace.start(options);
+
+// Setup process shutdown hook to snapshot/flush.
+process.on('exit', function () {
+  // Snapshot and retrieve the resulting buffers.
+  var buffers = [];
+  wtf.trace.snapshot(buffers);
+  wtf.trace.stop();
+
+  // Extract and convert buffers and write to disk.
+  for (var n = 0; n < buffers.length; n++) {
+    var buffer = buffers[n];
+    var nodeBuffer = new Buffer(buffer.length);
+    for (var i = 0; i < buffer.length; i++) {
+      nodeBuffer[i] = buffer[i];
+    }
+    // TODO(benvanik): use wtf.trace.target
+    fs.writeFileSync('node.wtf-trace', nodeBuffer);
+  }
+});
+
+// Execute the user script.
+vm.runInThisContext(code, filename);

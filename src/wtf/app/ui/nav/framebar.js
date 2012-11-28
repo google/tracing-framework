@@ -265,7 +265,7 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
 
     // Go to frame.
     // TODO(benvanik): move to document view?
-    var frameIndex = this.db_.getEventIndex('browser.timing.frameEnd');
+    var frameIndex = this.db_.getEventIndex('timing.frameEnd');
     if (frameIndex) {
       frameIndex.forEach(0, Number.MAX_VALUE, function(e) {
         if (e.args['number'] == result) {

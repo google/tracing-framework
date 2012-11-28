@@ -19,8 +19,8 @@ loaded at runtime and can provide tracing or visualization functionality.
 ## Tracing
 
 Tracing options change the behavior of the core tracing library and
-instrumentation providers. They can be specified as a value to any one of the
-`wtf.trace.start*` methods or by the global override object `wtf_trace_options`.
+instrumentation providers. They can be specified as a value to the
+`wtf.trace.start` method or by the global override object `wtf_trace_options`.
 
 ### wtf.trace.mode
 

@@ -101,7 +101,7 @@ wtf.trace.Scope.enter = function(opt_msg, opt_flow, opt_time) {
 
   // Append event.
   var time = opt_time || wtf.now();
-  wtf.trace.Builtin.enterScope.append(time, opt_msg);
+  wtf.trace.Builtin.enterScope.enterScope(time, opt_flow, opt_msg);
 
   // Extend flow, if present.
   if (opt_flow) {

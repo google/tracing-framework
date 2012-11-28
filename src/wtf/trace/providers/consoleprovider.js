@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.trace.ConsoleProvider');
+goog.provide('wtf.trace.providers.ConsoleProvider');
 
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
@@ -24,19 +24,19 @@ goog.require('wtf.trace.Provider');
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.ConsoleProvider = function() {
+wtf.trace.providers.ConsoleProvider = function() {
   goog.base(this);
 
   this.injectConsoleProfiling_();
 };
-goog.inherits(wtf.trace.ConsoleProvider, wtf.trace.Provider);
+goog.inherits(wtf.trace.providers.ConsoleProvider, wtf.trace.Provider);
 
 
 /**
  * Injects console.time/timeEnd functions.
  * @private
  */
-wtf.trace.ConsoleProvider.prototype.injectConsoleProfiling_ =
+wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ =
     function() {
   // Don't impersonate console - that would trick code that was looking for more
   // than we implement.

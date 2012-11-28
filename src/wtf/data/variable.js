@@ -861,3 +861,41 @@ wtf.data.Variable.parseSignatureArguments = function(argsString) {
 
   return argMap;
 };
+
+
+/**
+ * Parses a signature string and returns the parts.
+ * The signature can be of any one of the given forms:
+ * {@code namespace.someMethod}, {@code someMethod(uint8 a)},
+ * {@code someMethod(uint8 a@4)}, etc.
+ * @param {string} signature Signature string.
+ * @return {{
+ *   name: string,
+ *   args: !Array.<!wtf.data.Variable>,
+ *   argMap: !Array.<{ordinal: number, variable: !wtf.data.Variable}>
+ * }}
+ */
+wtf.data.Variable.parseSignature = function(signature) {
+  // Split signature.
+  // 'a.b.c(<params>)'
+  // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
+  var signatureParts = /^([a-zA-Z0-9_\.#:]+)(\((.*)\)$)?/.exec(signature);
+  var signatureName = signatureParts[1]; // entire name before ()
+  var signatureArgs = signatureParts[3]; // contents of () (excluding ())
+
+  // Build argument mapping.
+  var argMap = [];
+  var argList = [];
+  if (signatureArgs) {
+    argMap = wtf.data.Variable.parseSignatureArguments(signatureArgs);
+    for (var n = 0; n < argMap.length; n++) {
+      argList.push(argMap[n].variable);
+    }
+  }
+
+  return {
+    name: signatureName,
+    args: argList,
+    argMap: argMap
+  };
+};
