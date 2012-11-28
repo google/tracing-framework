@@ -19,7 +19,7 @@ strip_comments(
 file_set(
     name='tracing_files',
     srcs=[
-        '../../..:wtf_trace_web_js_compiled',
+        '../..:wtf_trace_web_js_compiled',
         ])
 
 file_set(
@@ -35,10 +35,10 @@ file_set(
 copy_files(
     name='deploy',
     srcs=[':extension_files'],
-    out='../../../injector/',
-    flatten_paths=['extensions/chrome/injector/'])
+    out='../../wtf-injector-chrome/',
+    flatten_paths=['injector/wtf-injector-chrome/'])
 
 archive_files(
-    name='wtf-chrome-extension',
+    name='wtf-injector-chrome',
     srcs=':extension_files',
-    flatten_paths=['extensions/chrome/injector/'])
+    flatten_paths=['injector/wtf-injector-chrome/'])
