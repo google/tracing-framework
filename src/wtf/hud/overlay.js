@@ -347,11 +347,16 @@ wtf.hud.Overlay.prototype.insertButton = function(info) {
  */
 wtf.hud.Overlay.prototype.addButton_ = function(
     isSystem, icon, title, shortcut, callback, opt_scope) {
+  var fullTitle = title;
+  if (shortcut) {
+    fullTitle += ' (' + shortcut + ')';
+  }
+
   // Create button.
   var dom = this.getDom();
   var el = dom.createElement(goog.dom.TagName.A);
   goog.dom.classes.add(el, 'wtfHudButton');
-  el['title'] = title;
+  el['title'] = fullTitle;
   var img = dom.createElement(goog.dom.TagName.IMG);
   img['alt'] = title;
   img['src'] = '';
