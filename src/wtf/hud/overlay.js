@@ -55,9 +55,10 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   // Add stylesheet to page.
   // Note that we don't use GSS so that we can avoid another file dependency
   // and renaming issues.
-  dom.appendChild(this.getParentElement(),
-      /** @type {!Element} */ (goog.soy.renderAsFragment(
-          wtf.hud.overlay.style, undefined, undefined, dom)));
+  var styleEl = /** @type {!Element} */ (goog.soy.renderAsFragment(
+      wtf.hud.overlay.style, undefined, undefined, dom));
+  this.addRelatedElement(styleEl);
+  dom.appendChild(this.getParentElement(), styleEl);
 
   /**
    * Tracing session.
