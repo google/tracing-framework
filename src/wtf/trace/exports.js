@@ -113,16 +113,6 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
       'wtf.trace.ignoreListener',
       wtf.trace.ignoreListener);
 
-  // wtf.trace.EventType
-  goog.exportProperty(
-      wtf.trace.EventType.prototype,
-      'append',
-      wtf.trace.EventType.prototype.appendExternal);
-  goog.exportProperty(
-      wtf.trace.EventType.prototype,
-      'enterScope',
-      wtf.trace.EventType.prototype.enterScopeExternal);
-
   // wtf.trace.Scope
   goog.exportProperty(
       wtf.trace.Scope.prototype,

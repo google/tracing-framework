@@ -81,6 +81,9 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
     return fn.apply(self, arguments);
   };
 
+  // Expose us on the event function for others to use, if they want reflection.
+  fn['eventType'] = this;
+
   /**
    * Current count.
    * Incremented each time the event is appended, if the COUNT flag is present.
@@ -216,27 +219,4 @@ wtf.trace.EventType.getNameMap = function() {
     enterTypedScope: reflectedNames[2],
     dummyScope: reflectedNames[3]
   };
-};
-
-
-/**
- * Exported method that calls into {@see #append}.
- * @param {number} time Time for the enter.
- * @param {...} var_args Scope data arguments.
- */
-wtf.trace.EventType.prototype.appendExternal = function(time, var_args) {
-  this.append.apply(this, arguments);
-};
-
-
-/**
- * Exported method that calls into {@see #enterScope}.
- * @param {number} time Time for the enter.
- * @param {wtf.trace.Flow} flow A flow to terminate on scope leave, if any.
- * @param {...} var_args Scope data arguments.
- * @return {!wtf.trace.Scope} An initialized scope object.
- */
-wtf.trace.EventType.prototype.enterScopeExternal = function(
-    time, flow, var_args) {
-  return this.append.apply(this, arguments);
 };
