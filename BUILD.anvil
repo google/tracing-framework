@@ -370,9 +370,9 @@ archive_files(
         ])
 
 file_set(
-    name='extension',
+    name='injector',
     srcs=[
-        'extensions/chrome/injector:wtf-chrome-extension',
+        'injector/wtf-injector-chrome:wtf-injector-chrome',
         ])
 
 file_set(
@@ -389,7 +389,7 @@ file_set(
         'app:release',
         'app:wtf-chrome-app',
         ':wtf-trace-web-api',
-        ':extension',
+        ':injector',
         ],
     deps=[
         #':all_js_lint',
