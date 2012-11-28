@@ -16,7 +16,7 @@ goog.provide('wtf.trace.Session');
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('wtf');
-goog.require('wtf.trace.Builtin');
+goog.require('wtf.trace.BuiltinEvents');
 
 
 
@@ -253,7 +253,7 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
     // Note: this must occur after currentBuffer has been set, as append is
     // re-entrant to this function.
     this.hasDiscontinuity_ = false;
-    wtf.trace.Builtin.discontinuity.append(time, buffer);
+    wtf.trace.BuiltinEvents.discontinuity(time, buffer);
   }
 
   if (buffer) {
@@ -262,7 +262,7 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
     // of nasty state tracking.
     var zone = this.traceManager_.getCurrentZone();
     if (zone) {
-      wtf.trace.Builtin.setZone.append(time, zone.id, buffer);
+      wtf.trace.BuiltinEvents.setZone(time, zone.id, buffer);
     }
 
     // Ignore if size can't fit in the buffer.

@@ -114,14 +114,14 @@ Emitting an instance event:
   // Create the event and cache the event object:
   var myEvent = wtf.trace.events.createInstance('myEvent(uint32 foo)');
   // At some point in the future, append it:
-  myEvent.append(wtf.now(), 12345);
+  myEvent(wtf.now(), 12345);
 
 Emitting a scope event:
 
   // Create the event and cache the event object:
   var myScopeEvent = wtf.trace.events.createScope('myScopeEvent(utf8 bar)');
   // Enter/leave the scope:
-  var scope = myScopeEvent.enterScope(wtf.now(), null, 'hello world');
+  var scope = myScopeEvent(wtf.now(), null, 'hello world');
   // ...
   return scope.leave(someResult);
 
@@ -144,6 +144,24 @@ Automatic instrumentation of an entire type:
       my.Type, 'my.Type(uint8 a, uint8 b)', {
         foo: 'foo(uint8 a)'
       });
+
+If you need to do any expensive work that you don't want to show up as user
+time, use the built-in helper scope:
+
+  var traceScope = wtf.trace.enterTracingScope(wtf.now());
+  // Expensive work...
+  traceScope.leave();
+
+To prevent DOM event listeners from appearing in the trace, wrap them with
+`wtf.trace.ignoreListener` before attaching them:
+
+  var el = document.createElement('a');
+  el.onclick = wtf.trace.ignoreListener(function(e) {
+    // Clicked and untraced
+  });
+  el.addEventListener('click', wtf.trace.ignoreListener(function(e) {
+    // Clicked and untraced
+  }), false);
 
 Supported types in event signatures:
 

@@ -201,7 +201,7 @@ wtf.trace.SnapshottingSession.prototype.setupStream_ = function(stream) {
   this.writeTraceHeader(buffer);
 
   // Write discontinuity event.
-  //wtf.trace.Builtin.discontinuity.append(wtf.timebase(), buffer);
+  //wtf.trace.BuiltinEvents.discontinuity(wtf.timebase(), buffer);
 
   // Write header buffer.
   var immediate = stream.write(buffer, this.returnBufferCallback_, this);

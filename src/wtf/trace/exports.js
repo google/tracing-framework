@@ -88,6 +88,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.enterScope',
       wtf.trace.enterScope);
+  goog.exportSymbol(
+      'wtf.trace.enterTracingScope',
+      wtf.trace.enterTracingScope);
 
   // wtf.trace flow operations
   goog.exportSymbol(
@@ -109,16 +112,6 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.ignoreListener',
       wtf.trace.ignoreListener);
-
-  // wtf.trace.EventType
-  goog.exportProperty(
-      wtf.trace.EventType.prototype,
-      'append',
-      wtf.trace.EventType.prototype.appendExternal);
-  goog.exportProperty(
-      wtf.trace.EventType.prototype,
-      'enterScope',
-      wtf.trace.EventType.prototype.enterScopeExternal);
 
   // wtf.trace.Scope
   goog.exportProperty(

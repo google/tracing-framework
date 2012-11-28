@@ -20,7 +20,7 @@ goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.ZoneType');
-goog.require('wtf.trace.Builtin');
+goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.Zone');
@@ -213,7 +213,7 @@ wtf.trace.TraceManager.prototype.createZone = function(name, type, location) {
   this.allZones_[zone.id] = zone;
 
   // Append event.
-  wtf.trace.Builtin.createZone.append(
+  wtf.trace.BuiltinEvents.createZone(
       zone.timestamp, zone.id, zone.name, zone.type, zone.location);
 
   return zone;
@@ -229,7 +229,7 @@ wtf.trace.TraceManager.prototype.deleteZone = function(zone) {
   goog.asserts.assert(!goog.array.contains(this.zoneStack_, zone));
 
   // Append event.
-  wtf.trace.Builtin.deleteZone.append(wtf.now(), zone.id);
+  wtf.trace.BuiltinEvents.deleteZone(wtf.now(), zone.id);
 
   // NOTE: zones are never deleted.
 };
@@ -246,14 +246,14 @@ wtf.trace.TraceManager.prototype.appendAllZones = function(buffer) {
   for (var key in this.allZones_) {
     var zone = this.allZones_[key];
     // Note that we use 0 instead of zone.timestamp to prevent skewing traces
-    wtf.trace.Builtin.createZone.append(
+    wtf.trace.BuiltinEvents.createZone(
         0, zone.id, zone.name, zone.type, zone.location,
         buffer);
   }
 
   var currentZone = this.getCurrentZone();
   if (currentZone) {
-    wtf.trace.Builtin.setZone.append(0, currentZone.id, buffer);
+    wtf.trace.BuiltinEvents.setZone(0, currentZone.id, buffer);
   }
 };
 
@@ -269,7 +269,7 @@ wtf.trace.TraceManager.prototype.pushZone = function(zone) {
   // Note that we avoid doing clever things here around de-duping events
   // as the frequency of this should be low and snappshotting could cause
   // events to end up missing.
-  wtf.trace.Builtin.setZone.append(wtf.now(), zone.id);
+  wtf.trace.BuiltinEvents.setZone(wtf.now(), zone.id);
 };
 
 
@@ -282,7 +282,7 @@ wtf.trace.TraceManager.prototype.popZone = function() {
 
   // Append event.
   var zone = this.getCurrentZone();
-  wtf.trace.Builtin.setZone.append(wtf.now(), zone.id);
+  wtf.trace.BuiltinEvents.setZone(wtf.now(), zone.id);
 };
 
 
@@ -374,7 +374,7 @@ wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
     eventType.acquireBuffer = this.currentAcquireBuffer_;
 
     // Append to the stream.
-    wtf.trace.Builtin.defineEvent.append(
+    wtf.trace.BuiltinEvents.defineEvent(
         wtf.now(),
         eventType.wireId,
         eventType.eventClass,
@@ -398,7 +398,7 @@ wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer) {
     var eventType = eventTypes[n];
 
     // Append to the header.
-    wtf.trace.Builtin.defineEvent.append(
+    wtf.trace.BuiltinEvents.defineEvent(
         wtf.now(),
         eventType.wireId,
         eventType.eventClass,

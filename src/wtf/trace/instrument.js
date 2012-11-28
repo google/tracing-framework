@@ -84,7 +84,7 @@ if (!COMPILED) {
  * @param {Function} value Target function.
  * @param {string} signature Method signature.
  * @param {string=} opt_namePrefix String to prepend to the name.
- * @param {(function(Function, !wtf.trace.EventType):Function)=} opt_generator
+ * @param {(function(Function, Function):Function)=} opt_generator
  *     A custom function generator that is responsible for taking the given
  *     {@code value} and returning a wrapped function that emits the given
  *     event type.
@@ -118,7 +118,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
       if (opt_pre) {
         opt_pre.call(this);
       }
-      var scope = customEvent.enterScope(wtf.now(), null);
+      var scope = customEvent(wtf.now(), null);
       var result = value.apply(this, arguments);
       return scope.leave(result);
     };
@@ -135,7 +135,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
       for (var n = 0; n < argMap.length; n++) {
         eventArgs[n + 2] = arguments[argMap[n].ordinal];
       }
-      var scope = customEvent.enterScope.apply(customEvent, eventArgs);
+      var scope = customEvent.apply(customEvent, eventArgs);
       var result = value.apply(this, arguments);
       return scope.leave(result);
     };
