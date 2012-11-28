@@ -140,6 +140,8 @@ if (isEnabled) {
  * @param {!Object.<!Object>} extensions A map of URL to extension JSON.
  */
 function startTracing(options, extensions) {
+  // NOTE: this code is injected by string and cannot access any closure
+  //     variables!
   // Register extensions.
   for (var url in extensions) {
     var name = extensions[url]['name'];
