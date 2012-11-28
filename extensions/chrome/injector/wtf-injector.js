@@ -52,7 +52,7 @@ var options = {
   'wtf.app.endpoint': appEndpoint,
   'wtf.extensions': [
     //'http://localhost:8080/test/extension.json'
-    'http://localhost:8080/test/webglcapture.json'
+    //'http://localhost:8080/test/webglcapture.json'
   ]
 };
 
