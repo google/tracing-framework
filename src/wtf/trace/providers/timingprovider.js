@@ -65,7 +65,7 @@ wtf.trace.providers.TimingProvider.prototype.injectTimeouts_ = function() {
         // Flow-spanning logic.
         var flow; // NOTE: flow is branched below so event order is correct
         var timeoutId = originalSetTimeout.call(goog.global, function() {
-          var scope = setTimeoutEvent.enterScope(
+          var scope = setTimeoutCallbackEvent.enterScope(
               wtf.now(), flow, timeoutIdRef[0]);
           try {
             // Support both functions and strings as callbacks.
