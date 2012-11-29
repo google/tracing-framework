@@ -18,7 +18,6 @@
 goog.provide('wtf.trace.exports');
 
 goog.require('wtf.trace');
-goog.require('wtf.trace.EventType');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
