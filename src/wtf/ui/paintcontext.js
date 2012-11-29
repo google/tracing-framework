@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.PaintContext');
 
 goog.require('goog.Disposable');
+goog.require('goog.dom');
 goog.require('wtf.timing');
 goog.require('wtf.util.canvas');
 
@@ -108,6 +109,16 @@ wtf.ui.PaintContext.prototype.getCanvas = function() {
  */
 wtf.ui.PaintContext.prototype.getCanvasContext2d = function() {
   return this.canvasContext2d_;
+};
+
+
+/**
+ * Gets a dom helper.
+ * @return {!goog.dom.DomHelper} A dom helper for the document containing
+ *     this paint context's canvas.
+ */
+wtf.ui.PaintContext.prototype.getDom = function() {
+  return goog.dom.getDomHelper(this.canvas_);
 };
 
 
