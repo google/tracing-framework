@@ -26,6 +26,8 @@ goog.require('wtf.ipc.Channel');
  * @extends {wtf.ipc.Channel}
  */
 wtf.ipc.ExtensionChannel = function(port) {
+  goog.base(this);
+
   /**
    * Port that onmessage is fired on.
    * @type {ChromePort}

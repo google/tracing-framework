@@ -90,6 +90,14 @@ Docking position of the HUD overlay. May be one of:
 * `bl`: Bottom Left.
 * `br`: Bottom Right.
 
+### wtf.hud.app.mode/wtf.hud.app.endpoint
+
+The mode used for communicating with the visualizer application. May be one of:
+
+* `page`: If set, `wtf.hud.app.endpoint` is a URL to the page that will be
+opened in a new window.
+* `remote`: If set, `wtf.hud.app.endpoint` is a `host:port` of a target HTTP server that will listen for POSTs.
+
 ## App
 
 App options are only used by the app UI. They can be specified to the

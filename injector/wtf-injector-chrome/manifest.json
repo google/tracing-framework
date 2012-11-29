@@ -38,6 +38,9 @@
   //"options_page": "",
   "background": {
     "scripts": [
+      "uri.js",
+      "options.js",
+      "extension.js",
       "background.js"
     ]
   },
