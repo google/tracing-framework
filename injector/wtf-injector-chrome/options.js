@@ -291,7 +291,6 @@ Options.prototype.setPageOptions = function(url, options) {
     cleanedOptions[key] = value;
     anyValues = true;
   }
-  console.log('saving', cleanedOptions);
 
   if (anyValues) {
     this.pageOptions_[url] = cleanedOptions;
