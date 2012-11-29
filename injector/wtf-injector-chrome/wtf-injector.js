@@ -50,12 +50,17 @@ for (var n = 0; n < cookies.length; n++) {
 }
 
 // Pick an app URL.
+// TODO(benvanik): pull from options.
+var appMode = 'remote';
 var appEndpoint = 'localhost:9024';
+// var appMode = 'page';
+// var appEndpoint = 'http://localhost:8080/app/maindisplay-debug.html';
 
 // Setup default options.
 var options = {
   'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
-  'wtf.app.endpoint': appEndpoint,
+  'wtf.hud.app.mode': appMode,
+  'wtf.hud.app.endpoint': appEndpoint,
   'wtf.extensions': [
     //'http://localhost:8080/extensions/test/extension.json'
     //'http://localhost:8080/extensions/webglcapture/webglcapture.json'

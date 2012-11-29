@@ -26,6 +26,7 @@ goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.SettingsDialog');
 goog.require('wtf.hud.overlay');
 goog.require('wtf.io.BufferedHttpWriteStream');
+goog.require('wtf.ipc');
 goog.require('wtf.trace');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.util.Options');
@@ -436,13 +437,59 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function() {
  * @private
  */
 wtf.hud.Overlay.prototype.sendSnapshot_ = function() {
+  var mode = this.options_.getString('wtf.hud.app.mode', 'page');
+  var endpoint = this.options_.getOptionalString('wtf.hud.app.endpoint');
+  switch (mode) {
+    default:
+    case 'page':
+      this.sendSnapshotToPage_(endpoint);
+      break;
+    case 'remote':
+      this.sendSnapshotToRemote_(endpoint);
+      break;
+  }
+};
+
+
+/**
+ * Sends a snapshot to a webpage via message channel.
+ * @param {string=} opt_endpoint Target URL.
+ * @private
+ */
+wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
+  // Capture snapshot into memory buffers.
+  // Sending may take a bit, so doing this now ensures we get the snapshot
+  // immediately when requested.
+  var buffers = [];
+  wtf.trace.snapshot(buffers);
+
+  // Open the page URL.
+  var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
+  var target = window.open(endpoint, 'wtf_ui');
+
+  // Wait for the child to connect.
+  wtf.ipc.waitForChildWindow(function(channel) {
+    channel.postMessage({
+      'command': 'snapshot',
+      'content_type': 'application/x-extension-wtf-trace',
+      'contents': buffers
+    });
+  }, this);
+};
+
+
+/**
+ * Sends a snapshot to a remote UI over HTTP.
+ * @param {string=} opt_endpoint Target host:port pair.
+ * @private
+ */
+wtf.hud.Overlay.prototype.sendSnapshotToRemote_ = function(opt_endpoint) {
   // TODO(benvanik): something more sophisticated
   var host = COMPILED ? 'localhost:9023' : 'localhost:9024';
-  host = this.options_.getString('wtf.app.endpoint', host);
+  host = opt_endpoint || host;
   var url = 'http://' + host + '/snapshot/upload';
 
   // Capture snapshot into memory buffers.
-  var buffers = [];
   wtf.trace.snapshot(function() {
     return new wtf.io.BufferedHttpWriteStream(url);
   });
