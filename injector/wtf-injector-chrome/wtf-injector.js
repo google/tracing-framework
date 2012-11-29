@@ -16,80 +16,101 @@
 
 (function() {
 
-
 // console.log utility that doesn't explode when it's not present.
 var log = window.console ?
-    window.console.log.bind(window.console) :
-    function() {};
+    window.console.log.bind(window.console) : function() {};
 
 
 /**
- * Name of the cookie that is used to indicate injection should occur.
- * @const
- * @type {string}
+ * Injects the extension, if needed.
+ * This is called on startup in the content-script context.
  */
-var WTF_ENABLED_COOKIE = 'wtfE';
-
-
-/**
- * Root path for extension files.
- * @const
- * @type {string}
- */
-var WTF_PATH_ROOT = window.WTF_EXTENSION_DEBUG ? 'extensions/chrome' : '';
-
-
-// Check for the injection cookie.
-var isEnabled = false;
-var cookies = document.cookie.split('; ');
-for (var n = 0; n < cookies.length; n++) {
-  if (cookies[n].lastIndexOf(WTF_ENABLED_COOKIE) == 0) {
-    isEnabled = true;
-    break;
-  }
-}
-
-// Pick an app URL.
-// TODO(benvanik): pull from options.
-var appMode = 'remote';
-var appEndpoint = 'localhost:9024';
-// var appMode = 'page';
-// var appEndpoint = 'http://localhost:8080/app/maindisplay-debug.html';
-
-// Setup default options.
-var options = {
-  'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
-  'wtf.hud.app.mode': appMode,
-  'wtf.hud.app.endpoint': appEndpoint,
-  'wtf.extensions': [
-    //'http://localhost:8080/extensions/test/extension.json'
-    //'http://localhost:8080/extensions/webglcapture/webglcapture.json'
-  ]
-};
-
-// TODO(benvanik): load other options
-
-// Perform injection.
-if (isEnabled) {
-  if (window.WTF_EXTENSION_DEBUG) {
-    // Debug variant.
-    injectScriptFile(chrome.extension.getURL(
-        'build-out/wtf_trace_web_js_compiled.js'));
-  } else {
-    // Release variant.
-    injectScriptFile(chrome.extension.getURL(
-        WTF_PATH_ROOT + '/wtf_trace_web_js_compiled.js'));
+function main() {
+  // Grab options - if not found, not injected.
+  var options = fetchOptions();
+  if (!options) {
+    return;
   }
 
-  // Inject prepare.
-  // This must be called before any extension code executes.
+  // Inject the tracing framework script and the prepare function.
+  injectScriptFile(chrome.extension.getURL('wtf_trace_web_js_compiled.js'));
   injectScriptFunction(function() {
-    // Setup tracing library.
     wtf.trace.prepare();
   });
 
-  // Inject extensions.
-  var manifestUrls = options['wtf.extensions'] || [];
+  // Inject extensions, if required.
+  var extensions = injectExtensions(options['wtf.extensions'] || []);
+
+  // Inject preparation code to start tracing with the desired options.
+  injectScriptFunction(startTracing, [
+    options,
+    extensions
+  ]);
+
+  setupCommunications();
+};
+
+
+/**
+ * Fetches the options from the extension background page.
+ * This will only return a value if the options were injected in a cookie, and
+ * if no options are returned it means the injection is not active.
+ * @return {!Object} Options object.
+ */
+function fetchOptions() {
+  /**
+   * Name of the cookie that contains the options for the injection.
+   * The data is just a blob GUID that is used to construct a URL to the blob
+   * exposed by the extension.
+   * @const
+   * @type {string}
+   */
+  var WTF_OPTIONS_COOKIE = 'wtf';
+
+  // Check for the injection cookie.
+  var optionsUuid = null;
+  var cookies = document.cookie.split('; ');
+  for (var n = 0; n < cookies.length; n++) {
+    if (cookies[n].lastIndexOf(WTF_OPTIONS_COOKIE) == 0) {
+      optionsUuid = cookies[n].substr(cookies[n].indexOf('=') + 1);
+      break;
+    }
+  }
+  if (!optionsUuid) {
+    return null;
+  }
+
+  // Fetch the options from the extension.
+  try {
+    // blob:chrome-extension%3A//[extension id]/[options uuid]
+    var optionsUrl = 'blob:' +
+        chrome.extension.getURL(optionsUuid).replace(':', '%3A');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', optionsUrl, false);
+    xhr.send(null);
+    if (xhr.status != 200) {
+      log('Failed to load WTF injection options:',
+          optionsUrl,
+          xhr.status, xhr.statusText);
+      return null;
+    }
+    return JSON.parse(xhr.responseText);
+  } catch(e) {
+    log('Failed to parse WTF injection options:', e, xhr.responseText);
+    return null;
+  }
+
+  return null;
+};
+
+
+/**
+ * Injects the given extensions into the page.
+ * @param {!Array.<string>} manifestUrls Extension manifest JSON URLs.
+ * @return {!Object.<!Object>} Extension manifests, mapped by manifest URL.
+ */
+function injectExtensions(manifestUrls) {
   var extensions = {};
   for (var n = 0; n < manifestUrls.length; n++) {
     // Fetch Manifest JSON.
@@ -106,8 +127,8 @@ if (isEnabled) {
     var tracingInfo = json['tracing'];
     if (tracingInfo && tracingInfo['scripts']) {
       var tracingScripts = tracingInfo['scripts'];
-      for (var n = 0; n < tracingScripts.length; n++) {
-        var scriptUrl = resolveUrl(url, tracingScripts[n]);
+      for (var m = 0; m < tracingScripts.length; m++) {
+        var scriptUrl = resolveUrl(url, tracingScripts[m]);
         if (!injectScriptFile(scriptUrl)) {
           log('Error loading extension ' + url + ':');
           log('Tracing script file not found: ' + scriptUrl);
@@ -115,21 +136,8 @@ if (isEnabled) {
       }
     }
   }
-
-  // Snapshotting:
-  options['wtf.trace.mode'] = 'snapshotting';
-  // TODO(benvanik): make something up based on page title/domain/etc?
-  options['wtf.trace.target'] = 'file://' + 'trace';
-  // Streaming:
-  // options['wtf.trace.mode'] = 'streaming';
-  // options['wtf.trace.target'] = 'http://' + appEndpoint;
-
-  // Inject preparation code to start tracing with the desired options.
-  injectScriptFunction(startTracing, [
-    options,
-    extensions
-  ]);
-}
+  return extensions;
+};
 
 
 /**
@@ -161,6 +169,60 @@ function startTracing(options, extensions) {
 
   // Start recording.
   wtf.trace.start(options);
+};
+
+
+/**
+ * Sets up two-way communications with the page.
+ * This enables proxying to the background page.
+ */
+function setupCommunications() {
+  // Initiate a connection to the background page that we can use as a
+  // channel for settings saving/etc.
+  var port = chrome.extension.connect({
+    name: 'injector'
+  });
+
+  // Setup a communication channel with the page via events.
+  var channelElement = document;
+  var localId = String(Number(Date.now()));
+  channelElement.addEventListener('WtfContentScriptEvent', function(e) {
+    // The message here is from the wtf.ipc.DomChannel, and has some header
+    // data in it.
+    var packet = e.detail;
+    if (!packet ||
+        !packet['wtf_ipc_connect_token'] ||
+        packet['wtf_ipc_sender_token'] == localId) {
+      return;
+    }
+    var data = packet['data'];
+    switch (data['command']) {
+      case 'reload':
+        port.postMessage({
+          'command': 'reload'
+        });
+        break;
+      case 'save_settings':
+        port.postMessage({
+          'command': 'save_settings',
+          'content': data['content']
+        });
+        break;
+    }
+  }, false);
+
+  function sendMessage(data) {
+    var packet = {
+      'wtf_ipc_connect_token': true,
+      'wtf_ipc_sender_token': localId,
+      'data': data
+    };
+    var e = channelElement.createEvent('CustomEvent');
+    e.initCustomEvent('WtfContentScriptEvent', false, false, packet);
+    channelElement.dispatchEvent(e);
+  };
+
+  // TODO(benvanik): listen on port and proxy messages from extension?
 };
 
 
@@ -308,6 +370,9 @@ function injectScriptFile(url) {
 
   return true;
 };
+
+
+main();
 
 
 })();

@@ -13,6 +13,7 @@
 
 goog.provide('wtf.hud.Overlay');
 
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
@@ -27,6 +28,7 @@ goog.require('wtf.hud.SettingsDialog');
 goog.require('wtf.hud.overlay');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.ipc');
+goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.util.Options');
@@ -60,6 +62,18 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
       wtf.hud.overlay.style, undefined, undefined, dom));
   this.addRelatedElement(styleEl);
   dom.appendChild(this.getParentElement(), styleEl);
+
+  /**
+   * DOM channel, if supported.
+   * This can be used to listen to notifications from the extension or send
+   * messages to the content script.
+   * @type {wtf.ipc.DomChannel}
+   * @private
+   */
+  this.extensionChannel_ = wtf.ipc.openDomChannel(
+      dom.getDocument(),
+      'WtfContentScriptEvent');
+  this.registerDisposable(this.extensionChannel_);
 
   /**
    * Tracing session.
@@ -127,6 +141,10 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.options_.addListener(
       wtf.util.Options.EventType.CHANGED, this.reloadOptions_, this);
   this.reloadOptions_();
+
+  // Listen for messages from the extension.
+  this.extensionChannel_.addListener(
+      wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this);
 
   // TODO(benvanik): generate counter code
   /*
@@ -216,10 +234,17 @@ wtf.hud.Overlay.prototype.layoutInternal = function() {
 
 /**
  * Reloads options.
+ * @param {Array.<string>=} opt_changedKeys A list of keys that were changed.
  * @private
  */
-wtf.hud.Overlay.prototype.reloadOptions_ = function() {
+wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
   var options = this.options_;
+
+  // This is a list of keys that are known safe and do not need a reload.
+  // If a key is not in this list the page will be automatically reloaded.
+  var safeReloadKeys = [
+    'wtf.hud.dock'
+  ];
 
   switch (options.getString('wtf.hud.dock', 'br')) {
     case 'tl':
@@ -276,6 +301,29 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function() {
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
+  }
+
+  // If there's an extension connected, save the settings to it.
+  if (this.extensionChannel_) {
+    this.extensionChannel_.postMessage({
+      'command': 'save_settings',
+      'content': this.options_.save()
+    });
+
+    // If any setting changed was reload-worthy, reload now.
+    var needsReload = false;
+    if (opt_changedKeys) {
+      var changedKeys = opt_changedKeys.slice();
+      for (var n = 0; n < safeReloadKeys.length; n++) {
+        goog.array.remove(changedKeys, safeReloadKeys[n]);
+      }
+      needsReload = !!changedKeys.length;
+    }
+    if (needsReload) {
+      this.extensionChannel_.postMessage({
+        'command': 'reload'
+      });
+    }
   }
 };
 
@@ -493,4 +541,14 @@ wtf.hud.Overlay.prototype.sendSnapshotToRemote_ = function(opt_endpoint) {
   wtf.trace.snapshot(function() {
     return new wtf.io.BufferedHttpWriteStream(url);
   });
+};
+
+
+/**
+ * Handles messages from the extension.
+ * @param {!Object} data Message data.
+ * @private
+ */
+wtf.hud.Overlay.prototype.extensionMessage_ = function(data) {
+  // TODO(benvanik): handle messages from the extension.
 };
