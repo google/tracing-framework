@@ -1,0 +1,43 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * TracksPanel info bar CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+@def WTF_APP_UI_TRACKSPANEL_INFO_HEADER_HEIGHT  40px;
+
+.wtfAppUiTracksPanelInfoOuter {
+}
+
+.wtfAppUiTracksPanelInfoHeader {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: WTF_APP_UI_TRACKSPANEL_INFO_HEADER_HEIGHT;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.wtfAppUiTracksPanelInfoHeader .kSearchField {
+  position: relative;
+  left: 5px;
+  top: 5px;
+}
+
+.wtfAppUiTracksPanelInfoContent {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: WTF_APP_UI_TRACKSPANEL_INFO_HEADER_HEIGHT;
+  bottom: 0;
+  padding: 3px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}

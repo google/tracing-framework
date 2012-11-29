@@ -21,6 +21,7 @@ goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.TabPanel');
+goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.events.EventType');
@@ -51,6 +52,15 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.db_ = db;
+
+  /**
+   * Infobar control.
+   * @type {!wtf.app.ui.tracks.TrackInfoBar}
+   * @private
+   */
+  this.infobar_ = new wtf.app.ui.tracks.TrackInfoBar(this,
+      this.getChildElement(goog.getCssName('wtfAppUiTracksPanelInfoControl')));
+  this.registerDisposable(this.infobar_);
 
   /**
    * Track canvas.
