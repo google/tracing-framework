@@ -13,7 +13,6 @@
 
 goog.provide('wtf.analysis.TraceListener');
 
-goog.require('wtf.analysis.FilterOperation');
 goog.require('wtf.analysis.Zone');
 goog.require('wtf.events.EventEmitter');
 
@@ -22,32 +21,13 @@ goog.require('wtf.events.EventEmitter');
 /**
  * Trace listener base type.
  * Consumers of the analysis framework should subclass this to receive events
- * from the trace session. It provides filtering and efficient dispatch of
- * events and hooks for custom provider extensions.
+ * from the trace session.
  *
- * @param {wtf.analysis.FilterOperation=} opt_defaultOperation Default filtering
- *     operation.
- * @param {Array.<!wtf.analysis.Filter>=} opt_filters A list of filters.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.analysis.TraceListener = function(opt_defaultOperation, opt_filters) {
+wtf.analysis.TraceListener = function() {
   goog.base(this);
-
-  /**
-   * Default filtering operation.
-   * @type {wtf.analysis.FilterOperation}
-   * @private
-   */
-  this.defaultOperation_ = goog.isDef(opt_defaultOperation) ?
-      opt_defaultOperation : wtf.analysis.FilterOperation.INCLUDE;
-
-  /**
-   * Filters applied to the entries.
-   * @type {!Array.<!wtf.analysis.Filter>}
-   * @private
-   */
-  this.filters_ = opt_filters || [];
 
   // TODO(benvanik): add registered provider listeners
 
@@ -59,24 +39,6 @@ wtf.analysis.TraceListener = function(opt_defaultOperation, opt_filters) {
   this.allZones_ = {};
 };
 goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
-
-
-/**
- * Gets the default filtering operation.
- * @return {wtf.analysis.FilterOperation} Default filtering operation.
- */
-wtf.analysis.TraceListener.prototype.getDefaultFilterOperation = function() {
-  return this.defaultOperation_;
-};
-
-
-/**
- * Gets a list of filters to apply to events.
- * @return {!Array.<!wtf.analysis.Filter>} Filters.
- */
-wtf.analysis.TraceListener.prototype.getFilters = function() {
-  return this.filters_;
-};
 
 
 /**
