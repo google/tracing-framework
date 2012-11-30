@@ -21,7 +21,6 @@ goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.app.ui.tracks.TrackPainter');
 goog.require('wtf.math');
 goog.require('wtf.ui.RangeRenderer');
-goog.require('wtf.ui.RgbColor');
 
 
 

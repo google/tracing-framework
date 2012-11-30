@@ -15,8 +15,13 @@
  */
 
 goog.provide('wtf.ui.RangeRenderer');
+goog.provide('wtf.ui.RgbColor');
 
-goog.require('wtf.ui.RgbColor');
+
+/** @typedef {{r: number, g: number, b: number}} */
+wtf.ui.RgbColor;
+
+
 
 /**
  * Range renderer.
