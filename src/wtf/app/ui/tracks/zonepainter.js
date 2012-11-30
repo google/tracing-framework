@@ -228,9 +228,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
     // Run filter against it.
     var filtered = evaluator ? !evaluator(enter) : false;
-    if (filtered) {
-      continue;
-    }
+    var alpha = filtered ? 0.3 : 1;
 
     // Compute screen size.
     var left = wtf.math.remap(enter.time, timeLeft, timeRight, 0, width);
@@ -248,7 +246,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     if (!this.rangeRenderers_[depth]) {
       this.rangeRenderers_[depth] = new wtf.ui.RangeRenderer();
     }
-    this.rangeRenderers_[depth].drawRange(screenLeft, screenRight, color, 1);
+    this.rangeRenderers_[depth].drawRange(
+        screenLeft, screenRight, color, alpha);
 
     if (screenWidth > 15) {
       // Calculate label width to determine fade.
