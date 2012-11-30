@@ -49,6 +49,12 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       this.getChildElement(goog.getCssName('wtfAppUiTracksPanelInfoHeader')),
       dom);
   this.registerDisposable(this.searchControl_);
+
+  this.searchControl_.addListener(
+      wtf.ui.SearchControl.EventType.CHANGE,
+      function(newValue, oldValue) {
+        goog.global.console.log(newValue);
+      }, this);
 };
 goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.Control);
 
