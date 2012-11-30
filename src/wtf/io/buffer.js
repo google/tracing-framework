@@ -74,13 +74,17 @@ wtf.io.Buffer.ENABLE_ASSERTS = false;
 /**
  * Clones the buffer.
  * Only the valid bytes in the buffer are cloned.
+ * @param {number=} opt_length Total length to clone. If omitted the current
+ *     offset is used.
  * @return {!wtf.io.Buffer} Cloned buffer.
  */
-wtf.io.Buffer.prototype.clone = function() {
-  var newBuffer = new wtf.io.Buffer(this.offset);
+wtf.io.Buffer.prototype.clone = function(opt_length) {
+  var length = goog.isDef(opt_length) ? opt_length : this.offset;
+  length = Math.min(length, this.offset);
+  var newBuffer = new wtf.io.Buffer(length);
   var srcData = this.data;
   var dstData = newBuffer.data;
-  for (var n = 0; n < this.offset; n++) {
+  for (var n = 0; n < length; n++) {
     dstData[n] = srcData[n];
   }
   return newBuffer;

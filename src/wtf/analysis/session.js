@@ -40,6 +40,14 @@ wtf.analysis.Session = function(traceListener, options) {
   this.traceListener_ = traceListener;
 
   /**
+   * Trace data storage.
+   * If set by an application all streams will be sent to this.
+   * @type {wtf.analysis.Storage}
+   * @private
+   */
+  this.storage_ = null;
+
+  /**
    * All active trace sources, each modelling a stream.
    * They are all owned and will be disposed when the session ends.
    * @type {!Array.<!wtf.analysis.TraceSource>}
@@ -48,6 +56,15 @@ wtf.analysis.Session = function(traceListener, options) {
   this.traceSources_ = [];
 };
 goog.inherits(wtf.analysis.Session, goog.Disposable);
+
+
+/**
+ * @override
+ */
+wtf.analysis.Session.prototype.disposeInternal = function() {
+  goog.dispose(this.storage_);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -60,11 +77,32 @@ wtf.analysis.Session.prototype.getTraceListener = function() {
 
 
 /**
+ * Gets the trace data storage, if any.
+ * @return {wtf.analysis.Storage} Trace data storage, if setup.
+ */
+wtf.analysis.Session.prototype.getStorage = function() {
+  return this.storage_;
+};
+
+
+/**
+ * Sets the trace data storage.
+ * Any existing storage will be disposed.
+ * @param {wtf.analysis.Storage} value New storage.
+ */
+wtf.analysis.Session.prototype.setStorage = function(value) {
+  goog.dispose(this.storage_);
+  this.storage_ = value;
+};
+
+
+/**
  * Adds a trace source to the session.
  * @param {!wtf.analysis.TraceSource} traceSource Trace source to add to the
  *     session.
+ * @private
  */
-wtf.analysis.Session.prototype.addTraceSource = function(traceSource) {
+wtf.analysis.Session.prototype.addTraceSource_ = function(traceSource) {
   // Add to session.
   this.traceSources_.push(traceSource);
   this.registerDisposable(traceSource);
@@ -76,7 +114,12 @@ wtf.analysis.Session.prototype.addTraceSource = function(traceSource) {
  * @param {!wtf.io.ReadStream} stream Read stream.
  */
 wtf.analysis.Session.prototype.addStreamingSource = function(stream) {
-  this.addTraceSource(new wtf.analysis.sources.BinaryTraceSource(
+  // Send to storage, if needed.
+  if (this.storage_) {
+    stream = this.storage_.captureStream(stream);
+  }
+
+  this.addTraceSource_(new wtf.analysis.sources.BinaryTraceSource(
       this.getTraceListener(), stream));
 };
 
@@ -87,10 +130,16 @@ wtf.analysis.Session.prototype.addStreamingSource = function(stream) {
  */
 wtf.analysis.Session.prototype.addBinarySource = function(data) {
   // Create a stream wrapper for the input data.
-  var readStream = new wtf.io.MemoryReadStream();
-  readStream.addData(data);
-  this.addTraceSource(new wtf.analysis.sources.BinaryTraceSource(
-      this.getTraceListener(), readStream));
+  var stream = new wtf.io.MemoryReadStream();
+  stream.addData(data);
+
+  // Send to storage, if needed.
+  if (this.storage_) {
+    stream = this.storage_.captureStream(stream);
+  }
+
+  this.addTraceSource_(new wtf.analysis.sources.BinaryTraceSource(
+      this.getTraceListener(), stream));
 };
 
 
