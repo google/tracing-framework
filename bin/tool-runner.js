@@ -74,11 +74,11 @@ exports.launchTool = function(name) {
 
 
 function createPlatformAbstractionLayer() {
-  goog.require('wtf.util.IPlatform');
+  goog.require('wtf.pal.IPlatform');
 
   /**
    * @constructor
-   * @implements {!wtf.util.IPlatform}
+   * @implements {!wtf.pal.IPlatform}
    */
   var NodePlatform = function() {
     goog.base(this);
@@ -89,7 +89,7 @@ function createPlatformAbstractionLayer() {
      */
     this.workingDirectory_ = process.cwd();
   };
-  goog.inherits(NodePlatform, wtf.util.IPlatform);
+  goog.inherits(NodePlatform, wtf.pal.IPlatform);
 
 
   /**

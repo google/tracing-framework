@@ -26,7 +26,7 @@ goog.require('wtf.tools.util');
 /**
  * WebGL code generator tool.
  *
- * @param {!wtf.util.IPlatform} platform Platform abstraction layer.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @constructor
  * @extends {wtf.tools.Tool}
  */

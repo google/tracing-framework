@@ -14,6 +14,7 @@
 goog.provide('wtf.app.ui');
 
 goog.require('wtf.app.ui.MainDisplay');
+goog.require('wtf.pal.BrowserPlatform');
 goog.require('wtf.util');
 goog.require('wtf.util.Options');
 
@@ -42,20 +43,24 @@ wtf.app.ui.show = function(opt_options) {
   options.mixin(opt_options);
   options.mixin(goog.global['wtf_app_ui_options']);
 
+  // TODO(benvanik): switch to chrome platform when possible?
+  var platform = new wtf.pal.BrowserPlatform();
+
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(function() {
-    wtf.app.ui.showWhenDomLoaded_(options);
+    wtf.app.ui.showWhenDomLoaded_(platform, options);
   });
 };
 
 
 /**
  * Completes preparation of any UI after the DOM is ready.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!wtf.util.Options} options Options.
  * @private
  */
-wtf.app.ui.showWhenDomLoaded_ = function(options) {
+wtf.app.ui.showWhenDomLoaded_ = function(platform, options) {
   // Create display and add to the DOM.
-  var mainDisplay = new wtf.app.ui.MainDisplay(options);
+  var mainDisplay = new wtf.app.ui.MainDisplay(platform, options);
   wtf.app.ui.mainDisplay_ = mainDisplay;
 };

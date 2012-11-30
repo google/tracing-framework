@@ -11,67 +11,29 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.util.ChromePlatform');
+goog.provide('wtf.pal.ChromePlatform');
 
 goog.require('wtf.net.ListenSocket');
 goog.require('wtf.net.Socket');
-goog.require('wtf.util.IPlatform');
+goog.require('wtf.pal.BrowserPlatform');
 
 
 
 /**
  * Chrome extension platform abstraction layer implementation.
  * @constructor
- * @implements {wtf.util.IPlatform}
+ * @extends {wtf.pal.BrowserPlatform}
  */
-wtf.util.ChromePlatform = function() {
+wtf.pal.ChromePlatform = function() {
+  goog.base(this);
 };
+goog.inherits(wtf.pal.ChromePlatform, wtf.pal.BrowserPlatform);
 
 
 /**
  * @override
  */
-wtf.util.ChromePlatform.prototype.getWorkingDirectory = function() {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.util.ChromePlatform.prototype.readTextFile = function(path) {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.util.ChromePlatform.prototype.readBinaryFile = function(path) {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.util.ChromePlatform.prototype.writeTextFile = function(path, contents) {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.util.ChromePlatform.prototype.writeBinaryFile = function(path, contents) {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.util.ChromePlatform.prototype.getNetworkInterfaces = function(
+wtf.pal.ChromePlatform.prototype.getNetworkInterfaces = function(
     callback, opt_scope) {
   chrome.socket.getNetworkList(function(interfaces) {
     var results = [];
@@ -89,9 +51,9 @@ wtf.util.ChromePlatform.prototype.getNetworkInterfaces = function(
 /**
  * @override
  */
-wtf.util.ChromePlatform.prototype.createListenSocket =
+wtf.pal.ChromePlatform.prototype.createListenSocket =
     function(port, opt_hostname) {
-  return new wtf.util.ChromePlatform.ListenSocket_(port, opt_hostname);
+  return new wtf.pal.ChromePlatform.ListenSocket_(port, opt_hostname);
 };
 
 
@@ -105,7 +67,7 @@ wtf.util.ChromePlatform.prototype.createListenSocket =
  * @extends {wtf.net.ListenSocket}
  * @private
  */
-wtf.util.ChromePlatform.ListenSocket_ = function(port, opt_hostname) {
+wtf.pal.ChromePlatform.ListenSocket_ = function(port, opt_hostname) {
   goog.base(this);
 
   /**
@@ -137,13 +99,13 @@ wtf.util.ChromePlatform.ListenSocket_ = function(port, opt_hostname) {
   chrome.socket.create(
       'tcp', {}, goog.bind(this.socketCreated_, this));
 };
-goog.inherits(wtf.util.ChromePlatform.ListenSocket_, wtf.net.ListenSocket);
+goog.inherits(wtf.pal.ChromePlatform.ListenSocket_, wtf.net.ListenSocket);
 
 
 /**
  * @override
  */
-wtf.util.ChromePlatform.ListenSocket_.prototype.disposeInternal = function() {
+wtf.pal.ChromePlatform.ListenSocket_.prototype.disposeInternal = function() {
   // Destroy socket.
   if (this.socketId_ !== undefined) {
     chrome.socket.destroy(this.socketId_);
@@ -159,7 +121,7 @@ wtf.util.ChromePlatform.ListenSocket_.prototype.disposeInternal = function() {
  * @param {!Object} socketInfo Socket information.
  * @private
  */
-wtf.util.ChromePlatform.ListenSocket_.prototype.socketCreated_ =
+wtf.pal.ChromePlatform.ListenSocket_.prototype.socketCreated_ =
     function(socketInfo) {
   var socketId = socketInfo['socketId'];
   this.socketId_ = socketId;
@@ -177,7 +139,7 @@ wtf.util.ChromePlatform.ListenSocket_.prototype.socketCreated_ =
  * @param {number} result Result code.
  * @private
  */
-wtf.util.ChromePlatform.ListenSocket_.prototype.socketListening_ =
+wtf.pal.ChromePlatform.ListenSocket_.prototype.socketListening_ =
     function(result) {
   if (result < 0) {
     // Failed.
@@ -199,7 +161,7 @@ wtf.util.ChromePlatform.ListenSocket_.prototype.socketListening_ =
  * This must be called after every accept.
  * @private
  */
-wtf.util.ChromePlatform.ListenSocket_.prototype.requestAccept_ = function() {
+wtf.pal.ChromePlatform.ListenSocket_.prototype.requestAccept_ = function() {
   if (this.socketId_ === undefined) {
     return;
   }
@@ -212,7 +174,7 @@ wtf.util.ChromePlatform.ListenSocket_.prototype.requestAccept_ = function() {
  * @param {!Object} acceptInfo Accept info.
  * @private
  */
-wtf.util.ChromePlatform.ListenSocket_.prototype.socketAccepted_ =
+wtf.pal.ChromePlatform.ListenSocket_.prototype.socketAccepted_ =
     function(acceptInfo) {
   // Always queue another accept callback.
   this.requestAccept_();
@@ -226,7 +188,7 @@ wtf.util.ChromePlatform.ListenSocket_.prototype.socketAccepted_ =
   }
 
   // Create socket.
-  var socket = new wtf.util.ChromePlatform.Socket_(acceptInfo['socketId']);
+  var socket = new wtf.pal.ChromePlatform.Socket_(acceptInfo['socketId']);
   this.emitConnection(socket);
 };
 
@@ -240,7 +202,7 @@ wtf.util.ChromePlatform.ListenSocket_.prototype.socketAccepted_ =
  * @extends {wtf.net.Socket}
  * @private
  */
-wtf.util.ChromePlatform.Socket_ = function(socketId) {
+wtf.pal.ChromePlatform.Socket_ = function(socketId) {
   goog.base(this);
 
   /**
@@ -266,13 +228,13 @@ wtf.util.ChromePlatform.Socket_ = function(socketId) {
 
   this.requestRead_();
 };
-goog.inherits(wtf.util.ChromePlatform.Socket_, wtf.net.Socket);
+goog.inherits(wtf.pal.ChromePlatform.Socket_, wtf.net.Socket);
 
 
 /**
  * @override
  */
-wtf.util.ChromePlatform.Socket_.prototype.disposeInternal = function() {
+wtf.pal.ChromePlatform.Socket_.prototype.disposeInternal = function() {
   // Notify
   if (!this.isOpen_) {
     this.isOpen_ = false;
@@ -289,7 +251,7 @@ wtf.util.ChromePlatform.Socket_.prototype.disposeInternal = function() {
 /**
  * @override
  */
-wtf.util.ChromePlatform.Socket_.prototype.setBufferSize = function(value) {
+wtf.pal.ChromePlatform.Socket_.prototype.setBufferSize = function(value) {
   this.bufferSize_ = value;
 };
 
@@ -300,7 +262,7 @@ wtf.util.ChromePlatform.Socket_.prototype.setBufferSize = function(value) {
  * @param {number=} opt_bufferSize Buffer size.
  * @private
  */
-wtf.util.ChromePlatform.Socket_.prototype.requestRead_ =
+wtf.pal.ChromePlatform.Socket_.prototype.requestRead_ =
     function(opt_bufferSize) {
   var bufferSize = opt_bufferSize || this.bufferSize_;
   bufferSize = Math.min(bufferSize, 16 * 1024 * 1024);
@@ -317,7 +279,7 @@ wtf.util.ChromePlatform.Socket_.prototype.requestRead_ =
  * @param {!Object} readInfo Read information.
  * @private
  */
-wtf.util.ChromePlatform.Socket_.prototype.socketRead_ = function(readInfo) {
+wtf.pal.ChromePlatform.Socket_.prototype.socketRead_ = function(readInfo) {
   // Check failure.
   if (readInfo['resultCode'] < 0) {
     // Failed - assume disconnected.
@@ -343,7 +305,7 @@ wtf.util.ChromePlatform.Socket_.prototype.socketRead_ = function(readInfo) {
 /**
  * @override
  */
-wtf.util.ChromePlatform.Socket_.prototype.write = function(data) {
+wtf.pal.ChromePlatform.Socket_.prototype.write = function(data) {
   var buffer = data.buffer;
   chrome.socket.write(this.socketId_, buffer, goog.bind(function(writeInfo) {
     if (writeInfo['bytesWritten'] < 0) {
