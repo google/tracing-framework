@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_TRACKSPANEL_INFO_WIDTH  240px;
+@def WTF_APP_UI_TRACKSPANEL_INFO_WIDTH          240px;
 
 /* TracksPanel root. */
 .wtfAppUiTracksPanel {
@@ -29,20 +29,10 @@
 .wtfAppUiTracksPanelCanvas {
 }
 
-.wtfAppUiTracksPanelInfoOuter {
+.wtfAppUiTracksPanelInfoControl {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
   width: WTF_APP_UI_TRACKSPANEL_INFO_WIDTH;
-}
-.wtfAppUiTracksPanelInfo {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  padding: 3px;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
