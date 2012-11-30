@@ -16,6 +16,7 @@ goog.provide('wtf.ui.SearchControl');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
+goog.require('wtf.events.EventType');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.ui.Control');
 
@@ -23,6 +24,9 @@ goog.require('wtf.ui.Control');
 
 /**
  * Search textbox control.
+ *
+ * INVALIDATED events are fired when the search term changes and have the args
+ * [newValue, oldValue].
  *
  * @param {!Element} parentElement Element to display in.
  * @param {goog.dom.DomHelper=} opt_dom DOM helper.
@@ -63,6 +67,15 @@ wtf.ui.SearchControl = function(parentElement, opt_dom) {
 
   // Bind input to watch for escape/etc.
   // TODO(benvanik): handle escape to clear? globally?
+  eh.listen(el, goog.events.EventType.KEYDOWN, function(e) {
+    if (e.keyCode == 27) {
+      el.value = '';
+      this.setValue('');
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+  }, true);
 
   // Watch textbox changes.
   eh.listen(el, [
@@ -77,19 +90,6 @@ goog.inherits(wtf.ui.SearchControl, wtf.ui.Control);
 
 
 /**
- * Search control event types.
- * @type {!Object.<string>}
- */
-wtf.ui.SearchControl.EventType = {
-  /**
-   * Search query changed.
-   * Arguments: [newValue, oldValue].
-   */
-  CHANGE: goog.events.getUniqueId('change')
-};
-
-
-/**
  * @override
  */
 wtf.ui.SearchControl.prototype.createDom = function(dom) {
@@ -100,6 +100,18 @@ wtf.ui.SearchControl.prototype.createDom = function(dom) {
       goog.getCssName('kTextField'),
       goog.getCssName('kSearchField'));
   return el;
+};
+
+
+/**
+ * Toggles error mode on the control.
+ * When true, the control will be drawn with a special error style to indicate
+ * that the contents are invalid.
+ * @param {boolean} value True to enable error mode.
+ */
+wtf.ui.SearchControl.prototype.toggleError = function(value) {
+  var el = this.getRootElement();
+  goog.dom.classes.enable(el, goog.getCssName('kTextFieldError'), value);
 };
 
 
@@ -122,7 +134,7 @@ wtf.ui.SearchControl.prototype.setValue = function(value) {
   }
   var oldValue = this.value_;
   this.value_ = value;
-  this.emitEvent(wtf.ui.SearchControl.EventType.CHANGE, value, oldValue);
+  this.emitEvent(wtf.events.EventType.INVALIDATED, value, oldValue);
 };
 
 

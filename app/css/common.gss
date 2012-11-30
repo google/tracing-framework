@@ -598,6 +598,9 @@ em {
   outline: none;
   border: 1px solid #4d90fe;
 }
+.kTextFieldError {
+  border: 1px solid #DD4B39 !important;
+}
 
 .kSearchField {
   font-size: 16px;

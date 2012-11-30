@@ -29,10 +29,11 @@ goog.require('wtf.ui.RangeRenderer');
  * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
+ * @param {!wtf.app.ui.tracks.TrackFilter} filter Track filter.
  * @constructor
  * @extends {wtf.app.ui.tracks.TrackPainter}
  */
-wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex) {
+wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex, filter) {
   goog.base(this, parentContext, db);
 
   /**
@@ -41,6 +42,13 @@ wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex) {
    * @private
    */
   this.zoneIndex_ = zoneIndex;
+
+  /**
+   * Track filter.
+   * @type {!wtf.app.ui.tracks.TrackFilter}
+   * @private
+   */
+  this.filter_ = filter;
 
   /**
    * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
@@ -193,6 +201,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
   this.resetScopeDrawing_(width);
 
+  var evaluator = this.filter_.getEvaluator();
+
   // We need to draw all the rects before the labes so we keep track of the
   // labels to draw and then draw them after.
   var labelsToDraw = [];
@@ -213,6 +223,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
     // Ignore if a leave and we already handled the scope.
     if (e == leave && enter.time >= timeLeft) {
+      continue;
+    }
+
+    // Run filter against it.
+    var filtered = evaluator ? !evaluator(enter) : false;
+    if (filtered) {
       continue;
     }
 

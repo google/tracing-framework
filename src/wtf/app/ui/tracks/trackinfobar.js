@@ -15,6 +15,7 @@ goog.provide('wtf.app.ui.tracks.TrackInfoBar');
 
 goog.require('goog.soy');
 goog.require('wtf.app.ui.tracks.trackinfobar');
+goog.require('wtf.events.EventType');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.SearchControl');
 
@@ -50,10 +51,12 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       dom);
   this.registerDisposable(this.searchControl_);
 
+  var filter = this.tracksPanel_.getFilter();
   this.searchControl_.addListener(
-      wtf.ui.SearchControl.EventType.CHANGE,
+      wtf.events.EventType.INVALIDATED,
       function(newValue, oldValue) {
-        goog.global.console.log(newValue);
+        var parsed = filter.setFromString(newValue);
+        this.searchControl_.toggleError(!parsed);
       }, this);
 };
 goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.Control);
