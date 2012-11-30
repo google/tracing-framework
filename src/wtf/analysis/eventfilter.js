@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.TrackFilter');
+goog.provide('wtf.analysis.EventFilter');
 
 goog.require('goog.string');
 goog.require('wtf.events.EventEmitter');
@@ -20,12 +20,25 @@ goog.require('wtf.events.EventType');
 
 
 /**
- * Track filter mode.
+ * Event filter state manager.
+ * An application wishing to filter things should create a filter and manipulate
+ * it over the course of the run. An application can listen for events on the
+ * filter to change UI/etc when the filter changes or may manually invalidate
+ * themselves.
+ *
+ * Filters are used by getting an evaluator function via {@see #getEvaluator}
+ * that events are passed to. The evaluator will return true if the event is
+ * included in the filter and false otherwise. If there is no active evaluator
+ * the return will be null and the caller should include all events.
+ *
+ * Evaluators can be set manually with {@see #setEvaluator} or can be
+ * constructed from various sources, such as expression strings. See
+ * {@see #setFromString} for more information.
  *
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.app.ui.tracks.TrackFilter = function() {
+wtf.analysis.EventFilter = function() {
   goog.base(this);
 
   /**
@@ -36,7 +49,7 @@ wtf.app.ui.tracks.TrackFilter = function() {
    */
   this.evaluator_ = null;
 };
-goog.inherits(wtf.app.ui.tracks.TrackFilter, wtf.events.EventEmitter);
+goog.inherits(wtf.analysis.EventFilter, wtf.events.EventEmitter);
 
 
 /**
@@ -44,14 +57,14 @@ goog.inherits(wtf.app.ui.tracks.TrackFilter, wtf.events.EventEmitter);
  * @return {boolean} True.
  * @private
  */
-wtf.app.ui.tracks.TrackFilter.passEvaluator_ = function() { return true; };
+wtf.analysis.EventFilter.passEvaluator_ = function() { return true; };
 
 
 /**
  * Gets the evaluator function used to filter events.
  * @return {Function?} Evaluator function, or null if all should pass.
  */
-wtf.app.ui.tracks.TrackFilter.prototype.getEvaluator = function() {
+wtf.analysis.EventFilter.prototype.getEvaluator = function() {
   return this.evaluator_;
 };
 
@@ -60,7 +73,7 @@ wtf.app.ui.tracks.TrackFilter.prototype.getEvaluator = function() {
  * Sets the evaluator function used to filter events.
  * @param {Function?} fn Evaluator function.
  */
-wtf.app.ui.tracks.TrackFilter.prototype.setEvaluator = function(fn) {
+wtf.analysis.EventFilter.prototype.setEvaluator = function(fn) {
   if (this.evaluator_ == fn) {
     return;
   }
@@ -72,7 +85,7 @@ wtf.app.ui.tracks.TrackFilter.prototype.setEvaluator = function(fn) {
 /**
  * Clears the current filter.
  */
-wtf.app.ui.tracks.TrackFilter.prototype.clear = function() {
+wtf.analysis.EventFilter.prototype.clear = function() {
   if (!this.evaluator_) {
     return;
   }
@@ -87,7 +100,7 @@ wtf.app.ui.tracks.TrackFilter.prototype.clear = function() {
  * @return {boolean} True if the value was set, otherwise false indicating that
  *     the expression could not be parsed.
  */
-wtf.app.ui.tracks.TrackFilter.prototype.setFromString = function(value) {
+wtf.analysis.EventFilter.prototype.setFromString = function(value) {
   value = goog.string.trim(value);
   if (!value.length) {
     this.clear();
@@ -115,7 +128,7 @@ wtf.app.ui.tracks.TrackFilter.prototype.setFromString = function(value) {
  * @type {!RegExp}
  * @private
  */
-wtf.app.ui.tracks.TrackFilter.regexMatch_ = /^\/(.+)\/([gim]*)$/;
+wtf.analysis.EventFilter.regexMatch_ = /^\/(.+)\/([gim]*)$/;
 
 
 /**
@@ -124,12 +137,12 @@ wtf.app.ui.tracks.TrackFilter.regexMatch_ = /^\/(.+)\/([gim]*)$/;
  * @return {Object} Expression object or null if it could not be parsed.
  * @private
  */
-wtf.app.ui.tracks.TrackFilter.prototype.parseExpression_ = function(value) {
+wtf.analysis.EventFilter.prototype.parseExpression_ = function(value) {
   // TODO(benvanik): real expression parsing
   // ATM only name substring search and regex mode is supported.
 
   var regex = null;
-  var regexMatch = wtf.app.ui.tracks.TrackFilter.regexMatch_;
+  var regexMatch = wtf.analysis.EventFilter.regexMatch_;
   if (regexMatch.test(value)) {
     // Looks like a regex.
     // TODO(benvanik): de-dupe options/validate to prevent exceptions.
@@ -152,7 +165,7 @@ wtf.app.ui.tracks.TrackFilter.prototype.parseExpression_ = function(value) {
  * @return {Function?} Evaluator function or null if invalid.
  * @private
  */
-wtf.app.ui.tracks.TrackFilter.prototype.generateEvaluatorFn_ =
+wtf.analysis.EventFilter.prototype.generateEvaluatorFn_ =
     function(expr) {
   return function(e) {
     return expr.name.test(e.eventType.name);

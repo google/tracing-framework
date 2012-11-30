@@ -29,7 +29,7 @@ goog.require('wtf.ui.RangeRenderer');
  * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
- * @param {!wtf.app.ui.tracks.TrackFilter} filter Track filter.
+ * @param {!wtf.analysis.EventFilter} filter Track filter.
  * @constructor
  * @extends {wtf.app.ui.tracks.TrackPainter}
  */
@@ -45,7 +45,7 @@ wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex, filter) {
 
   /**
    * Track filter.
-   * @type {!wtf.app.ui.tracks.TrackFilter}
+   * @type {!wtf.analysis.EventFilter}
    * @private
    */
   this.filter_ = filter;

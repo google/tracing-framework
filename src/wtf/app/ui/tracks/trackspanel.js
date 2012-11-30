@@ -18,10 +18,10 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.soy');
 goog.require('goog.style');
+goog.require('wtf.analysis.EventFilter');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.TabPanel');
-goog.require('wtf.app.ui.tracks.TrackFilter');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
@@ -56,10 +56,10 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   /**
    * Active track filter.
-   * @type {!wtf.app.ui.tracks.TrackFilter}
+   * @type {!wtf.analysis.EventFilter}
    * @private
    */
-  this.filter_ = new wtf.app.ui.tracks.TrackFilter();
+  this.filter_ = new wtf.analysis.EventFilter();
   this.registerDisposable(this.filter_);
   this.filter_.addListener(wtf.events.EventType.INVALIDATED,
       function() {
@@ -201,7 +201,7 @@ wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_ =
 
 /**
  * Get the active filter.
- * @return {!wtf.app.ui.tracks.TrackFilter} Gets the active track filter.
+ * @return {!wtf.analysis.EventFilter} Gets the active track filter.
  */
 wtf.app.ui.tracks.TracksPanel.prototype.getFilter = function() {
   return this.filter_;
