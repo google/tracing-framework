@@ -29,10 +29,11 @@ goog.require('wtf.ui.RangeRenderer');
  * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
+ * @param {!wtf.analysis.EventFilter} filter Track filter.
  * @constructor
  * @extends {wtf.app.ui.tracks.TrackPainter}
  */
-wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex) {
+wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex, filter) {
   goog.base(this, parentContext, db);
 
   /**
@@ -41,6 +42,13 @@ wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex) {
    * @private
    */
   this.zoneIndex_ = zoneIndex;
+
+  /**
+   * Track filter.
+   * @type {!wtf.analysis.EventFilter}
+   * @private
+   */
+  this.filter_ = filter;
 
   /**
    * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
@@ -193,6 +201,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
   this.resetScopeDrawing_(width);
 
+  var evaluator = this.filter_.getEvaluator();
+
   // We need to draw all the rects before the labes so we keep track of the
   // labels to draw and then draw them after.
   var labelsToDraw = [];
@@ -216,6 +226,10 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
       continue;
     }
 
+    // Run filter against it.
+    var filtered = evaluator ? !evaluator(enter) : false;
+    var alpha = filtered ? 0.3 : 1;
+
     // Compute screen size.
     var left = wtf.math.remap(enter.time, timeLeft, timeRight, 0, width);
     var right = wtf.math.remap(leave.time, timeLeft, timeRight, 0, width);
@@ -232,7 +246,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     if (!this.rangeRenderers_[depth]) {
       this.rangeRenderers_[depth] = new wtf.ui.RangeRenderer();
     }
-    this.rangeRenderers_[depth].drawRange(screenLeft, screenRight, color, 1);
+    this.rangeRenderers_[depth].drawRange(
+        screenLeft, screenRight, color, alpha);
 
     if (screenWidth > 15) {
       // Calculate label width to determine fade.

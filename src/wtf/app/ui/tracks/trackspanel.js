@@ -18,9 +18,11 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.soy');
 goog.require('goog.style');
+goog.require('wtf.analysis.EventFilter');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.TabPanel');
+goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.events.EventType');
@@ -51,6 +53,27 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.db_ = db;
+
+  /**
+   * Active track filter.
+   * @type {!wtf.analysis.EventFilter}
+   * @private
+   */
+  this.filter_ = new wtf.analysis.EventFilter();
+  this.registerDisposable(this.filter_);
+  this.filter_.addListener(wtf.events.EventType.INVALIDATED,
+      function() {
+        this.requestRepaint();
+      }, this);
+
+  /**
+   * Infobar control.
+   * @type {!wtf.app.ui.tracks.TrackInfoBar}
+   * @private
+   */
+  this.infobar_ = new wtf.app.ui.tracks.TrackInfoBar(this,
+      this.getChildElement(goog.getCssName('wtfAppUiTracksPanelInfoControl')));
+  this.registerDisposable(this.infobar_);
 
   /**
    * Track canvas.
@@ -177,6 +200,15 @@ wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_ =
 
 
 /**
+ * Get the active filter.
+ * @return {!wtf.analysis.EventFilter} Gets the active track filter.
+ */
+wtf.app.ui.tracks.TracksPanel.prototype.getFilter = function() {
+  return this.filter_;
+};
+
+
+/**
  * @override
  */
 wtf.app.ui.tracks.TracksPanel.prototype.navigate = function(pathParts) {
@@ -205,6 +237,6 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
   goog.asserts.assert(paintContext);
 
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
-      paintContext, this.db_, zoneIndex);
+      paintContext, this.db_, zoneIndex, this.filter_);
   this.timeRangePainters_.push(zonePainter);
 };
