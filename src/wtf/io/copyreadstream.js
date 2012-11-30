@@ -60,6 +60,7 @@ wtf.io.CopyReadStream.prototype.bufferRead_ = function(buffer, length) {
   // This clones the buffer for writing because we can't be sure if it's async
   // or not. This could be made more optimal.
   var clonedBuffer = buffer.clone(length);
+  clonedBuffer.offset = length;
   this.targetStream_.write(clonedBuffer, function(buffer) {}, this);
 
   // TODO(benvanik): is the flush required?

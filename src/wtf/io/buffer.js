@@ -80,7 +80,7 @@ wtf.io.Buffer.ENABLE_ASSERTS = false;
  */
 wtf.io.Buffer.prototype.clone = function(opt_length) {
   var length = goog.isDef(opt_length) ? opt_length : this.offset;
-  length = Math.min(length, this.offset);
+  length = Math.min(length, this.capacity);
   var newBuffer = new wtf.io.Buffer(length);
   var srcData = this.data;
   var dstData = newBuffer.data;

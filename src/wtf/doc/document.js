@@ -15,6 +15,7 @@ goog.provide('wtf.doc.Document');
 goog.provide('wtf.doc.DocumentMode');
 goog.provide('wtf.doc.DocumentStatus');
 
+goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.object');
 goog.require('wtf.analysis.Session');
@@ -326,4 +327,15 @@ wtf.doc.Document.prototype.endEventStream = function(streamId) {
  */
 wtf.doc.Document.prototype.addBinaryEventSource = function(data) {
   this.session_.addBinarySource(data);
+};
+
+
+/**
+ * Gets the trace data storage.
+ * @return {!wtf.analysis.Storage} Trace data storage.
+ */
+wtf.doc.Document.prototype.getStorage = function() {
+  var storage = this.session_.getStorage();
+  goog.asserts.assert(storage);
+  return storage;
 };

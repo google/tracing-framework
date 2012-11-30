@@ -11,6 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+goog.provide('wtf.analysis.DataStream');
 goog.provide('wtf.analysis.Storage');
 
 goog.require('goog.Disposable');
@@ -63,4 +64,32 @@ wtf.analysis.Storage.prototype.captureStream = function(sourceStream) {
 
   var copyStream = new wtf.io.CopyReadStream(sourceStream, targetStream);
   return copyStream;
+};
+
+
+/**
+ * @typedef {{
+ *   type: string,
+ *   data: !Array.<!wtf.io.ByteArray>
+ * }}
+ */
+wtf.analysis.DataStream;
+
+
+/**
+ * Gets a list of all stream buffers with cloned data.
+ * @return {!Array.<!wtf.analysis.DataStream>} Data buffers.
+ */
+wtf.analysis.Storage.prototype.snapshotDataStreamBuffers = function() {
+  var dataStreams = [];
+  for (var n = 0; n < this.allStreams_.length; n++) {
+    var writeStream = this.allStreams_[n];
+    if (writeStream instanceof wtf.io.MemoryWriteStream) {
+      dataStreams.push({
+        type: 'application/x-extension-wtf-trace',
+        data: writeStream.getData()
+      });
+    }
+  }
+  return dataStreams;
 };

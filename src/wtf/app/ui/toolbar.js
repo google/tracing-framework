@@ -20,6 +20,7 @@ goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.ui.Control');
+goog.require('wtf.util');
 
 
 
@@ -56,7 +57,7 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       this.settingsClicked_, false);
 
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonShare'), false);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSave'), false);
+  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSave'), true);
 
   var db = documentView.getDatabase();
   db.addListener(
@@ -159,8 +160,20 @@ wtf.app.ui.Toolbar.prototype.shareClicked_ = function(e) {
 wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
   e.preventDefault();
 
-  // TODO(benvanik): save current data
-  window.console.log('save');
+  var doc = this.documentView_.getDocument();
+  var storage = doc.getStorage();
+  var dataStreams = storage.snapshotDataStreamBuffers();
+  for (var n = 0; n < dataStreams.length; n++) {
+    var dataStream = dataStreams[n];
+    var filename = 'trace-something';
+    // TODO(benvanik): think of a good naming scheme
+    switch (dataStream.type) {
+      case 'application/x-extension-wtf-trace':
+        filename += '.wtf-trace';
+        break;
+    }
+    wtf.util.downloadData([dataStream.data], filename, dataStream.type);
+  }
 };
 
 
