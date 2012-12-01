@@ -462,7 +462,21 @@ wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function() {
  * @private
  */
 wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function() {
-  wtf.trace.snapshot();
+  var contextInfo = wtf.trace.getTraceManager().detectContextInfo();
+
+  // Pick a filename prefix.
+  var options = this.options_;
+  var filenamePrefix = options.getOptionalString('wtf.trace.target', '');
+  if (filenamePrefix.length) {
+    if (filenamePrefix != 'file://') {
+      filenamePrefix += '-';
+    }
+  } else {
+    filenamePrefix += 'file://';
+  }
+
+  var filename = filenamePrefix + contextInfo.getFilename();
+  wtf.trace.snapshot(filename);
 };
 
 

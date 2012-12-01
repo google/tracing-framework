@@ -31,7 +31,7 @@ goog.require('wtf.util');
 wtf.io.LocalFileWriteStream = function(filenamePrefix) {
   goog.base(this);
 
-  // prefix-YYYY-MM-DDTHH-MM-SS-mmmZZZ
+  // prefix-YYYY-MM-DDTHH-MM-SS
   var dt = new Date();
   var filenameSuffix = '-' +
       dt.getFullYear() +

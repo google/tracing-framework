@@ -22,6 +22,8 @@ goog.require('wtf.io.ReadStream');
  * Copying read stream.
  * This wraps an existing read stream and clones all output to a write stream.
  *
+ * @param {!wtf.io.ReadStream} sourceStream Source stream.
+ * @param {!wtf.io.WriteStream} targetStream Target stream.
  * @constructor
  * @extends {wtf.io.ReadStream}
  */

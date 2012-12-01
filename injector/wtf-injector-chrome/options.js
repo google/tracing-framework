@@ -229,7 +229,7 @@ Options.prototype.getDefaultPageOptions = function(url) {
   // Snapshotting:
   options['wtf.trace.mode'] = 'snapshotting';
   // TODO(benvanik): make something up based on page title/domain/etc?
-  options['wtf.trace.target'] = 'file://' + 'trace';
+  options['wtf.trace.target'] = 'file://';
   // Streaming:
   // options['wtf.trace.mode'] = 'streaming';
   // options['wtf.trace.target'] = 'http://' + appEndpoint;

@@ -16,9 +16,11 @@ goog.provide('wtf.app.ui.Toolbar');
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('goog.string');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
+goog.require('wtf.io');
 goog.require('wtf.ui.Control');
 goog.require('wtf.util');
 
@@ -161,18 +163,40 @@ wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
   e.preventDefault();
 
   var doc = this.documentView_.getDocument();
+  var db = doc.getDatabase();
+  var sources = db.getSources();
+  if (!sources.length) {
+    return;
+  }
+  // Just pick the first source for naming.
+  var contextInfo = sources[0];
+  var filename = contextInfo.getFilename();
+
+  // prefix-YYYY-MM-DDTHH-MM-SS
+  var dt = new Date();
+  var filenameSuffix = '-' +
+      dt.getFullYear() +
+      goog.string.padNumber(dt.getMonth() + 1, 2) +
+      goog.string.padNumber(dt.getDate(), 2) + 'T' +
+      goog.string.padNumber(dt.getHours(), 2) +
+      goog.string.padNumber(dt.getMinutes(), 2) +
+      goog.string.padNumber(dt.getSeconds(), 2);
+  filename += filenameSuffix;
+
   var storage = doc.getStorage();
   var dataStreams = storage.snapshotDataStreamBuffers();
   for (var n = 0; n < dataStreams.length; n++) {
     var dataStream = dataStreams[n];
-    var filename = 'trace-something';
-    // TODO(benvanik): think of a good naming scheme
+    var streamFilename = filename;
+    if (dataStreams.length > 1) {
+      streamFilename += '-' + n;
+    }
     switch (dataStream.type) {
       case 'application/x-extension-wtf-trace':
-        filename += '.wtf-trace';
+        streamFilename += wtf.io.FILE_EXTENSION;
         break;
     }
-    wtf.util.downloadData([dataStream.data], filename, dataStream.type);
+    wtf.util.downloadData([dataStream.data], streamFilename, dataStream.type);
   }
 };
 
