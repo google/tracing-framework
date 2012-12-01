@@ -69,8 +69,12 @@ wtf.ui.SearchControl = function(parentElement, opt_dom) {
   // TODO(benvanik): handle escape to clear? globally?
   eh.listen(el, goog.events.EventType.KEYDOWN, function(e) {
     if (e.keyCode == 27) {
-      el.value = '';
-      this.setValue('');
+      if (el.value.length) {
+        el.value = '';
+        this.setValue('');
+      } else {
+        el.blur();
+      }
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -143,4 +147,13 @@ wtf.ui.SearchControl.prototype.setValue = function(value) {
  */
 wtf.ui.SearchControl.prototype.clear = function() {
   this.setValue('');
+};
+
+
+/**
+ * Focuses the search control.
+ */
+wtf.ui.SearchControl.prototype.focus = function() {
+  var el = this.getRootElement();
+  el.focus();
 };
