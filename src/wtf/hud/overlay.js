@@ -525,18 +525,34 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
   var buffers = [];
   wtf.trace.snapshot(buffers);
 
-  // Open the page URL.
+  // Get the page URL.
   var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
-  var target = window.open(endpoint, 'wtf_ui');
 
-  // Wait for the child to connect.
-  wtf.ipc.waitForChildWindow(function(channel) {
-    channel.postMessage({
-      'command': 'snapshot',
+  // TODO(benvanik): if the extension is attached always show snapshot through
+  // it - this would ensure the UI runs in a different process.
+  if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
+    // Opening in an extension window, need to marshal through the content
+    // script to get it open.
+    this.extensionChannel_.postMessage({
+      'command': 'show_snapshot',
+      'page_url': endpoint,
       'content_type': 'application/x-extension-wtf-trace',
       'contents': buffers
-    });
-  }, this);
+    }, buffers);
+  } else {
+    // Create window and show.
+    var target = window.open(endpoint, 'wtf_ui');
+
+    // Wait for the child to connect.
+    wtf.ipc.waitForChildWindow(function(channel) {
+      goog.global.console.log(channel);
+      channel.postMessage({
+        'command': 'snapshot',
+        'content_type': 'application/x-extension-wtf-trace',
+        'contents': buffers
+      }, buffers);
+    }, this);
+  }
 };
 
 

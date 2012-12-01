@@ -223,6 +223,15 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   var contentType = data['content_type'];
   var datas = data['contents'];
 
+  if (!datas.length) {
+    return;
+  }
+  for (var n = 0; n < datas.length; n++) {
+    if (!(datas[n] instanceof Uint8Array)) {
+      datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
+    }
+  }
+
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
   for (var n = 0; n < datas.length; n++) {

@@ -207,10 +207,11 @@ Options.prototype.getDefaultPageOptions = function(url) {
   // TODO(benvanik): pull from global options?
   // TODO(benvanik): detect if app is installed and default to it
   // TODO(benvanik): embedded maindisplay by default
-  var appMode = 'remote';
-  var appEndpoint = 'localhost:9024';
-  // var appMode = 'page';
-  // var appEndpoint = 'http://localhost:8080/app/maindisplay-debug.html';
+  // var appMode = 'remote';
+  // var appEndpoint = 'localhost:9024';
+  var appMode = 'page';
+  //var appEndpoint = 'http://localhost:8080/app/maindisplay-debug.html';
+  var appEndpoint = chrome.extension.getURL('app/maindisplay.html');
 
   // TODO(benvanik): pull from global options?
   var extensions = [
