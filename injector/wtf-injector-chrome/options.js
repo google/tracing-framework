@@ -76,7 +76,7 @@ var Options = function() {
  * Loads the options.
  */
 Options.prototype.load = function() {
-  chrome.storage.sync.get([
+  chrome.storage.local.get([
     'options'
   ], (function(items) {
     var values = items['options'];
@@ -96,7 +96,7 @@ Options.prototype.load = function() {
  * Saves the options, overwriting all previous values.
  */
 Options.prototype.save = function() {
-  chrome.storage.sync.set({
+  chrome.storage.local.set({
     'options': {
       'showPageAction': this.showPageAction,
       'showContextMenu': this.showContextMenu,

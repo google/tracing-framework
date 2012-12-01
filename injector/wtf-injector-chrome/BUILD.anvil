@@ -36,10 +36,15 @@ file_set(
     src_exclude_filter='*-deps.js')
 
 file_set(
+    name='app_files',
+    srcs=['../../app:app_files'],
+    src_exclude_filter='manifest.json')
+
+file_set(
     name='combined_files',
     srcs=[
         ':extension_files',
-        '../../app:app_files'
+        ':app_files'
         ])
 
 copy_files(

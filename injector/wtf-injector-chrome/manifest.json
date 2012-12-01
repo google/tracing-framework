@@ -4,10 +4,10 @@
   // These can be copy/pasted directly between them.
   // ---------------------------------------------------------------------------
   "manifest_version": 2,
-  "version": "0.0.12",
+  "version": "0.0.16",
   "minimum_chrome_version": "21",
   "offline_enabled": true,
-  "incognito": "spanning",
+  "incognito": "split",
   "permissions": [
     "chrome://favicon/",
     "cookies",
