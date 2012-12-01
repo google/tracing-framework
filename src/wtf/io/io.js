@@ -72,6 +72,20 @@ wtf.io.isByteArray = function(value) {
 
 
 /**
+ * Creates a new byte array from a regular array.
+ * @param {!Array.<number>} source Source array.
+ * @return {!wtf.io.ByteArray} The new byte array.
+ */
+wtf.io.createByteArrayFromArray = function(source) {
+  var target = wtf.io.createByteArray(source.length);
+  for (var n = 0; n < source.length; n++) {
+    target[n] = source[n] & 0xFF;
+  }
+  return target;
+};
+
+
+/**
  * Checks to see if the two byte arrays are equal.
  * @param {!wtf.io.ByteArray} a First array.
  * @param {!wtf.io.ByteArray} b Second array.

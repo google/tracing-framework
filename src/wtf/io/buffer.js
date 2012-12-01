@@ -242,7 +242,6 @@ wtf.io.Buffer.prototype.readUint16 = function() {
   this.ensureAvailable_(2);
   var data = this.data;
   var offset = this.offset;
-  window.console.assert(offset + 2 <= data.byteLength);
   var b0 = data[offset++];
   var b1 = data[offset++];
   this.offset = offset;
