@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.zoom.Element');
 
 goog.require('goog.asserts');
+goog.require('goog.dom');
 goog.require('goog.events.BrowserEvent');
 goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
@@ -34,6 +35,13 @@ goog.require('wtf.ui.zoom.TransitionMode');
  */
 wtf.ui.zoom.Element = function(el, zoomTarget) {
   goog.base(this, this);
+
+  /**
+   * DOM helper.
+   * @type {!goog.dom.DomHelper}
+   * @private
+   */
+  this.dom_ = goog.dom.getDomHelper(el);
 
   /**
    * Target DOM element.
@@ -136,6 +144,19 @@ wtf.ui.zoom.Element.prototype.setCursor = function(opt_name) {
 
 
 /**
+ * Steals focus from any active input control.
+ * @private
+ */
+wtf.ui.zoom.Element.prototype.takeFocus_ = function() {
+  var doc = this.dom_.getDocument();
+  if (doc.activeElement) {
+    doc.activeElement.blur();
+  }
+  this.el.focus();
+};
+
+
+/**
  * Gets the event position offset relative to the current target, as opposed to
  * the real target.
  * @param {!goog.events.BrowserEvent} e Browser event.
@@ -160,6 +181,7 @@ wtf.ui.zoom.Element.prototype.getEventOffset_ = function(e) {
 wtf.ui.zoom.Element.prototype.mousedown_ = function(e) {
   var offset = this.getEventOffset_(e);
   var button = /** @type {goog.events.BrowserEvent.MouseButton} */ (e.button);
+  this.takeFocus_();
   if (this.zoomTarget.mouseDown(offset.x, offset.y, button)) {
     e.stopPropagation();
     e.preventDefault();
@@ -174,6 +196,7 @@ wtf.ui.zoom.Element.prototype.mousedown_ = function(e) {
 wtf.ui.zoom.Element.prototype.mouseup_ = function(e) {
   var offset = this.getEventOffset_(e);
   var button = /** @type {goog.events.BrowserEvent.MouseButton} */ (e.button);
+  this.takeFocus_();
   if (this.zoomTarget.mouseUp(offset.x, offset.y, button)) {
     e.stopPropagation();
     e.preventDefault();

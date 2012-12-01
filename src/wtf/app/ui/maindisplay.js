@@ -30,6 +30,7 @@ goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.io');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.ui.Control');
