@@ -40,6 +40,50 @@ var Extension = function() {
       port.onMessage.addListener(this.pageMessageReceived_.bind(this));
     }
   }.bind(this));
+
+  // Detect the application.
+  this.detectApplication_();
+  var detectApplication = this.detectApplication_.bind(this);
+  chrome.management.onInstalled.addListener(detectApplication);
+  chrome.management.onUninstalled.addListener(detectApplication);
+  chrome.management.onEnabled.addListener(detectApplication);
+  chrome.management.onDisabled.addListener(detectApplication);
+};
+
+
+/**
+ * Detects whether the application is installed and sets up options for it.
+ * @private
+ */
+Extension.prototype.detectApplication_ = function() {
+  // This is used to change the default options to use the app instead of the
+  // embedded app.
+  // TODO(benvanik): some way of talking to the app to get the right URL.
+  var options = this.options_;
+  options.setDefaultEndpoint('page',
+      chrome.extension.getURL('app/maindisplay.html'));
+      // TODO(benvanik): use debug URL somehow?
+      //'http://localhost:8080/app/maindisplay-debug.html');
+
+  chrome.management.getAll(function(results) {
+    for (var n = 0; n < results.length; n++) {
+      var result = results[n];
+      if (!result.enabled) {
+        continue;
+      }
+      if (result.name == 'Web Tracing Framework (App/DEBUG)') {
+        // Always prefer the debug app, if installed.
+        console.log('Discovered WTF App - debug ' + result.version);
+        options.setDefaultEndpoint('remote', 'localhost:9024');
+        break;
+      } else if (result.id == 'ofamllpnllolodilannpkikhjjcnfegg') {
+        // Otherwise use CWS ID.
+        console.log('Discovered WTF App - release ' + result.version);
+        options.setDefaultEndpoint('remote', 'localhost:9023');
+        break;
+      }
+    }
+  });
 };
 
 
