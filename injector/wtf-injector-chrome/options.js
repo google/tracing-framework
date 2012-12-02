@@ -69,6 +69,29 @@ var Options = function() {
    * @private
    */
   this.pageOptions_ = {};
+
+  /**
+   * Default endpoint to use for pages.
+   * @type {{mode: string, endpoint: string}}
+   * @private
+   */
+  this.defaultEndpoint_ = {
+    mode: 'page',
+    endpoint: chrome.extension.getURL('app/maindisplay.html')
+  };
+};
+
+
+/**
+ * Sets the default endpoint.
+ * @param {string} mode Mode.
+ * @param {string} endpoint Endpoint.
+ */
+Options.prototype.setDefaultEndpoint = function(mode, endpoint) {
+  this.defaultEndpoint_ = {
+    mode: mode,
+    endpoint: endpoint
+  };
 };
 
 
@@ -76,7 +99,7 @@ var Options = function() {
  * Loads the options.
  */
 Options.prototype.load = function() {
-  chrome.storage.sync.get([
+  chrome.storage.local.get([
     'options'
   ], (function(items) {
     var values = items['options'];
@@ -96,7 +119,7 @@ Options.prototype.load = function() {
  * Saves the options, overwriting all previous values.
  */
 Options.prototype.save = function() {
-  chrome.storage.sync.set({
+  chrome.storage.local.set({
     'options': {
       'showPageAction': this.showPageAction,
       'showContextMenu': this.showContextMenu,
@@ -203,15 +226,6 @@ Options.prototype.blacklistPage = function(url) {
  * @return {!Object} Default options object.
  */
 Options.prototype.getDefaultPageOptions = function(url) {
-  // Pick an app URL.
-  // TODO(benvanik): pull from global options?
-  // TODO(benvanik): detect if app is installed and default to it
-  // TODO(benvanik): embedded maindisplay by default
-  var appMode = 'remote';
-  var appEndpoint = 'localhost:9024';
-  // var appMode = 'page';
-  // var appEndpoint = 'http://localhost:8080/app/maindisplay-debug.html';
-
   // TODO(benvanik): pull from global options?
   var extensions = [
     // 'http://localhost:8080/extensions/test/extension.json',
@@ -220,8 +234,8 @@ Options.prototype.getDefaultPageOptions = function(url) {
 
   var options = {
     'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
-    'wtf.hud.app.mode': appMode,
-    'wtf.hud.app.endpoint': appEndpoint,
+    'wtf.hud.app.mode': this.defaultEndpoint_.mode,
+    'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
     'wtf.extensions': extensions
   };
 
@@ -229,7 +243,7 @@ Options.prototype.getDefaultPageOptions = function(url) {
   // Snapshotting:
   options['wtf.trace.mode'] = 'snapshotting';
   // TODO(benvanik): make something up based on page title/domain/etc?
-  options['wtf.trace.target'] = 'file://' + 'trace';
+  options['wtf.trace.target'] = 'file://';
   // Streaming:
   // options['wtf.trace.mode'] = 'streaming';
   // options['wtf.trace.target'] = 'http://' + appEndpoint;

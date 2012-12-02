@@ -30,6 +30,7 @@ goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.io');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.ui.Control');
@@ -40,13 +41,15 @@ goog.require('wtf.ui.Control');
  * Main WTF UI.
  * Manages the main UI (menus/etc), active traces (and their trace views), etc.
  *
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!wtf.util.Options} options Options.
  * @param {Element=} opt_parentElement Element to display in.
  * @param {goog.dom.DomHelper=} opt_dom DOM helper.
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.MainDisplay = function(options, opt_parentElement, opt_dom) {
+wtf.app.ui.MainDisplay = function(
+    platform, options, opt_parentElement, opt_dom) {
   var dom = opt_dom || goog.dom.getDomHelper(opt_parentElement);
   var parentElement = /** @type {!Element} */ (
       opt_parentElement || dom.getDocument().body);
@@ -58,6 +61,13 @@ wtf.app.ui.MainDisplay = function(options, opt_parentElement, opt_dom) {
    * @private
    */
   this.options_ = options;
+
+  /**
+   * Platform abstraction layer.
+   * @type {!wtf.pal.IPlatform}
+   * @private
+   */
+  this.platform_ = platform;
 
   /**
    * The current document view, if any.
@@ -214,7 +224,16 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   var contentType = data['content_type'];
   var datas = data['contents'];
 
-  var doc = new wtf.doc.Document();
+  if (!datas.length) {
+    return;
+  }
+  for (var n = 0; n < datas.length; n++) {
+    if (!(datas[n] instanceof Uint8Array)) {
+      datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
+    }
+  }
+
+  var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
   for (var n = 0; n < datas.length; n++) {
     doc.addBinaryEventSource(datas[n]);
@@ -233,7 +252,7 @@ wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
   var contentType = data['content_type'];
 
   // TODO(benvanik): support multiple streams into the same trace/etc
-  var doc = new wtf.doc.Document();
+  var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
   doc.beginEventStream(streamId, contentType);
 };
@@ -297,7 +316,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
 
   var name = sources[0].name;
 
-  var doc = new wtf.doc.Document();
+  var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
 
   // Add all sources to the trace.
@@ -325,7 +344,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
  * @param {!string} url Resource to load.
  */
 wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
-  var doc = new wtf.doc.Document();
+  var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
 
   var xhr = new goog.net.XhrIo();

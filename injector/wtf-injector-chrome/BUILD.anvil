@@ -32,16 +32,28 @@ file_set(
         'options.js',
         'uri.js',
         'wtf-injector.js',
-        ] + glob('assets/**/*'),
+        ] + glob('assets/**/*.png'),
     src_exclude_filter='*-deps.js')
+
+file_set(
+    name='app_files',
+    srcs=['../../app:app_files'],
+    src_exclude_filter='manifest.json')
+
+file_set(
+    name='combined_files',
+    srcs=[
+        ':extension_files',
+        ':app_files'
+        ])
 
 copy_files(
     name='deploy',
-    srcs=[':extension_files'],
+    srcs=[':combined_files'],
     out='../../wtf-injector-chrome/',
     flatten_paths=['injector/wtf-injector-chrome/'])
 
 archive_files(
     name='wtf-injector-chrome',
-    srcs=':extension_files',
+    srcs=':combined_files',
     flatten_paths=['injector/wtf-injector-chrome/'])

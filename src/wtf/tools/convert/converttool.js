@@ -23,7 +23,7 @@ goog.require('wtf.tools.convert.ConvertTraceListener');
 /**
  * Convert tool.
  *
- * @param {!wtf.util.IPlatform} platform Platform abstraction layer.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @constructor
  * @extends {wtf.tools.Tool}
  */

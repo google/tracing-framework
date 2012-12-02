@@ -16,6 +16,8 @@ goog.provide('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.events.EventType');
+goog.require('wtf.events.Keyboard');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.SearchControl');
 
@@ -50,6 +52,14 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       this.getChildElement(goog.getCssName('wtfAppUiTracksPanelInfoHeader')),
       dom);
   this.registerDisposable(this.searchControl_);
+
+  // Setup keyboard shortcuts.
+  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+  keyboardScope.addShortcut('ctrl+f', function() {
+    this.searchControl_.focus();
+  }, this);
 
   var filter = this.tracksPanel_.getFilter();
   this.searchControl_.addListener(

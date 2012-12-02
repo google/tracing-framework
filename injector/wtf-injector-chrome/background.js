@@ -17,21 +17,3 @@
 // main()
 var extension = new Extension();
 extension.setup();
-
-
-// TODO(benvanik): use this to find the app and setup options for connecting
-//     or an infobar for downloading it
-chrome.management.getAll(function(results) {
-  for (var n = 0; n < results.length; n++) {
-    var result = results[n];
-    if (result.name == 'Web Tracing Framework (App/DEBUG)') {
-      // Always prefer the debug app, if installed.
-      console.log('Discovered WTF App - debug ' + result.version);
-      break;
-    } else if (result.id == 'ofamllpnllolodilannpkikhjjcnfegg') {
-      // Otherwise use CWS ID.
-      console.log('Discovered WTF App - release ' + result.version);
-      break;
-    }
-  }
-});

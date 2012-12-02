@@ -173,6 +173,25 @@ function startTracing(options, extensions) {
 
 
 /**
+ * Converts a list of Uint8Arrays to regular arrays.
+ * @param {!Array.<!Uint8Array>} sources Source arrays.
+ * @return {!Array.<!Array.<number>>} Target arrays.
+ */
+function convertUint8ArraysToArrays(sources) {
+  var targets = [];
+  for (var n = 0; n < sources.length; n++) {
+    var source = sources[n];
+    var target = new Array(source.length);
+    for (var i = 0; i < source.length; i++) {
+      target[i] = source[i];
+    }
+    targets.push(target);
+  }
+  return targets;
+};
+
+
+/**
  * Sets up two-way communications with the page.
  * This enables proxying to the background page.
  */
@@ -195,6 +214,9 @@ function setupCommunications() {
         packet['wtf_ipc_sender_token'] == localId) {
       return;
     }
+
+    // NOTE: Chrome ports do not support transferrables! Need to convert!
+
     var data = packet['data'];
     switch (data['command']) {
       case 'reload':
@@ -206,6 +228,14 @@ function setupCommunications() {
         port.postMessage({
           'command': 'save_settings',
           'content': data['content']
+        });
+        break;
+      case 'show_snapshot':
+        port.postMessage({
+          'command': 'show_snapshot',
+          'page_url': data['page_url'],
+          'content_type': data['content_type'],
+          'contents': convertUint8ArraysToArrays(data['contents'])
         });
         break;
     }
@@ -221,8 +251,6 @@ function setupCommunications() {
     e.initCustomEvent('WtfContentScriptEvent', false, false, packet);
     channelElement.dispatchEvent(e);
   };
-
-  // TODO(benvanik): listen on port and proxy messages from extension?
 };
 
 
