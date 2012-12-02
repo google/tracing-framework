@@ -215,7 +215,7 @@ function setupCommunications() {
       return;
     }
 
-    // NOTE: Chrome ports do not suppor transferrables! Need to convert!
+    // NOTE: Chrome ports do not support transferrables! Need to convert!
 
     var data = packet['data'];
     switch (data['command']) {
@@ -251,8 +251,6 @@ function setupCommunications() {
     e.initCustomEvent('WtfContentScriptEvent', false, false, packet);
     channelElement.dispatchEvent(e);
   };
-
-  // TODO(benvanik): listen on port and proxy messages from extension?
 };
 
 

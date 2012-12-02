@@ -255,7 +255,7 @@ wtf.data.ScriptContextInfo.prototype.getFilename = function() {
     var filename = goog.string.stripQuotes(this.title, '"`\'');
     filename = goog.string.collapseWhitespace(filename);
     filename = filename.replace(/[\/ \n\r]/g, '-');
-    filename = filename.replace(/--/g, '-');
+    filename = filename.replace(/[-]+/g, '-');
     filename = filename.toLowerCase();
     return filename;
   } else if (this.uri) {
