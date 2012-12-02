@@ -16,8 +16,10 @@ goog.provide('wtf.data.ContextType');
 goog.provide('wtf.data.ScriptContextInfo');
 goog.provide('wtf.data.UserAgent');
 
+goog.require('goog.Uri');
 goog.require('goog.asserts');
 goog.require('goog.json');
+goog.require('goog.string');
 goog.require('goog.userAgent');
 goog.require('goog.userAgent.platform');
 goog.require('goog.userAgent.product');
@@ -45,6 +47,13 @@ wtf.data.ContextType = {
  */
 wtf.data.ContextInfo = function() {
 };
+
+
+/**
+ * Infers a filename from the given context info.
+ * @return {string} A filename fragment.
+ */
+wtf.data.ContextInfo.prototype.getFilename = goog.abstractMethod;
 
 
 /**
@@ -236,6 +245,38 @@ wtf.data.ScriptContextInfo = function() {
   };
 };
 goog.inherits(wtf.data.ScriptContextInfo, wtf.data.ContextInfo);
+
+
+/**
+ * @override
+ */
+wtf.data.ScriptContextInfo.prototype.getFilename = function() {
+  if (this.title) {
+    var filename = goog.string.stripQuotes(this.title, '"`\'');
+    filename = goog.string.collapseWhitespace(filename);
+    filename = filename.replace(/[\/ \n\r]/g, '-');
+    filename = filename.replace(/[-]+/g, '-');
+    filename = filename.toLowerCase();
+    return filename;
+  } else if (this.uri) {
+    var uri = goog.Uri.parse(this.uri);
+    var filename = uri.getDomain();
+    if (uri.hasPort()) {
+      filename += '-' + uri.getPort();
+    }
+    if (uri.hasPath()) {
+      var path = uri.getPath();
+      path = path.replace(/\//g, '-');
+      path = path.replace(/\./g, '-');
+      if (goog.string.endsWith(filename, '-')) {
+        path = path.substr(0, path.length - 1);
+      }
+      filename += path;
+    }
+    return filename;
+  }
+  return 'script';
+};
 
 
 /**

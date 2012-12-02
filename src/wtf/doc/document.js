@@ -15,9 +15,11 @@ goog.provide('wtf.doc.Document');
 goog.provide('wtf.doc.DocumentMode');
 goog.provide('wtf.doc.DocumentStatus');
 
+goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.object');
 goog.require('wtf.analysis.Session');
+goog.require('wtf.analysis.Storage');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.doc.CommentScope');
 goog.require('wtf.doc.Profile');
@@ -68,10 +70,11 @@ wtf.doc.DocumentStatus = {
  * Implementations can make this support local-only documents or remote
  * documents (such as ones stored in the cloud).
  *
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.doc.Document = function() {
+wtf.doc.Document = function(platform) {
   goog.base(this);
 
   /**
@@ -143,6 +146,11 @@ wtf.doc.Document = function() {
    * @private
    */
   this.readStreams_ = {};
+
+  // Setup storage.
+  // This lets us get all data in the document if needed.
+  var storage = new wtf.analysis.Storage(platform);
+  this.session_.setStorage(storage);
 };
 goog.inherits(wtf.doc.Document, wtf.events.EventEmitter);
 
@@ -319,4 +327,15 @@ wtf.doc.Document.prototype.endEventStream = function(streamId) {
  */
 wtf.doc.Document.prototype.addBinaryEventSource = function(data) {
   this.session_.addBinarySource(data);
+};
+
+
+/**
+ * Gets the trace data storage.
+ * @return {!wtf.analysis.Storage} Trace data storage.
+ */
+wtf.doc.Document.prototype.getStorage = function() {
+  var storage = this.session_.getStorage();
+  goog.asserts.assert(storage);
+  return storage;
 };

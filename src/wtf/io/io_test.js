@@ -54,6 +54,14 @@ wtf.io_test = suite('wtf.io', function() {
       assert.isFalse(wtf.io.byteArraysEqual(sourceArray, targetArray));
     });
 
+    test('#createByteArrayFromArray', function() {
+      assert.lengthOf(wtf.io.createByteArrayFromArray([]), 0);
+
+      var sourceArray = [1, 2, 3];
+      var targetArray = wtf.io.createByteArrayFromArray(sourceArray);
+      assert.arraysEqual(targetArray, sourceArray);
+    });
+
     test('#copyByteArray', function() {
       var sourceArray = wtf.io.createByteArray(4);
       var targetArray = wtf.io.createByteArray(4);

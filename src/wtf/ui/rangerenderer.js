@@ -98,6 +98,7 @@ wtf.ui.RangeRenderer.prototype.drawRange = function(left, right, color, alpha) {
  * @param {number} x Pixel coordinate.
  * @param {{r:number,g:number,b:number}} color The color to write.
  * @param {number} alpha The alpha to draw with.
+ * @private
  */
 wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
   this.buffer_[x * 4 + 0] = alpha * color.r;
@@ -113,6 +114,7 @@ wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
  * @param {number} d The fraction of the pixel covered.
  * @param {{r:number,g:number,b:number}} color The color to write.
  * @param {number} alpha The alpha to draw with.
+ * @private
  */
 wtf.ui.RangeRenderer.prototype.accumPx_ = function(x, d, color, alpha) {
   this.buffer_[x * 4 + 0] += d * alpha * color.r;

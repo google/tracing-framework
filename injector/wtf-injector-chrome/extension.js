@@ -40,6 +40,50 @@ var Extension = function() {
       port.onMessage.addListener(this.pageMessageReceived_.bind(this));
     }
   }.bind(this));
+
+  // Detect the application.
+  this.detectApplication_();
+  var detectApplication = this.detectApplication_.bind(this);
+  chrome.management.onInstalled.addListener(detectApplication);
+  chrome.management.onUninstalled.addListener(detectApplication);
+  chrome.management.onEnabled.addListener(detectApplication);
+  chrome.management.onDisabled.addListener(detectApplication);
+};
+
+
+/**
+ * Detects whether the application is installed and sets up options for it.
+ * @private
+ */
+Extension.prototype.detectApplication_ = function() {
+  // This is used to change the default options to use the app instead of the
+  // embedded app.
+  // TODO(benvanik): some way of talking to the app to get the right URL.
+  var options = this.options_;
+  options.setDefaultEndpoint('page',
+      chrome.extension.getURL('app/maindisplay.html'));
+      // TODO(benvanik): use debug URL somehow?
+      //'http://localhost:8080/app/maindisplay-debug.html');
+
+  chrome.management.getAll(function(results) {
+    for (var n = 0; n < results.length; n++) {
+      var result = results[n];
+      if (!result.enabled) {
+        continue;
+      }
+      if (result.name == 'Web Tracing Framework (App/DEBUG)') {
+        // Always prefer the debug app, if installed.
+        console.log('Discovered WTF App - debug ' + result.version);
+        options.setDefaultEndpoint('remote', 'localhost:9024');
+        break;
+      } else if (result.id == 'ofamllpnllolodilannpkikhjjcnfegg') {
+        // Otherwise use CWS ID.
+        console.log('Discovered WTF App - release ' + result.version);
+        options.setDefaultEndpoint('remote', 'localhost:9023');
+        break;
+      }
+    }
+  });
 };
 
 
@@ -112,6 +156,9 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
 
   // Get page URL.
   var pageUrl = URI.canonicalize(tabUrl);
+  if (!pageUrl.length) {
+    return;
+  }
   if (pageUrl.lastIndexOf('blob:') == 0 ||
       pageUrl.lastIndexOf('view-source:') == 0) {
     // Ignore blob: URLs.
@@ -245,12 +292,32 @@ Extension.prototype.pageActionClicked_ = function(tab) {
 
 
 /**
+ * Converts a list of regular arrays to Uint8Arrays.
+ * @param {!Array.<!Array.<number>>} sources Source arrays.
+ * @return {!Array.<!Uint8Array>} Target arrays.
+ * @private
+ */
+Extension.prototype.convertArraysToUint8Arrays_ = function(sources) {
+  var targets = [];
+  for (var n = 0; n < sources.length; n++) {
+    var source = sources[n];
+    var target = new Uint8Array(source.length);
+    for (var i = 0; i < source.length; i++) {
+      target[i] = source[i];
+    }
+    targets.push(target);
+  }
+  return targets;
+};
+
+
+/**
  * Handles incoming messages from injector content scripts.
- * @param {!Object} msg Message.
+ * @param {!Object} data Message.
  * @param {!Port} port Port the message was received on.
  * @private
  */
-Extension.prototype.pageMessageReceived_ = function(msg, port) {
+Extension.prototype.pageMessageReceived_ = function(data, port) {
   var tab = port.sender.tab;
   if (!tab) {
     return;
@@ -259,7 +326,7 @@ Extension.prototype.pageMessageReceived_ = function(msg, port) {
   var options = this.getOptions();
   var pageUrl = URI.canonicalize(tab.url);
 
-  switch (msg['command']) {
+  switch (data['command']) {
     case 'reload':
       this.updatePageState_(tab.id, tab.url);
       chrome.tabs.reload(tab.id, {
@@ -269,7 +336,51 @@ Extension.prototype.pageMessageReceived_ = function(msg, port) {
     case 'save_settings':
       options.setPageOptions(
           pageUrl,
-          JSON.parse(msg['content']));
+          JSON.parse(data['content']));
+      break;
+    case 'show_snapshot':
+      this.showSnapshot_(
+          data['page_url'],
+          data['content_type'],
+          data['contents']);
       break;
   }
+};
+
+
+/**
+ * Shows a snapshot in a new window.
+ * @param {string} pageUrl Page URL to open.
+ * @param {string} contentType Data content type.
+ * @param {!Array.<!Uint8Array>} contents Data.
+ * @private
+ */
+Extension.prototype.showSnapshot_ = function(pageUrl, contentType, contents) {
+  // TODO(benvanik): generalize this into an IPC channel
+  var waiter = function(e) {
+    // This is a packet from the wtf.ipc.MessageChannel type.
+    var data = e.data;
+    if (!data ||
+        !data['wtf_ipc_connect_token'] ||
+        !data['data']['hello']) {
+      return;
+    }
+
+    // Stop snooping.
+    e.preventDefault();
+    e.stopPropagation();
+    window.removeEventListener('message', waiter, true);
+
+    // NOTE: postMessage doesn't support transferrables here.
+    e.source.postMessage({
+      'wtf_ipc_connect_token': true,
+      'data': {
+        'command': 'snapshot',
+        'content_type': contentType,
+        'contents': contents
+      }
+    }, '*');
+  };
+  window.addEventListener('message', waiter, true);
+  var child = window.open(pageUrl, 'wtf_ui');
 };

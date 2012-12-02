@@ -255,16 +255,17 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
       var labelWidth = ctx.measureText(label).width;
       var labelScreenWidth = screenRight - screenLeft;
       if (labelScreenWidth >= labelWidth) {
-        var alpha = wtf.math.smoothRemap(
+        var labelAlpha = wtf.math.smoothRemap(
             labelScreenWidth, labelWidth, labelWidth + 15 * 2, 0, 1);
 
         // Center the label within the box then clamp to the screen.
         var x = left + (right - left) / 2 - labelWidth / 2;
         x = goog.math.clamp(x, 0, width - labelWidth);
 
-        var scopeTop = top + depth * wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+        var scopeTop =
+            top + depth * wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
         var y = scopeTop + 12;
-        labelsToDraw.push({text: label, x: x, y: y, alpha: alpha});
+        labelsToDraw.push({text: label, x: x, y: y, alpha: labelAlpha});
       }
     }
   }

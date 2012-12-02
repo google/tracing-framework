@@ -22,7 +22,7 @@ goog.require('wtf.net.HttpServer');
 /**
  * HTTP server control service endpoint.
  *
- * @param {!wtf.util.IPlatform} platform Platform abstraction layer.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!Array.<number>} ports TCP ports to listen on.
  * @constructor
  * @extends {wtf.app.background.ServiceEndpoint}

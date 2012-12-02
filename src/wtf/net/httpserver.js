@@ -33,7 +33,7 @@ goog.require('wtf.util');
  * {@see wtf.net.EventType#REQUEST} event is fired containing the request and
  * a response.
  *
- * @param {!wtf.util.IPlatform} platform Platform abstraction layer.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
@@ -42,7 +42,7 @@ wtf.net.HttpServer = function(platform) {
 
   /**
    * Platform abstraction layer.
-   * @type {!wtf.util.IPlatform}
+   * @type {!wtf.pal.IPlatform}
    * @private
    */
   this.platform_ = platform;

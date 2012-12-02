@@ -18,13 +18,13 @@ goog.provide('wtf.tools.Tool');
 /**
  * Abstract tool.
  *
- * @param {!wtf.util.IPlatform} platform Platform abstraction layer.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @constructor
  */
 wtf.tools.Tool = function(platform) {
   /**
    * Platform abstraction layer.
-   * @type {!wtf.util.IPlatform}
+   * @type {!wtf.pal.IPlatform}
    * @protected
    */
   this.platform = platform;
@@ -33,7 +33,7 @@ wtf.tools.Tool = function(platform) {
 
 /**
  * Gets the platform abstraction layer used by the tool.
- * @return {!wtf.util.IPlatform} Platform abstraction layer.
+ * @return {!wtf.pal.IPlatform} Platform abstraction layer.
  */
 wtf.tools.Tool.prototype.getPlatform = function() {
   return this.platform;

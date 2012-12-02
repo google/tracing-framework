@@ -19,12 +19,12 @@ goog.require('goog.string');
 goog.require('wtf.analysis.Session');
 goog.require('wtf.io');
 /** @suppress {extraRequire} */
-goog.require('wtf.util.IPlatform');
+goog.require('wtf.pal.IPlatform');
 
 
 /**
  * Runs an analysis session on the given input.
- * @param {!wtf.util.IPlatform} platform Platform abstraction layer.
+ * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!wtf.analysis.TraceListener} traceListener Custom trace listener.
  * @param {string|!wtf.io.ByteArray|!Object} input Input data.
  *     This can be a filename (if in node.js) or a byte buffer.
