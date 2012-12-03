@@ -17,6 +17,18 @@ goog.provide('wtf.trace.util');
 
 
 /**
+ * Dummy scope object.
+ * Has the same exported methods as a real {@see wtf.trace.Scope}.
+ * @type {!Object}
+ */
+wtf.trace.util.DUMMY_SCOPE = {
+  leave: function(result) {
+    return result;
+  }
+};
+
+
+/**
  * Marks an event listener as being ignored, meaning that it will not show up
  * in traces.
  * @param {!T} listener Event listener.

@@ -16,6 +16,7 @@ goog.provide('wtf.trace.EventTypeBuilder');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.io.Buffer');
 goog.require('wtf.trace.EventType');
+goog.require('wtf.trace.util');
 goog.require('wtf.util.FunctionBuilder');
 
 
@@ -36,7 +37,7 @@ wtf.trace.EventTypeBuilder = function() {
    * @type {!Object.<string>}
    * @private
    */
-  this.names_ = wtf.trace.EventType.getNameMap();
+  this.eventTypeNames_ = wtf.trace.EventType.getNameMap();
 
   /**
    * Names of compiled members on {@see wtf.io.Buffer}.
@@ -50,12 +51,19 @@ goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
 
 /**
  * Generates an event tracing function.
+ * @param {!Array.<wtf.trace.Session>} sessionPtr An array containing a
+ *     reference to the target trace session.
  * @param {!wtf.trace.EventType} eventType Event type.
  * @return {Function} Generated function based on class.
  */
-wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
+wtf.trace.EventTypeBuilder.prototype.generate = function(
+    sessionPtr, eventType) {
   // Begin building the function with default args.
   this.begin();
+  this.addScopeVariable('sessionPtr', sessionPtr);
+  this.addScopeVariable('dummyScope', wtf.trace.util.DUMMY_SCOPE);
+  this.addScopeVariable('eventType', eventType);
+
   this.addArgument('time');
   switch (eventType.eventClass) {
     case wtf.data.EventClass.SCOPE:
@@ -83,12 +91,22 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
   // Always accept an optional buffer.
   this.addArgument('opt_buffer');
 
+  this.append(
+      'var session = sessionPtr[0];');
+  if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
+    this.append(
+        'if (!session) { return dummyScope; }');
+  } else {
+    this.append(
+        'if (!session) { return; }');
+  }
+
   // Write buffer acquisition code (and size calculate if variable size).
   if (!isVariableSize) {
     // Size known - grab the buffer quickly.
     this.append(
-        'var buffer = opt_buffer || this.' + this.names_.acquireBuffer +
-        '(time, ' + minSize + ');');
+        'var buffer = opt_buffer || session.acquireBuffer(' +
+        'time, ' + minSize + ');');
   } else {
     // Size unknown - compute size and grab the buffer.
     this.append(
@@ -103,14 +121,14 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
       }
     }
     this.append(
-        'var buffer = opt_buffer || this.' + this.names_.acquireBuffer +
-        '(time, ' + minSize + ' + argSize);');
+        'var buffer = opt_buffer || session.acquireBuffer(' +
+        'time, ' + minSize + ' + argSize);');
   }
 
   // Early out if the buffer couldn't be acquired.
   if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
     this.append(
-        'if (!buffer) { return this.' + this.names_.dummyScope + '; }');
+        'if (!buffer) { return dummyScope; }');
   } else {
     this.append(
         'if (!buffer) { return; }');
@@ -141,15 +159,19 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(eventType) {
 
   // Count.
   this.append(
-      'this.' + this.names_.count + '++;');
+      'eventType.' + this.eventTypeNames_.count + '++;');
 
   // Enter scope/flow/etc.
   if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
     this.append(
-        'return this.' + this.names_.enterTypedScope + '(flow, time);');
+        'return session.enterTypedScope(flow, time);');
   }
 
   // Save off the final function.
   var fn = this.end(eventType.toString());
+
+  // Expose us on the event function for others to use, if they want reflection.
+  fn['eventType'] = eventType;
+
   return fn;
 };

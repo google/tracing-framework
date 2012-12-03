@@ -15,6 +15,7 @@ goog.provide('wtf.trace.Scope');
 
 goog.require('wtf');
 goog.require('wtf.trace.BuiltinEvents');
+goog.require('wtf.trace.util');
 
 
 
@@ -67,7 +68,8 @@ wtf.trace.Scope.pool_ = {
  * Dummy scope used when the tracing library is disabled.
  * @type {!wtf.trace.Scope}
  */
-wtf.trace.Scope.dummy = new wtf.trace.Scope();
+wtf.trace.Scope.dummy =
+    /** @type {!wtf.trace.Scope} */ (wtf.trace.util.DUMMY_SCOPE);
 
 
 /**
@@ -180,3 +182,10 @@ wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(
 
       return opt_result;
     } : goog.identityFunction;
+
+
+// Always export names used in generated code.
+goog.exportProperty(
+    wtf.trace.Scope.prototype,
+    'leave',
+    wtf.trace.Scope.prototype.leave);

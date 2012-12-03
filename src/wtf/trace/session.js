@@ -17,6 +17,7 @@ goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.trace.BuiltinEvents');
+goog.require('wtf.trace.Scope');
 
 
 
@@ -281,3 +282,22 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
 // appendBlob(data) -> blobId
 // wtf.trace.Session.prototype.appendBlob = function() {
 // };
+
+
+/**
+ * An alias to the {@see wtf.trace.Scope#enterTyped} static method.
+ * This is here to enable easy access from generated code.
+ * @type {!Function}
+ */
+wtf.trace.Session.prototype.enterTypedScope = wtf.trace.Scope.enterTyped;
+
+
+// Always export names used in generated code.
+goog.exportProperty(
+    wtf.trace.Session.prototype,
+    'acquireBuffer',
+    wtf.trace.Session.prototype.acquireBuffer);
+goog.exportProperty(
+    wtf.trace.Session.prototype,
+    'enterTypedScope',
+    wtf.trace.Session.prototype.enterTypedScope);

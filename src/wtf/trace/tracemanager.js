@@ -22,7 +22,6 @@ goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.ZoneType');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
-goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.Zone');
 
 
@@ -107,22 +106,15 @@ wtf.trace.TraceManager = function() {
    */
   this.currentSession_ = null;
 
+  var registry = wtf.trace.EventRegistry.getShared();
   /**
-   * A cached acquire buffer bound to the current session.
-   * This is only valid when a session is active.
-   * @type {(function(number, number):wtf.io.Buffer)?}
+   * A 'pointer' to the current session.
+   * This is kept in sync with {@see #currentSession_} and is used to allow
+   * for resetting the session in generated closures.
+   * @type {!Array.<wtf.trace.Session>}
    * @private
    */
-  this.currentAcquireBuffer_ = null;
-
-  // Prepare all previously-registered events.
-  var registry = wtf.trace.EventRegistry.getShared();
-  var eventTypes = registry.getEventTypes();
-  for (var n = 0; n < eventTypes.length; n++) {
-    var eventType = eventTypes[n];
-    eventType.enterTypedScope = wtf.trace.Scope.enterTyped;
-    eventType.dummyScope = wtf.trace.Scope.dummy;
-  }
+  this.currentSessionPtr_ = registry.getSessionPtr();
 
   // Listen for newly registered events.
   registry.addListener(
@@ -143,8 +135,7 @@ goog.inherits(wtf.trace.TraceManager, goog.Disposable);
  * @override
  */
 wtf.trace.TraceManager.prototype.disposeInternal = function() {
-  goog.dispose(this.currentSession_);
-  this.currentSession_ = null;
+  this.stopSession();
 
   goog.disposeAll(this.providers_);
   this.providers_.length = 0;
@@ -317,18 +308,7 @@ wtf.trace.TraceManager.prototype.startSession = function(session) {
   goog.asserts.assert(!this.currentSession_);
 
   this.currentSession_ = session;
-
-  // Bound acquireBuffer call used in generated code.
-  this.currentAcquireBuffer_ = function(time, size) {
-    return session.acquireBuffer(time, size);
-  };
-
-  // Set all session-specific event values.
-  var eventTypes = wtf.trace.EventRegistry.getShared().getEventTypes();
-  for (var n = 0; n < eventTypes.length; n++) {
-    var eventType = eventTypes[n];
-    eventType.acquireBuffer = this.currentAcquireBuffer_;
-  }
+  this.currentSessionPtr_[0] = session;
 
   // Notify listeners.
   if (this.currentSession_) {
@@ -353,7 +333,7 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
   // Cleanup session.
   goog.dispose(this.currentSession_);
   this.currentSession_ = null;
-  this.currentAcquireBuffer_ = null;
+  this.currentSessionPtr_[0] = null;
 };
 
 
@@ -363,16 +343,8 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
  * @private
  */
 wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
-  // Stupid event cycles...
-  eventType.enterTypedScope = wtf.trace.Scope.enterTyped;
-  eventType.dummyScope = wtf.trace.Scope.dummy;
-
   // If there is an active session, append the event type to the stream.
   if (this.currentSession_) {
-    // Setup.
-    goog.asserts.assert(this.currentAcquireBuffer_);
-    eventType.acquireBuffer = this.currentAcquireBuffer_;
-
     // Append to the stream.
     wtf.trace.BuiltinEvents.defineEvent(
         wtf.now(),
@@ -393,7 +365,8 @@ wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
  */
 wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer) {
   // Write event metadata.
-  var eventTypes = wtf.trace.EventRegistry.getShared().getEventTypes();
+  var registry = wtf.trace.EventRegistry.getShared();
+  var eventTypes = registry.getEventTypes();
   for (var n = 0; n < eventTypes.length; n++) {
     var eventType = eventTypes[n];
 
