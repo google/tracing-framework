@@ -210,3 +210,29 @@ wtf.app.ui.DocumentView.prototype.layout_ = function() {
 wtf.app.ui.DocumentView.prototype.navigate = function(path) {
   this.tabbar_.navigate(path);
 };
+
+
+/**
+ * Zooms the local view to fit the data.
+ */
+wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
+  var db = this.getDatabase();
+  var summaryIndex = db.getSummaryIndex();
+  var firstEventTime = summaryIndex.getFirstEventTime();
+  var lastEventTime = summaryIndex.getLastEventTime();
+  if (!lastEventTime) {
+    return;
+  }
+
+  if (!this.viewports_.length) {
+    return;
+  }
+  var viewport = this.viewports_[0];
+  var width = viewport.getScreenWidth();
+  viewport.set(-1000, 0, width / (lastEventTime - firstEventTime + 2000));
+
+  // TODO(benvanik): bind viewports to the local view correctly - right now they
+  //     are inverted and this doesn't work as it should.
+  // var view = this.localView_;
+  // view.setVisibleRange(firstEventTime, lastEventTime);
+};

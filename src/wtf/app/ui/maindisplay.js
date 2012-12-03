@@ -33,6 +33,7 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.io');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 
 
@@ -227,17 +228,26 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   if (!datas.length) {
     return;
   }
+
+  // Convert data from Arrays to ensure we are typed all the way through.
   for (var n = 0; n < datas.length; n++) {
     if (!(datas[n] instanceof Uint8Array)) {
       datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
     }
   }
 
+  // Create document with snapshot data.
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
   for (var n = 0; n < datas.length; n++) {
     doc.addBinaryEventSource(datas[n]);
   }
+
+  // Zoom to fit.
+  // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+  wtf.timing.setTimeout(50, function() {
+    this.documentView_.zoomToFit();
+  }, this);
 };
 
 
@@ -327,10 +337,17 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   }
   goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
       function(datas) {
+        // Add all data.
         for (var n = 0; n < datas.length; n++) {
           var data = datas[n];
           doc.addBinaryEventSource(new Uint8Array(data));
         }
+
+        // Zoom to fit.
+        // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+        wtf.timing.setTimeout(50, function() {
+          this.documentView_.zoomToFit();
+        }, this);
       },
       function(arg) {
         // TODO(benvanik): handle errors better
@@ -357,7 +374,15 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
     }
     var data = /** @type {ArrayBuffer} */ (xhr.getResponse());
     goog.asserts.assert(data);
+
+    // Add data.
     doc.addBinaryEventSource(new Uint8Array(data));
+
+    // Zoom to fit.
+    // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+    wtf.timing.setTimeout(50, function() {
+      this.documentView_.zoomToFit();
+    }, this);
   });
   xhr.send(url);
 };

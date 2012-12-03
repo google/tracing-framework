@@ -380,6 +380,7 @@ Extension.prototype.showSnapshot_ = function(pageUrl, contentType, contents) {
         'contents': contents
       }
     }, '*');
+    e.source.focus();
   };
   window.addEventListener('message', waiter, true);
   var child = window.open(pageUrl, 'wtf_ui');
