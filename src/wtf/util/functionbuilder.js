@@ -33,6 +33,20 @@ wtf.util.FunctionBuilder = function() {
   this.isBuilding_ = false;
 
   /**
+   * Current list of added scope variable names.
+   * @type {!Array.<string>}
+   * @private
+   */
+  this.currentScopeVariableNames_ = [];
+
+  /**
+   * Current list of added scope variable values.
+   * @type {!Array.<*>}
+   * @private
+   */
+  this.currentScopeVariableValues_ = [];
+
+  /**
    * Current list of added arguments.
    * @type {!Array.<string>}
    * @private
@@ -89,6 +103,18 @@ wtf.util.FunctionBuilder.prototype.begin = function() {
 
 
 /**
+ * Adds a scope variable.
+ * @param {string} name Variable name.
+ * @param {*} value Variable value.
+ */
+wtf.util.FunctionBuilder.prototype.addScopeVariable = function(name, value) {
+  goog.asserts.assert(this.isBuilding_);
+  this.currentScopeVariableNames_.push(name);
+  this.currentScopeVariableValues_.push(value);
+};
+
+
+/**
  * Adds an argument to the argument list.
  * @param {string} name Argument name.
  */
@@ -123,13 +149,23 @@ wtf.util.FunctionBuilder.prototype.end = function(name) {
   // Combine all source code with newlines.
   var combinedSource = this.currentSource_.join('\n');
 
+  // Build closure wrapper.
+  var creator = new Function(this.currentScopeVariableNames_, [
+    '"use strict";',
+    'return function(' + this.currentArgs_.join(', ') + ') {',
+    combinedSource,
+    '};'
+  ].join('\n'));
+
   // Build function.
-  var fn = new Function(this.currentArgs_, combinedSource);
+  var fn = creator.apply(null, this.currentScopeVariableValues_);
   if (goog.DEBUG) {
     fn['displayName'] = name;
   }
 
   // Reset state.
+  this.currentScopeVariableNames_.length = 0;
+  this.currentScopeVariableValues_.length = 0;
   this.currentArgs_.length = 0;
   this.currentSource_.length = 0;
   this.isBuilding_ = false;

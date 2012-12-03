@@ -19,7 +19,6 @@ goog.provide('wtf.trace.exports');
 
 goog.require('wtf.trace');
 goog.require('wtf.trace.Flow');
-goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
 goog.require('wtf.trace.instrument');
 goog.require('wtf.trace.instrumentType');
@@ -111,12 +110,6 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.ignoreListener',
       wtf.trace.ignoreListener);
-
-  // wtf.trace.Scope
-  goog.exportProperty(
-      wtf.trace.Scope.prototype,
-      'leave',
-      wtf.trace.Scope.prototype.leave);
 
   // wtf.trace.Flow
   goog.exportProperty(

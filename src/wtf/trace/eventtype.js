@@ -67,22 +67,13 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
   this.wireId = wtf.trace.EventType.nextEventWireId_++;
   goog.asserts.assert(this.wireId <= wtf.trace.EventType.MAX_EVENT_WIRE_ID_);
 
-  var builder = wtf.trace.EventType.getBuilder_();
-  var fn = builder.generate(this);
-
   /**
    * Append function.
+   * This is only set when a session is active and the function is bound to
+   * that session.
    * @type {Function}
    */
   this.append = null;
-  // V8 optimization: always set to null before setting to a function.
-  var self = this;
-  this.append = function() {
-    return fn.apply(self, arguments);
-  };
-
-  // Expose us on the event function for others to use, if they want reflection.
-  fn['eventType'] = this;
 
   /**
    * Current count.
@@ -90,34 +81,6 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
    * @type {number}
    */
   this.count = 0;
-
-  // NOTE: we do these crazy cases to ensure v8 picks up the right types for
-  //     our members on its first pass.
-
-  /**
-   * Utility function to acquire a buffer for writing.
-   * This is used by the generated append code and is only set in tracing
-   * builds.
-   * @type {function(number, number):wtf.io.Buffer}
-   */
-  this.acquireBuffer = /** @type {function(number, number):wtf.io.Buffer} */
-      (goog.nullFunction);
-
-  /**
-   * Alias to {@see wtf.trace.Scope#enterTyped}.
-   * @type {function(wtf.trace.Flow, number):!wtf.trace.Scope}
-   */
-  this.enterTypedScope =
-      /** @type {function(wtf.trace.Flow, number):!wtf.trace.Scope} */ (
-          goog.nullFunction);
-
-  /**
-   * Dummy scope.
-   * @type {!wtf.trace.Scope}
-   */
-  this.dummyScope = /** @type {!wtf.trace.Scope} */ ({
-    leave: function(result) { return result; }
-  });
 };
 
 
@@ -167,32 +130,12 @@ wtf.trace.EventType.prototype.getArgString = function() {
 
 
 /**
- * Shared function builder singleton.
- * To prevent cycles the event registry initializes this.
- * @type {wtf.trace.EventTypeBuilder}
- * @private
+ * Generates event append code bound to the given session.
+ * @param {!Array.<wtf.trace.Session>} sessionPtr An array containing a
+ *     reference to the target trace session.
  */
-wtf.trace.EventType.builder_ = null;
-
-
-/**
- * Gets a shared event builder.
- * @return {!wtf.trace.EventTypeBuilder} Builder.
- * @private
- */
-wtf.trace.EventType.getBuilder_ = function() {
-  goog.asserts.assert(wtf.trace.EventType.builder_);
-  return wtf.trace.EventType.builder_;
-};
-
-
-/**
- * Sets the shared event builder.
- * This is done by the event registry to prevent cycles.
- * @param {!wtf.trace.EventTypeBuilder} eventTypeBuilder Event type builder.
- */
-wtf.trace.EventType.setBuilder = function(eventTypeBuilder) {
-  wtf.trace.EventType.builder_ = eventTypeBuilder;
+wtf.trace.EventType.prototype.generateCode = function(builder, sessionPtr) {
+  this.append = builder.generate(sessionPtr, this);
 };
 
 
@@ -207,16 +150,10 @@ wtf.trace.EventType.setBuilder = function(eventTypeBuilder) {
  */
 wtf.trace.EventType.getNameMap = function() {
   var reflectedNames = goog.reflect.object(wtf.trace.EventType, {
-    count: 0,
-    acquireBuffer: 1,
-    enterTypedScope: 2,
-    dummyScope: 3
+    count: 0
   });
   reflectedNames = goog.object.transpose(reflectedNames);
   return {
-    count: reflectedNames[0],
-    acquireBuffer: reflectedNames[1],
-    enterTypedScope: reflectedNames[2],
-    dummyScope: reflectedNames[3]
+    count: reflectedNames[0]
   };
 };
