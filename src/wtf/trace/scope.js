@@ -155,27 +155,28 @@ wtf.trace.Scope.enterTyped = function(flow, time) {
  * be terminated.
  *
  * @param {*=} opt_result A value to return directly.
+ * @param {number=} opt_time Time for the leave; omit to use the current time.
  * @return {?} The value passed as {@code opt_result}.
  * @this {wtf.trace.Scope}
  */
-wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(opt_result) {
-  // Time immediately after the scope - don't track our stuff.
-  // TODO(benvanik): allow for specifying time.
-  var time = wtf.now();
+wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(
+    opt_result, opt_time) {
+      // Time immediately after the scope - don't track our stuff.
+      var time = opt_time || wtf.now();
 
-  // Terminate a flow, if one is attached.
-  if (this.flow_) {
-    this.flow_.terminate(undefined, time);
-    this.flow_ = undefined;
-  }
+      // Terminate a flow, if one is attached.
+      if (this.flow_) {
+        this.flow_.terminate(undefined, time);
+        this.flow_ = undefined;
+      }
 
-  // Append event.
-  wtf.trace.BuiltinEvents.leaveScope(time);
+      // Append event.
+      wtf.trace.BuiltinEvents.leaveScope(time);
 
-  // Return the scope to the pool.
-  // Note that we have no thresholding here and will grow forever.
-  var pool = wtf.trace.Scope.pool_;
-  pool.unusedScopes[pool.unusedIndex++] = this;
+      // Return the scope to the pool.
+      // Note that we have no thresholding here and will grow forever.
+      var pool = wtf.trace.Scope.pool_;
+      pool.unusedScopes[pool.unusedIndex++] = this;
 
-  return opt_result;
-} : goog.identityFunction;
+      return opt_result;
+    } : goog.identityFunction;

@@ -37,6 +37,14 @@ var Extension = function() {
   // Listen for commands from content scripts.
   chrome.extension.onConnect.addListener(function(port) {
     if (port.name == 'injector') {
+      // Setup the extended info provider for the page.
+      var tab = port.sender.tab;
+      var options = this.getOptions();
+      var pageUrl = URI.canonicalize(tab.url);
+      var pageOptions = options.getPageOptions(pageUrl);
+      var extendedInfo = new ExtendedInfo(tab.id, port, pageOptions);
+
+      // Listen for messages from the page.
       port.onMessage.addListener(this.pageMessageReceived_.bind(this));
     }
   }.bind(this));
@@ -61,9 +69,9 @@ Extension.prototype.detectApplication_ = function() {
   // TODO(benvanik): some way of talking to the app to get the right URL.
   var options = this.options_;
   options.setDefaultEndpoint('page',
-      chrome.extension.getURL('app/maindisplay.html'));
+      //chrome.extension.getURL('app/maindisplay.html'));
       // TODO(benvanik): use debug URL somehow?
-      //'http://localhost:8080/app/maindisplay-debug.html');
+      'http://localhost:8080/app/maindisplay-debug.html');
 
   chrome.management.getAll(function(results) {
     for (var n = 0; n < results.length; n++) {

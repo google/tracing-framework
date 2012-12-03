@@ -11,6 +11,7 @@
   "permissions": [
     "chrome://favicon/",
     "cookies",
+    "debugger",
     "management",
     "storage",
     "tabs",
@@ -40,6 +41,8 @@
     "scripts": [
       "uri.js",
       "options.js",
+      "debugger.js",
+      "extendedinfo.js",
       "extension.js",
       "background.js"
     ]
