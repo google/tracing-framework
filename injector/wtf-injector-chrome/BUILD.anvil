@@ -28,6 +28,8 @@ file_set(
         ':stripped_manifest',
         ':tracing_files',
         'background.js',
+        'debugger.js',
+        'extendedinfo.js',
         'extension.js',
         'options.js',
         'uri.js',

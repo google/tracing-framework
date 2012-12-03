@@ -54,6 +54,9 @@ wtf.app.ui.nav.HeatmapPainter = function(parentContext, db) {
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'branches', [
     'wtf.flow.branch'
   ]));
+  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'GCs', [
+    'javascript#gc'
+  ]));
 
   var deferreds = [];
   for (var n = 0; n < this.bars_.length; n++) {

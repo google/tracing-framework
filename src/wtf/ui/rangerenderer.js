@@ -46,7 +46,7 @@ wtf.ui.RangeRenderer = function() {
 /**
  * Clear the accumulated ranges. Resetting with a different width is somewhat
  * expensive so should not be done frequently.
- * @param {number} width
+ * @param {number} width Width.
  */
 wtf.ui.RangeRenderer.prototype.reset = function(width) {
   if (this.width_ != width) {

@@ -202,6 +202,15 @@ function setupCommunications() {
     name: 'injector'
   });
 
+  // Listen for data from the extension.
+  port.onMessage.addListener(function(data, port) {
+    switch (data['command']) {
+      case 'trace_events':
+        sendMessage(data);
+        break;
+    }
+  });
+
   // Setup a communication channel with the page via events.
   var channelElement = document;
   var localId = String(Number(Date.now()));

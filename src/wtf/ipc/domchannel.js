@@ -14,8 +14,8 @@
 goog.provide('wtf.ipc.DomChannel');
 
 goog.require('goog.dom');
-goog.require('goog.events.EventHandler');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.trace.util');
 
 
 
@@ -55,17 +55,27 @@ wtf.ipc.DomChannel = function(el, eventType) {
   this.localId_ = String(goog.now());
 
   /**
-   * Event handler.
-   * @type {!goog.events.EventHandler}
+   * Bound {@see #handleMessage_} call that will be ignored in the trace.
+   * @type {!function(Event):(boolean|undefined)}
    * @private
    */
-  this.eh_ = new goog.events.EventHandler(this);
-  this.registerDisposable(this.eh_);
-
-  this.eh_.listen(
-      this.el_, this.eventType_, this.handleMessage_, false);
+  this.boundHandleMessage_ = wtf.trace.util.ignoreListener(
+      /** @type {function(Event):(boolean|undefined)} */ (
+          goog.bind(this.handleMessage_, this)));
+  this.el_.addEventListener(
+      this.eventType_, this.boundHandleMessage_, false);
 };
 goog.inherits(wtf.ipc.DomChannel, wtf.ipc.Channel);
+
+
+/**
+ * @override
+ */
+wtf.ipc.DomChannel.prototype.disposeInternal = function() {
+  this.el_.removeEventListener(
+      this.eventType_, this.boundHandleMessage_, false);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -102,11 +112,11 @@ wtf.ipc.DomChannel.prototype.isConnected = function() {
 
 /**
  * Handles incoming messages.
- * @param {!goog.events.BrowserEvent} e Incoming event.
+ * @param {!Event} e Incoming event.
  * @private
  */
 wtf.ipc.DomChannel.prototype.handleMessage_ = function(e) {
-  var detail = e.getBrowserEvent()['detail'];
+  var detail = e['detail'];
   if (!detail) {
     return;
   }
