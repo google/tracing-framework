@@ -16,8 +16,8 @@ goog.provide('wtf.tools.webglgen.WebGLGenTool');
 
 goog.require('goog.string');
 goog.require('wtf.analysis');
+goog.require('wtf.analysis.EventfulTraceListener');
 goog.require('wtf.analysis.ScopeEvent');
-goog.require('wtf.analysis.TraceListener');
 goog.require('wtf.tools.Tool');
 goog.require('wtf.tools.util');
 
@@ -62,7 +62,7 @@ wtf.tools.webglgen.WebGLGenTool.prototype.run = function(args) {
   // objs = { handle : object };
   // frame(number, startTime, fn, endTime);
 
-  var traceListener = new wtf.analysis.TraceListener();
+  var traceListener = new wtf.analysis.EventfulTraceListener();
   traceListener.addListeners({
     'sourceAdded': function(timebase, contextInfo) {
       frameStart = timebase;

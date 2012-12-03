@@ -21,7 +21,6 @@ goog.require('wtf.analysis.Flow');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
-goog.require('wtf.analysis.TraceListener');
 goog.require('wtf.analysis.TraceSource');
 goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
@@ -364,10 +363,6 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   }
 
   if (e) {
-    listener.traceEvent(e);
-    if (isCustom) {
-      listener.emitEvent(wtf.analysis.TraceListener.EventType.CUSTOM, e);
-    }
-    listener.emitEvent(eventType.name, e);
+    listener.traceEvent(e, isCustom);
   }
 };
