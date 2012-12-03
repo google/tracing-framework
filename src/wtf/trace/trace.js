@@ -31,6 +31,7 @@ goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
+goog.require('wtf.trace.util');
 goog.require('wtf.util.Options');
 
 
@@ -374,7 +375,4 @@ wtf.trace.mark = wtf.ENABLE_TRACING ? function(opt_msg, opt_time) {
  * @return {!T} The parameter, for chaining.
  * @template T
  */
-wtf.trace.ignoreListener = function(listener) {
-  listener['__wtf_ignore__'] = true;
-  return listener;
-};
+wtf.trace.ignoreListener = wtf.trace.util.ignoreListener;
