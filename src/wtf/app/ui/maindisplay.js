@@ -296,7 +296,10 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
   var inputElement = dom.createElement(goog.dom.TagName.INPUT);
   inputElement['type'] = 'file';
   inputElement['multiple'] = true;
-  inputElement['accept'] = '.wtf-trace,application/x-extension-wtf-trace';
+  inputElement['accept'] = [
+    '.wtf-trace,application/x-extension-wtf-trace',
+    '.wtf-json,application/x-extension-wtf-json'
+  ].join(',');
   inputElement.click();
   goog.events.listenOnce(inputElement, goog.events.EventType.CHANGE,
       function(e) {
@@ -312,19 +315,28 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
  * @param {!Array.<!File>} traceFiles Files to load.
  */
 wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
-  var sources = [];
+  var binarySources = [];
+  var jsonSources = [];
   for (var n = 0; n < traceFiles.length; n++) {
     var file = traceFiles[n];
     if (goog.string.endsWith(file.name, '.wtf-trace') ||
         file.type == 'application/x-extension-wtf-trace') {
-      sources.push(file);
+      binarySources.push(file);
+    } else if (goog.string.endsWith(file.name, '.wtf-json') ||
+        file.type == 'application/x-extension-wtf-json') {
+      jsonSources.push(file);
     }
   }
-  if (!sources.length) {
+  if (!binarySources.length && !jsonSources.length) {
     return;
   }
 
-  var name = sources[0].name;
+  var name = '';
+  if (binarySources.length) {
+    name = binarySources[0].name;
+  } else {
+    name = jsonSources[0].name;
+  }
 
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
@@ -332,15 +344,26 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   // Add all sources to the trace.
   // TODO(benvanik): move into wtf.analysis?
   var deferreds = [];
-  for (var n = 0; n < sources.length; n++) {
-    deferreds.push(goog.fs.FileReader.readAsArrayBuffer(sources[n]));
+  for (var n = 0; n < binarySources.length; n++) {
+    deferreds.push(goog.fs.FileReader.readAsArrayBuffer(binarySources[n]));
+  }
+  for (var n = 0; n < jsonSources.length; n++) {
+    deferreds.push(goog.fs.FileReader.readAsText(jsonSources[n]));
   }
   goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
       function(datas) {
         // Add all data.
         for (var n = 0; n < datas.length; n++) {
           var data = datas[n];
-          doc.addBinaryEventSource(new Uint8Array(data));
+          if (data instanceof ArrayBuffer) {
+            doc.addBinaryEventSource(new Uint8Array(data));
+          } else if (goog.isString(data)) {
+            // TODO(benvanik): handle JSON parse errors
+            var jsonData = goog.global.JSON.parse(data);
+            if (jsonData && goog.isObject(jsonData)) {
+              doc.addJsonEventSource(jsonData);
+            }
+          }
         }
 
         // Zoom to fit.

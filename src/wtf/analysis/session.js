@@ -15,6 +15,7 @@ goog.provide('wtf.analysis.Session');
 
 goog.require('goog.Disposable');
 goog.require('wtf.analysis.sources.BinaryTraceSource');
+goog.require('wtf.analysis.sources.JsonTraceSource');
 goog.require('wtf.io.MemoryReadStream');
 
 
@@ -148,6 +149,8 @@ wtf.analysis.Session.prototype.addBinarySource = function(data) {
  * @param {!Object} data Input data.
  */
 wtf.analysis.Session.prototype.addJsonSource = function(data) {
-  // TODO(benvanik): JSON sources
-  throw Error('Session.addJsonSource not implemented');
+  // TODO(benvanik): send to storage so that saves work
+
+  this.addTraceSource_(new wtf.analysis.sources.JsonTraceSource(
+      this.getTraceListener(), data));
 };
