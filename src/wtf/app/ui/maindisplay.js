@@ -406,6 +406,6 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
     wtf.timing.setTimeout(50, function() {
       this.documentView_.zoomToFit();
     }, this);
-  });
+  }, false, this);
   xhr.send(url);
 };
