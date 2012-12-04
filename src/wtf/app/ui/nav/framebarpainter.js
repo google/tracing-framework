@@ -107,11 +107,16 @@ wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
   var h = Math.floor(0.5 * (height - y));
 
   // Draw frames.
+  // Since we are going off of frame end events we scan all the way forward in
+  // time until we find the first event that spills out of view.
   ctx.font = '12px bold verdana, sans-serif';
-  this.frameIndex_.forEach(timeLeft, timeRight + 100, function(e) {
+  this.frameIndex_.forEach(timeLeft, Number.MAX_VALUE, function(e) {
     var duration = e.args['duration'] / 1000;
     var startTime = e.time - duration;
     var endTime = e.time;
+    if (startTime > timeRight) {
+      return false;
+    }
 
     // TODO(benvanik): smoothly blend colors based on duration
     var colorIndex = Math.min((duration / 16.7777) | 0, palette.length - 1);

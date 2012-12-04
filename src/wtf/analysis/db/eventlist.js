@@ -228,8 +228,8 @@ wtf.analysis.db.EventList.prototype.search = function(time, filter) {
  *
  * @param {number} timeStart Start wall-time range.
  * @param {number} timeEnd End wall-time range.
- * @param {!function(!wtf.analysis.Event)} callback Function to call
- *     with the event nodes.
+ * @param {!function(!wtf.analysis.Event):(boolean|undefined)} callback
+ *     Function to call with the event nodes. Return {@code false} to cancel.
  * @param {Object=} opt_scope Scope to call the function in.
  */
 wtf.analysis.db.EventList.prototype.forEach = function(
@@ -272,7 +272,9 @@ wtf.analysis.db.EventList.prototype.forEach = function(
         return;
       }
 
-      callback.call(opt_scope, e);
+      if (callback.call(opt_scope, e) === false) {
+        return;
+      }
     }
   }
 };
