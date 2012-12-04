@@ -18,6 +18,9 @@
 goog.provide('wtf.analysis.exports');
 
 goog.require('wtf.analysis');
+goog.require('wtf.analysis.FlowEvent');
+goog.require('wtf.analysis.ScopeEvent');
+goog.require('wtf.analysis.ZoneEvent');
 
 
 /**
@@ -34,6 +37,19 @@ wtf.analysis.exports.ENABLE_EXPORTS = false;
 if (wtf.analysis.exports.ENABLE_EXPORTS) {
   // wtf.analysis controls
   goog.exportSymbol(
+      'wtf.analysis.createTraceListener',
+      wtf.analysis.createTraceListener);
+  goog.exportSymbol(
       'wtf.analysis.run',
       wtf.analysis.run);
+
+  goog.exportSymbol(
+      'wtf.analysis.FlowEvent',
+      wtf.analysis.FlowEvent);
+  goog.exportSymbol(
+      'wtf.analysis.ScopeEvent',
+      wtf.analysis.ScopeEvent);
+  goog.exportSymbol(
+      'wtf.analysis.ZoneEvent',
+      wtf.analysis.ZoneEvent);
 }
