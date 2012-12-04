@@ -131,6 +131,7 @@ wtf.trace.EventType.prototype.getArgString = function() {
 
 /**
  * Generates event append code bound to the given session.
+ * @param {!wtf.trace.EventTypeBuilder} builder Event type builder.
  * @param {!Array.<wtf.trace.Session>} sessionPtr An array containing a
  *     reference to the target trace session.
  */

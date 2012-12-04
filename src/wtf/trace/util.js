@@ -22,8 +22,14 @@ goog.provide('wtf.trace.util');
  * @type {!Object}
  */
 wtf.trace.util.DUMMY_SCOPE = {
-  leave: function(result) {
-    return result;
+  /**
+   * Leave mock.
+   * @param {T=} opt_result Optional result to chain.
+   * @return {T|undefined} The value of the {@code opt_result} parameter.
+   * @template T
+   */
+  leave: function(opt_result) {
+    return opt_result;
   }
 };
 
