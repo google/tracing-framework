@@ -545,7 +545,6 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
 
     // Wait for the child to connect.
     wtf.ipc.waitForChildWindow(function(channel) {
-      goog.global.console.log(channel);
       channel.postMessage({
         'command': 'snapshot',
         'content_type': 'application/x-extension-wtf-trace',
