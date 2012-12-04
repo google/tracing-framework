@@ -1,0 +1,36 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Help overlay DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.helpoverlay}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css wtfAppUiHelpOverlay}">
+    TODO: a prettier dialog<br/>
+    <br/>
+    ctrl-o : open a new trace<br/>
+    ctrl-s : save current trace<br/>
+    ctrl-/ : show shortcuts<br/>
+    <br/>
+    ctrl-f : focus filter box<br/>
+    esc : clear filter contents<br/>
+    ctrl-g : zoom to frame #<br/>
+    <br/>
+    w/a/s/d up/left/down/right : move the viewport<br/>
+    space/shift+space: move one viewport right/left<br/>
+    home: fit viewport<br/>
+  </div>
+{/template}
