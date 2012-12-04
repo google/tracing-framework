@@ -16,13 +16,11 @@ goog.provide('wtf.app.ui.Toolbar');
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
-goog.require('goog.string');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
-goog.require('wtf.io');
+goog.require('wtf.events');
 goog.require('wtf.ui.Control');
-goog.require('wtf.util');
 
 
 
@@ -46,6 +44,10 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
   this.documentView_ = documentView;
 
   eh.listen(
+      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonOpen')),
+      goog.events.EventType.CLICK,
+      this.openClicked_, false);
+  eh.listen(
       this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonShare')),
       goog.events.EventType.CLICK,
       this.shareClicked_, false);
@@ -57,9 +59,16 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonSettings')),
       goog.events.EventType.CLICK,
       this.settingsClicked_, false);
+  eh.listen(
+      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonHelp')),
+      goog.events.EventType.CLICK,
+      this.helpClicked_, false);
 
+  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonOpen'), true);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonShare'), false);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSave'), true);
+  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSettings'), false);
+  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonHelp'), true);
 
   var db = documentView.getDatabase();
   db.addListener(
@@ -142,15 +151,26 @@ wtf.app.ui.Toolbar.prototype.refreshIcon_ = function(uri) {
 
 
 /**
+ * Handles 'open' button clicks.
+ * @param {!goog.events.BrowserEvent} e Event.
+ * @private
+ */
+wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
+  e.preventDefault();
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('open_trace', this, null);
+};
+
+
+/**
  * Handles 'share' button clicks.
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
 wtf.app.ui.Toolbar.prototype.shareClicked_ = function(e) {
   e.preventDefault();
-
-  // TODO(benvanik): share current data
-  window.console.log('share');
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('share_trace', this, null);
 };
 
 
@@ -161,43 +181,8 @@ wtf.app.ui.Toolbar.prototype.shareClicked_ = function(e) {
  */
 wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
   e.preventDefault();
-
-  var doc = this.documentView_.getDocument();
-  var db = doc.getDatabase();
-  var sources = db.getSources();
-  if (!sources.length) {
-    return;
-  }
-  // Just pick the first source for naming.
-  var contextInfo = sources[0];
-  var filename = contextInfo.getFilename();
-
-  // prefix-YYYY-MM-DDTHH-MM-SS
-  var dt = new Date();
-  var filenameSuffix = '-' +
-      dt.getFullYear() +
-      goog.string.padNumber(dt.getMonth() + 1, 2) +
-      goog.string.padNumber(dt.getDate(), 2) + 'T' +
-      goog.string.padNumber(dt.getHours(), 2) +
-      goog.string.padNumber(dt.getMinutes(), 2) +
-      goog.string.padNumber(dt.getSeconds(), 2);
-  filename += filenameSuffix;
-
-  var storage = doc.getStorage();
-  var dataStreams = storage.snapshotDataStreamBuffers();
-  for (var n = 0; n < dataStreams.length; n++) {
-    var dataStream = dataStreams[n];
-    var streamFilename = filename;
-    if (dataStreams.length > 1) {
-      streamFilename += '-' + n;
-    }
-    switch (dataStream.type) {
-      case 'application/x-extension-wtf-trace':
-        streamFilename += wtf.io.FILE_EXTENSION;
-        break;
-    }
-    wtf.util.downloadData([dataStream.data], streamFilename, dataStream.type);
-  }
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('save_trace', this, null);
 };
 
 
@@ -208,7 +193,18 @@ wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
  */
 wtf.app.ui.Toolbar.prototype.settingsClicked_ = function(e) {
   e.preventDefault();
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('show_settings', this, null);
+};
 
-  // TODO(benvanik): show settings
-  window.console.log('settings');
+
+/**
+ * Handles 'help' button clicks.
+ * @param {!goog.events.BrowserEvent} e Event.
+ * @private
+ */
+wtf.app.ui.Toolbar.prototype.helpClicked_ = function(e) {
+  e.preventDefault();
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('toggle_help', this, null);
 };
