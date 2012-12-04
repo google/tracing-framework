@@ -16,8 +16,10 @@ goog.provide('wtf.events.KeyboardScope');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.dom.DomHelper');
 goog.require('goog.events.EventHandler');
 goog.require('goog.ui.KeyboardShortcutHandler');
+goog.require('wtf.events.CommandManager');
 goog.require('wtf.events.EventEmitter');
 
 
@@ -108,10 +110,12 @@ wtf.events.Keyboard.prototype.resume = function() {
 /**
  * Adds a command to be executed on the given key press.
  * @param {string} shortcut Shortcut string (like 'ctrl+g').
- * @param {!Function} callback Callback function.
- * @param {Object=} opt_scope Scope for the callback function.
+ * @param {!function(this:T)} callback Callback function.
+ * @param {T=} opt_scope Scope for the callback function.
+ * @template T
+ * @private
  */
-wtf.events.Keyboard.prototype.addShortcut = function(
+wtf.events.Keyboard.prototype.addShortcut_ = function(
     shortcut, callback, opt_scope) {
   // Support multi shortcuts.
   var shortcuts = shortcut.split('|');
@@ -130,8 +134,9 @@ wtf.events.Keyboard.prototype.addShortcut = function(
  * @param {string} shortcut Shortcut string (like 'ctrl+g').
  * @param {!Function} callback Callback function.
  * @param {Object=} opt_scope Scope for the callback function.
+ * @private
  */
-wtf.events.Keyboard.prototype.removeShortcut = function(
+wtf.events.Keyboard.prototype.removeShortcut_ = function(
     shortcut, callback, opt_scope) {
   // Support multi shortcuts.
   var shortcuts = shortcut.split('|');
@@ -165,10 +170,13 @@ wtf.events.Keyboard.keyboardInstances_ = {};
 
 /**
  * Gets the keyboard for the given window, creating one if needed.
- * @param {Window=} opt_window Window to get the keyboard for.
+ * @param {Window|goog.dom.DomHelper=} opt_window Window to get the keyboard of.
  * @return {!wtf.events.Keyboard} Keyboard for the given window.
  */
 wtf.events.Keyboard.getWindowKeyboard = function(opt_window) {
+  if (opt_window && opt_window instanceof goog.dom.DomHelper) {
+    opt_window = opt_window.getWindow();
+  }
   var targetWindow = opt_window || goog.global;
   var uid = goog.getUid(targetWindow);
   var keyboard = wtf.events.Keyboard.keyboardInstances_[uid];
@@ -214,20 +222,39 @@ goog.inherits(wtf.events.KeyboardScope, goog.Disposable);
 wtf.events.KeyboardScope.prototype.disposeInternal = function() {
   for (var n = 0; n < this.listeners_.length; n++) {
     var listener = this.listeners_[n];
-    this.keyboard_.removeShortcut(listener[0], listener[1], listener[2]);
+    this.keyboard_.removeShortcut_(listener[0], listener[1], listener[2]);
   }
   goog.base(this, 'disposeInternal');
 };
 
 
 /**
- * Adds a command to be executed on the given key press.
+ * Adds a callback to be executed on the given key press.
  * @param {string} shortcut Shortcut string (like 'ctrl+g').
- * @param {!Function} callback Callback function.
- * @param {Object=} opt_scope Scope for the callback function.
+ * @param {!function(this:T)} callback Callback function.
+ * @param {T=} opt_scope Scope for the callback function.
+ * @template T
  */
 wtf.events.KeyboardScope.prototype.addShortcut = function(
     shortcut, callback, opt_scope) {
   this.listeners_.push([shortcut, callback, opt_scope]);
-  this.keyboard_.addShortcut(shortcut, callback, opt_scope);
+  this.keyboard_.addShortcut_(shortcut, callback, opt_scope);
+};
+
+
+/**
+ * Adds a command to be executed on the given key press.
+ * @param {string} shortcut Shortcut string (like 'ctrl+g').
+ * @param {string} commandName Command name.
+ */
+wtf.events.KeyboardScope.prototype.addCommandShortcut = function(
+    shortcut, commandName) {
+  function callback() {
+    var commandManager = wtf.events.CommandManager.getShared();
+    if (commandManager) {
+      commandManager.execute(commandName, this, null);
+    }
+  };
+  this.listeners_.push([shortcut, callback, this]);
+  this.keyboard_.addShortcut_(shortcut, callback, this);
 };

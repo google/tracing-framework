@@ -21,7 +21,7 @@ goog.require('goog.dom.classes');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
-goog.require('wtf.events.Keyboard');
+goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.SettingsDialog');
@@ -112,7 +112,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
       session, options, this.getChildElement('wtfHudGraph'));
   this.registerDisposable(this.liveGraph_);
 
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboard = wtf.events.getWindowKeyboard(dom);
 
   /**
    * Keyboard shortcut scope.
