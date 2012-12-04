@@ -17,6 +17,10 @@ goog.provide('wtf.ui.DialogOptions');
 goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
+goog.require('goog.dom.classes');
+goog.require('goog.events');
+goog.require('goog.events.EventHandler');
+goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
@@ -48,13 +52,14 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
 
   // Setup keyboard handlers for closing/etc.
   var keyboard = wtf.events.getWindowKeyboard(dom);
+  // TODO(benvanik): suppress all other scopes
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
   keyboardScope.addShortcut('esc', this.close, this);
 
   if (options.modal) {
     // Add shield.
-    var shield = new wtf.ui.Dialog.Shield_(dom);
+    var shield = new wtf.ui.Dialog.Shield_(this);
     this.registerDisposable(shield);
   }
 };
@@ -71,6 +76,15 @@ wtf.ui.Dialog.ZINDEX_ = 999999;
 
 
 /**
+ * Event types.
+ * @type {!Object.<string>}
+ */
+wtf.ui.Dialog.EventType = {
+  CLOSED: goog.events.getUniqueId('closed')
+};
+
+
+/**
  * @override
  */
 wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
@@ -78,15 +92,18 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
 
   // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
+  goog.dom.classes.add(el, goog.getCssName('kDialog'));
   goog.style.setStyle(el, {
     'position': 'fixed',
-    'left': '50%',
-    'top': '50%',
     'z-index': wtf.ui.Dialog.ZINDEX_,
     'opacity': 0,
     '-webkit-transform': 'scale(1.05)',
     '-moz-transform': 'scale(1.05)',
     'transform': 'scale(1.05)'
+  });
+  goog.style.setStyle(el, {
+    'left': '50%',
+    'top': '50%'
   });
 
   // Wrap root element in dialog DOM.
@@ -138,6 +155,7 @@ wtf.ui.Dialog.prototype.close = function() {
     });
     wtf.timing.setTimeout(218, function() {
       dom.removeNode(el);
+      this.emitEvent(wtf.ui.Dialog.EventType.CLOSED);
       goog.dispose(this);
     }, this);
   }
@@ -147,13 +165,15 @@ wtf.ui.Dialog.prototype.close = function() {
 
 /**
  * Modal dialog shield wrapper.
- * @param {!goog.dom.DomHelper} dom DOM helper.
+ * @param {!wtf.ui.Dialog} dialog Parent dialog.
  * @constructor
  * @extends {goog.Disposable}
  * @private
  */
-wtf.ui.Dialog.Shield_ = function(dom) {
+wtf.ui.Dialog.Shield_ = function(dialog) {
   goog.base(this);
+
+  var dom = dialog.getDom();
 
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.style.setStyle(el, {
@@ -182,6 +202,18 @@ wtf.ui.Dialog.Shield_ = function(dom) {
    * @private
    */
   this.el_ = el;
+
+  /**
+   * Event handler.
+   * @type {!goog.events.EventHandler}
+   * @private
+   */
+  this.eh_ = new goog.events.EventHandler(this);
+  this.registerDisposable(this.eh_);
+
+  this.eh_.listen(this.el_, goog.events.EventType.MOUSEDOWN, function(e) {
+    dialog.close();
+  });
 
   // Add to document.
   var doc = dom.getDocument();

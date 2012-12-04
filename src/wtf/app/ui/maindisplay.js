@@ -26,6 +26,7 @@ goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
 goog.require('wtf.app.ui.DocumentView');
+goog.require('wtf.app.ui.HelpOverlay');
 goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events');
@@ -36,6 +37,7 @@ goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
+goog.require('wtf.ui.Dialog');
 goog.require('wtf.util');
 
 
@@ -81,6 +83,13 @@ wtf.app.ui.MainDisplay = function(
   wtf.events.CommandManager.setShared(this.commandManager_);
 
   /**
+   * Any active dialog.
+   * @type {wtf.ui.Dialog}
+   * @private
+   */
+  this.activeDialog_ = null;
+
+  /**
    * The current document view, if any.
    * @type {wtf.app.ui.DocumentView}
    * @private
@@ -116,6 +125,7 @@ wtf.app.ui.MainDisplay = function(
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
   keyboardScope.addCommandShortcut('ctrl+o', 'open_trace');
+  keyboardScope.addCommandShortcut('ctrl+s', 'save_trace');
   keyboardScope.addCommandShortcut('ctrl+/', 'toggle_help');
 
   this.setupDragDropLoading_();
@@ -134,9 +144,14 @@ goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
  * @override
  */
 wtf.app.ui.MainDisplay.prototype.disposeInternal = function() {
+  goog.dispose(this.activeDialog_);
+  this.activeDialog_ = null;
+
   goog.dom.removeNode(this.getRootElement());
   this.setDocumentView(null);
+
   wtf.events.CommandManager.setShared(null);
+
   goog.base(this, 'disposeInternal');
 };
 
@@ -510,5 +525,22 @@ wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
  * @private
  */
 wtf.app.ui.MainDisplay.prototype.toggleHelpOverlay_ = function() {
-  // TODO(benvanik): show the help overlay.
+  // Close existing help dialog (only).
+  if (this.activeDialog_) {
+    if (this.activeDialog_ instanceof wtf.app.ui.HelpOverlay) {
+      goog.dispose(this.activeDialog_);
+      this.activeDialog_ = null;
+    }
+    return;
+  }
+
+  // Show help dialog.
+  var body = this.getDom().getDocument().body;
+  goog.asserts.assert(body);
+  this.activeDialog_ = new wtf.app.ui.HelpOverlay(
+      body,
+      this.getDom());
+  this.activeDialog_.addListener(wtf.ui.Dialog.EventType.CLOSED, function() {
+    this.activeDialog_ = null;
+  }, this);
 };

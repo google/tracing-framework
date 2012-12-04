@@ -151,7 +151,7 @@ wtf.analysis.EventFilter.prototype.parseExpression_ = function(value) {
   } else {
     // Generate from value.
     var escapedValue = goog.string.regExpEscape(value);
-    regex = new RegExp('.*' + escapedValue + '.*', '');
+    regex = new RegExp('.*' + escapedValue + '.*', 'i');
   }
   return {
     name: regex
