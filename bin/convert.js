@@ -15,6 +15,7 @@
  */
 
 var toolRunner = require('./tool-runner');
+var util = toolRunner.util;
 toolRunner.launch(runTool);
 
 
@@ -29,11 +30,11 @@ function runTool(platform, args) {
   var inputFile = args[0];
   var outputFile = args[1];
   if (!inputFile || !outputFile) {
-    goog.global.console.log('usage: convert.js file.wtf-trace out.json');
+    console.log('usage: convert.js file.wtf-trace out.json');
     return -1;
   }
-  goog.global.console.log('Converting ' + inputFile + ' to JSON...');
-  goog.global.console.log('');
+  console.log('Converting ' + inputFile + ' to JSON...');
+  console.log('');
 
   /**
    * Source JSON.
@@ -158,7 +159,7 @@ function runTool(platform, args) {
   });
 
   if (!wtf.analysis.run(platform, traceListener, inputFile)) {
-    goog.global.console.log('failed to start analysis!');
+    console.log('failed to start analysis!');
     return -1;
   }
 
