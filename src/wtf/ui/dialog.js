@@ -18,7 +18,7 @@ goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
-goog.require('wtf.events.Keyboard');
+goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
@@ -47,7 +47,7 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
   var dom = this.getDom();
 
   // Setup keyboard handlers for closing/etc.
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
   keyboardScope.addShortcut('esc', this.close, this);

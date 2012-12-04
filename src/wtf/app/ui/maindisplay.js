@@ -28,13 +28,15 @@ goog.require('goog.style');
 goog.require('wtf.app.ui.DocumentView');
 goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
-goog.require('wtf.events.Keyboard');
+goog.require('wtf.events');
+goog.require('wtf.events.CommandManager');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.io');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
+goog.require('wtf.util');
 
 
 
@@ -71,6 +73,14 @@ wtf.app.ui.MainDisplay = function(
   this.platform_ = platform;
 
   /**
+   * Command manager.
+   * @type {!wtf.events.CommandManager}
+   * @private
+   */
+  this.commandManager_ = new wtf.events.CommandManager();
+  wtf.events.CommandManager.setShared(this.commandManager_);
+
+  /**
    * The current document view, if any.
    * @type {wtf.app.ui.DocumentView}
    * @private
@@ -89,11 +99,24 @@ wtf.app.ui.MainDisplay = function(
         this.channelMessage_, this);
   }
 
+  // Setup command manager.
+  this.commandManager_.registerSimpleCommand(
+      'open_trace', this.requestTraceLoad, this);
+  this.commandManager_.registerSimpleCommand(
+      'save_trace', this.saveTrace_, this);
+  this.commandManager_.registerSimpleCommand(
+      'share_trace', this.shareTrace_, this);
+  this.commandManager_.registerSimpleCommand(
+      'show_settings', this.showSettings_, this);
+  this.commandManager_.registerSimpleCommand(
+      'toggle_help', this.toggleHelpOverlay_, this);
+
   // Setup keyboard shortcuts.
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
-  keyboardScope.addShortcut('ctrl+o', this.requestTraceLoad, this);
+  keyboardScope.addCommandShortcut('ctrl+o', 'open_trace');
+  keyboardScope.addCommandShortcut('ctrl+/', 'toggle_help');
 
   this.setupDragDropLoading_();
 
@@ -113,6 +136,7 @@ goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
 wtf.app.ui.MainDisplay.prototype.disposeInternal = function() {
   goog.dom.removeNode(this.getRootElement());
   this.setDocumentView(null);
+  wtf.events.CommandManager.setShared(null);
   goog.base(this, 'disposeInternal');
 };
 
@@ -408,4 +432,83 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
     }, this);
   }, false, this);
   xhr.send(url);
+};
+
+
+/**
+ * Saves the current trace document, if any.
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
+  if (!this.documentView_) {
+    return;
+  }
+
+  var doc = this.documentView_.getDocument();
+  var db = doc.getDatabase();
+  var sources = db.getSources();
+  if (!sources.length) {
+    return;
+  }
+  // Just pick the first source for naming.
+  var contextInfo = sources[0];
+  var filename = contextInfo.getFilename();
+
+  // prefix-YYYY-MM-DDTHH-MM-SS
+  var dt = new Date();
+  var filenameSuffix = '-' +
+      dt.getFullYear() +
+      goog.string.padNumber(dt.getMonth() + 1, 2) +
+      goog.string.padNumber(dt.getDate(), 2) + 'T' +
+      goog.string.padNumber(dt.getHours(), 2) +
+      goog.string.padNumber(dt.getMinutes(), 2) +
+      goog.string.padNumber(dt.getSeconds(), 2);
+  filename += filenameSuffix;
+
+  var storage = doc.getStorage();
+  var dataStreams = storage.snapshotDataStreamBuffers();
+  for (var n = 0; n < dataStreams.length; n++) {
+    var dataStream = dataStreams[n];
+    var streamFilename = filename;
+    if (dataStreams.length > 1) {
+      streamFilename += '-' + n;
+    }
+    switch (dataStream.type) {
+      case 'application/x-extension-wtf-trace':
+        streamFilename += wtf.io.FILE_EXTENSION;
+        break;
+    }
+    wtf.util.downloadData([dataStream.data], streamFilename, dataStream.type);
+  }
+};
+
+
+/**
+ * Shares the current trace document, if any.
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.shareTrace_ = function() {
+  if (!this.documentView_) {
+    return;
+  }
+
+  // TODO(benvanik): share trace.
+};
+
+
+/**
+ * Shows the settings dialog.
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
+  // TODO(benvanik): show a settings dialog.
+};
+
+
+/**
+ * Toggles the display of the help overlay.
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.toggleHelpOverlay_ = function() {
+  // TODO(benvanik): show the help overlay.
 };

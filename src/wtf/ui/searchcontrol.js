@@ -16,8 +16,8 @@ goog.provide('wtf.ui.SearchControl');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
-goog.require('wtf.events.Keyboard');
 goog.require('wtf.ui.Control');
 
 
@@ -49,7 +49,7 @@ wtf.ui.SearchControl = function(parentElement, opt_dom) {
   var eh = this.getHandler();
 
   // Manage keyboard bindings.
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardSuspended = false;
   eh.listen(el, goog.events.EventType.FOCUS, function() {
     if (keyboardSuspended) {

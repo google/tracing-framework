@@ -23,8 +23,8 @@ goog.require('wtf.app.ui.nav.FramebarPainter');
 goog.require('wtf.app.ui.nav.HeatmapPainter');
 goog.require('wtf.app.ui.nav.framebar');
 goog.require('wtf.doc.View');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
-goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.ui.Control');
@@ -210,7 +210,7 @@ wtf.app.ui.nav.Framebar.prototype.createDom = function(dom) {
  */
 wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
   var dom = this.getDom();
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
   keyboardScope.addShortcut('space', function() {

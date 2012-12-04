@@ -70,6 +70,8 @@
 .wtfAppUiToolbarButtons {
   float: left;
 }
+.wtfAppUiToolbarButtonOpen {}
 .wtfAppUiToolbarButtonShare {}
 .wtfAppUiToolbarButtonSave {}
 .wtfAppUiToolbarButtonSettings {}
+.wtfAppUiToolbarButtonHelp {}

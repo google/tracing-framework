@@ -19,7 +19,7 @@ goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.tabbar');
-goog.require('wtf.events.Keyboard');
+goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 
@@ -72,7 +72,7 @@ wtf.app.ui.Tabbar = function(documentView, parentElement) {
    */
   this.selectedTab_ = null;
 
-  var keyboard = wtf.events.Keyboard.getWindowKeyboard(dom.getWindow());
+  var keyboard = wtf.events.getWindowKeyboard(dom);
 
   /**
    * Keyboard scope for tab selection.
