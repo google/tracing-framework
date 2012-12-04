@@ -69,9 +69,9 @@ Extension.prototype.detectApplication_ = function() {
   // TODO(benvanik): some way of talking to the app to get the right URL.
   var options = this.options_;
   options.setDefaultEndpoint('page',
-      //chrome.extension.getURL('app/maindisplay.html'));
+      chrome.extension.getURL('app/maindisplay.html'));
       // TODO(benvanik): use debug URL somehow?
-      'http://localhost:8080/app/maindisplay-debug.html');
+      //'http://localhost:8080/app/maindisplay-debug.html');
 
   chrome.management.getAll(function(results) {
     for (var n = 0; n < results.length; n++) {
