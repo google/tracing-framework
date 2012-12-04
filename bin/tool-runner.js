@@ -13,54 +13,58 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+// TODO(benvanik): support 'release' mode - load a compiled analysis lib.
+
+// Import Closure Library and deps.js.
+require('../src/wtf/bootstrap/node').importClosureLibrary([
+  'wtf_js-deps.js'
+]);
+
+var args = process.argv.slice(2);
+
+// Disable asserts unless debugging - asserts cause all code to deopt.
+// TODO(benvanik): real options parser stuff
+var debugIndex = args.indexOf('--debug');
+if (debugIndex == -1) {
+  goog.DEBUG = false;
+  goog.require('goog.asserts');
+  goog.asserts.assert = function(condition) {
+    return condition;
+  };
+} else {
+  goog.require('goog.asserts');
+  goog.asserts.assert = function(condition, opt_message) {
+    console.assert(condition, opt_msessage);
+    return condition;
+  };
+  args.splice(debugIndex, 1);
+}
+
+// Load WTF and configure options.
+goog.require('wtf');
+wtf.NODE = true;
+goog.require('wtf.analysis.exports');
+goog.require('wtf.tools.util');
+
 
 /**
- * Launches the given tool by name.
- *
- * @param {string} name Full type name of the {@see wtf.tools.Tool} subclass.
+ * @typedef {!function(!wtf.pal.IPlatform, !Array.<string>):
+ *     (number|!goog.async.Deferred)}
+ */
+var ToolRunFunction;
+
+
+/**
+ * Launches the given tool function.
+ * @param {!ToolRunFunction} toolFn Tool run function.
  * @return {number} Return code.
  */
-exports.launchTool = function(name) {
-  // Import Closure Library and deps.js.
-  require('../src/wtf/bootstrap/node').importClosureLibrary([
-    'wtf_js-deps.js'
-  ]);
-
-  var args = process.argv.slice(2);
-
-  // Disable asserts unless debugging - asserts cause all code to deopt.
-  // TODO(benvanik): real options parser stuff
-  var debugIndex = args.indexOf('--debug');
-  if (debugIndex == -1) {
-    goog.DEBUG = false;
-    goog.require('goog.asserts');
-    goog.asserts.assert = function(condition) {
-      return condition;
-    };
-  } else {
-    goog.require('goog.asserts');
-    goog.asserts.assert = function(condition, opt_message) {
-      console.assert(condition, opt_msessage);
-      return condition;
-    };
-    args.splice(debugIndex, 1);
-  }
-
-  // Load WTF and configure options.
-  goog.require('wtf');
-  wtf.NODE = true;
-  goog.require('wtf.analysis.exports');
-
+exports.launch = function(toolFn) {
   // Setup platform abstraction layer.
   var platform = createPlatformAbstractionLayer();
 
-  // Load tool by name.
-  goog.require(name);
-  var type = goog.getObjectByName(name);
-  var tool = new type(platform);
-
   // Execute the tool, potentially async.
-  var returnValue = tool.run(args);
+  var returnValue = toolFn(platform, args);
   if (goog.isNumber(returnValue)) {
     process.exit(returnValue);
   } else {
