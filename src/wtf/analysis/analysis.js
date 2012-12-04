@@ -16,10 +16,24 @@
 goog.provide('wtf.analysis');
 
 goog.require('goog.string');
+goog.require('wtf.analysis.EventfulTraceListener');
 goog.require('wtf.analysis.Session');
 goog.require('wtf.io');
 /** @suppress {extraRequire} */
 goog.require('wtf.pal.IPlatform');
+
+
+/**
+ * Creates a trace listener that targets the given events.
+ * @param {!Object.<!Function>} eventMap A map of event names to callbacks.
+ * @param {Object=} opt_scope Scope for the callback functions.
+ * @return {!wtf.analysis.TraceListener} New trace listener.
+ */
+wtf.analysis.createTraceListener = function(eventMap, opt_scope) {
+  var traceListener = new wtf.analysis.EventfulTraceListener();
+  traceListener.addListeners(eventMap, opt_scope);
+  return traceListener;
+};
 
 
 /**

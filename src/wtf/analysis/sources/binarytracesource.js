@@ -33,6 +33,7 @@ goog.require('wtf.io.EventType');
 /**
  * Single-source trace stream implenting the WTF binary format.
  * This accepts streams formatted in a version of the WTF binary format.
+ * For more information on the format see {@code docs/wtf-trace.md}.
  *
  * @param {!wtf.analysis.TraceListener} traceListener Trace listener.
  * @param {!wtf.io.ReadStream} readStream Read stream. Ownership is transferred

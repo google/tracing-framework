@@ -331,6 +331,15 @@ wtf.doc.Document.prototype.addBinaryEventSource = function(data) {
 
 
 /**
+ * Adds a JSON event source to the database.
+ * @param {!Object} data JSON data.
+ */
+wtf.doc.Document.prototype.addJsonEventSource = function(data) {
+  this.session_.addJsonSource(data);
+};
+
+
+/**
  * Gets the trace data storage.
  * @return {!wtf.analysis.Storage} Trace data storage.
  */
