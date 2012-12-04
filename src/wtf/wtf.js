@@ -41,6 +41,7 @@ wtf.ENABLE_TRACING = true;
  * @type {boolean}
  */
 wtf.hasHighResolutionTimes =
+    !!(goog.global['process'] && goog.global['process']['hrtime']) ||
     !!(goog.global['performance'] && (
         goog.global['performance']['now'] ||
         goog.global['performance']['webkitNow']));
@@ -53,6 +54,14 @@ wtf.hasHighResolutionTimes =
  * @return {number} A time, in ms.
  */
 wtf.timebase = (function() {
+  if (wtf.NODE) {
+    var timeValue = goog.global['process']['hrtime']();
+    var timebase = timeValue[0] * 1000 + timeValue[1] / 1000000;
+    return function() {
+      return timebase;
+    };
+  }
+
   var navigationStart = 0;
   var performance = goog.global['performance'];
   if (performance && performance['timing']) {
@@ -78,6 +87,17 @@ wtf.timebase = (function() {
  *      resolution (if supported).
  */
 wtf.now = (function() {
+  if (wtf.NODE) {
+    // TODO(benvanik): use node-microtime if available instead?
+    var timebase = wtf.timebase();
+    var hrtime = goog.global['process']['hrtime'];
+    var lastTime = hrtime();
+    return function() {
+      var timeValue = hrtime();
+      return (timeValue[0] * 1000 - timebase) + timeValue[1] / 1000000;
+    };
+  }
+
   // This dance is a little silly, but calling off of the closure object is
   // 2x+ faster than dereferencing the global and using a direct call instead of
   // a .call() is 2x+ on top of that.
