@@ -14,6 +14,7 @@
  */
 
 var toolRunner = require('./tool-runner');
+var util = toolRunner.util;
 toolRunner.launch(runTool);
 
 
@@ -27,11 +28,11 @@ toolRunner.launch(runTool);
 function runTool(platform, args) {
   var inputFile = args[0];
   if (!inputFile) {
-    goog.global.console.log('usage: webglgen.js file.wtf-trace');
+    console.log('usage: webglgen.js file.wtf-trace');
     return -1;
   }
 
-  var log = goog.global.console.log;
+  var log = console.log;
 
   var argTable = buildArgTable_();
 
@@ -58,14 +59,14 @@ function runTool(platform, args) {
       frameNumber = e.args['number'];
       log('frame(' +
           frameNumber + ', ' +
-          '"' + wtf.tools.util.formatTime(e.time) + '"' +
+          '"' + util.formatTime(e.time) + '"' +
           ', function(ctxs, objs, resources) {');
       log('  var result;');
       log('  var gl = ctxs[' + currentContext + '];');
       frameStart = e.time;
     },
     'timing.frameEnd': function(e) {
-      log('}, [' + resources.join(', ') + '], "' + wtf.tools.util.formatTime(e.time) + '");');
+      log('}, [' + resources.join(', ') + '], "' + util.formatTime(e.time) + '");');
       resources.length = 0;
       log('intraFrame(function(ctxs, objs, resources) {');
       log('  var result;');
@@ -86,9 +87,9 @@ function runTool(platform, args) {
     'custom': function(e) {
       if (e instanceof wtf.analysis.ScopeEvent &&
           e.eventType.name.indexOf('WebGLRenderingContext#') == 0) {
-        //wtf.tools.util.logEvent(e, e.scope.getId(), e.args);
+        //util.logEvent(e, e.scope.getId(), e.args);
         var callName = e.eventType.name.substr(22);
-        var offsetMs = wtf.tools.util.pad(
+        var offsetMs = util.pad(
             '+' + ((e.time - frameStart) | 0) + 'ms', -6);
 
         var argString = '';
@@ -242,7 +243,7 @@ function runTool(platform, args) {
   log('  var gl = ctxs[' + currentContext + '];');
 
   if (!wtf.analysis.run(platform, traceListener, inputFile)) {
-    goog.global.console.log('failed to start analysis!');
+    console.log('failed to start analysis!');
     return -1;
   }
 

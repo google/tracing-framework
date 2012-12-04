@@ -14,6 +14,7 @@
  */
 
 var toolRunner = require('./tool-runner');
+var util = toolRunner.util;
 toolRunner.launch(runTool);
 
 
@@ -27,11 +28,11 @@ toolRunner.launch(runTool);
 function runTool(platform, args) {
   var inputFile = args[0];
   if (!inputFile) {
-    goog.global.console.log('usage: query.js file.wtf-trace');
+    console.log('usage: query.js file.wtf-trace');
     return -1;
   }
-  goog.global.console.log('Querying ' + inputFile + '...');
-  goog.global.console.log('');
+  console.log('Querying ' + inputFile + '...');
+  console.log('');
 
   // Create database for querying.
   var db = new wtf.analysis.db.EventDatabase();
@@ -40,13 +41,13 @@ function runTool(platform, args) {
   // Run to populate the db.
   var traceListener = db.getTraceListener();
   if (!wtf.analysis.run(platform, traceListener, inputFile)) {
-    goog.global.console.log('failed to start analysis!');
+    console.log('failed to start analysis!');
     return -1;
   }
 
   var markerIndex = db.getEventIndex('timing.frameEnd');
   // markerIndex.forEach(0, Number.MAX_VALUE, function(e) {
-  //   wtf.tools.util.logEvent(
+  //   util.logEvent(
   //       e.zone, e.time, e.eventType.name, undefined, e.data);
   // });
   console.log(markerIndex.getCount() + ' frame events');
