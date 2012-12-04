@@ -66,11 +66,7 @@ wtf.analysis.TraceListener.prototype.createOrGetZone = function(
  * @param {number} timebase Timebase.
  * @param {!wtf.data.ContextInfo} contextInfo Context information.
  */
-wtf.analysis.TraceListener.prototype.sourceAdded = function(
-    timebase, contextInfo) {
-  this.emitEvent(wtf.analysis.TraceListener.EventType.SOURCE_ADDED,
-      timebase, contextInfo);
-};
+wtf.analysis.TraceListener.prototype.sourceAdded = goog.nullFunction;
 
 
 /**
@@ -104,67 +100,6 @@ wtf.analysis.TraceListener.prototype.traceRawEvent = goog.nullFunction;
  * Signals an event in the stream.
  * This fires for all events that pass filtering, including built-in ones.
  * @param {!wtf.analysis.Event} e Event.
+ * @param {boolean} isCustom True if the event is not a known built-in event.
  */
 wtf.analysis.TraceListener.prototype.traceEvent = goog.nullFunction;
-
-
-/**
- * Event type values for the events dispatched on trace listeners.
- * @enum {string}
- */
-wtf.analysis.TraceListener.EventType = {
-  /**
-   * Args: [timebase, wtf.data.ContextInfo]
-   */
-  SOURCE_ADDED: 'sourceAdded',
-
-  /**
-   * Args: [wtf.analysis.Event]
-   */
-  DISCONTINUITY: 'wtf.discontinuity',
-
-  /**
-   * Args: [wtf.analysis.ZoneEvent]
-   */
-  CREATE_ZONE: 'wtf.zone.create',
-
-  /**
-   * Args: [wtf.analysis.ZoneEvent]
-   */
-  DELETE_ZONE: 'wtf.zone.delete',
-
-  /**
-   * Args: [wtf.analysis.ScopeEvent]
-   */
-  ENTER_SCOPE: 'wtf.scope.enter',
-
-  /**
-   * Args: [wtf.analysis.ScopeEvent]
-   */
-  LEAVE_SCOPE: 'wtf.scope.leave',
-
-  /**
-   * Args: [wtf.analysis.FlowEvent]
-   */
-  BRANCH_FLOW: 'wtf.flow.branch',
-
-  /**
-   * Args: [wtf.analysis.FlowEvent]
-   */
-  EXTEND_FLOW: 'wtf.flow.extend',
-
-  /**
-   * Args: [wtf.analysis.FlowEvent]
-   */
-  TERMINATE_FLOW: 'wtf.flow.terminate',
-
-  /**
-   * Args: [wtf.analysis.Event]
-   */
-  MARK: 'wtf.mark',
-
-  /**
-   * Args: [wtf.analysis.Event]
-   */
-  CUSTOM: 'custom'
-};

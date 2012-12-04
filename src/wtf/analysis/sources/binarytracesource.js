@@ -21,7 +21,6 @@ goog.require('wtf.analysis.Flow');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
-goog.require('wtf.analysis.TraceListener');
 goog.require('wtf.analysis.TraceSource');
 goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
@@ -34,6 +33,7 @@ goog.require('wtf.io.EventType');
 /**
  * Single-source trace stream implenting the WTF binary format.
  * This accepts streams formatted in a version of the WTF binary format.
+ * For more information on the format see {@code docs/wtf-trace.md}.
  *
  * @param {!wtf.analysis.TraceListener} traceListener Trace listener.
  * @param {!wtf.io.ReadStream} readStream Read stream. Ownership is transferred
@@ -364,10 +364,6 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   }
 
   if (e) {
-    listener.traceEvent(e);
-    if (isCustom) {
-      listener.emitEvent(wtf.analysis.TraceListener.EventType.CUSTOM, e);
-    }
-    listener.emitEvent(eventType.name, e);
+    listener.traceEvent(e, isCustom);
   }
 };
