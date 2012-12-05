@@ -71,7 +71,7 @@ function fetchOptions() {
   var optionsUuid = null;
   var cookies = document.cookie.split('; ');
   for (var n = 0; n < cookies.length; n++) {
-    if (cookies[n].lastIndexOf(WTF_OPTIONS_COOKIE) == 0) {
+    if (cookies[n].lastIndexOf(WTF_OPTIONS_COOKIE + '=') == 0) {
       optionsUuid = cookies[n].substr(cookies[n].indexOf('=') + 1);
       break;
     }
