@@ -40,7 +40,7 @@ function runTool(platform, args) {
 
   // Run to populate the db.
   var traceListener = db.getTraceListener();
-  if (!wtf.analysis.run(platform, traceListener, inputFile)) {
+  if (!wtf.analysis.run(traceListener, inputFile)) {
     console.log('failed to start analysis!');
     return -1;
   }

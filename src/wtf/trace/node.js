@@ -29,7 +29,7 @@ if (wtf.NODE) {
     // Setup process shutdown hook to snapshot/flush.
     process.on('exit', function() {
       // Snapshot and retrieve the resulting buffers.
-      wtf.trace.snapshot();
+      wtf.trace.snapshot('file://');
       wtf.trace.stop();
     });
   };

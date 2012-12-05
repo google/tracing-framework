@@ -69,12 +69,14 @@ function prepareRelease() {
     './build-out',
     '../build-out'
   ];
+  var modulePath = path.dirname(module.filename);
   var wtfPath = null;
   for (var n = 0; n < searchPaths.length; n++) {
     var searchPath = path.join(
         searchPaths[n], 'wtf_node_js_compiled.js');
+    searchPath = path.join(modulePath, searchPath);
     if (fs.existsSync(searchPath)) {
-      wtfPath = searchPath;
+      wtfPath = path.relative(modulePath, searchPath);
       break;
     }
   }
@@ -83,7 +85,7 @@ function prepareRelease() {
     process.exit(-1);
     return;
   }
-  var wtf = require(path.join(process.cwd(), wtfPath.replace('.js', '')));
+  var wtf = require(wtfPath.replace('.js', ''));
   global.wtf = wtf;
 };
 

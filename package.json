@@ -46,7 +46,7 @@
 
   "main": "./build-out/wtf_node_js_compiled",
   "bin": {
-    "wtf-run": "./bin/trace-runner.js",
+    "wtf-trace": "./bin/trace-runner.js",
     "wtf-dump": "./bin/dump.js"
   }
 }

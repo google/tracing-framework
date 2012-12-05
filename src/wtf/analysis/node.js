@@ -26,3 +26,10 @@ goog.require('wtf.net.ListenSocket');
 goog.require('wtf.net.Socket');
 /** @suppress {extraRequire} */
 goog.require('wtf.pal');
+
+
+/**
+ * Placeholder function.
+ */
+wtf.analysis.node = function() {
+};

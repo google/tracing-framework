@@ -284,7 +284,7 @@ wtf.data.ScriptContextInfo.prototype.getFilename = function() {
  */
 wtf.data.ScriptContextInfo.prototype.detect = function() {
   if (wtf.NODE) {
-    this.uri = process.argv[1];
+    this.uri = process.argv[1] || process.argv[0];
     if (process.title == 'node') {
       this.title = this.uri.substr(this.uri.lastIndexOf('/') + 1);
       this.title = this.title.replace(/\.js$/, '');
