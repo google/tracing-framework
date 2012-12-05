@@ -182,7 +182,9 @@ closure_js_library(
     pretty_print=True,
     entry_points=[
         'wtf.exports',
+        'wtf.analysis.exports',
         'wtf.trace.exports',
+        'wtf.trace.node',
         ],
     srcs=[
         'third_party:all_closure_js',
@@ -196,6 +198,7 @@ closure_js_library(
         '--define=wtf.NODE=true',
         '--define=wtf.ENABLE_TRACING=true',
         '--define=wtf.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
         ],
     wrap_with_global='global')
@@ -386,6 +389,7 @@ file_set(
     srcs=[
         ':deps',
         ':wtf_trace_web_release',
+        ':wtf_trace_node_release',
         'app:release',
         'app:wtf-chrome-app',
         ':wtf-trace-web-api',
