@@ -26,18 +26,19 @@ var searchPaths = [
 ];
 var wtfPath = null;
 for (var n = 0; n < searchPaths.length; n++) {
-  var searchPath = path.join(searchPaths[n], 'wtf_trace_node_js_compiled.js');
+  var searchPath = path.join(searchPaths[n], 'wtf_node_js_compiled.js');
   if (fs.existsSync(searchPath)) {
     wtfPath = searchPath;
     break;
   }
 }
 if (!wtfPath) {
-  console.log('Unable to find wtf_trace_node_js_compiled.js');
+  console.log('Unable to find wtf_node_js_compiled.js');
   process.exit(-1);
   return;
 }
-require(path.join(process.cwd(), wtfPath.replace('.js', '')));
+var wtf = require(path.join(process.cwd(), wtfPath.replace('.js', '')));
+global.wtf = wtf;
 
 // Load the target script file.
 var filename = path.join(process.cwd(), process.argv[2]);
@@ -45,13 +46,14 @@ var code = fs.readFileSync(filename, 'utf8');
 
 // Setup process arguments to strip our run script.
 // TODO(benvanik): look for -- to split args/etc
-var args = process.argv.slice(3);
+var args = process.argv.slice();
+args.splice(1, 1);
 process.argv = args;
 // TODO(benvanik): setup options from command line/etc?
 var options = {
   'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
   'wtf.trace.mode': 'snapshotting',
-  'wtf.trace.target': 'file://' + path.basename(filename, '.js')
+  'wtf.trace.target': 'file://'
 };
 
 // Starting the tracing framework.

@@ -13,6 +13,10 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+var fs = require('fs');
+var path = require('path');
+
+
 var args = process.argv.slice(2);
 // TODO(benvanik): real options parser stuff
 var debugArgIndex = args.indexOf('--debug');
@@ -35,7 +39,7 @@ function prepareDebug() {
   if (debugMode) {
     goog.require('goog.asserts');
     goog.asserts.assert = function(condition, opt_message) {
-      console.assert(condition, opt_msessage);
+      console.assert(condition, opt_message);
       return condition;
     };
   } else {
@@ -50,6 +54,7 @@ function prepareDebug() {
   goog.require('wtf');
   wtf.NODE = true;
   goog.require('wtf.analysis.exports');
+  goog.require('wtf.analysis.node');
 };
 
 
@@ -57,17 +62,37 @@ function prepareDebug() {
  * Prepares the global context for running a tool with the release WTF.
  */
 function prepareRelease() {
-  // TODO(benvanik): see trace-runner for loading the release lib
+  // Load WTF binary. Search a few paths.
+  // TODO(benvanik): look in ENV?
+  var searchPaths = [
+    '.',
+    './build-out',
+    '../build-out'
+  ];
+  var wtfPath = null;
+  for (var n = 0; n < searchPaths.length; n++) {
+    var searchPath = path.join(
+        searchPaths[n], 'wtf_node_js_compiled.js');
+    if (fs.existsSync(searchPath)) {
+      wtfPath = searchPath;
+      break;
+    }
+  }
+  if (!wtfPath) {
+    console.log('Unable to find wtf_node_js_compiled.js');
+    process.exit(-1);
+    return;
+  }
+  var wtf = require(path.join(process.cwd(), wtfPath.replace('.js', '')));
+  global.wtf = wtf;
 };
 
 
-// TOOD(benvanik): switch based on --debug
-prepareDebug();
-// if (debugMode) {
-//   prepareDebug();
-// } else {
-//   prepareRelease();
-// }
+if (debugMode) {
+  prepareDebug();
+} else {
+  prepareRelease();
+}
 
 
 /**

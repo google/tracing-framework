@@ -46,3 +46,8 @@ wtf.pal.getPlatform = function() {
   }
   return wtf.pal.sharedPlatform_;
 };
+
+
+goog.exportSymbol(
+    'wtf.pal.getPlatform',
+    wtf.pal.getPlatform);

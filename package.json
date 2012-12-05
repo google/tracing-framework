@@ -31,7 +31,7 @@
   },
 
   "files": [
-    "build-out/wtf_trace_node_js_compiled.js",
+    "build-out/wtf_node_js_compiled.js",
 
     "bin/",
 
@@ -44,7 +44,7 @@
     "docs/wtf-trace.md"
   ],
 
-  "main": "./build-out/wtf_trace_node_js_compiled",
+  "main": "./build-out/wtf_node_js_compiled",
   "bin": {
     "wtf-run": "./bin/trace-runner.js",
     "wtf-dump": "./bin/dump.js"

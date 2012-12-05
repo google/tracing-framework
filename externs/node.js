@@ -37,6 +37,18 @@ NodeEventEmitter.prototype.on = function(event, listener) {};
  * @noalias
  */
 var NodeProcessModule;
+/** @type {!Array.<string>} */
+NodeProcessModule.prototype.argv;
+/** @type {number} */
+NodeProcessModule.prototype.pid;
+/** @type {string} */
+NodeProcessModule.prototype.arch;
+/** @type {string} */
+NodeProcessModule.prototype.platform;
+/** @type {string} */
+NodeProcessModule.prototype.title;
+/** @type {string} */
+NodeProcessModule.prototype.version;
 /**
  * @return {string}
  */
