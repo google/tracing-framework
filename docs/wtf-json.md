@@ -31,6 +31,12 @@ trailing commas:
       },   <-- trailing comma
            <-- no trailing ]
 
+Optionally the array can be wrapped inside of an object:
+
+    {
+      'events': [...]
+    }
+
 ## Entries
 
 ### Header
@@ -111,7 +117,25 @@ TODO(benvanik): context info
 
 ### Zones
 
-TODO(benvanik): support zones
+TODO(benvanik): support zones with some sugar
+
+      {
+        "event": "wtf.zone.create",
+        "time": 0,
+        "args": [
+          1000,         <-- ID
+          "zone name",
+          "script",
+          "http://some/url.js"
+        ]
+      },
+      {
+        "event": "wtf.zone.set",
+        "time": 0,
+        "args": [
+          1000          <-- ID
+        ]
+      }
 
 ### Flows
 
@@ -165,7 +189,7 @@ Efficient file:
       {
         "type": "wtf.json.header",
         "timebase": 123450000
-      }
+      },
       {
         "type": "wtf.event.define",
         "signature": "my.custom#scopeEvent",

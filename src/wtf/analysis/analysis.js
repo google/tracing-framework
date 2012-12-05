@@ -63,18 +63,15 @@ wtf.analysis.run = function(traceListener, input) {
         return false;
       }
       session.addBinarySource(fileData);
-    } else {
+    } else if (goog.string.endsWith(input, '.wtf-json')) {
       var jsonSource = platform.readTextFile(input);
       if (!jsonSource) {
         goog.dispose(session);
         return false;
       }
-      var json = goog.global.JSON.parse(jsonSource);
-      if (!json) {
-        goog.dispose(session);
-        return false;
-      }
-      session.addJsonSource(/** @type {!Object} */ (json));
+      session.addJsonSource(jsonSource);
+    } else {
+      session.addJsonSource(input);
     }
   } else if (wtf.io.isByteArray(input)) {
     // Binary buffer.
