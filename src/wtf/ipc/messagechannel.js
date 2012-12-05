@@ -54,16 +54,13 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
   this.registerDisposable(this.eh_);
 
   /**
-   * Whether the send port has {@code webkitPostMessage}.
-   * This check is done once because Firefox throws an exception.
-   * @type {boolean}
+   * Whether the send port supports transferrable objects.
+   * This check is done on the first post as there's no way to detect it
+   * otherwise.
+   * @type {boolean|undefined}
    * @private
    */
-  this.hasWebkitPostMessage_ = false;
-  try {
-    this.hasWebkitPostMessage_ = 'webkitPostMessage' in this.sendPort_;
-  } catch (e) {
-  }
+  this.hasTransferablePostMessage_ = undefined;
 
   this.eh_.listen(
       this.recvPort_,
@@ -153,9 +150,18 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(
   packet[wtf.ipc.MessageChannel.PACKET_TOKEN] = true;
 
   // Actual post.
-  if (this.hasWebkitPostMessage_ &&
-      this.sendPort_['webkitPostMessage']) {
-    this.sendPort_['webkitPostMessage'](packet, '*', opt_transferrables);
+  if (this.hasTransferablePostMessage_ === undefined) {
+    try {
+      this.sendPort_.postMessage(packet, '*', opt_transferrables);
+      // Data has been sent!
+      this.hasTransferablePostMessage_ = true;
+    } catch (e) {
+      // Send failed - try without transferrables.
+      this.hasTransferablePostMessage_ = false;
+      this.sendPort_.postMessage(packet, '*');
+    }
+  } else if (this.hasTransferablePostMessage_) {
+    this.sendPort_.postMessage(packet, '*', opt_transferrables);
   } else {
     this.sendPort_.postMessage(packet, '*');
   }
