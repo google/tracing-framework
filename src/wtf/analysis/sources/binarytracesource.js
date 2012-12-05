@@ -25,7 +25,6 @@ goog.require('wtf.analysis.TraceSource');
 goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventClass');
-goog.require('wtf.data.Variable');
 goog.require('wtf.io.EventType');
 
 
@@ -70,13 +69,7 @@ wtf.analysis.sources.BinaryTraceSource = function(traceListener, readStream) {
   this.eventTable_ = [];
 
   // Always add 'defineEvent'.
-  this.eventTable_[1] = new wtf.analysis.EventType(
-      1, 'wtf.event.define', wtf.data.EventClass.INSTANCE, 0, [
-        new wtf.data.Variable.Uint16('wireId'),
-        new wtf.data.Variable.Uint16('eventClass'),
-        new wtf.data.Variable.AsciiString('name'),
-        new wtf.data.Variable.AsciiString('args')
-      ]);
+  this.eventTable_[1] = traceListener.getEventType('wtf.event.define');
 
   /**
    * All seen zones, indexed by zone ID.
@@ -270,7 +263,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   var isCustom = false;
   switch (eventType.name) {
     case 'wtf.event.define':
-      this.eventTable_[args['wireId']] = wtf.analysis.EventType.parse(args);
+      var newEventType = listener.defineEventType(
+          wtf.analysis.EventType.parse(args));
+      this.eventTable_[args['wireId']] = newEventType;
       break;
 
     case 'wtf.discontinuity':
