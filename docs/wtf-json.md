@@ -19,7 +19,8 @@ type. In JSON, this looks like:
     ]
 
 In order to support generators that cannot properly close the enclosing array,
-parsers of the format also support omitting the trailing `]` and the presence of trailing commas:
+parsers of the format also support omitting the trailing `]` and the presence of
+trailing commas:
 
     [
       {
@@ -48,14 +49,17 @@ are used.
 
 * `format_version`: major version of the format, must be 1.
 * `high_resolution_times`: whether the times in the file are high resolution.
-* `timebase`: unix time since the epoch that is added to all time values in the trace. A timebase of 1000 means that a `time` of 5 would be seen as 1005.
+This indicates that the times have higher than millisecond precision.
+* `timebase`: unix time since the epoch that is added to all time values in the
+trace. A timebase of 1000 means that a `time` of 5 would be seen as 1005.
 
 ### Event Definitions
 
 Any event that will be seen in the stream must be defined before it is seen.
 Events are defined by a signature that can be either a simple name or a
 function-like signature with arguments. Events are either `scopes` or
-`instance` types, and can contain optional flags.
+`instance` types, and can contain optional flags. Events can be defined anywhere
+in the stream but must be defined before use.
 
 To decrease filesize it's possible to assign an `event_id` that will be
 referenced instead of the event name. This is optional.
@@ -96,10 +100,14 @@ its time, and optionally any arguments.
     }
 
 `event`: either the event name from the definition `signature` or the `event_id`
-if it was assigned.
+if it was assigned. This is a reference to a previously defined event.
 `time`: the time the event occurred, relative to the `timebase`.
 `args`: an optional list of arguments for the event, if any were indicated in
 the `signature`.
+
+### Context Info
+
+TODO(benvanik): context info
 
 ### Zones
 
@@ -109,6 +117,28 @@ TODO(benvanik): support zones
 
 TODO(benvanik): support flows
 
+## Builtin Events
+
+To help reduce the file length, certain system events are built in to the
+format.
+
+### wtf.scope.leave
+
+Leaves a scope event. This is implicitly defined as:
+
+    {
+      "type": "wtf.event.define",
+      "signature": "wtf.scope.leave",
+      "event_id": -1
+    }
+
+This allows for the shorthand for leaving an entered scope:
+
+    {
+      "event": -1,
+      "time": 1234
+    }
+
 ## Example
 
 Smallest possible file:
@@ -116,7 +146,8 @@ Smallest possible file:
     [
       {
         "type": "wtf.event.define",
-        "signature": "my.custom#event"
+        "signature": "my.custom#event",
+        "class": "instance"
       },
       {
         "event": "my.custom#event",
@@ -137,15 +168,24 @@ Efficient file:
       }
       {
         "type": "wtf.event.define",
-        "signature": "my.custom#event",
-        "event_id": 0
+        "signature": "my.custom#scopeEvent",
+        "event_id": 1
       },
       {
-        "event": 0,
+        "type": "wtf.event.define",
+        "signature": "my.custom#instanceEvent",
+        "event_id": 2
+      },
+      {
+        "event": 1,     <-- enter #scopeEvent
         "time": 1
       },
       {
-        "event": 0,
+        "event": 2,     <-- #instanceEvent
         "time": 2
+      },
+      {
+        "event": -1,     <-- leave #scopeEvent
+        "time": 3
       }
     ]
