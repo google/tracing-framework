@@ -280,14 +280,18 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   // Create document with snapshot data.
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
-  for (var n = 0; n < datas.length; n++) {
-    doc.addBinaryEventSource(datas[n]);
-  }
 
-  // Zoom to fit.
-  // TODO(benvanik): remove setTimeout when zoomToFit is based on view
-  wtf.timing.setTimeout(50, function() {
-    this.documentView_.zoomToFit();
+  // Append data after a bit - gives the UI time to setup.
+  wtf.timing.setImmediate(function() {
+    for (var n = 0; n < datas.length; n++) {
+      doc.addBinaryEventSource(datas[n]);
+    }
+
+    // Zoom to fit.
+    // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+    wtf.timing.setTimeout(50, function() {
+      this.documentView_.zoomToFit();
+    }, this);
   }, this);
 };
 
