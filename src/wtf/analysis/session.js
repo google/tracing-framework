@@ -152,7 +152,7 @@ wtf.analysis.Session.prototype.addBinarySource = function(data) {
 
 /**
  * Adds a JSON data source as an immediately-available stream.
- * @param {!Object} data Input data.
+ * @param {string|!Array|!Object} data Input data.
  */
 wtf.analysis.Session.prototype.addJsonSource = function(data) {
   // TODO(benvanik): send to storage so that saves work

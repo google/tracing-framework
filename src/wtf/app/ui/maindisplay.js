@@ -405,11 +405,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
           if (data instanceof ArrayBuffer) {
             doc.addBinaryEventSource(new Uint8Array(data));
           } else if (goog.isString(data)) {
-            // TODO(benvanik): handle JSON parse errors
-            var jsonData = goog.global.JSON.parse(data);
-            if (jsonData && goog.isObject(jsonData)) {
-              doc.addJsonEventSource(jsonData);
-            }
+            doc.addJsonEventSource(data);
           }
         }
 
@@ -434,19 +430,33 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
 
+  var responseType = goog.net.XhrIo.ResponseType.ARRAY_BUFFER;
+  if (goog.string.endsWith(url, '.wtf-trace') ||
+      goog.string.endsWith(url, '.bin.part')) {
+    responseType = goog.net.XhrIo.ResponseType.ARRAY_BUFFER;
+  } else if (goog.string.endsWith(url, '.wtf-json')) {
+    responseType = goog.net.XhrIo.ResponseType.TEXT;
+  }
+
   var xhr = new goog.net.XhrIo();
-  xhr.setResponseType(goog.net.XhrIo.ResponseType.ARRAY_BUFFER);
+  xhr.setResponseType(responseType);
   goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
     var success = xhr.isSuccess();
     if (!success) {
       window.alert('Unable to load url: ' + url);
       return;
     }
-    var data = /** @type {ArrayBuffer} */ (xhr.getResponse());
+    var data = xhr.getResponse();
     goog.asserts.assert(data);
 
     // Add data.
-    doc.addBinaryEventSource(new Uint8Array(data));
+    if (data instanceof ArrayBuffer) {
+      doc.addBinaryEventSource(
+          new Uint8Array(/** @type {ArrayBuffer} */ (data)));
+    } else {
+      doc.addJsonEventSource(
+          /** @type {string} */ (data));
+    }
 
     // Zoom to fit.
     // TODO(benvanik): remove setTimeout when zoomToFit is based on view

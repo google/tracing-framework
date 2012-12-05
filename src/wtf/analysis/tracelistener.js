@@ -13,6 +13,7 @@
 
 goog.provide('wtf.analysis.TraceListener');
 
+goog.require('wtf.analysis.EventType');
 goog.require('wtf.analysis.Zone');
 goog.require('wtf.events.EventEmitter');
 
@@ -37,8 +38,61 @@ wtf.analysis.TraceListener = function() {
    * @private
    */
   this.allZones_ = {};
+
+  /**
+   * Lookup table for all defined {@see wtf.analysis.EventType}s by event name.
+   * @type {!Object.<wtf.analysis.EventType>}
+   * @private
+   */
+  this.eventTable_ = {};
+
+  // Add some built-in events.
+  var builtinEvents = wtf.analysis.TraceListener.BuiltinEvents_;
+  for (var n = 0; n < builtinEvents.length; n++) {
+    this.eventTable_[builtinEvents[n].name] = builtinEvents[n];
+  }
 };
 goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
+
+
+/**
+ * Builtin events.
+ * This matches {@see wtf.trace.BuiltinEvents}.
+ * @type {!Array.<!wtf.analysis.EventType>}
+ * @private
+ */
+wtf.analysis.TraceListener.BuiltinEvents_ = [
+  wtf.analysis.EventType.createInstance(
+      'wtf.event.define(uint16 wireId, uint16 eventClass, ascii name, ' +
+      'ascii args)'),
+
+  wtf.analysis.EventType.createInstance(
+      'wtf.discontinuity()'),
+
+  wtf.analysis.EventType.createInstance(
+      'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)'),
+  wtf.analysis.EventType.createInstance(
+      'wtf.zone.delete(uint16 zoneId)'),
+  wtf.analysis.EventType.createInstance(
+      'wtf.zone.set(uint16 zoneId)'),
+
+  wtf.analysis.EventType.createScope(
+      'wtf.scope.enter(ascii msg)'),
+  wtf.analysis.EventType.createScope(
+      'wtf.scope.enterTracing()'),
+  wtf.analysis.EventType.createInstance(
+      'wtf.scope.leave()'),
+
+  wtf.analysis.EventType.createInstance(
+      'wtf.flow.branch(flowId id, flowId parentId, ascii msg)'),
+  wtf.analysis.EventType.createInstance(
+      'wtf.flow.extend(flowId id, ascii msg)'),
+  wtf.analysis.EventType.createInstance(
+      'wtf.flow.terminate(flowId id, ascii msg)'),
+
+  wtf.analysis.EventType.createInstance(
+      'wtf.mark(ascii msg)')
+];
 
 
 /**
@@ -57,6 +111,36 @@ wtf.analysis.TraceListener.prototype.createOrGetZone = function(
     this.allZones_[key] = value;
   }
   return value;
+};
+
+
+/**
+ * Adds an event type to the event table.
+ * If the event type is already defined the existing one is returned. If any of
+ * the values differ an error is thrown.
+ * @param {!wtf.analysis.EventType} eventType Event type.
+ * @return {!wtf.analysis.EventType} The given event type or an existing one.
+ */
+wtf.analysis.TraceListener.prototype.defineEventType = function(eventType) {
+  var existingEventType = this.eventTable_[eventType.name];
+  if (!existingEventType) {
+    this.eventTable_[eventType.name] = eventType;
+    return eventType;
+  }
+
+  // TODO(benvanik): diff definitions
+
+  return existingEventType;
+};
+
+
+/**
+ * Gets the event type for the given event name.
+ * @param {string} name Event name.
+ * @return {wtf.analysis.EventType?} Event type, if found.
+ */
+wtf.analysis.TraceListener.prototype.getEventType = function(name) {
+  return this.eventTable_[name] || null;
 };
 
 

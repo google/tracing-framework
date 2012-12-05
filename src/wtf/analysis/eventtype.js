@@ -14,6 +14,7 @@
 goog.provide('wtf.analysis.EventType');
 
 goog.require('wtf.analysis.EventTypeBuilder');
+goog.require('wtf.data.EventClass');
 goog.require('wtf.data.Variable');
 
 
@@ -31,7 +32,7 @@ goog.require('wtf.data.Variable');
  *     with the event.
  * @constructor
  */
-wtf.analysis.EventType = function(wireId, name, eventClass, flags, args) {
+wtf.analysis.EventType = function(name, eventClass, flags, args) {
   /**
    * A machine-friendly name used to uniquely identify the event. It should be a
    * valid Javascript literal (no spaces/etc).
@@ -57,12 +58,6 @@ wtf.analysis.EventType = function(wireId, name, eventClass, flags, args) {
    * @type {!Array.<!wtf.data.Variable>}
    */
   this.args = args;
-
-  /**
-   * Event wire ID, used when serializing.
-   * @type {number}
-   */
-  this.wireId = wireId;
 
   var builder = wtf.analysis.EventType.getBuilder_();
 
@@ -91,6 +86,7 @@ wtf.analysis.EventType.prototype.toString = function() {
 };
 
 
+// TODO(benvanik): move to BinaryTraceSource
 /**
  * Creates an event type from a serialized define event message.
  * @param {!Object} defineArgs Defined event arguments.
@@ -106,11 +102,40 @@ wtf.analysis.EventType.parse = function(defineArgs) {
   }
 
   return new wtf.analysis.EventType(
-      defineArgs['wireId'],
       defineArgs['name'],
       defineArgs['eventClass'],
       0,
       argList);
+};
+
+
+/**
+ * Creates an instance event type from the given signature.
+ * @param {string} signature Event signature.
+ * @return {!wtf.analysis.EventType} Event type.
+ */
+wtf.analysis.EventType.createInstance = function(signature) {
+  var parsedSignature = wtf.data.Variable.parseSignature(signature);
+  return new wtf.analysis.EventType(
+      parsedSignature.name,
+      wtf.data.EventClass.INSTANCE,
+      0,
+      parsedSignature.args);
+};
+
+
+/**
+ * Creates a scope event type from the given signature.
+ * @param {string} signature Event signature.
+ * @return {!wtf.analysis.EventType} Event type.
+ */
+wtf.analysis.EventType.createScope = function(signature) {
+  var parsedSignature = wtf.data.Variable.parseSignature(signature);
+  return new wtf.analysis.EventType(
+      parsedSignature.name,
+      wtf.data.EventClass.SCOPE,
+      0,
+      parsedSignature.args);
 };
 
 

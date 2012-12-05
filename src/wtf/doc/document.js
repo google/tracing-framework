@@ -327,7 +327,7 @@ wtf.doc.Document.prototype.addBinaryEventSource = function(data) {
 
 /**
  * Adds a JSON event source to the database.
- * @param {!Object} data JSON data.
+ * @param {string|!Array|!Object} data JSON data.
  */
 wtf.doc.Document.prototype.addJsonEventSource = function(data) {
   this.session_.addJsonSource(data);
