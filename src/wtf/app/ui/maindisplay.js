@@ -126,14 +126,16 @@ wtf.app.ui.MainDisplay = function(
   this.registerDisposable(keyboardScope);
   keyboardScope.addCommandShortcut('ctrl+o', 'open_trace');
   keyboardScope.addCommandShortcut('ctrl+s', 'save_trace');
-  keyboardScope.addCommandShortcut('ctrl+/', 'toggle_help');
+  keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
 
   this.setupDragDropLoading_();
 
-  // If there's a fragment identifier, use it as the url to load.
-  var hash = dom.getWindow().location.hash;
-  if (hash) {
-    var url = hash.substring(1);
+  // Use the query string as a URL.
+  // TODO(benvanik): use goog.Uri to parse the query string args and pull off
+  //     the URL.
+  var queryString = dom.getWindow().location.search;
+  if (queryString) {
+    var url = queryString.replace(/\?url=/, '');
     this.loadNetworkTrace(url);
   }
 };
@@ -337,7 +339,8 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
   inputElement['multiple'] = true;
   inputElement['accept'] = [
     '.wtf-trace,application/x-extension-wtf-trace',
-    '.wtf-json,application/x-extension-wtf-json'
+    '.wtf-json,application/x-extension-wtf-json',
+    '.part,application/x-extension-part'
   ].join(',');
   inputElement.click();
   goog.events.listenOnce(inputElement, goog.events.EventType.CHANGE,
@@ -359,6 +362,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   for (var n = 0; n < traceFiles.length; n++) {
     var file = traceFiles[n];
     if (goog.string.endsWith(file.name, '.wtf-trace') ||
+        goog.string.endsWith(file.name, '.bin.part') ||
         file.type == 'application/x-extension-wtf-trace') {
       binarySources.push(file);
     } else if (goog.string.endsWith(file.name, '.wtf-json') ||
