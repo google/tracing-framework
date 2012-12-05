@@ -30,12 +30,11 @@ goog.provide('wtf.analysis.ZoneEvent');
  *
  * @param {!wtf.analysis.EventType} eventType Event information.
  * @param {wtf.analysis.Zone} zone Zone the event occurred in.
- * @param {wtf.analysis.Scope} scope Scope the event ocurred in.
  * @param {number} time Wall-time of the event.
  * @param {Object} args Custom event arguments.
  * @constructor
  */
-wtf.analysis.Event = function(eventType, zone, scope, time, args) {
+wtf.analysis.Event = function(eventType, zone, time, args) {
   // TODO(benvanik): make IDs listener-local?
   /**
    * DB-unique event ID.
@@ -60,7 +59,7 @@ wtf.analysis.Event = function(eventType, zone, scope, time, args) {
    * Scope the event occurred in.
    * @type {wtf.analysis.Scope}
    */
-  this.scope = scope;
+  this.scope = null;
 
   /**
    * Wall-time the event occurred at.
@@ -103,6 +102,15 @@ wtf.analysis.Event.prototype.getId = function() {
 
 
 /**
+ * Sets the scope this event occurred in.
+ * @param {wtf.analysis.Scope} value Scope this event occurred in.
+ */
+wtf.analysis.Event.prototype.setScope = function(value) {
+  this.scope = value;
+};
+
+
+/**
  * Drops the event from memory.
  */
 wtf.analysis.Event.prototype.drop = function() {
@@ -130,16 +138,17 @@ wtf.analysis.Event.comparer = function(a, b) {
  * Scope event.
  * @param {!wtf.analysis.EventType} eventType Event information.
  * @param {wtf.analysis.Zone} zone Zone the event occurred in.
- * @param {wtf.analysis.Scope} scope Scope the event ocurred in.
  * @param {number} time Wall-time of the event.
  * @param {Object} args Custom event arguments.
+ * @param {!wtf.analysis.Scope} scopeValue Scope that was entered.
  * @constructor
  * @extends {wtf.analysis.Event}
  */
-wtf.analysis.ScopeEvent = function(eventType, zone, scope, time, args) {
+wtf.analysis.ScopeEvent = function(eventType, zone, time, args, scopeValue) {
   // We manually call base method instead of using goog.base because this method
   // is called often enough to have a major impact on load time in debug mode.
-  wtf.analysis.Event.call(this, eventType, zone, scope, time, args);
+  wtf.analysis.Event.call(this, eventType, zone, time, args);
+  this.scope = scopeValue;
 };
 goog.inherits(wtf.analysis.ScopeEvent, wtf.analysis.Event);
 
@@ -149,15 +158,14 @@ goog.inherits(wtf.analysis.ScopeEvent, wtf.analysis.Event);
  * Flow event.
  * @param {!wtf.analysis.EventType} eventType Event information.
  * @param {wtf.analysis.Zone} zone Zone the event occurred in.
- * @param {wtf.analysis.Scope} scope Scope the event ocurred in.
  * @param {number} time Wall-time of the event.
  * @param {Object} args Custom event arguments.
  * @param {!wtf.analysis.Flow} flow Flow.
  * @constructor
  * @extends {wtf.analysis.Event}
  */
-wtf.analysis.FlowEvent = function(eventType, zone, scope, time, args, flow) {
-  goog.base(this, eventType, zone, scope, time, args);
+wtf.analysis.FlowEvent = function(eventType, zone, time, args, flow) {
+  goog.base(this, eventType, zone, time, args);
 
   /**
    * Flow.
@@ -173,16 +181,14 @@ goog.inherits(wtf.analysis.FlowEvent, wtf.analysis.Event);
  * Zone event.
  * @param {!wtf.analysis.EventType} eventType Event information.
  * @param {wtf.analysis.Zone} zone Zone the event occurred in.
- * @param {wtf.analysis.Scope} scope Scope the event ocurred in.
  * @param {number} time Wall-time of the event.
  * @param {Object} args Custom event arguments.
  * @param {!wtf.analysis.Zone} zoneValue Zone.
  * @constructor
  * @extends {wtf.analysis.Event}
  */
-wtf.analysis.ZoneEvent = function(eventType, zone, scope, time, args,
-    zoneValue) {
-  goog.base(this, eventType, zone, scope, time, args);
+wtf.analysis.ZoneEvent = function(eventType, zone, time, args, zoneValue) {
+  goog.base(this, eventType, zone, time, args);
 
   /**
    * Zone.

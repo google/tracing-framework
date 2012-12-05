@@ -370,20 +370,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
   var time = wtf.math.remap(x, 0, width, timeLeft, timeRight);
 
   var count = 0;
-  var scope = null;
-  // Search back for the scope event before "time".
-  var scopeEvent = zoneIndex.search(time, function(e) {
-    return e instanceof wtf.analysis.ScopeEvent;
-  });
-
-  if (!scopeEvent) {
-    return undefined;
-  }
+  var scope = zoneIndex.findEnclosingScope(time);
 
   // The scope we're looking for must be this scope or some ancestor scope of
   // this scope. Look up the parent chain until we find a parent of the correct
   // depth.
-  for (scope = scopeEvent.scope; scope; scope = scope.getParent()) {
+  for (; scope; scope = scope.getParent()) {
     var depth = scope.getDepth();
     var enter = scope.getEnterEvent();
     var leave = scope.getLeaveEvent();
@@ -391,7 +383,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     var scopeTop = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ +
         depth * scopeHeight;
     var scopeBottom = scopeTop + scopeHeight;
-    if (scopeTop <= y && y <= scopeBottom) {
+    if (enter && leave && scopeTop <= y && y <= scopeBottom) {
       if (leave.time >= time) {
         var elapsed = leave.time - enter.time;
         if (elapsed > 0) {
