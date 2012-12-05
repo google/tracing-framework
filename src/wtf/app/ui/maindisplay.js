@@ -126,7 +126,7 @@ wtf.app.ui.MainDisplay = function(
   this.registerDisposable(keyboardScope);
   keyboardScope.addCommandShortcut('ctrl+o', 'open_trace');
   keyboardScope.addCommandShortcut('ctrl+s', 'save_trace');
-  keyboardScope.addCommandShortcut('ctrl+/', 'toggle_help');
+  keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
 
   this.setupDragDropLoading_();
 
