@@ -121,3 +121,14 @@ wtf.now = (function() {
     }
   }
 })();
+
+
+goog.exportSymbol(
+    'wtf.hasHighResolutionTimes',
+    wtf.hasHighResolutionTimes);
+goog.exportSymbol(
+    'wtf.timebase',
+    wtf.timebase);
+goog.exportSymbol(
+    'wtf.now',
+    wtf.now);

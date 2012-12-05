@@ -231,7 +231,7 @@ wtf.data.ScriptContextInfo = function() {
    * @type {{
    *   value: string,
    *   type: wtf.data.UserAgent.Type,
-   *   platform: wtf.data.UserAgent.Platform,
+   *   platform: (wtf.data.UserAgent.Platform|string),
    *   platformVersion: string,
    *   device: wtf.data.UserAgent.Device
    * }}
@@ -283,25 +283,20 @@ wtf.data.ScriptContextInfo.prototype.getFilename = function() {
  * @override
  */
 wtf.data.ScriptContextInfo.prototype.detect = function() {
-  // Full script URI.
   if (wtf.NODE) {
-    this.uri = goog.global['process']['argv'][1];
+    this.uri = process.argv[1] || process.argv[0];
+    if (process.title == 'node') {
+      this.title = this.uri.substr(this.uri.lastIndexOf('/') + 1);
+      this.title = this.title.replace(/\.js$/, '');
+    } else {
+      this.title = process.title;
+    }
+    this.icon = null;
+    this.taskId = String(process.pid);
+    this.args = process.argv.slice();
   } else {
     this.uri = goog.global.location.href;
-  }
-
-  // Title.
-  if (wtf.NODE) {
-    // TODO(benvanik): a better title for node processes
-    this.title = null;
-  } else {
     this.title = goog.global.document.title;
-  }
-
-  // Capture icon URI.
-  if (wtf.NODE) {
-    this.icon = null;
-  } else {
     if (goog.global.document) {
       var link = goog.global.document.querySelector('link[rel~="icon"]');
       if (link && link.href) {
@@ -310,22 +305,9 @@ wtf.data.ScriptContextInfo.prototype.detect = function() {
         };
       }
     }
-  }
-
-  // Process/task ID.
-  this.taskId = '';
-  if (wtf.NODE) {
-    this.taskId = goog.global['process']['pid'];
-  }
-  // TODO(benvanik): find something meaningful for browsers
-
-  // Entire arguments list.
-  this.args = [];
-  if (wtf.NODE) {
-    var argv = /** @type {!Array.<string>} */ (goog.global['process']['argv']);
-    for (var n = 0; n < argv.length; n++) {
-      this.args.push(argv[n]);
-    }
+    // TODO(benvanik): find something meaningful for browsers
+    this.taskId = '';
+    this.args = [];
   }
 
   // Full user-agent string.
@@ -349,7 +331,7 @@ wtf.data.ScriptContextInfo.prototype.detect = function() {
   // Platform.
   if (wtf.NODE) {
     // TODO(benvanik): better detection/mapping
-    this.userAgent.platform = goog.global['process']['platform'];
+    this.userAgent.platform = process.platform;
   } else if (goog.userAgent.MAC) {
     this.userAgent.platform = wtf.data.UserAgent.Platform.MAC;
   } else if (goog.userAgent.WINDOWS) {
@@ -362,7 +344,7 @@ wtf.data.ScriptContextInfo.prototype.detect = function() {
 
   // Platform version.
   if (wtf.NODE) {
-    this.userAgent.platformVersion = goog.global['process']['version'];
+    this.userAgent.platformVersion = process.version;
   } else {
     this.userAgent.platformVersion = goog.userAgent.platform.VERSION;
   }

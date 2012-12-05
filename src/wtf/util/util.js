@@ -16,11 +16,6 @@ goog.provide('wtf.util');
 goog.require('goog.asserts');
 /** @suppress {extraRequire} */
 goog.require('goog.debug.ErrorHandler');
-goog.require('goog.dom');
-goog.require('goog.dom.TagName');
-goog.require('goog.events.EventType');
-goog.require('goog.fs');
-goog.require('wtf.io');
 
 
 /**
@@ -75,50 +70,6 @@ wtf.util.callWhenDomReady = function(callback, opt_scope) {
       document.attachEvent('onload', listener);
     }
   }
-};
-
-
-/**
- * Invokes a download action on the given buffers.
- * This must originate from a user action (click/etc).
- * @param {!Array.<!wtf.io.ByteArray>} buffers Buffers.
- * @param {string} filename Name of the file.
- * @param {string=} opt_mimeType File mime type.
- */
-wtf.util.downloadData = function(buffers, filename, opt_mimeType) {
-  // Create blob from all parts.
-  var blob;
-  if (wtf.io.HAS_TYPED_ARRAYS) {
-    // Binary version.
-    blob = new Blob(buffers, {
-      'type': opt_mimeType || 'application/octet-stream'
-    });
-  } else {
-    // Base64 version.
-    var combinedBuffers = wtf.io.combineByteArrays(buffers);
-    var stringData = wtf.io.byteArrayToString(combinedBuffers);
-    blob = new Blob([stringData], {
-      'type': opt_mimeType || 'text/plain'
-    });
-  }
-
-  // IE10+
-  if (goog.global.navigator['msSaveBlob']) {
-    goog.global.navigator['msSaveBlob'](blob, filename);
-    return;
-  }
-
-  // Download file. Wow.
-  var doc = goog.dom.getDocument();
-  var a = doc.createElement(goog.dom.TagName.A);
-  a['download'] = filename;
-  a.href = goog.fs.createObjectUrl(blob);
-  var e = doc.createEvent('MouseEvents');
-  e.initMouseEvent(
-      goog.events.EventType.CLICK,
-      true, false, goog.global, 0, 0, 0, 0, 0,
-      false, false, false, false, 0, null);
-  a.dispatchEvent(e);
 };
 
 

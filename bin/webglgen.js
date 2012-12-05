@@ -242,7 +242,7 @@ function runTool(platform, args) {
   log('  var result;');
   log('  var gl = ctxs[' + currentContext + '];');
 
-  if (!wtf.analysis.run(platform, traceListener, inputFile)) {
+  if (!wtf.analysis.run(traceListener, inputFile)) {
     console.log('failed to start analysis!');
     return -1;
   }

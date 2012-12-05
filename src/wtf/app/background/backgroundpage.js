@@ -20,7 +20,7 @@ goog.require('wtf.app.background.HttpServiceEndpoint');
 goog.require('wtf.app.background.ServiceEndpoint');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
-goog.require('wtf.pal.ChromePlatform');
+goog.require('wtf.pal');
 
 
 
@@ -44,7 +44,7 @@ wtf.app.background.BackgroundPage = function(options) {
    * @type {!wtf.pal.IPlatform}
    * @private
    */
-  this.platform_ = new wtf.pal.ChromePlatform();
+  this.platform_ = wtf.pal.getPlatform();
 
   /**
    * All created service endpoints.

@@ -19,7 +19,6 @@ goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.object');
 goog.require('wtf.analysis.Session');
-goog.require('wtf.analysis.Storage');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.doc.CommentScope');
 goog.require('wtf.doc.Profile');
@@ -139,6 +138,7 @@ wtf.doc.Document = function(platform) {
   this.session_ = new wtf.analysis.Session(this.db_.getTraceListener(), {
   });
   this.registerDisposable(this.session_);
+  this.session_.setStorageEnabled(true);
 
   /**
    * Incoming read streams, mapped by stream ID.
@@ -146,11 +146,6 @@ wtf.doc.Document = function(platform) {
    * @private
    */
   this.readStreams_ = {};
-
-  // Setup storage.
-  // This lets us get all data in the document if needed.
-  var storage = new wtf.analysis.Storage(platform);
-  this.session_.setStorage(storage);
 };
 goog.inherits(wtf.doc.Document, wtf.events.EventEmitter);
 

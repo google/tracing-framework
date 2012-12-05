@@ -14,6 +14,7 @@
 goog.provide('wtf.analysis.Session');
 
 goog.require('goog.Disposable');
+goog.require('wtf.analysis.Storage');
 goog.require('wtf.analysis.sources.BinaryTraceSource');
 goog.require('wtf.analysis.sources.JsonTraceSource');
 goog.require('wtf.io.MemoryReadStream');
@@ -87,13 +88,18 @@ wtf.analysis.Session.prototype.getStorage = function() {
 
 
 /**
- * Sets the trace data storage.
- * Any existing storage will be disposed.
- * @param {wtf.analysis.Storage} value New storage.
+ * Sets whether trace data storage is enabled.
  */
-wtf.analysis.Session.prototype.setStorage = function(value) {
-  goog.dispose(this.storage_);
-  this.storage_ = value;
+wtf.analysis.Session.prototype.setStorageEnabled = function(value) {
+  if (value == !!this.storage_) {
+    return;
+  }
+  if (value) {
+    this.storage_ = new wtf.analysis.Storage();
+  } else {
+    goog.dispose(this.storage_);
+    this.storage_ = null;
+  }
 };
 
 
