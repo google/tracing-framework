@@ -24,11 +24,14 @@
   overflow: hidden;
 }
 
-/* Outer div of 'empty' block shown when no document view is active. */
-.wtfAppUiMainEmpty {
+.wtfAppUiMainCenteredBlock {
   position: absolute;
   width: 100%;
   height: 100%;
   margin-top: 50%;
   text-align: center;
+}
+
+/* Outer div of 'empty' block shown when no document view is active. */
+.wtfAppUiMainEmpty {
 }
