@@ -13,6 +13,10 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+var fs = require('fs');
+var path = require('path');
+
+
 var args = process.argv.slice(2);
 // TODO(benvanik): real options parser stuff
 var debugArgIndex = args.indexOf('--debug');
@@ -35,7 +39,7 @@ function prepareDebug() {
   if (debugMode) {
     goog.require('goog.asserts');
     goog.asserts.assert = function(condition, opt_message) {
-      console.assert(condition, opt_msessage);
+      console.assert(condition, opt_message);
       return condition;
     };
   } else {
@@ -50,6 +54,7 @@ function prepareDebug() {
   goog.require('wtf');
   wtf.NODE = true;
   goog.require('wtf.analysis.exports');
+  goog.require('wtf.analysis.node');
 };
 
 
@@ -57,22 +62,43 @@ function prepareDebug() {
  * Prepares the global context for running a tool with the release WTF.
  */
 function prepareRelease() {
-  // TODO(benvanik): see trace-runner for loading the release lib
+  // Load WTF binary. Search a few paths.
+  // TODO(benvanik): look in ENV?
+  var searchPaths = [
+    '.',
+    './build-out',
+    '../build-out'
+  ];
+  var modulePath = path.dirname(module.filename);
+  var wtfPath = null;
+  for (var n = 0; n < searchPaths.length; n++) {
+    var searchPath = path.join(
+        searchPaths[n], 'wtf_node_js_compiled.js');
+    searchPath = path.join(modulePath, searchPath);
+    if (fs.existsSync(searchPath)) {
+      wtfPath = path.relative(modulePath, searchPath);
+      break;
+    }
+  }
+  if (!wtfPath) {
+    console.log('Unable to find wtf_node_js_compiled.js');
+    process.exit(-1);
+    return;
+  }
+  var wtf = require(wtfPath.replace('.js', ''));
+  global.wtf = wtf;
 };
 
 
-// TOOD(benvanik): switch based on --debug
-prepareDebug();
-// if (debugMode) {
-//   prepareDebug();
-// } else {
-//   prepareRelease();
-// }
+if (debugMode) {
+  prepareDebug();
+} else {
+  prepareRelease();
+}
 
 
 /**
- * @typedef {!function(!wtf.pal.IPlatform, !Array.<string>):
- *     (number|!goog.async.Deferred)}
+ * @typedef {!function(!Array.<string>):(number|!Function)}
  */
 var ToolRunFunction;
 
@@ -83,115 +109,21 @@ var ToolRunFunction;
  * @return {number} Return code.
  */
 exports.launch = function(toolFn) {
-  // Setup platform abstraction layer.
-  var platform = createPlatformAbstractionLayer();
+  // Get the platform abstraction layer.
+  var platform = wtf.pal.getPlatform();
 
   // Execute the tool, potentially async.
   var returnValue = toolFn(platform, args);
-  if (goog.isNumber(returnValue)) {
+  if (typeof returnValue == 'number') {
     process.exit(returnValue);
-  } else {
-    returnValue.addCallbacks(function() {
-      process.exit(0);
-    }, function(arg) {
-      process.exit(arg);
+  } else if (typeof returnValue == 'function') {
+    returnValue(function(opt_arg) {
+      process.exit(opt_arg || 0);
     });
+  } else {
+    process.exit(0);
   }
 };
-
-
-function createPlatformAbstractionLayer() {
-  goog.require('wtf.pal.IPlatform');
-
-  /**
-   * @constructor
-   * @implements {!wtf.pal.IPlatform}
-   */
-  var NodePlatform = function() {
-    goog.base(this);
-
-    /**
-     * @type {string}
-     * @private
-     */
-    this.workingDirectory_ = process.cwd();
-  };
-  goog.inherits(NodePlatform, wtf.pal.IPlatform);
-
-
-  /**
-   * @override
-   */
-  NodePlatform.prototype.getWorkingDirectory = function() {
-    return this.workingDirectory_;
-  };
-
-
-  /**
-   * @override
-   */
-  NodePlatform.prototype.readTextFile = function(path) {
-    var fs = require('fs');
-
-    try {
-      return fs.readFileSync(path, 'utf8');
-    } catch (e) {
-      return null;
-    }
-  };
-
-
-  /**
-   * @override
-   */
-  NodePlatform.prototype.readBinaryFile = function(path) {
-    var fs = require('fs');
-
-    var nodeData = null;
-    try {
-      nodeData = fs.readFileSync(path);
-    } catch (e) {
-      return null;
-    }
-
-    // TODO(benvanik): a better way to convert
-    var data = new Uint8Array(nodeData.length);
-    for (var n = 0; n < data.length; n++) {
-      data[n] = nodeData[n];
-    }
-
-    return data;
-  };
-
-
-  /**
-   * @override
-   */
-  NodePlatform.prototype.writeTextFile = function(path, contents) {
-    var fs = require('fs');
-
-    fs.writeFileSync(path, contents, 'utf8');
-  };
-
-
-  /**
-   * @override
-   */
-  NodePlatform.prototype.writeBinaryFile = function(path, contents) {
-    var fs = require('fs');
-
-    // TODO(benvanik): a better way to convert
-    var nodeData = new Buffer(contents.length);
-    for (var n = 0; n < nodeData.length; n++) {
-      nodeData[n] = contents[n];
-    }
-
-    fs.writeFileSync(path, nodeData);
-  };
-
-  return new NodePlatform();
-};
-
 
 
 exports.util = {};

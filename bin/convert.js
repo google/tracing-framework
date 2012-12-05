@@ -158,7 +158,7 @@ function runTool(platform, args) {
     }
   });
 
-  if (!wtf.analysis.run(platform, traceListener, inputFile)) {
+  if (!wtf.analysis.run(traceListener, inputFile)) {
     console.log('failed to start analysis!');
     return -1;
   }

@@ -19,6 +19,7 @@ goog.require('goog.string');
 goog.require('wtf.analysis.EventfulTraceListener');
 goog.require('wtf.analysis.Session');
 goog.require('wtf.io');
+goog.require('wtf.pal');
 /** @suppress {extraRequire} */
 goog.require('wtf.pal.IPlatform');
 
@@ -38,13 +39,14 @@ wtf.analysis.createTraceListener = function(eventMap, opt_scope) {
 
 /**
  * Runs an analysis session on the given input.
- * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!wtf.analysis.TraceListener} traceListener Custom trace listener.
  * @param {string|!wtf.io.ByteArray|!Object} input Input data.
  *     This can be a filename (if in node.js) or a byte buffer.
  * @return {boolean} Whether the run succeeded.
  */
-wtf.analysis.run = function(platform, traceListener, input) {
+wtf.analysis.run = function(traceListener, input) {
+  var platform = wtf.pal.getPlatform();
+
   // Create session around trace listener.
   // TODO(benvanik): options?
   var session = new wtf.analysis.Session(traceListener, {

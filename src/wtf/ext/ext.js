@@ -82,3 +82,14 @@ wtf.ext.getAppExtensions = function() {
   var registry = wtf.ext.getRegistry_();
   return registry.getAppExtensions();
 };
+
+
+goog.exportSymbol(
+    'wtf.ext.registerExtension',
+    wtf.ext.registerExtension);
+goog.exportSymbol(
+    'wtf.ext.getTraceExtensions',
+    wtf.ext.getTraceExtensions);
+goog.exportSymbol(
+    'wtf.ext.getAppExtensions',
+    wtf.ext.getAppExtensions);

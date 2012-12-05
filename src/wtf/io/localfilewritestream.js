@@ -16,7 +16,7 @@ goog.provide('wtf.io.LocalFileWriteStream');
 goog.require('goog.string');
 goog.require('wtf.io');
 goog.require('wtf.io.WriteStream');
-goog.require('wtf.util');
+goog.require('wtf.pal');
 
 
 
@@ -62,7 +62,13 @@ goog.inherits(wtf.io.LocalFileWriteStream, wtf.io.WriteStream);
  * @override
  */
 wtf.io.LocalFileWriteStream.prototype.disposeInternal = function() {
-  wtf.util.downloadData(this.bufferDatas_, this.filename_);
+  var platform = wtf.pal.getPlatform();
+  if (this.bufferDatas_.length == 1) {
+    platform.writeBinaryFile(this.filename_, this.bufferDatas_[0]);
+  } else {
+    var combinedBuffers = wtf.io.combineByteArrays(this.bufferDatas_);
+    platform.writeBinaryFile(this.filename_, combinedBuffers);
+  }
   this.bufferDatas_.length = 0;
 
   goog.base(this, 'disposeInternal');

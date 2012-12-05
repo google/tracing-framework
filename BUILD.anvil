@@ -84,7 +84,6 @@ closure_js_library(
     out='wtf_js',
     mode='DEPS',
     entry_points=[
-        'wtf.exports',
         'wtf.analysis.exports',
         'wtf.app.background.exports',
         'wtf.app.ui.exports',
@@ -124,7 +123,6 @@ file_set(
         ] + WTF_TRACE_WEB_SRCS)
 
 WTF_TRACE_WEB_ENTRY_POINTS=[
-    'wtf.exports',
     'wtf.trace.exports',
     'wtf.hud.exports',
     ]
@@ -151,7 +149,6 @@ closure_js_library(
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
         '--define=wtf.ENABLE_TRACING=true',
-        '--define=wtf.exports.ENABLE_EXPORTS=true',
         '--define=wtf.hud.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
         ],
@@ -172,17 +169,20 @@ file_set(
 
 
 # ------------------------------------------------------------------------------
-# JavaScript : trace_node
+# JavaScript : node
 # ------------------------------------------------------------------------------
 
 closure_js_library(
-    name='wtf_trace_node_js_compiled',
-    deps_out='wtf_trace_node_js',
-    mode='ADVANCED',
+    name='wtf_node_js_compiled',
+    deps_out='wtf_node_js',
+    # TODO(benvanik): fix exports so ADVANCED can be used
+    mode='SIMPLE',
     pretty_print=True,
     entry_points=[
-        'wtf.exports',
+        'wtf.analysis.exports',
+        'wtf.analysis.node',
         'wtf.trace.exports',
+        'wtf.trace.node',
         ],
     srcs=[
         'third_party:all_closure_js',
@@ -195,15 +195,15 @@ closure_js_library(
         '--define=goog.asserts.ENABLE_ASSERTS=false',
         '--define=wtf.NODE=true',
         '--define=wtf.ENABLE_TRACING=true',
-        '--define=wtf.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
-        ],
-    wrap_with_global='global')
+        '--output_wrapper="module.exports = (function(exports){%output%;return this.wtf;}).call(global); delete global.wtf;"',
+        ])
 
 file_set(
-    name='wtf_trace_node_release',
+    name='wtf_node_release',
     srcs=[
-        ':wtf_trace_node_js_compiled',
+        ':wtf_node_js_compiled',
         ],
     src_exclude_filter='*-deps.js')
 
@@ -236,7 +236,6 @@ file_set(
         ] + WTF_UI_SRCS)
 
 WTF_UI_ENTRY_POINTS=[
-    'wtf.exports',
     'wtf.analysis.exports',
     'wtf.app.background.exports',
     'wtf.app.ui.exports',
@@ -264,7 +263,6 @@ closure_js_library(
     externs=[':closure_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
-        '--define=wtf.exports.ENABLE_EXPORTS=true',
         '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.background.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.ui.exports.ENABLE_EXPORTS=true',
@@ -386,6 +384,7 @@ file_set(
     srcs=[
         ':deps',
         ':wtf_trace_web_release',
+        ':wtf_node_release',
         'app:release',
         'app:wtf-chrome-app',
         ':wtf-trace-web-api',

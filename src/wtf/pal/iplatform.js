@@ -50,6 +50,7 @@ wtf.pal.IPlatform.prototype.readBinaryFile = goog.nullFunction;
  * Writes a file to the given path as a utf8 string.
  * @param {string} path File path.
  * @param {string} contents File contents.
+ * @param {string=} opt_mimeType File mime type.
  */
 wtf.pal.IPlatform.prototype.writeTextFile = goog.nullFunction;
 
@@ -58,6 +59,7 @@ wtf.pal.IPlatform.prototype.writeTextFile = goog.nullFunction;
  * Writes a file to the given path as a binary blob.
  * @param {string} path File path.
  * @param {!wtf.io.ByteArray} contents File contents.
+ * @param {string=} opt_mimeType File mime type.
  */
 wtf.pal.IPlatform.prototype.writeBinaryFile = goog.nullFunction;
 

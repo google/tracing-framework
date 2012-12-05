@@ -25,19 +25,11 @@ goog.require('wtf.io.MemoryWriteStream');
  * This contains copies of all data streams and can be used for quickly
  * saving the data off.
  *
- * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.analysis.Storage = function(platform) {
+wtf.analysis.Storage = function() {
   goog.base(this);
-
-  /**
-   * Platform abstraction layer.
-   * @type {!wtf.pal.IPlatform}
-   * @private
-   */
-  this.platform_ = platform;
 
   /**
    * All active streams.

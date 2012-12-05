@@ -42,6 +42,9 @@ exports.importClosureLibrary = function(depsFiles, opt_basePath, opt_baseDeps) {
   // Export a 'goog' to place things on.
   global.goog = {};
 
+  // Export require so we can make node-like requires.
+  global.require = require;
+
   // Create a dummy window object to make most of the common operations in the
   // Closure Library happy.
   global.window = {

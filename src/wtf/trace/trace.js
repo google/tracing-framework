@@ -128,6 +128,31 @@ wtf.trace.getOptions_ = function(opt_options) {
 
 
 /**
+ * Gets a filename to use for a trace file.
+ * @param {string} targetValue {@code wtf.trace.target} value.
+ * @return {string} Filename, minus the file:// prefix.
+ * @private
+ */
+wtf.trace.getTraceFilename_ = function(targetValue) {
+  var traceManager = wtf.trace.getTraceManager();
+  var contextInfo = traceManager.detectContextInfo();
+
+  // Pick a filename prefix.
+  var filenamePrefix = targetValue;
+  if (filenamePrefix.length) {
+    if (filenamePrefix != 'file://') {
+      filenamePrefix += '-';
+    }
+  } else {
+    filenamePrefix = 'file://';
+  }
+
+  var filename = filenamePrefix + contextInfo.getFilename();
+  return filename.replace('file://', '');
+};
+
+
+/**
  * Creates a write stream based on the given options.
  * @param {!wtf.util.Options} options Options.
  * @param {wtf.io.WriteStream|*=} opt_targetValue Target value. May be anything,
@@ -160,7 +185,8 @@ wtf.trace.createStream_ = function(options, opt_targetValue) {
       return new wtf.io.StreamingHttpWriteStream(targetUrl);
     } else if (goog.string.startsWith(targetUrl, 'file://')) {
       // File target.
-      return new wtf.io.LocalFileWriteStream(targetUrl.replace('file://', ''));
+      var targetFilename = wtf.trace.getTraceFilename_(targetUrl);
+      return new wtf.io.LocalFileWriteStream(targetFilename);
     }
   } else if (goog.isArray(targetValue)) {
     // Memory target.
