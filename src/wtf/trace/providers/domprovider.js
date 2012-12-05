@@ -169,8 +169,10 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   };
 
   // Hook document.createElement to inject object events.
-  var originalCreateElement = HTMLDocument.prototype.createElement;
-  this.injectFunction(HTMLDocument.prototype, 'createElement',
+  var documentPrototype = goog.global.HTMLDocument ?
+      HTMLDocument.prototype : Document.prototype;
+  var originalCreateElement = documentPrototype['createElement'];
+  this.injectFunction(documentPrototype, 'createElement',
       function(name) {
         var result = originalCreateElement.apply(this, arguments);
         var ctorName = result.constructor.name;
@@ -352,29 +354,37 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectObjectEvents =
     if (key.indexOf('on') == 0 &&
         key.toLowerCase() == key) {
       // This is likely an event!
-      // Delete the original (defineProperty does not allow redefinition).
-      delete target[key];
+      try {
+        // Delete the original (defineProperty does not allow redefinition).
+        delete target[key];
 
-      // Hook the event.
-      (function(key) {
-        // TODO(benvanik): better event tracking support and reset behavior.
-        var currentValue = null;
-        Object.defineProperty(target, key, {
-          'enumerable': false,
-          'get': function() {
-            return currentValue;
-          },
-          'set': function(value) {
-            if (currentValue) {
-              this.removeEventListener(key.substr(2), currentValue, false);
+        // Hook the event.
+        (function(key) {
+          // TODO(benvanik): better event tracking support and reset behavior.
+          var currentValue = null;
+          Object.defineProperty(target, key, {
+            'configurable': false,
+            'enumerable': false,
+            'get': function() {
+              return currentValue;
+            },
+            'set': function(value) {
+              if (currentValue) {
+                this.removeEventListener(key.substr(2), currentValue, false);
+              }
+              if (value) {
+                this.addEventListener(key.substr(2), value, false);
+              }
+              currentValue = value;
             }
-            if (value) {
-              this.addEventListener(key.substr(2), value, false);
-            }
-            currentValue = value;
-          }
-        });
-      })(key);
+          });
+        })(key);
+      } catch (e) {
+        // Hmm, this will likely not work then...
+        // This is seen in Safari, which doesn't let you change these events.
+        // So, no event injection in Safari! Boo!
+        continue;
+      }
     }
   }
 };

@@ -337,7 +337,8 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
   inputElement['multiple'] = true;
   inputElement['accept'] = [
     '.wtf-trace,application/x-extension-wtf-trace',
-    '.wtf-json,application/x-extension-wtf-json'
+    '.wtf-json,application/x-extension-wtf-json',
+    '.part,application/x-extension-part'
   ].join(',');
   inputElement.click();
   goog.events.listenOnce(inputElement, goog.events.EventType.CHANGE,
@@ -359,6 +360,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   for (var n = 0; n < traceFiles.length; n++) {
     var file = traceFiles[n];
     if (goog.string.endsWith(file.name, '.wtf-trace') ||
+        goog.string.endsWith(file.name, '.bin.part') ||
         file.type == 'application/x-extension-wtf-trace') {
       binarySources.push(file);
     } else if (goog.string.endsWith(file.name, '.wtf-json') ||

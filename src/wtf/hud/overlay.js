@@ -411,13 +411,6 @@ wtf.hud.Overlay.prototype.addButton_ = function(
   img['src'] = '';
   dom.appendChild(el, img);
 
-  // Set icon.
-  if (goog.string.startsWith(icon, 'data:')) {
-    img['src'] = icon;
-  } else {
-    goog.dom.classes.add(el, icon);
-  }
-
   // Add to DOM.
   var buttonBar = this.getChildElement('wtfHudButtons');
   if (isSystem) {
@@ -426,6 +419,22 @@ wtf.hud.Overlay.prototype.addButton_ = function(
     dom.insertChildAt(buttonBar, el, 0);
   }
   this.buttonCount_++;
+
+  // Set icon.
+  if (goog.string.startsWith(icon, 'data:')) {
+    img['src'] = icon;
+  } else {
+    // Most browsers don't like setting content via CSS, so instead read it out.
+    // This is nasty and requires the img be in the document already, but
+    // whatever.
+    goog.dom.classes.add(el, icon);
+    var contentUrl = goog.style.getComputedStyle(img, 'content');
+    contentUrl = contentUrl.substr(5, contentUrl.length - 7);
+    contentUrl = contentUrl.replace(/%20/g, ' ');
+    contentUrl = contentUrl.replace(/\\/g, '');
+    img['src'] = contentUrl;
+    goog.dom.classes.remove(el, icon);
+  }
 
   // Keyboard shortcut handler.
   if (shortcut) {

@@ -102,6 +102,12 @@ wtf.util.downloadData = function(buffers, filename, opt_mimeType) {
     });
   }
 
+  // IE10+
+  if (goog.global.navigator['msSaveBlob']) {
+    goog.global.navigator['msSaveBlob'](blob, filename);
+    return;
+  }
+
   // Download file. Wow.
   var doc = goog.dom.getDocument();
   var a = doc.createElement(goog.dom.TagName.A);

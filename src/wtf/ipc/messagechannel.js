@@ -53,6 +53,18 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
   this.eh_ = new goog.events.EventHandler(this);
   this.registerDisposable(this.eh_);
 
+  /**
+   * Whether the send port has {@code webkitPostMessage}.
+   * This check is done once because Firefox throws an exception.
+   * @type {boolean}
+   * @private
+   */
+  this.hasWebkitPostMessage_ = false;
+  try {
+    this.hasWebkitPostMessage_ = 'webkitPostMessage' in this.sendPort_;
+  } catch (e) {
+  }
+
   this.eh_.listen(
       this.recvPort_,
       goog.events.EventType.MESSAGE,
@@ -141,8 +153,9 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(
   packet[wtf.ipc.MessageChannel.PACKET_TOKEN] = true;
 
   // Actual post.
-  if (this.sendPort_.webkitPostMessage) {
-    this.sendPort_.webkitPostMessage(packet, '*', opt_transferrables);
+  if (this.hasWebkitPostMessage_ &&
+      this.sendPort_['webkitPostMessage']) {
+    this.sendPort_['webkitPostMessage'](packet, '*', opt_transferrables);
   } else {
     this.sendPort_.postMessage(packet, '*');
   }
