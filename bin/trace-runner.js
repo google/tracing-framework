@@ -51,31 +51,11 @@ process.argv = args;
 var options = {
   'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
   'wtf.trace.mode': 'snapshotting',
-  'wtf.trace.target': 'file://node'
+  'wtf.trace.target': 'file://' + path.basename(filename, '.js')
 };
 
-// Prepare tracing framework.
-wtf.trace.prepare();
-wtf.trace.start(options);
-
-// Setup process shutdown hook to snapshot/flush.
-process.on('exit', function () {
-  // Snapshot and retrieve the resulting buffers.
-  var buffers = [];
-  wtf.trace.snapshot(buffers);
-  wtf.trace.stop();
-
-  // Extract and convert buffers and write to disk.
-  for (var n = 0; n < buffers.length; n++) {
-    var buffer = buffers[n];
-    var nodeBuffer = new Buffer(buffer.length);
-    for (var i = 0; i < buffer.length; i++) {
-      nodeBuffer[i] = buffer[i];
-    }
-    // TODO(benvanik): use wtf.trace.target
-    fs.writeFileSync('node.wtf-trace', nodeBuffer);
-  }
-});
+// Starting the tracing framework.
+wtf.trace.node.start(options);
 
 // Execute the user script.
 vm.runInThisContext(code, filename);

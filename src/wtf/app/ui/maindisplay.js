@@ -35,10 +35,10 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.io');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.pal');
 goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.Dialog');
-goog.require('wtf.util');
 
 
 
@@ -497,7 +497,8 @@ wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
         streamFilename += wtf.io.FILE_EXTENSION;
         break;
     }
-    wtf.util.downloadData([dataStream.data], streamFilename, dataStream.type);
+    var platform = wtf.pal.getPlatform();
+    platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
   }
 };
 
