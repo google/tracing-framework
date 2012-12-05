@@ -130,10 +130,12 @@ wtf.app.ui.MainDisplay = function(
 
   this.setupDragDropLoading_();
 
-  // If there's a fragment identifier, use it as the url to load.
-  var hash = dom.getWindow().location.hash;
-  if (hash) {
-    var url = hash.substring(1);
+  // Use the query string as a URL.
+  // TODO(benvanik): use goog.Uri to parse the query string args and pull off
+  //     the URL.
+  var queryString = dom.getWindow().location.search;
+  if (queryString) {
+    var url = queryString.replace(/\?url=/, '');
     this.loadNetworkTrace(url);
   }
 };
