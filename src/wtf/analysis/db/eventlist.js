@@ -184,6 +184,10 @@ wtf.analysis.db.EventList.prototype.indexOfEventNear_ = function(chunk, time) {
  * @return {wtf.analysis.Event} The found event, if any.
  */
 wtf.analysis.db.EventList.prototype.search = function(time, filter) {
+  if (this.dirtyChunks_.length) {
+    this.reconcileChanges_();
+  }
+
   var chunks = this.chunks_;
   var chunksLength = chunks.length;
   if (!chunksLength) {
@@ -224,6 +228,41 @@ wtf.analysis.db.EventList.prototype.search = function(time, filter) {
 
 
 /**
+ * Search filter function that finds events with full scopes.
+ * @param {!wtf.analysis.Event} e Event.
+ * @return {boolean} True to match filter.
+ * @private
+ */
+wtf.analysis.db.EventList.findEventWithScope_ = function(e) {
+  return !!e.scope && !!e.scope.getEnterEvent() && !!e.scope.getLeaveEvent();
+};
+
+
+/**
+ * Finds the deepest scope that encloses the given time.
+ * @param {number} time Wall-time to search for.
+ * @return {wtf.analysis.Scope} Scope that contains the time, if any.
+ */
+wtf.analysis.db.EventList.prototype.findEnclosingScope = function(time) {
+  // TODO(benvanik): replace the search with an inlined version.
+  var scopeEvent = this.search(
+      time, wtf.analysis.db.EventList.findEventWithScope_);
+  if (!scopeEvent) {
+    return null;
+  }
+  for (var scope = scopeEvent.scope; scope; scope = scope.getParent()) {
+    var enter = scope.getEnterEvent();
+    var leave = scope.getLeaveEvent();
+    if (enter && enter.time <= time &&
+        leave && leave.time >= time) {
+      return scope;
+    }
+  }
+  return null;
+};
+
+
+/**
  * Iterates over the list returning all events in the given time range.
  *
  * @param {number} timeStart Start wall-time range.
@@ -234,6 +273,8 @@ wtf.analysis.db.EventList.prototype.search = function(time, filter) {
  */
 wtf.analysis.db.EventList.prototype.forEach = function(
     timeStart, timeEnd, callback, opt_scope) {
+  goog.asserts.assert(!this.dirtyChunks_.length);
+
   // TODO(benvanik): binary search the start point
   var chunks = this.chunks_;
   var chunksLength = chunks.length;
@@ -358,7 +399,9 @@ wtf.analysis.db.EventList.prototype.insertEvent = function(e) {
   }
 
   // Event is inserting before any other event - insert at the head.
-  this.chunks_[0].insertEvent(e);
+  chunk = this.chunks_[0];
+  chunk.insertEvent(e);
+  this.dirtyChunks_.push(chunk);
 };
 
 
@@ -369,6 +412,24 @@ wtf.analysis.db.EventList.prototype.endInserting = function() {
   goog.asserts.assert(this.insertingEvents_);
   this.insertingEvents_ = false;
 
+  // Reconcile all chunk changes/etc.
+  this.reconcileChanges_();
+
+  // Only do expensive logic if any events were inserted.
+  if (this.insertedEventCount_) {
+    this.insertedEventCount_ = 0;
+    this.invalidate_();
+  }
+};
+
+
+/**
+ * Reconciles all chunk changes/etc and prepares the list for searches.
+ * This must be called after modifying the list and before any searches are
+ * performed.
+ * @private
+ */
+wtf.analysis.db.EventList.prototype.reconcileChanges_ = function() {
   // Reconcile chunk changes after they have been dirtied.
   for (var n = 0; n < this.dirtyChunks_.length; n++) {
     var chunk = this.dirtyChunks_[n];
@@ -380,12 +441,6 @@ wtf.analysis.db.EventList.prototype.endInserting = function() {
   if (this.needsResortChunks_) {
     this.needsResortChunks_ = false;
     this.chunks_.sort(wtf.analysis.db.Chunk.comparer);
-  }
-
-  // Only do expensive logic if any events were inserted.
-  if (this.insertedEventCount_) {
-    this.insertedEventCount_ = 0;
-    this.invalidate_();
   }
 };
 

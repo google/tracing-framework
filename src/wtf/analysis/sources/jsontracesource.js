@@ -58,14 +58,6 @@ wtf.analysis.sources.JsonTraceSource = function(traceListener, sourceData) {
    */
   this.currentZone_ = null;
 
-  // TODO(benvanik): better structure
-  /**
-   * A stack of scopes that are open.
-   * @type {!Array.<!wtf.analysis.Scope>}
-   * @private
-   */
-  this.scopeStack_ = [];
-
   // If the input is a string it needs to be parsed (and maybe fixed up).
   if (goog.isString(sourceData)) {
     sourceData = this.parseJson_(sourceData);
@@ -262,8 +254,6 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
 
   // Infer state.
   var zone = this.currentZone_;
-  var scope = this.scopeStack_.length ?
-      this.scopeStack_[this.scopeStack_.length - 1] : null;
 
   // Always fire raw event.
   var listener = this.traceListener;
@@ -274,61 +264,39 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
   var e = null;
   var isCustom = false;
   switch (eventType.name) {
-    case 'wtf.discontinuity':
-      e = new wtf.analysis.Event(eventType, zone, scope, wallTime, args);
-      break;
-
     case 'wtf.zone.create':
       var newZone = listener.createOrGetZone(
           args['name'], args['type'], args['location']);
       this.zoneTable_[args['zoneId']] = newZone;
       e = new wtf.analysis.ZoneEvent(
-          eventType, zone, scope, wallTime, args, newZone);
+          eventType, zone, wallTime, args, newZone);
       break;
     case 'wtf.zone.delete':
       var deadZone = this.zoneTable_[args['zoneId']] || null;
       e = new wtf.analysis.ZoneEvent(
-          eventType, zone, scope, wallTime, args, deadZone);
+          eventType, zone, wallTime, args, deadZone);
       break;
     case 'wtf.zone.set':
       this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
       break;
 
-    case 'wtf.scope.enter':
-      // Handled below in the SCOPE check.
-      break;
-    case 'wtf.scope.leave':
-      if (this.scopeStack_.length) {
-        var oldScope = this.scopeStack_.pop();
-        e = new wtf.analysis.ScopeEvent(
-            eventType, zone, oldScope, wallTime, args);
-        oldScope.setLeaveEvent(e);
-      }
-      break;
-
-    case 'wtf.mark':
-      e = new wtf.analysis.Event(eventType, zone, scope, wallTime, args);
-      break;
+    // TODO(benvanik): flow events
 
     default:
-      // Scope events are handled below in the SCOPE check.
-      if (eventType.eventClass != wtf.data.EventClass.SCOPE) {
-        e = new wtf.analysis.Event(eventType, zone, scope, wallTime, args);
+      switch (eventType.eventClass) {
+        case wtf.data.EventClass.SCOPE:
+          var newScope = new wtf.analysis.Scope();
+          e = new wtf.analysis.ScopeEvent(
+              eventType, zone, wallTime, args, newScope);
+          newScope.setEnterEvent(e);
+          break;
+        default:
+        case wtf.data.EventClass.INSTANCE:
+          e = new wtf.analysis.Event(eventType, zone, wallTime, args);
+          break;
       }
       isCustom = true;
       break;
-  }
-
-  // Handle scope event types.
-  if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
-    goog.asserts.assert(!e);
-    var newScope = new wtf.analysis.Scope();
-    if (scope) {
-      scope.addChild(newScope);
-    }
-    this.scopeStack_.push(newScope);
-    e = new wtf.analysis.ScopeEvent(eventType, zone, newScope, wallTime, args);
-    newScope.setEnterEvent(e);
   }
 
   if (e) {

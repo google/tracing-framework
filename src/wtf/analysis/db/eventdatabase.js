@@ -368,7 +368,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(
     if (e.eventType.name == 'wtf.zone.create') {
       // Create a new zone index.
       var newZone = e.value;
-      var zoneIndex = new wtf.analysis.db.ZoneIndex(newZone);
+      var zoneIndex = new wtf.analysis.db.ZoneIndex(this, newZone);
       this.db_.zoneIndices_.push(zoneIndex);
       this.eventTargets_.push(zoneIndex);
       zoneIndex.beginInserting();

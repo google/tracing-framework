@@ -58,14 +58,14 @@ wtf.analysis.db.Chunk = function() {
    * @type {number}
    * @private
    */
-  this.timeStart_ = 0;
+  this.timeStart_ = Number.MAX_VALUE;
 
   /**
    * Wall-time the last event in the chunk occurs at.
    * @type {number}
    * @private
    */
-  this.timeEnd_ = 0;
+  this.timeEnd_ = Number.MIN_VALUE;
 
   /**
    * Event data, sorted by time (and by insertion order).
@@ -75,13 +75,6 @@ wtf.analysis.db.Chunk = function() {
    * @private
    */
   this.events_ = [];
-
-  /**
-   * Whether the chunk is inside an insertion block.
-   * @type {boolean}
-   * @private
-   */
-  this.insertingEvents_ = false;
 
   /**
    * Number of events added in the current insert block so far.
@@ -139,7 +132,7 @@ wtf.analysis.db.Chunk.prototype.release = function() {
  * @return {number} Wall-time of the first event in the chunk.
  */
 wtf.analysis.db.Chunk.prototype.getTimeStart = function() {
-  return this.timeStart_;
+  return this.timeStart_ == Number.MAX_VALUE ? 0 : this.timeStart_;
 };
 
 
@@ -148,7 +141,7 @@ wtf.analysis.db.Chunk.prototype.getTimeStart = function() {
  * @return {number} Wall-time of the last event in the chunk.
  */
 wtf.analysis.db.Chunk.prototype.getTimeEnd = function() {
-  return this.timeEnd_;
+  return this.timeEnd_ == Number.MIN_VALUE ? 0 : this.timeEnd_;
 };
 
 
@@ -182,17 +175,15 @@ wtf.analysis.db.Chunk.prototype.isFull = function() {
  * @return {boolean} True if this insert has set the dirty flag on the chunk.
  */
 wtf.analysis.db.Chunk.prototype.insertEvent = function(e) {
-  var dirtied = false;
-  if (!this.insertingEvents_) {
-    goog.asserts.assert(!this.insertingEvents_);
-    this.insertingEvents_ = true;
-    dirtied = true;
-  }
+  var dirtied = !this.insertedEventCount_;
 
   // Add to the list.
   this.events_.push(e);
   this.eventCount_++;
   this.insertedEventCount_++;
+
+  this.timeStart_ = Math.min(this.timeStart_, e.time);
+  this.timeEnd_ = Math.max(this.timeEnd_, e.time);
 
   // Detect if a sort is required.
   if (!this.insertionOutOfOrder_ &&
@@ -211,11 +202,6 @@ wtf.analysis.db.Chunk.prototype.insertEvent = function(e) {
  * has had any insertions.
  */
 wtf.analysis.db.Chunk.prototype.reconcileInsertion = function() {
-  if (!this.insertingEvents_) {
-    return;
-  }
-  this.insertingEvents_ = false;
-
   // Only do expensive logic if any events were inserted.
   if (this.insertedEventCount_) {
     if (this.insertionOutOfOrder_) {
