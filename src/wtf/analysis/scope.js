@@ -37,7 +37,7 @@ wtf.analysis.Scope = function() {
 
   /**
    * Leave event for the scope.
-   * @type {wtf.analysis.ScopeEvent}
+   * @type {wtf.analysis.Event}
    * @private
    */
   this.leaveEvent_ = null;
@@ -110,7 +110,7 @@ wtf.analysis.Scope.prototype.setEnterEvent = function(e) {
 
 /**
  * Gets the leave event for the scope.
- * @return {wtf.analysis.ScopeEvent} Leave event, if any.
+ * @return {wtf.analysis.Event} Leave event, if any.
  */
 wtf.analysis.Scope.prototype.getLeaveEvent = function() {
   return this.leaveEvent_;
@@ -119,7 +119,7 @@ wtf.analysis.Scope.prototype.getLeaveEvent = function() {
 
 /**
  * Sets the leave event for the scope.
- * @param {!wtf.analysis.ScopeEvent} e Event.
+ * @param {!wtf.analysis.Event} e Event.
  */
 wtf.analysis.Scope.prototype.setLeaveEvent = function(e) {
   this.leaveEvent_ = e;
