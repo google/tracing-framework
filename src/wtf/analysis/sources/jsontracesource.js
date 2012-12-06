@@ -14,7 +14,6 @@
 goog.provide('wtf.analysis.sources.JsonTraceSource');
 
 goog.require('goog.asserts');
-goog.require('wtf');
 goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.EventType');
 goog.require('wtf.analysis.Scope');
@@ -115,10 +114,6 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseJson_ = function(source) {
 wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
   var listener = this.traceListener;
 
-  // TODO(benvanik): a better default context info.
-  var contextInfo = new wtf.data.ScriptContextInfo();
-  var hasBegunBatch = false;
-
   /**
    * Map of event types by event ID.
    * @type {!Array.<wtf.analysis.EventType>}
@@ -128,13 +123,14 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
   // Define builtin events.
   eventTable[-1] = listener.getEventType('wtf.scope.leave');
 
+  var hasBegunBatch = false;
   for (var n = 0; n < source.length; n++) {
     var entry = source[n];
     if (entry['event']) {
       // Default header, if none was previously defined.
       if (!hasBegunBatch) {
-        listener.sourceAdded(this.getTimebase(), contextInfo);
-        listener.beginEventBatch(contextInfo);
+        this.parseHeader_(null);
+        listener.beginEventBatch(this.getContextInfo());
         hasBegunBatch = true;
       }
 
@@ -150,9 +146,8 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
       switch (entry['type']) {
         case 'wtf.json.header':
           if (!hasBegunBatch) {
-            contextInfo = this.parseHeader_(entry);
-            listener.sourceAdded(this.getTimebase(), contextInfo);
-            listener.beginEventBatch(contextInfo);
+            this.parseHeader_(entry);
+            listener.beginEventBatch(this.getContextInfo());
             hasBegunBatch = true;
           }
           break;
@@ -175,24 +170,28 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
 
 
 /**
- * Parses a {@code wtf.json.header} entry.
- * @param {!Object} entry Entry.
- * @return {!wtf.data.ContextInfo} Context info.
+ * Parses a {@code wtf.json.header} entry and sets up the trace source.
+ * If no entry is provided default options will be used.
+ * @param {Object} entry Header entry, if any.
  * @private
  */
 wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
+  var listener = this.traceListener;
+
+  entry = entry || {};
+
   var formatVersion = entry['format_version'] || 1;
   var hasHighResolutionTimes = goog.isDef(entry['high_resolution_times']) ?
       entry['high_resolution_times'] : true;
   var timebase = entry['timebase'] || 0;
 
   // TODO(benvanik): embed context info.
+  // TODO(benvanik): a better default context info.
   var contextInfo = new wtf.data.ScriptContextInfo();
 
-  // TODO(benvanik): is this right?
-  var timeDelay = wtf.timebase() - timebase;
+  var timeDelay = listener.computeTimeDelay(timebase);
   this.initialize(contextInfo, hasHighResolutionTimes, timebase, timeDelay);
-  return contextInfo;
+  listener.sourceAdded(this.getTimebase(), contextInfo);
 };
 
 
@@ -240,8 +239,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEventType_ = function(
  */
 wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
     eventType, time, argList) {
-  var timebase = this.getTimebase();
-  var wallTime = timebase + time;
+  time += this.getTimeDelay();
 
   // Build args data structure.
   var args = {};
@@ -257,7 +255,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
 
   // Always fire raw event.
   var listener = this.traceListener;
-  listener.traceRawEvent(eventType, zone, timebase, time, args);
+  listener.traceRawEvent(eventType, zone, this.getTimebase(), time, args);
 
   // Handle built-in events.
   // TODO(benvanik): something much more efficient for builtins
@@ -269,12 +267,12 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
           args['name'], args['type'], args['location']);
       this.zoneTable_[args['zoneId']] = newZone;
       e = new wtf.analysis.ZoneEvent(
-          eventType, zone, wallTime, args, newZone);
+          eventType, zone, time, args, newZone);
       break;
     case 'wtf.zone.delete':
       var deadZone = this.zoneTable_[args['zoneId']] || null;
       e = new wtf.analysis.ZoneEvent(
-          eventType, zone, wallTime, args, deadZone);
+          eventType, zone, time, args, deadZone);
       break;
     case 'wtf.zone.set':
       this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
@@ -287,12 +285,12 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
         case wtf.data.EventClass.SCOPE:
           var newScope = new wtf.analysis.Scope();
           e = new wtf.analysis.ScopeEvent(
-              eventType, zone, wallTime, args, newScope);
+              eventType, zone, time, args, newScope);
           newScope.setEnterEvent(e);
           break;
         default:
         case wtf.data.EventClass.INSTANCE:
-          e = new wtf.analysis.Event(eventType, zone, wallTime, args);
+          e = new wtf.analysis.Event(eventType, zone, time, args);
           break;
       }
       isCustom = true;

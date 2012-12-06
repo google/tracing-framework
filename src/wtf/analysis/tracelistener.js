@@ -33,6 +33,16 @@ wtf.analysis.TraceListener = function() {
   // TODO(benvanik): add registered provider listeners
 
   /**
+   * A timebase used to calculate the time delay of each source.
+   * This is set by the first source added and all subsequent sources use it.
+   * This means that it's possible to end up with events with negative time.
+   * A value of -1 indicates that the timebase has not yet been set.
+   * @type {number}
+   * @private
+   */
+  this.commonTimebase_ = -1;
+
+  /**
    * All zones, indexed by zone key.
    * @type {!Object.<!wtf.analysis.Zone>}
    * @private
@@ -102,6 +112,33 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
   wtf.analysis.EventType.createInstance(
       'wtf.mark(ascii msg)')
 ];
+
+
+/**
+ * Gets the common timebase.
+ * @return {number} The timebase or 0 if it has not been set.
+ */
+wtf.analysis.TraceListener.prototype.getCommonTimebase = function() {
+  return this.commonTimebase_ == -1 ? 0 : this.commonTimebase_;
+};
+
+
+/**
+ * Computes a time delay for the given source from the shared timebase.
+ * If no timebase has been previously registered the given timebase will be set
+ * as the shared one.
+ * @param {number} timebase Source timebase.
+ * @return {number} The time delay between the given timebase and the shared
+ *     one.
+ */
+wtf.analysis.TraceListener.prototype.computeTimeDelay = function(timebase) {
+  if (this.commonTimebase_ == -1) {
+    this.commonTimebase_ = timebase;
+    return 0;
+  } else {
+    return timebase - this.commonTimebase_;
+  }
+};
 
 
 /**

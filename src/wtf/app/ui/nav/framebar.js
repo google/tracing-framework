@@ -147,7 +147,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
 
         for (var n = 0; n < this.timeRangePainters_.length; n++) {
           var painter = this.timeRangePainters_[n];
-          painter.setTimeRange(firstEventTime, timeLeft, timeRight);
+          painter.setTimeRange(0, timeLeft, timeRight);
         }
 
         this.requestRepaint();

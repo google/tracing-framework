@@ -220,8 +220,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   var longTimebase = goog.math.Long.fromBits(
       buffer.readUint32(), buffer.readUint32());
   var timebase = longTimebase.toNumber();
-  // TODO(benvanik): is this right?
-  var timeDelay = wtf.timebase() - timebase;
+  var timeDelay = this.traceListener.computeTimeDelay(timebase);
 
   // Initialize the trace source.
   // Only call when all other parsing has been successful.
@@ -241,15 +240,14 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
  */
 wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
     eventType, time, args) {
-  var timebase = this.getTimebase();
-  var wallTime = timebase + time;
+  time += this.getTimeDelay();
 
   // Infer state.
   var zone = this.currentZone_;
 
   // Always fire raw event.
   var listener = this.traceListener;
-  listener.traceRawEvent(eventType, zone, timebase, time, args);
+  listener.traceRawEvent(eventType, zone, this.getTimebase(), time, args);
 
   // Handle built-in events.
   // TODO(benvanik): something much more efficient for builtins
@@ -267,12 +265,12 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
           args['name'], args['type'], args['location']);
       this.zoneTable_[args['zoneId']] = newZone;
       e = new wtf.analysis.ZoneEvent(
-          eventType, zone, wallTime, args, newZone);
+          eventType, zone, time, args, newZone);
       break;
     case 'wtf.zone.delete':
       var deadZone = this.zoneTable_[args['zoneId']] || null;
       e = new wtf.analysis.ZoneEvent(
-          eventType, zone, wallTime, args, deadZone);
+          eventType, zone, time, args, deadZone);
       break;
     case 'wtf.zone.set':
       this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
@@ -285,7 +283,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
       var flow = new wtf.analysis.Flow(flowId, parentFlowId, parentFlow);
       this.flowTable_[flowId] = flow;
       e = new wtf.analysis.FlowEvent(
-          eventType, zone, wallTime, args, flow);
+          eventType, zone, time, args, flow);
       flow.setBranchEvent(e);
       break;
     case 'wtf.flow.extend':
@@ -296,7 +294,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
         this.flowTable_[flowId] = flow;
       }
       e = new wtf.analysis.FlowEvent(
-          eventType, zone, wallTime, args, flow);
+          eventType, zone, time, args, flow);
       flow.setExtendEvent(e);
       break;
     case 'wtf.flow.terminate':
@@ -307,7 +305,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
         this.flowTable_[flowId] = flow;
       }
       e = new wtf.analysis.FlowEvent(
-          eventType, zone, wallTime, args, flow);
+          eventType, zone, time, args, flow);
       flow.setTerminateEvent(e);
       break;
 
@@ -316,12 +314,12 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
         case wtf.data.EventClass.SCOPE:
           var newScope = new wtf.analysis.Scope();
           e = new wtf.analysis.ScopeEvent(
-              eventType, zone, wallTime, args, newScope);
+              eventType, zone, time, args, newScope);
           newScope.setEnterEvent(e);
           break;
         default:
         case wtf.data.EventClass.INSTANCE:
-          e = new wtf.analysis.Event(eventType, zone, wallTime, args);
+          e = new wtf.analysis.Event(eventType, zone, time, args);
           break;
       }
       isCustom = true;
