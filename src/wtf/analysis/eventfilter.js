@@ -42,6 +42,13 @@ wtf.analysis.EventFilter = function() {
   goog.base(this);
 
   /**
+   * String that the filter is based on.
+   * @type {string}
+   * @private
+   */
+  this.sourceString_ = '';
+
+  /**
    * Current evaluator function.
    * This may be null, which indicates that all events should pass.
    * @type {Function?}
@@ -70,27 +77,24 @@ wtf.analysis.EventFilter.prototype.getEvaluator = function() {
 
 
 /**
- * Sets the evaluator function used to filter events.
- * @param {Function?} fn Evaluator function.
- */
-wtf.analysis.EventFilter.prototype.setEvaluator = function(fn) {
-  if (this.evaluator_ == fn) {
-    return;
-  }
-  this.evaluator_ = fn;
-  this.emitEvent(wtf.events.EventType.INVALIDATED);
-};
-
-
-/**
  * Clears the current filter.
  */
 wtf.analysis.EventFilter.prototype.clear = function() {
   if (!this.evaluator_) {
     return;
   }
+  this.sourceString_ = '';
   this.evaluator_ = null;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
+};
+
+
+/**
+ * Gets a string representing this filter.
+ * @return {string} Filter string. May be the empty string.
+ */
+wtf.analysis.EventFilter.prototype.toString = function() {
+  return this.sourceString_;
 };
 
 
@@ -101,9 +105,11 @@ wtf.analysis.EventFilter.prototype.clear = function() {
  *     the expression could not be parsed.
  */
 wtf.analysis.EventFilter.prototype.setFromString = function(value) {
-  // TODO(benvanik): de-dupe sets - this can be expensive
-
   value = goog.string.trim(value);
+  if (this.sourceString_ == value) {
+    return true;
+  }
+
   if (!value.length) {
     this.clear();
     return true;
@@ -120,9 +126,20 @@ wtf.analysis.EventFilter.prototype.setFromString = function(value) {
   }
 
   var fn = this.generateEvaluatorFn_(expr);
-  this.setEvaluator(fn);
+  this.sourceString_ = value;
+  this.evaluator_ = fn;
+  this.emitEvent(wtf.events.EventType.INVALIDATED);
   return true;
 };
+
+
+/**
+ * A regex that matches {@code <anything>[timeStart, timeEnd]}.
+ * @type {!RegExp}
+ * @private
+ */
+wtf.analysis.EventFilter.timeRangeMatch_ =
+    /(.*)((\[([+-]*[0-9]+(\.[0-9]+)?),[ ]*([+-]*[0-9]+(\.[0-9]+)?)\])$)/;
 
 
 /**
@@ -143,6 +160,21 @@ wtf.analysis.EventFilter.prototype.parseExpression_ = function(value) {
   // TODO(benvanik): real expression parsing
   // ATM only name substring search and regex mode is supported.
 
+  // If there's a [#,#] at the end, slice that off for time range filtering.
+  var startTime = Number.MIN_VALUE;
+  var endTime = Number.MAX_VALUE;
+  var timeRangeMatch = wtf.analysis.EventFilter.timeRangeMatch_;
+  if (timeRangeMatch.test(value)) {
+    var parts = timeRangeMatch.exec(value);
+    value = goog.string.trim(parts[1]);
+    var timeRange = this.parseTimeRange_(parts[4], parts[6]);
+    if (!timeRange) {
+      return null;
+    }
+    startTime = timeRange[0];
+    endTime = timeRange[1];
+  }
+
   var regex = null;
   var regexMatch = wtf.analysis.EventFilter.regexMatch_;
   if (regexMatch.test(value)) {
@@ -156,8 +188,27 @@ wtf.analysis.EventFilter.prototype.parseExpression_ = function(value) {
     regex = new RegExp('.*' + escapedValue + '.*', 'i');
   }
   return {
-    name: regex
+    name: regex,
+    startTime: startTime,
+    endTime: endTime
   };
+};
+
+
+/**
+ * Parses a start/end time range string.
+ * @param {string} startString Start time string.
+ * @param {string} endString End time string.
+ * @return {Array.<number>} An array containing [start, end] or null if an
+ *     error occurred.
+ * @private
+ */
+wtf.analysis.EventFilter.prototype.parseTimeRange_ = function(
+    startString, endString) {
+  // TODO(benvanik): support unit suffixes/etc.
+  var startTime = parseFloat(startString);
+  var endTime = parseFloat(endString);
+  return [startTime, endTime];
 };
 
 
@@ -169,7 +220,17 @@ wtf.analysis.EventFilter.prototype.parseExpression_ = function(value) {
  */
 wtf.analysis.EventFilter.prototype.generateEvaluatorFn_ =
     function(expr) {
-  return function(e) {
-    return expr.name.test(e.eventType.name);
-  };
+  if (expr.startTime == Number.MIN_VALUE &&
+      expr.endTime == Number.MAX_VALUE) {
+    return function(e) {
+      return expr.name.test(e.eventType.name);
+    };
+  } else {
+    return function(e) {
+      if (e.time < expr.startTime || e.time > expr.endTime) {
+        return false;
+      }
+      return expr.name.test(e.eventType.name);
+    };
+  }
 };
