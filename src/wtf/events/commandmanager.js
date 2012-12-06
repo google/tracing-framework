@@ -65,6 +65,15 @@ wtf.events.CommandManager.prototype.registerSimpleCommand = function(
 
 
 /**
+ * Unregisters the command with the given name, if it exists.
+ * @param {string} name Command name.
+ */
+wtf.events.CommandManager.prototype.unregisterCommand = function(name) {
+  delete this.commands_[name];
+};
+
+
+/**
  * Checks to see whether the given command can be executed.
  * @param {string} name Command name.
  * @return {boolean} True if the command can be executed.

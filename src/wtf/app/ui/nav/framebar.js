@@ -210,6 +210,16 @@ goog.inherits(wtf.app.ui.nav.Framebar, wtf.ui.Control);
 /**
  * @override
  */
+wtf.app.ui.nav.Framebar.prototype.disposeInternal = function() {
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.unregisterCommand('goto_frame');
+  goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.nav.Framebar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.nav.framebar.control, undefined, undefined, dom));

@@ -229,6 +229,7 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
  * @param {!wtf.doc.Document} doc Document.
  */
 wtf.app.ui.MainDisplay.prototype.openDocument = function(doc) {
+  this.setDocumentView(null);
   var documentView = new wtf.app.ui.DocumentView(
       this.getChildElement(goog.getCssName('wtfAppUiMainDocumentView')),
       this.getDom(),

@@ -85,6 +85,16 @@ goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.Control);
 /**
  * @override
  */
+wtf.app.ui.tracks.TrackInfoBar.prototype.disposeInternal = function() {
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.unregisterCommand('filter_events');
+  goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.tracks.TrackInfoBar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.tracks.trackinfobar.control, undefined, undefined, dom));
