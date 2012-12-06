@@ -158,6 +158,10 @@ wtf.analysis.db.SummaryIndex.prototype.growToInclude_ = function(time) {
   while (time < rootNode.timeStart_ || time >= rootNode.timeEnd_) {
     var granularity = rootNode.granularity_ * 10;
     var startTime = rootNode.timeStart_ - (rootNode.timeStart_ % granularity);
+    if (startTime == rootNode.timeStart_) {
+      // Special case for 0.
+      startTime -= granularity;
+    }
     var newRoot = new wtf.analysis.db.SummaryIndexNode_(
         null, startTime, startTime + granularity);
     newRoot.growFrom(rootNode);
