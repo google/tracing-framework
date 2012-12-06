@@ -19,6 +19,7 @@ goog.require('goog.string');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.app.ui.tracks.TrackPainter');
+goog.require('wtf.events');
 goog.require('wtf.math');
 goog.require('wtf.ui.RangeRenderer');
 
@@ -361,8 +362,45 @@ wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
 /**
  * @override
  */
+wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
+    function(x, y, width, height) {
+  var scope = this.hitTestScope_(x, y, width, height);
+  var newFilterString;
+  if (scope) {
+    var eventName = scope.getEnterEvent().eventType.name;
+    newFilterString = eventName;
+  } else {
+    newFilterString = '';
+  }
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('filter_events', this, null, newFilterString);
+  return true;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     function(x, y, width, height) {
+  var scope = this.hitTestScope_(x, y, width, height);
+  if (scope) {
+    return this.generateScopeTooltip_(scope);
+  }
+  return undefined;
+};
+
+
+/**
+ * Finds the scope at the given point.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Width of the paint canvas.
+ * @param {number} height Height of the paint canvas.
+ * @return {wtf.analysis.Scope} Scope, if any.
+ */
+wtf.app.ui.tracks.ZonePainter.prototype.hitTestScope_ = function(
+    x, y, width, height) {
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -385,13 +423,13 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     var scopeBottom = scopeTop + scopeHeight;
     if (enter && leave && scopeTop <= y && y <= scopeBottom) {
       if (leave.time >= time) {
-        return this.generateScopeTooltip_(scope);
+        return scope;
       }
       break;
     }
   }
 
-  return undefined;
+  return null;
 };
 
 

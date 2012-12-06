@@ -138,6 +138,10 @@ wtf.ui.SearchControl.prototype.setValue = function(value) {
   }
   var oldValue = this.value_;
   this.value_ = value;
+  var el = this.getRootElement();
+  if (el.value != value) {
+    el.value = value;
+  }
   this.emitEvent(wtf.events.EventType.INVALIDATED, value, oldValue);
 };
 

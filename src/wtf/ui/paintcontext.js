@@ -265,6 +265,42 @@ wtf.ui.PaintContext.prototype.clear = function(x, y, w, h, opt_color) {
 
 
 /**
+ * Handles click events at the given pixel.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Width of the paint canvas.
+ * @param {number} height Height of the paint canvas.
+ * @return {boolean} True if the click was handled.
+ */
+wtf.ui.PaintContext.prototype.onClick = function(x, y, width, height) {
+  if (this.onClickInternal(x, y, width, height)) {
+    return true;
+  }
+
+  for (var n = 0; n < this.childContexts_.length; n++) {
+    var childContext = this.childContexts_[n];
+    if (childContext.onClickInternal(x, y, width, height)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+
+/**
+ * Handles click events at the given pixel.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Width of the paint canvas.
+ * @param {number} height Height of the paint canvas.
+ * @return {boolean|undefined} True if the click was handled.
+ * @protected
+ */
+wtf.ui.PaintContext.prototype.onClickInternal = goog.nullFunction;
+
+
+/**
  * Queries the tree of painters for information about the pixel at x,y. Used to
  * populate a tooltip.
  * @param {number} x X coordinate, relative to canvas.
@@ -294,5 +330,6 @@ wtf.ui.PaintContext.prototype.getInfoString = function(x, y, width, height) {
  * @param {number} width Width of the paint canvas.
  * @param {number} height Height of the paint canvas.
  * @return {string|undefined} Info string or undefined for none.
+ * @protected
  */
 wtf.ui.PaintContext.prototype.getInfoStringInternal = goog.nullFunction;

@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.nav.FramebarPainter');
 goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
 goog.require('goog.math');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimeRangePainter');
@@ -168,7 +169,42 @@ wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
 /**
  * @override
  */
+wtf.app.ui.nav.FramebarPainter.prototype.onClickInternal =
+    function(x, y, width, height) {
+  var e = this.hitTestFrame_(x, y, width, height);
+  if (e) {
+    var commandManager = wtf.events.getCommandManager();
+    commandManager.execute('goto_frame', this, null, e.args['number']);
+    return true;
+  }
+  return false;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.nav.FramebarPainter.prototype.getInfoStringInternal = function(
+    x, y, width, height) {
+  var e = this.hitTestFrame_(x, y, width, height);
+  if (e) {
+    var duration = e.args['duration'] / 1000;
+    return 'frame #' + e.args['number'] + ' (' +
+        (Math.round(duration * 100) / 100) + 'ms)';
+  }
+  return undefined;
+};
+
+
+/**
+ * Finds the frame at the given point.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Width of the paint canvas.
+ * @param {number} height Height of the paint canvas.
+ * @return {wtf.analysis.Event} Frame event, if any.
+ */
+wtf.app.ui.nav.FramebarPainter.prototype.hitTestFrame_ = function(
     x, y, width, height) {
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -176,18 +212,23 @@ wtf.app.ui.nav.FramebarPainter.prototype.getInfoStringInternal = function(
   var top = wtf.app.ui.nav.FramebarPainter.FRAME_TOP_;
   var bottom = top + Math.floor(0.5 * (height - top));
 
-  if (y < top || y > bottom) return undefined;
+  if (y < top || y > bottom) {
+    return null;
+  }
 
   var time = wtf.math.remap(x, 0, width, timeLeft, timeRight);
 
-  var result = undefined;
-  this.frameIndex_.forEach(timeLeft, timeRight + 100, function(e) {
+  var result = null;
+  this.frameIndex_.forEach(timeLeft, Number.MAX_VALUE, function(e) {
     var duration = e.args['duration'] / 1000;
     var startTime = e.time - duration;
     var endTime = e.time;
+    if (startTime > timeRight) {
+      return false;
+    }
     if (startTime <= time && time <= endTime) {
-      result = 'frame #' + e.args['number'] + ' (' +
-          (Math.round(duration * 100) / 100) + 'ms)';
+      result = e;
+      return false;
     }
   });
 
