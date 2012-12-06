@@ -101,6 +101,8 @@ wtf.analysis.EventFilter.prototype.clear = function() {
  *     the expression could not be parsed.
  */
 wtf.analysis.EventFilter.prototype.setFromString = function(value) {
+  // TODO(benvanik): de-dupe sets - this can be expensive
+
   value = goog.string.trim(value);
   if (!value.length) {
     this.clear();
