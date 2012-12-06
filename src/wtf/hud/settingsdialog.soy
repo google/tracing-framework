@@ -211,6 +211,48 @@
     line-height: 13px;
   }
 
+  .wtfHudSettingsSectionContent input[type="checkbox"] {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border: 1px solid #C6C6C6;
+    margin: 0;
+    -webkit-border-radius: 1px;
+    -moz-border-radius: 1px;
+    border-radius: 1px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    cursor: default;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 4px;
+    margin-bottom: 5px;
+  }
+  .wtfHudSettingsSectionContent input[type="checkbox"]:focus {
+    outline: none;
+    border-color: #4d90fe;
+  }
+  .wtfHudSettingsSectionContent input[type="checkbox"]:active {
+    border-color: #666;
+    background: #ebebeb;
+  }
+  .wtfHudSettingsSectionContent input[type="checkbox"]:hover {
+    border-color: #666;
+    -webkit-box-shadow: inset 0px 1px 1px rgba(0,0,0,0.1);
+    -moz-box-shadow: inset 0px 1px 1px rgba(0,0,0,0.1);
+    box-shadow: inset 0px 1px 1px rgba(0,0,0,0.1);
+  }
+  .wtfHudSettingsSectionContent input[type=checkbox]:checked::after {
+    content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAOpJREFUeNpi/P//PwO1ARMDDcAwNZSRkRGFjYQlgZidLEORIxXEhvLNgbgSiG0wJInBWIA9EC8B4ihks1goCLpAIPYA4ktAvAJZghxDWYE4CYiNgPgy0GVTkMOaHEO5gTgPiBWA+A4QzyQp9oG2g1zgD8Qs0BgWAwpXQA18CsRTgPg3Vr24sinQEEcgFQHED4F4HxCHQV36Coi7gPgzLHJg3oeZhc9QEJUKxCZIwh+AuBOI3yGnHnRDCaVTUHJ5CWWDXDYJ2UC8CZpAmpQF4h5oWBKVIQh5HwY4gfg7LkOJDtPRom9wGQoQYADRjokrpemFfAAAAABJRU5ErkJggg==');
+    display: block;
+    position: absolute;
+    top: -6px;
+    left: -5px;
+  }
+
+  .wtfHudSettingsGeneralFeaturesContent {}
+
   {/literal}</style>
 {/template}
 
@@ -258,7 +300,26 @@
             </p>
           </div>
         </div>
+        <div class="wtfHudSettingsSection">
+          <div class="wtfHudSettingsSectionLabel">
+            Features
+          </div>
+          <div class="wtfHudSettingsSectionContent">
+            <p>
+              <div class="wtfHudSettingsGeneralFeaturesContent"/>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+{/template}
+
+
+/**
+ * Checkbox control.
+ * @param title Title displayed.
+ */
+{template .checkbox}
+  <input type="checkbox"><span>{$title}</span><br/>
 {/template}

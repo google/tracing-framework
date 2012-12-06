@@ -145,6 +145,19 @@ wtf.analysis.Scope.prototype.getDepth = function() {
 
 
 /**
+ * Gets the duration of a scope.
+ * This may exclude tracing time.
+ * @return {number} Total duration of user time.
+ */
+wtf.analysis.Scope.prototype.getDuration = function() {
+  if (this.enterEvent_ && this.leaveEvent_) {
+    return this.leaveEvent_.time - this.enterEvent_.time;
+  }
+  return 0;
+};
+
+
+/**
  * Adds a child scope.
  * @param {!wtf.analysis.Scope} child Child scope.
  */
