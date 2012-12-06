@@ -14,6 +14,7 @@
 goog.provide('wtf.analysis.sources.BinaryTraceSource');
 
 goog.require('goog.asserts');
+goog.require('goog.math.Long');
 goog.require('wtf');
 goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.EventType');
@@ -216,7 +217,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
 
   // Read time information.
   var hasHighResolutionTimes = buffer.readUint8() ? true : false;
-  var timebase = buffer.readUint32();
+  var longTimebase = goog.math.Long.fromBits(
+      buffer.readUint32(), buffer.readUint32());
+  var timebase = longTimebase.toNumber();
   // TODO(benvanik): is this right?
   var timeDelay = wtf.timebase() - timebase;
 
