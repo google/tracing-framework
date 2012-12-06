@@ -40,6 +40,15 @@ wtf.analysis.TraceListener = function() {
   this.allZones_ = {};
 
   /**
+   * The default zone.
+   * This is the first zone created either explicitly via
+   * {@see #createOrGetZone} or implicitly via {@see #getDefaultZone}.
+   * @type {wtf.analysis.Zone}
+   * @private
+   */
+  this.defaultZone_ = null;
+
+  /**
    * Lookup table for all defined {@see wtf.analysis.EventType}s by event name.
    * @type {!Object.<wtf.analysis.EventType>}
    * @private
@@ -97,6 +106,7 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
 
 /**
  * Creates a new zone or gets an existing one if a matching zone already exists.
+ * If a default zone was created previously this will be merged with that.
  * @param {string} name Zone name.
  * @param {string} type Zone type.
  * @param {string} location Zone location (such as URI of the script).
@@ -105,12 +115,41 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
 wtf.analysis.TraceListener.prototype.createOrGetZone = function(
     name, type, location) {
   var key = name + ':' + type + ':' + location;
+
+  // If there is a nameless default zone then merge with that.
+  if (this.defaultZone_ && this.defaultZone_.name == '') {
+    this.defaultZone_.name = name;
+    this.defaultZone_.type = type;
+    this.defaultZone_.location = location;
+    this.allZones_[key] = this.defaultZone_;
+    return this.defaultZone_;
+  }
+
+  // Lookup or create.
   var value = this.allZones_[key];
   if (!value) {
     value = new wtf.analysis.Zone(name, type, location);
     this.allZones_[key] = value;
+
+    // Set the default zone to the first created.
+    if (!this.defaultZone_) {
+      this.defaultZone_ = value;
+    }
   }
   return value;
+};
+
+
+/**
+ * Gets the default zone.
+ * If it doesn't exist it will be created.
+ * @return {!wtf.analysis.Zone} The default zone.
+ */
+wtf.analysis.TraceListener.prototype.getDefaultZone = function() {
+  if (!this.defaultZone_) {
+    this.defaultZone_ = new wtf.analysis.Zone('', '', '');
+  }
+  return this.defaultZone_;
 };
 
 

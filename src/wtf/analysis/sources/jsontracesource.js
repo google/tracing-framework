@@ -56,7 +56,7 @@ wtf.analysis.sources.JsonTraceSource = function(traceListener, sourceData) {
    * @type {wtf.analysis.Zone}
    * @private
    */
-  this.currentZone_ = null;
+  this.currentZone_ = traceListener.getDefaultZone();
 
   // If the input is a string it needs to be parsed (and maybe fixed up).
   if (goog.isString(sourceData)) {
