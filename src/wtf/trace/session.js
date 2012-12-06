@@ -15,6 +15,7 @@ goog.provide('wtf.trace.Session');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.math.Long');
 goog.require('wtf');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Scope');
@@ -177,8 +178,9 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
   // Write time information.
   buffer.writeUint8(wtf.hasHighResolutionTimes ? 1 : 0);
   var timebase = wtf.timebase();
-  buffer.writeUint32(timebase & 0xFFFFFFFF);
-  buffer.writeUint32((timebase >> 32) & 0xFFFFFFFF);
+  var longTimebase = goog.math.Long.fromNumber(timebase);
+  buffer.writeUint32(longTimebase.getLowBits());
+  buffer.writeUint32(longTimebase.getHighBits());
 
   // Write event info.
   if (!this.traceManager_.writeEventHeader(buffer)) {
