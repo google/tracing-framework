@@ -31,6 +31,7 @@ goog.require('wtf.ui.PaintContext');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
+goog.require('wtf.util.canvas');
 
 
 
@@ -156,6 +157,18 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
   documentView.registerViewport(this.viewport_);
+
+  // TODO(benvanik): replace viewport stuff and share this binding in control.
+  this.viewport_.addListener(
+      wtf.ui.zoom.Viewport.EventType.CLICK,
+      function(x, y) {
+        var canvas = paintContext.getCanvas();
+        var ctx = paintContext.getCanvasContext2d();
+        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
+        var width = canvas.width / scale;
+        var height = canvas.height / scale;
+        paintContext.onClick(x, y, width, height);
+      }, this);
 
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,

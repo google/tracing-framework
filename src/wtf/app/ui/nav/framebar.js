@@ -33,6 +33,7 @@ goog.require('wtf.ui.PaintContext');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
+goog.require('wtf.util.canvas');
 
 
 
@@ -156,6 +157,18 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   this.viewport_.setSceneSize(1, 1);
   documentView.registerViewport(this.viewport_);
 
+  // TODO(benvanik): replace viewport stuff and share this binding in control.
+  this.viewport_.addListener(
+      wtf.ui.zoom.Viewport.EventType.CLICK,
+      function(x, y) {
+        var canvas = paintContext.getCanvas();
+        var ctx = paintContext.getCanvasContext2d();
+        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
+        var width = canvas.width / scale;
+        var height = canvas.height / scale;
+        paintContext.onClick(x, y, width, height);
+      }, this);
+
   // HACK(benvanik): zoom to fit on change - this should follow other behavior
   function zoomToBounds() {
     var firstEventTime = summaryIndex.getFirstEventTime();
@@ -247,6 +260,25 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
         -1000, 0, lastEventTime - firstEventTime + 2000, 1);
   }, this);
 
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.registerSimpleCommand(
+      'goto_frame', function(source, target, frameNumber) {
+        // Go to frame.
+        // TODO(benvanik): move to document view?
+        var frameIndex = this.db_.getEventIndex('timing.frameEnd');
+        if (frameIndex) {
+          frameIndex.forEach(0, Number.MAX_VALUE, function(e) {
+            if (e.args['number'] == frameNumber) {
+              var summaryIndex = this.db_.getSummaryIndex();
+              var firstEventTime = summaryIndex.getFirstEventTime();
+              var timeStart = e.time - e.args['duration'] / 1000;
+              var timeEnd = e.time;
+              this.viewport_.zoomToBounds(
+                  timeStart - firstEventTime, 0, timeEnd - timeStart, 1);
+            }
+          }, this);
+        }
+      }, this);
   keyboardScope.addShortcut('ctrl+g', function() {
     var result;
     try {
@@ -263,21 +295,7 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
       return;
     }
 
-    // Go to frame.
-    // TODO(benvanik): move to document view?
-    var frameIndex = this.db_.getEventIndex('timing.frameEnd');
-    if (frameIndex) {
-      frameIndex.forEach(0, Number.MAX_VALUE, function(e) {
-        if (e.args['number'] == result) {
-          var summaryIndex = this.db_.getSummaryIndex();
-          var firstEventTime = summaryIndex.getFirstEventTime();
-          var timeStart = e.time - e.args['duration'] / 1000;
-          var timeEnd = e.time;
-          this.viewport_.zoomToBounds(
-              timeStart - firstEventTime, 0, timeEnd - timeStart, 1);
-        }
-      }, this);
-    }
+    commandManager.execute('goto_frame', this, null, result);
   }, this);
 };
 
