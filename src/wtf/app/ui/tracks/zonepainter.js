@@ -429,5 +429,5 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
     }
   }
 
-  return lines.join('<br/>');
+  return lines.join('\n');
 };
