@@ -399,7 +399,9 @@ wtf.analysis.db.EventList.prototype.insertEvent = function(e) {
   }
 
   // Event is inserting before any other event - insert at the head.
-  this.chunks_[0].insertEvent(e);
+  chunk = this.chunks_[0];
+  chunk.insertEvent(e);
+  this.dirtyChunks_.push(chunk);
 };
 
 
