@@ -75,6 +75,18 @@ occurred since the last snapshot is written.
 The frequency, in milliseconds, to flush data buffers or 0 to prevent automatic
 flushing.
 
+### wtf.trace.provider.*
+
+Each event provider can be toggled here to allow for the choice of which kind
+of events to include in the stream or the fidelity of the events added.
+
+#### wtf.trace.provider.javascript
+
+Set `wtf.trace.provider.javascript` to 1+ to enable the events. This will
+use a variety of means to attempt to gather javascript runtime events, such as
+garbage collections, JIT activity, etc. This functionality relies on the
+injector extension or custom builds of Chromium.
+
 ## HUD
 
 HUD options pertain only to the overlay used in browser-based injected runs.

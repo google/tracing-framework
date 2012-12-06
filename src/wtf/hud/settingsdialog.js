@@ -13,6 +13,8 @@
 
 goog.provide('wtf.hud.SettingsDialog');
 
+goog.require('goog.asserts');
+goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.hud.settingsdialog');
@@ -60,6 +62,35 @@ wtf.hud.SettingsDialog = function(options, parentElement, opt_dom) {
   eh.listen(
       this.getChildElement('wtfHudSettingsButtonCancel'),
       goog.events.EventType.CLICK, this.close, false, this);
+
+  /**
+   * A map of feature enable flag values.
+   * @type {!Object.<number>}
+   * @private
+   */
+  this.featureMap_ = {};
+
+  var featuresContainerEl =
+      this.getChildElement('wtfHudSettingsGeneralFeaturesContent');
+  var features = [
+    {
+      key: 'wtf.trace.provider.javascript',
+      title: 'Javascript system events'
+    }
+  ];
+  for (var n = 0; n < features.length; n++) {
+    var featureKey = features[n].key;
+    var featureTitle = features[n].title;
+    var defaultValue = options.getNumber(featureKey, 0);
+    this.featureMap_[featureKey] = defaultValue;
+    this.addCheckbox_(
+        featuresContainerEl,
+        featureTitle,
+        defaultValue > 0,
+        function(value) {
+          this.featureMap_[featureKey] = value ? 1 : 0;
+        }, this);
+  }
 
   this.loadSettings();
 };
@@ -113,5 +144,53 @@ wtf.hud.SettingsDialog.prototype.saveSettings = function() {
       wtfHudSettingsHudDockLocation.selectedIndex].value;
   options.setString('wtf.hud.dock', dockOption || 'br');
 
+  for (var featureKey in this.featureMap_) {
+    options.setNumber(featureKey, this.featureMap_[featureKey]);
+  }
+
   options.endChanging();
+};
+
+
+/**
+ * Adds a checkbox to the given element.
+ * @param {!Element} parentElement Parent element.
+ * @param {string} title Human-readable title.
+ * @param {boolean} defaultValue Default value.
+ * @param {function(this: T, boolean)} callback Callback called upon change.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ * @private
+ */
+wtf.hud.SettingsDialog.prototype.addCheckbox_ = function(
+    parentElement, title, defaultValue, callback, opt_scope) {
+  var dom = this.getDom();
+  var eh = this.getHandler();
+
+  var el = /** @type {!Element} */ (goog.soy.renderAsFragment(
+      wtf.hud.settingsdialog.checkbox, {
+        'title': title
+      }, undefined, dom));
+  dom.appendChild(parentElement, el);
+
+  var inputEl = /** @type {HTMLInputElement} */ (
+      dom.getElementsByTagNameAndClass(
+          goog.dom.TagName.INPUT, null, this.rootElement_)[0]);
+  goog.asserts.assert(inputEl);
+  inputEl.checked = defaultValue;
+
+  eh.listen(inputEl, goog.events.EventType.CHANGE, function(e) {
+    var value = inputEl.checked;
+    callback.call(opt_scope, value);
+  });
+
+  var titleEl = /** @type {Element} */ (
+      dom.getElementsByTagNameAndClass(
+          goog.dom.TagName.SPAN, null, this.rootElement_)[0]);
+  goog.asserts.assert(titleEl);
+  eh.listen(titleEl, goog.events.EventType.CLICK, function() {
+    var value = !inputEl.checked;
+    inputEl.checked = value;
+    callback.call(opt_scope, value);
+  });
 };

@@ -45,15 +45,12 @@ var ExtendedInfo = function(tabId, port, pageOptions) {
    */
   this.pageOptions_ = pageOptions;
 
-  // TODO(benvanik): use page options to determine whether to enable the
-  // debugger/extended info functionality.
-
   /**
-   * Debugger source.
-   * @type {!Debugger}
+   * Debugger source, if enabled.
+   * @type {Debugger}
    * @private
    */
-  this.debugger_ = new Debugger(this.tabId_, this.queueData.bind(this));
+  this.debugger_ = null;
 
   /**
    * Data pending send.
@@ -73,6 +70,10 @@ var ExtendedInfo = function(tabId, port, pageOptions) {
 
   // Listen for disconnects.
   port.onDisconnect.addListener(this.eventHandlers_.onDisconnect);
+
+  if (pageOptions['wtf.trace.provider.javascript']) {
+    this.debugger_ = new Debugger(this.tabId_, this.queueData.bind(this));
+  }
 };
 
 
@@ -81,7 +82,9 @@ var ExtendedInfo = function(tabId, port, pageOptions) {
  * After this is called the source should be discarded.
  */
 ExtendedInfo.prototype.dispose = function() {
-  this.debugger_.dispose();
+  if (this.debugger_) {
+    this.debugger_.dispose();
+  }
 
   this.port_.onDisconnect.removeListener(this.eventHandlers_.onDisconnect);
 };
