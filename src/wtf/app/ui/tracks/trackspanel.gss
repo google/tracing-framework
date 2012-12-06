@@ -27,6 +27,7 @@
   border-right: 1px solid #ebebeb;
 }
 .wtfAppUiTracksPanelCanvas {
+  cursor: crosshair;
 }
 
 .wtfAppUiTracksPanelInfoControl {

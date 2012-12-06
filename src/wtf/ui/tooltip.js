@@ -14,7 +14,6 @@
 goog.provide('wtf.ui.Tooltip');
 
 goog.require('goog.asserts');
-goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
@@ -97,7 +96,8 @@ wtf.ui.Tooltip.prototype.bindEvents = function(control) {
  */
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var elem = this.getRootElement();
-  goog.dom.setTextContent(elem, content);
+  // TODO(benvanik): don't use innerHTML - need a more structured way.
+  elem.innerHTML = content;
   goog.style.setStyle(elem, {
     'left': x + 10 + 'px',
     'top': y + 10 + 'px'

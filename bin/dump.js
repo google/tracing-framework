@@ -46,10 +46,12 @@ function runTool(platform, args) {
     },
 
     'wtf.scope.enter': function(e) {
-      util.logEvent(e, e.scope.getId(), e.args);
+      var scopeId = e.scope ? e.scope.getId() : null;
+      util.logEvent(e, scopeId, e.args);
     },
     'wtf.scope.leave': function(e) {
-      util.logEvent(e, e.scope.getId());
+      var scopeId = e.scope ? e.scope.getId() : null;
+      util.logEvent(e, scopeId);
     },
 
     'wtf.flow.branch': function(e) {
@@ -68,7 +70,8 @@ function runTool(platform, args) {
 
     'custom': function(e) {
       if (e instanceof wtf.analysis.ScopeEvent) {
-        util.logEvent(e, e.scope.getId(), e.args);
+        var scopeId = e.scope ? e.scope.getId() : null;
+        util.logEvent(e, scopeId, e.args);
       } else {
         util.logEvent(e, undefined, e.args);
       }

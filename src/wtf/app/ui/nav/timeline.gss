@@ -30,6 +30,7 @@
 }
 
 .wtfAppUiTimelineCanvas {
+  cursor: crosshair;
 }
 
 .wtfAppUiTimelineInfoOuter {

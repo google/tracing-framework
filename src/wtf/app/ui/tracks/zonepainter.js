@@ -385,21 +385,49 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     var scopeBottom = scopeTop + scopeHeight;
     if (enter && leave && scopeTop <= y && y <= scopeBottom) {
       if (leave.time >= time) {
-        var elapsed = leave.time - enter.time;
-        if (elapsed > 0) {
-          // Round to just a few significant digits.
-          // largest power of 10 <= value
-          var magnitude = Math.floor(Math.log(elapsed) / Math.LN10);
-          // a number which will shift elapsed (in base 10) so that
-          // there are 4 digits to the left of the decimal.
-          var mult = Math.pow(10, 3 - magnitude);
-          elapsed = Math.round(elapsed * mult) / mult;
-        }
-        return elapsed + 'ms: ' + enter.eventType.name;
+        return this.generateScopeTooltip_(scope);
       }
       break;
     }
   }
 
   return undefined;
+};
+
+
+/**
+ * Generates a tooltip string from the given scope.
+ * @param {!wtf.analysis.Scope} scope Scope.
+ * @return {string} Tooltip string.
+ * @private
+ */
+wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
+    scope) {
+  var enter = scope.getEnterEvent();
+  var leave = scope.getLeaveEvent();
+  var elapsed = leave.time - enter.time;
+  if (elapsed > 0) {
+    // Round to just a few significant digits.
+    // largest power of 10 <= value
+    var magnitude = Math.floor(Math.log(elapsed) / Math.LN10);
+    // a number which will shift elapsed (in base 10) so that
+    // there are 4 digits to the left of the decimal.
+    var mult = Math.pow(10, 3 - magnitude);
+    elapsed = Math.round(elapsed * mult) / mult;
+  }
+
+  var eventType = enter.eventType;
+  var lines = [
+    elapsed + 'ms: ' + eventType.name
+  ];
+
+  // Add arguments.
+  if (eventType.args.length) {
+    for (var n = 0; n < eventType.args.length; n++) {
+      var arg = eventType.args[n];
+      lines.push(arg.name + ': ' + enter.args[arg.name]);
+    }
+  }
+
+  return lines.join('<br/>');
 };
