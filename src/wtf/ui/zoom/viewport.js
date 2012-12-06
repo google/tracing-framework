@@ -842,7 +842,7 @@ wtf.ui.zoom.Viewport.prototype.mouseUp = function(x, y, button) {
     this.mouseDelta_ = 0;
   }, this);
 
-  if (delta < 4) {
+  if (this.leftMouseDown_ && delta < 4) {
     var sceneXY = this.screenToScene(x, y);
     this.emitEvent(wtf.ui.zoom.Viewport.EventType.CLICK, x, y);
   }
