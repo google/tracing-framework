@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.zoom.Viewport');
 
 goog.require('goog.array');
+goog.require('goog.events');
 goog.require('goog.events.BrowserEvent');
 goog.require('goog.math.Coordinate');
 goog.require('goog.math.Rect');
@@ -194,6 +195,15 @@ goog.inherits(wtf.ui.zoom.Viewport, wtf.events.EventEmitter);
 wtf.ui.zoom.Viewport.link = function(a, b) {
   a.peers_.push(b);
   b.peers_.push(a);
+};
+
+
+/**
+ * Event types.
+ * @type {!Object.<string>}
+ */
+wtf.ui.zoom.Viewport.EventType = {
+  CLICK: goog.events.getUniqueId('click')
 };
 
 
@@ -834,7 +844,7 @@ wtf.ui.zoom.Viewport.prototype.mouseUp = function(x, y, button) {
 
   if (delta < 4) {
     var sceneXY = this.screenToScene(x, y);
-    // TODO(benvanik): fire click with x/y
+    this.emitEvent(wtf.ui.zoom.Viewport.EventType.CLICK, x, y);
   }
 
   return true;

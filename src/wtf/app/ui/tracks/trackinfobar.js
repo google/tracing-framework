@@ -53,6 +53,21 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       dom);
   this.registerDisposable(this.searchControl_);
 
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.registerSimpleCommand(
+      'filter_events', function(source, target, filterString) {
+        var parsed = filter.setFromString(filterString);
+        this.searchControl_.toggleError(!parsed);
+        this.searchControl_.setValue(filterString);
+      }, this);
+
+  var filter = this.tracksPanel_.getFilter();
+  this.searchControl_.addListener(
+      wtf.events.EventType.INVALIDATED,
+      function(newValue, oldValue) {
+        commandManager.execute('filter_events', this, null, newValue);
+      }, this);
+
   // Setup keyboard shortcuts.
   var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
@@ -60,14 +75,9 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   keyboardScope.addShortcut('ctrl+f', function() {
     this.searchControl_.focus();
   }, this);
-
-  var filter = this.tracksPanel_.getFilter();
-  this.searchControl_.addListener(
-      wtf.events.EventType.INVALIDATED,
-      function(newValue, oldValue) {
-        var parsed = filter.setFromString(newValue);
-        this.searchControl_.toggleError(!parsed);
-      }, this);
+  keyboardScope.addShortcut('esc', function() {
+    commandManager.execute('filter_events', this, null, '');
+  }, this);
 };
 goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.Control);
 
