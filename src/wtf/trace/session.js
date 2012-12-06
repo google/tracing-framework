@@ -176,7 +176,9 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
 
   // Write time information.
   buffer.writeUint8(wtf.hasHighResolutionTimes ? 1 : 0);
-  buffer.writeUint32(wtf.timebase());
+  var timebase = wtf.timebase();
+  buffer.writeUint32(timebase & 0xFFFFFFFF);
+  buffer.writeUint32((timebase >> 32) & 0xFFFFFFFF);
 
   // Write event info.
   if (!this.traceManager_.writeEventHeader(buffer)) {

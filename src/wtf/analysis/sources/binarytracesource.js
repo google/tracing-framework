@@ -217,6 +217,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   // Read time information.
   var hasHighResolutionTimes = buffer.readUint8() ? true : false;
   var timebase = buffer.readUint32();
+  timebase += buffer.readUint32() << 32;
   // TODO(benvanik): is this right?
   var timeDelay = wtf.timebase() - timebase;
 
