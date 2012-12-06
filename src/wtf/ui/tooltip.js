@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.Tooltip');
 
 goog.require('goog.asserts');
+goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
@@ -46,7 +47,8 @@ wtf.ui.Tooltip.prototype.createDom = function(dom) {
     'position': 'absolute',
     'color': 'white',
     'backgroundColor': 'rgba(0,0,0,.7)',
-    'padding': '5px'
+    'padding': '5px',
+    'white-space': 'pre'
   });
   return elem;
 };
@@ -96,8 +98,7 @@ wtf.ui.Tooltip.prototype.bindEvents = function(control) {
  */
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var elem = this.getRootElement();
-  // TODO(benvanik): don't use innerHTML - need a more structured way.
-  elem.innerHTML = content;
+  goog.dom.setTextContent(elem, content);
   goog.style.setStyle(elem, {
     'left': x + 10 + 'px',
     'top': y + 10 + 'px'
