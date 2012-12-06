@@ -352,7 +352,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
 
   var scopeColors = wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_;
   var hash = goog.string.hashCode(scope.getEnterEvent().eventType.name);
-  hash += scope.getDepth();
   var colorIndex = hash % scopeColors.length;
   scope.setRenderData(colorIndex);
   return colorIndex;
