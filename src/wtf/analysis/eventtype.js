@@ -104,7 +104,7 @@ wtf.analysis.EventType.parse = function(defineArgs) {
   return new wtf.analysis.EventType(
       defineArgs['name'],
       defineArgs['eventClass'],
-      0,
+      defineArgs['flags'],
       argList);
 };
 
@@ -112,14 +112,15 @@ wtf.analysis.EventType.parse = function(defineArgs) {
 /**
  * Creates an instance event type from the given signature.
  * @param {string} signature Event signature.
+ * @param {number=} opt_flags A bitmask of {@see wtf.data.EventFlag} values.
  * @return {!wtf.analysis.EventType} Event type.
  */
-wtf.analysis.EventType.createInstance = function(signature) {
+wtf.analysis.EventType.createInstance = function(signature, opt_flags) {
   var parsedSignature = wtf.data.Variable.parseSignature(signature);
   return new wtf.analysis.EventType(
       parsedSignature.name,
       wtf.data.EventClass.INSTANCE,
-      0,
+      opt_flags || 0,
       parsedSignature.args);
 };
 
@@ -127,14 +128,15 @@ wtf.analysis.EventType.createInstance = function(signature) {
 /**
  * Creates a scope event type from the given signature.
  * @param {string} signature Event signature.
+ * @param {number=} opt_flags A bitmask of {@see wtf.data.EventFlag} values.
  * @return {!wtf.analysis.EventType} Event type.
  */
-wtf.analysis.EventType.createScope = function(signature) {
+wtf.analysis.EventType.createScope = function(signature, opt_flags) {
   var parsedSignature = wtf.data.Variable.parseSignature(signature);
   return new wtf.analysis.EventType(
       parsedSignature.name,
       wtf.data.EventClass.SCOPE,
-      0,
+      opt_flags || 0,
       parsedSignature.args);
 };
 

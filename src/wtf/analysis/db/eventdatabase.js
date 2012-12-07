@@ -118,11 +118,12 @@ wtf.analysis.db.EventDatabase.EventType = {
 
 
 /**
- * Gets the internal trace listener.
- * @return {!wtf.analysis.TraceListener} Trace listener.
+ * Gets a list of all sources that have been added to provide event data.
+ * @return {!Array.<!wtf.data.ContextInfo>} A list of all sources. Do not
+ *     modify.
  */
-wtf.analysis.db.EventDatabase.prototype.getTraceListener = function() {
-  return this.listener_;
+wtf.analysis.db.EventDatabase.prototype.getSources = function() {
+  return this.sources_;
 };
 
 
@@ -194,12 +195,11 @@ wtf.analysis.db.EventDatabase.prototype.getEventIndex = function(eventName) {
 
 
 /**
- * Gets a list of all sources that have been added to provide event data.
- * @return {!Array.<!wtf.data.ContextInfo>} A list of all sources. Do not
- *     modify.
+ * Gets the internal trace listener.
+ * @return {!wtf.analysis.TraceListener} Trace listener.
  */
-wtf.analysis.db.EventDatabase.prototype.getSources = function() {
-  return this.sources_;
+wtf.analysis.db.EventDatabase.prototype.getTraceListener = function() {
+  return this.listener_;
 };
 
 

@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.BuiltinEvents');
 
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.trace.events');
 
 
@@ -26,8 +27,8 @@ wtf.trace.BuiltinEvents = {
    * This can occur multiple times in a stream and duplicates should be ignored.
    */
   defineEvent: wtf.trace.events.createInstance(
-      'wtf.event.define(uint16 wireId, uint16 eventClass, ascii name, ' +
-          'ascii args)'),
+      'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
+          'ascii name, ascii args)'),
 
   /**
    * Marks a discontinuity in the trace.
@@ -68,7 +69,8 @@ wtf.trace.BuiltinEvents = {
    * that is being consumed by the framework for internal work.
    */
   enterTracingScope: wtf.trace.events.createScope(
-      'wtf.scope.enterTracing()'),
+      'wtf.scope.enterTracing()',
+      wtf.data.EventFlag.SYSTEM_TIME),
 
   /**
    * Leaves an execution scope.

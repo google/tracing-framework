@@ -15,6 +15,7 @@ goog.provide('wtf.analysis.db.ZoneIndex');
 
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.db.EventList');
+goog.require('wtf.data.EventFlag');
 
 
 
@@ -35,6 +36,20 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    * @private
    */
   this.zone_ = zone;
+
+  /**
+   * Accumulated total time in root scopes in this zone.
+   * @type {number}
+   * @private
+   */
+  this.rootTotalTime_ = 0;
+
+  /**
+   * Accumulated user time in root scopes in this zone.
+   * @type {number}
+   * @private
+   */
+  this.rootUserTime_ = 0;
 
   // Hacky, but stash the well-known event types that we will be comparing
   // with to dramatically improve performance.
@@ -72,6 +87,14 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    * @private
    */
   this.pendingOutOfOrderEvents_ = [];
+
+  /**
+   * Scopes that have the system flag set in the current batch.
+   * Ancestor scopes will have their user times adjusted at batch end.
+   * @type {!Array.<!wtf.analysis.Scope>}
+   * @private
+   */
+  this.pendingSystemScopes_ = [];
 };
 goog.inherits(wtf.analysis.db.ZoneIndex, wtf.analysis.db.EventList);
 
@@ -82,6 +105,26 @@ goog.inherits(wtf.analysis.db.ZoneIndex, wtf.analysis.db.EventList);
  */
 wtf.analysis.db.ZoneIndex.prototype.getZone = function() {
   return this.zone_;
+};
+
+
+/**
+ * Gets the total amount of time spent in any scope in this zone, including
+ * system time.
+ * @return {number} Total time.
+ */
+wtf.analysis.db.ZoneIndex.prototype.getRootTotalTime = function() {
+  return this.rootTotalTime_;
+};
+
+
+/**
+ * Gets the total amount of time spent in any scope in this zone, excluding
+ * system time.
+ * @return {number} Total time.
+ */
+wtf.analysis.db.ZoneIndex.prototype.getRootUserTime = function() {
+  return this.rootUserTime_;
 };
 
 
@@ -116,13 +159,17 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
               /** @type {!wtf.analysis.Scope} */ (e.scope));
         }
         this.currentScope_ = e.scope;
+        if (e.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+          this.pendingSystemScopes_.push(e.scope);
+        }
       } else if (e.eventType == this.eventTypes_.scopeLeave) {
         // Scope leave event.
         // Leaves the current scope, if any. Unmatched leaves are ignored.
-        e.setScope(this.currentScope_);
-        if (this.currentScope_) {
-          this.currentScope_.setLeaveEvent(e);
-          this.currentScope_ = this.currentScope_.getParent();
+        var scope = this.currentScope_;
+        e.setScope(scope);
+        if (scope) {
+          scope.setLeaveEvent(e);
+          this.currentScope_ = scope.getParent();
         }
       } else {
         // Attach the event to the current scope.
@@ -158,6 +205,9 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
             /** @type {!wtf.analysis.Scope} */ (e.scope));
       }
       currentScope = e.scope;
+      if (e.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+        this.pendingSystemScopes_.push(e.scope);
+      }
     } else if (e.eventType == this.eventTypes_.scopeLeave) {
       e.setScope(currentScope);
       if (currentScope) {
@@ -170,6 +220,28 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   }
   this.pendingOutOfOrderEvents_.length = 0;
 
+  // Reconcile pending system time scopes by subtracing their duratino from
+  // their ancestors.
+  // This must be done here as out of order events could have added scopes
+  // and such.
+  for (var n = 0; n < this.pendingSystemScopes_.length; n++) {
+    var scope = this.pendingSystemScopes_[n];
+    scope.adjustSystemTime();
+  }
+  this.pendingSystemScopes_.length = 0;
+
   wtf.analysis.db.EventList.prototype.endInserting.call(this);
+
+  // TODO(benvanik): don't waste so much time.
+  // Compute root times. This could be done a bit smarter.
+  this.rootTotalTime_ = 0;
+  this.rootUserTime_ = 0;
+  this.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
+    if (e instanceof wtf.analysis.ScopeEvent &&
+        e.scope.getDepth() == 0) {
+      this.rootTotalTime_ += e.scope.getTotalDuration();
+      this.rootUserTime_ += e.scope.getUserDuration();
+    }
+  }, this);
 };
 

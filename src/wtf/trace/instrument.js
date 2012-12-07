@@ -103,8 +103,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
   }
 
   // Define a custom event type at runtime.
-  var customEvent = wtf.trace.events.createScope(
-      signatureName, parsedSignature.args);
+  var customEvent = wtf.trace.events.createScope(signature);
   goog.asserts.assert(customEvent);
 
   // TODO(benvanik): use a FunctionBuilder to generate the argument stuff from

@@ -22,7 +22,25 @@
     <div class="{css wtfAppUiTracksPanelInfoHeader}">
     </div>
     <div class="{css kSrollBarInner} {css wtfAppUiTracksPanelInfoContent}">
-      [info]
+    </div>
+  </div>
+{/template}
+
+
+/**
+ * An entry in the data table.
+ * @param title Event title.
+ * @param value Sort value (time/etc).
+ * @param content Content line value.
+ */
+{template .entry}
+  <div class="{css wtfAppUiTracksPanelInfoEntry}">
+    <div class="{css wtfAppUiTracksPanelInfoEntryHeader}">
+      <div class="{css wtfAppUiTracksPanelInfoEntryValue}">{$value}</div>
+      <div class="{css wtfAppUiTracksPanelInfoEntryTitle}">{$title}</div>
+    </div>
+    <div class="{css wtfAppUiTracksPanelInfoEntryContent}">
+      {$content}
     </div>
   </div>
 {/template}

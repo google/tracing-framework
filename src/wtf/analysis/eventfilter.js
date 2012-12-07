@@ -14,8 +14,6 @@
 goog.provide('wtf.analysis.EventFilter');
 
 goog.require('goog.string');
-goog.require('wtf.events.EventEmitter');
-goog.require('wtf.events.EventType');
 
 
 
@@ -36,10 +34,14 @@ goog.require('wtf.events.EventType');
  * {@see #setFromString} for more information.
  *
  * @constructor
- * @extends {wtf.events.EventEmitter}
  */
 wtf.analysis.EventFilter = function() {
-  goog.base(this);
+  /**
+   * String that the filter is based on.
+   * @type {string}
+   * @private
+   */
+  this.sourceString_ = '';
 
   /**
    * Current evaluator function.
@@ -49,15 +51,17 @@ wtf.analysis.EventFilter = function() {
    */
   this.evaluator_ = null;
 };
-goog.inherits(wtf.analysis.EventFilter, wtf.events.EventEmitter);
 
 
 /**
- * An evaluator function that always returns true.
- * @return {boolean} True.
- * @private
+ * Filter result values.
+ * @enum {number}
  */
-wtf.analysis.EventFilter.passEvaluator_ = function() { return true; };
+wtf.analysis.EventFilter.Result = {
+  UPDATED: 0,
+  FAILED: 1,
+  NO_CHANGE: 2
+};
 
 
 /**
@@ -70,43 +74,42 @@ wtf.analysis.EventFilter.prototype.getEvaluator = function() {
 
 
 /**
- * Sets the evaluator function used to filter events.
- * @param {Function?} fn Evaluator function.
+ * Clears the current filter.
+ * @return {wtf.analysis.EventFilter.Result} Result.
  */
-wtf.analysis.EventFilter.prototype.setEvaluator = function(fn) {
-  if (this.evaluator_ == fn) {
-    return;
+wtf.analysis.EventFilter.prototype.clear = function() {
+  if (!this.evaluator_) {
+    return wtf.analysis.EventFilter.Result.NO_CHANGE;
   }
-  this.evaluator_ = fn;
-  this.emitEvent(wtf.events.EventType.INVALIDATED);
+  this.sourceString_ = '';
+  this.evaluator_ = null;
+  return wtf.analysis.EventFilter.Result.UPDATED;
 };
 
 
 /**
- * Clears the current filter.
+ * Gets a string representing this filter.
+ * @return {string} Filter string. May be the empty string.
  */
-wtf.analysis.EventFilter.prototype.clear = function() {
-  if (!this.evaluator_) {
-    return;
-  }
-  this.evaluator_ = null;
-  this.emitEvent(wtf.events.EventType.INVALIDATED);
+wtf.analysis.EventFilter.prototype.toString = function() {
+  return this.sourceString_;
 };
 
 
 /**
  * Updates the filter from a string query.
  * @param {string} value String query.
- * @return {boolean} True if the value was set, otherwise false indicating that
- *     the expression could not be parsed.
+ * @return {wtf.analysis.EventFilter.Result} Result.
  */
 wtf.analysis.EventFilter.prototype.setFromString = function(value) {
-  // TODO(benvanik): de-dupe sets - this can be expensive
-
   value = goog.string.trim(value);
+  if (this.sourceString_ == value) {
+    return wtf.analysis.EventFilter.Result.NO_CHANGE;
+  }
+
   if (!value.length) {
     this.clear();
-    return true;
+    return wtf.analysis.EventFilter.Result.UPDATED;
   }
 
   var expr = null;
@@ -116,12 +119,13 @@ wtf.analysis.EventFilter.prototype.setFromString = function(value) {
   }
   if (!expr) {
     // Could not parse expression - keep current value.
-    return false;
+    return wtf.analysis.EventFilter.Result.FAILED;
   }
 
   var fn = this.generateEvaluatorFn_(expr);
-  this.setEvaluator(fn);
-  return true;
+  this.sourceString_ = value;
+  this.evaluator_ = fn;
+  return wtf.analysis.EventFilter.Result.UPDATED;
 };
 
 
