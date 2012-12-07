@@ -57,6 +57,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
       'wtf.trace.snapshot',
       wtf.trace.snapshot);
   goog.exportSymbol(
+      'wtf.trace.reset',
+      wtf.trace.reset);
+  goog.exportSymbol(
       'wtf.trace.stop',
       wtf.trace.stop);
 
