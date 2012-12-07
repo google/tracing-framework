@@ -16,7 +16,7 @@ goog.provide('wtf.app.ui.nav.Timeline');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.nav.TimelinePainter');
 goog.require('wtf.app.ui.nav.timeline');
-goog.require('wtf.doc.View');
+goog.require('wtf.events.EventType');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.PaintContext');
@@ -58,8 +58,7 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
   var viewList = doc.getViewList();
   viewList.forEach(function(view) {
     view.addListener(
-        wtf.doc.View.EventType.VISIBLE_RANGE_CHANGED,
-        this.requestRepaint, this);
+        wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
   }, this);
   viewList.addListener(
       wtf.events.ListEventType.VALUES_ADDED,
@@ -67,8 +66,7 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
         for (var n = 0; n < values.length; n++) {
           var view = values[n];
           view.addListener(
-              wtf.doc.View.EventType.VISIBLE_RANGE_CHANGED,
-              this.requestRepaint, this);
+              wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
         }
       }, this);
 

@@ -172,7 +172,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.processBuffer_ =
  * @const
  * @type {number}
  */
-wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION = 1;
+wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION = 2;
 
 
 /**

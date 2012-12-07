@@ -107,6 +107,16 @@ wtf.trace.EventRegistry.prototype.getEventTypes = function() {
 
 
 /**
+ * Gets the event type with the given name.
+ * @return {wtf.trace.EventType} The event type with the given name, if it
+ *     exists.
+ */
+wtf.trace.EventRegistry.prototype.getEventType = function(name) {
+  return this.eventTypesByName_[name] || null;
+};
+
+
+/**
  * A shared event registry singleton.
  * Initialized on first call to {@see #getShared}.
  * @type {wtf.trace.EventRegistry}

@@ -15,6 +15,7 @@ goog.provide('wtf.analysis.TraceListener');
 
 goog.require('wtf.analysis.EventType');
 goog.require('wtf.analysis.Zone');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.events.EventEmitter');
 
 
@@ -82,8 +83,8 @@ goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
  */
 wtf.analysis.TraceListener.BuiltinEvents_ = [
   wtf.analysis.EventType.createInstance(
-      'wtf.event.define(uint16 wireId, uint16 eventClass, ascii name, ' +
-      'ascii args)'),
+      'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
+          'ascii name, ascii args)'),
 
   wtf.analysis.EventType.createInstance(
       'wtf.discontinuity()'),
@@ -98,7 +99,8 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
   wtf.analysis.EventType.createScope(
       'wtf.scope.enter(ascii msg)'),
   wtf.analysis.EventType.createScope(
-      'wtf.scope.enterTracing()'),
+      'wtf.scope.enterTracing()',
+      wtf.data.EventFlag.SYSTEM_TIME),
   wtf.analysis.EventType.createInstance(
       'wtf.scope.leave()'),
 

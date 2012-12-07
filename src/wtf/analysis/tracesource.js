@@ -95,10 +95,11 @@ wtf.analysis.TraceSource.prototype.isInitialized = function() {
 
 /**
  * Gets the context information, if it has been parsed.
- * @return {wtf.data.ContextInfo} Context information.
+ * @return {!wtf.data.ContextInfo} Context information.
  */
 wtf.analysis.TraceSource.prototype.getContextInfo = function() {
   goog.asserts.assert(this.isInitialized_);
+  goog.asserts.assert(this.contextInfo_);
   return this.contextInfo_;
 };
 

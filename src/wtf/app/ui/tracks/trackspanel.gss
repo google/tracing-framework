@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_TRACKSPANEL_INFO_WIDTH          240px;
+@def WTF_APP_UI_TRACKSPANEL_INFO_WIDTH          300px;
 
 /* TracksPanel root. */
 .wtfAppUiTracksPanel {

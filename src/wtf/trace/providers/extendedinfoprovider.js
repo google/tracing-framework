@@ -14,6 +14,7 @@
 goog.provide('wtf.trace.providers.ExtendedInfoProvider');
 
 goog.require('wtf');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace.Provider');
@@ -37,7 +38,8 @@ wtf.trace.providers.ExtendedInfoProvider = function() {
    */
   this.events_ = {
     gc: wtf.trace.events.createScope(
-        'javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)')
+        'javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
+        wtf.data.EventFlag.SYSTEM_TIME)
   };
 
   /**
