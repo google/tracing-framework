@@ -24,6 +24,7 @@ goog.require('wtf.io.MemoryWriteStream');
 goog.require('wtf.io.NullWriteStream');
 goog.require('wtf.io.StreamingHttpWriteStream');
 goog.require('wtf.io.WriteStream');
+goog.require('wtf.trace.BuiltinAppendDataEvents');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.NullSession');
@@ -345,6 +346,96 @@ wtf.trace.enterTracingScope = wtf.ENABLE_TRACING ?
     wtf.trace.BuiltinEvents.enterTracingScope : function(time, opt_flow) {
       return wtf.trace.Scope.dummy;
     };
+
+
+/**
+ * Appends a named argument of type int8 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataInt8 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addInt8 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type int16 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataInt16 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addInt16 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type int32 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataInt32 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addInt32 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type uint8 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataUint8 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addUint8 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type uint16 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataUint16 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addUint16 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type uint32 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataUint32 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addUint32 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type float32 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {number} value Value.
+ */
+wtf.trace.appendScopeDataFloat32 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addFloat32 : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type ascii to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {string} value Value.
+ */
+wtf.trace.appendScopeDataAscii = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addAscii : goog.nullFunction;
+
+
+/**
+ * Appends a named argument of type utf8 to the current scope.
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {string} value Value.
+ */
+wtf.trace.appendScopeDataUtf8 = wtf.ENABLE_TRACING ?
+    wtf.trace.BuiltinAppendDataEvents.addUtf8 : goog.nullFunction;
 
 
 /**

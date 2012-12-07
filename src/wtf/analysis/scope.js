@@ -13,6 +13,8 @@
 
 goog.provide('wtf.analysis.Scope');
 
+goog.require('wtf.data.EventFlag');
+
 
 
 /**
@@ -41,6 +43,13 @@ wtf.analysis.Scope = function() {
    * @private
    */
   this.leaveEvent_ = null;
+
+  /**
+   * A list of events that add data to this scope.
+   * @type {Array.<!wtf.analysis.Event>}
+   * @private
+   */
+  this.dataEvents_ = null;
 
   /**
    * Parent scope, if this is not a root.
@@ -130,6 +139,53 @@ wtf.analysis.Scope.prototype.getLeaveEvent = function() {
  */
 wtf.analysis.Scope.prototype.setLeaveEvent = function(e) {
   this.leaveEvent_ = e;
+};
+
+
+/**
+ * Adds a data event.
+ * This events arguments will be used when building the scope argument list.
+ * @param {!wtf.analysis.Event} e Event to add.
+ */
+wtf.analysis.Scope.prototype.addDataEvent = function(e) {
+  if (!this.dataEvents_) {
+    this.dataEvents_ = [e];
+  } else {
+    this.dataEvents_.push(e);
+  }
+};
+
+
+/**
+ * Gets the scope data as a key-value map.
+ * This is all scope enter arguments as well as any data appended by events.
+ * @return {Object} Scope arguments/data, if any.
+ */
+wtf.analysis.Scope.prototype.getData = function() {
+  var data = {};
+  if (this.enterEvent_) {
+    var argTypes = this.enterEvent_.eventType.args;
+    for (var n = 0; n < argTypes.length; n++) {
+      var arg = argTypes[n];
+      data[arg.name] = this.enterEvent_.args[arg.name];
+    }
+  }
+  if (this.dataEvents_) {
+    for (var n = 0; n < this.dataEvents_.length; n++) {
+      var e = this.dataEvents_[n];
+      if (e.eventType.flags & wtf.data.EventFlag.INTERNAL) {
+        // name-value pair from the builtin appending functions.
+        data[e.args['name']] = e.args['value'];
+      } else {
+        // Custom appender, use args.
+        for (var m = 0; m < e.eventType.args.length; m++) {
+          var arg = e.eventType.args[m];
+          data[arg.name] = e.args[arg.name];
+        }
+      }
+    }
+  }
+  return data;
 };
 
 

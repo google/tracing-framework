@@ -89,6 +89,33 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.enterTracingScope',
       wtf.trace.enterTracingScope);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataInt8',
+      wtf.trace.appendScopeDataInt8);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataInt16',
+      wtf.trace.appendScopeDataInt16);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataInt32',
+      wtf.trace.appendScopeDataInt32);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataUint8',
+      wtf.trace.appendScopeDataUint8);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataUint16',
+      wtf.trace.appendScopeDataUint16);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataUint32',
+      wtf.trace.appendScopeDataUint32);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataFloat32',
+      wtf.trace.appendScopeDataFloat32);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataAscii',
+      wtf.trace.appendScopeDataAscii);
+  goog.exportSymbol(
+      'wtf.trace.appendScopeDataUtf8',
+      wtf.trace.appendScopeDataUtf8);
 
   // wtf.trace flow operations
   goog.exportSymbol(

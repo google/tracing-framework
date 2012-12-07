@@ -60,5 +60,27 @@ wtf.data.EventFlag = {
    * Event represents some internal system event such as flow control events.
    * These should not be shown in the UI.
    */
-  INTERNAL: (1 << 3)
+  INTERNAL: (1 << 3),
+
+  /**
+   * Event arguments will be appended to the containing scope's arguments,
+   * overwritting any with the same name.
+   *
+   * If this is combined with the INTERNAL flag then the event is assumed to
+   * be a built-in system append event and will have special handling.
+   */
+  APPEND_SCOPE_DATA: (1 << 4)
 };
+
+
+goog.exportSymbol(
+    'wtf.data.EventFlag',
+    wtf.data.EventFlag);
+goog.exportProperty(wtf.data.EventFlag,
+    'HIGH_FREQUENCY', wtf.data.EventFlag.HIGH_FREQUENCY);
+goog.exportProperty(wtf.data.EventFlag,
+    'SYSTEM_TIME', wtf.data.EventFlag.SYSTEM_TIME);
+goog.exportProperty(wtf.data.EventFlag,
+    'INTERNAL', wtf.data.EventFlag.INTERNAL);
+goog.exportProperty(wtf.data.EventFlag,
+    'APPEND_SCOPE_DATA', wtf.data.EventFlag.APPEND_SCOPE_DATA);

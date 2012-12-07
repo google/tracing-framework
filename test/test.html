@@ -21,6 +21,9 @@
 
   <script>
     window.onload = function() {
+      var customAppend = wtf.trace.events.createInstance(
+          'myCustomAppend(uint32 a, uint32 b)',
+          wtf.data.EventFlag.APPEND_SCOPE_DATA);
       var someLink = document.getElementById('someLink');
       someLink.onclick = function(e) {
         e.preventDefault();
@@ -33,6 +36,17 @@
         window.setTimeout(function() {
           // Enter scope, resume flow
           var scope = wtf.trace.enterScope('setTimeout callback', flow);
+
+          wtf.trace.appendScopeDataInt8(wtf.now(), 'int8', -1);
+          wtf.trace.appendScopeDataInt16(wtf.now(), 'int16', -2);
+          wtf.trace.appendScopeDataInt32(wtf.now(), 'int32', -3);
+          wtf.trace.appendScopeDataUint8(wtf.now(), 'uint8', 1);
+          wtf.trace.appendScopeDataUint16(wtf.now(), 'uint16', 2);
+          wtf.trace.appendScopeDataUint32(wtf.now(), 'uint32', 3);
+          wtf.trace.appendScopeDataFloat32(wtf.now(), 'float32', 1.2345);
+          wtf.trace.appendScopeDataAscii(wtf.now(), 'ascii', 'bar');
+          wtf.trace.appendScopeDataUtf8(wtf.now(), 'utf8', 'ಠ_ಠ');
+          customAppend(wtf.now(), 123, 456);
 
           console.log('hi');
 
