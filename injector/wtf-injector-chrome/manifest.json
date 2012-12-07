@@ -32,7 +32,7 @@
   // ---------------------------------------------------------------------------
   // Release properties.
   // ---------------------------------------------------------------------------
-  "name": "Web Tracing Framework (Injector)",
+  "name": "Web Tracing Framework",
   "description": "In-page injection of the Web Tracing Framework.",
   "web_accessible_resources": [
     // Injected tracing code:
