@@ -64,6 +64,13 @@ wtf.analysis.Scope = function() {
   this.children_ = [];
 
   /**
+   * Total amount of time of all child system times.
+   * @type {number}
+   * @private
+   */
+  this.totalChildSystemTime_ = 0;
+
+  /**
    * Rendering data used by applications.
    * This is only used as storage and may be unpopulated.
    * @type {Object|number|string}
@@ -145,13 +152,26 @@ wtf.analysis.Scope.prototype.getDepth = function() {
 
 
 /**
- * Gets the duration of a scope.
+ * Gets the duration of the scope.
  * This may exclude tracing time.
- * @return {number} Total duration of user time.
+ * @return {number} Total duration of the scope including system time.
  */
-wtf.analysis.Scope.prototype.getDuration = function() {
+wtf.analysis.Scope.prototype.getTotalDuration = function() {
   if (this.enterEvent_ && this.leaveEvent_) {
     return this.leaveEvent_.time - this.enterEvent_.time;
+  }
+  return 0;
+};
+
+
+/**
+ * Gets the duration of the scope minus system time.
+ * @return {number} TOtal duration of the scope excluding system time.
+ */
+wtf.analysis.Scope.prototype.getUserDuration = function() {
+  if (this.enterEvent_ && this.leaveEvent_) {
+    return this.leaveEvent_.time - this.enterEvent_.time -
+        this.totalChildSystemTime_;
   }
   return 0;
 };

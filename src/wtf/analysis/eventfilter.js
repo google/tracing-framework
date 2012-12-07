@@ -49,6 +49,13 @@ wtf.analysis.EventFilter = function() {
   this.sourceString_ = '';
 
   /**
+   * The last successfully parsed expression object.
+   * @type {Object}
+   * @private
+   */
+  this.parsedExpression_ = null;
+
+  /**
    * Current evaluator function.
    * This may be null, which indicates that all events should pass.
    * @type {Function?}
@@ -77,6 +84,28 @@ wtf.analysis.EventFilter.prototype.getEvaluator = function() {
 
 
 /**
+ * Gets the start time of the filtered range.
+ * This may be {@code Number.MIN_VALUE}.
+ * @return {number} Start time value.
+ */
+wtf.analysis.EventFilter.prototype.getStartTime = function() {
+  return this.parsedExpression_ ?
+      this.parsedExpression_.startTime : Number.MIN_VALUE;
+};
+
+
+/**
+ * Gets the end time of the filtered range.
+ * This may be {@code Number.MAX_VALUE}.
+ * @return {number} End time value.
+ */
+wtf.analysis.EventFilter.prototype.getEndTime = function() {
+  return this.parsedExpression_ ?
+      this.parsedExpression_.endTime : Number.MAX_VALUE;
+};
+
+
+/**
  * Clears the current filter.
  */
 wtf.analysis.EventFilter.prototype.clear = function() {
@@ -84,6 +113,7 @@ wtf.analysis.EventFilter.prototype.clear = function() {
     return;
   }
   this.sourceString_ = '';
+  this.parsedExpression_ = null;
   this.evaluator_ = null;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };
@@ -127,6 +157,7 @@ wtf.analysis.EventFilter.prototype.setFromString = function(value) {
 
   var fn = this.generateEvaluatorFn_(expr);
   this.sourceString_ = value;
+  this.parsedExpression_ = expr;
   this.evaluator_ = fn;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
   return true;
