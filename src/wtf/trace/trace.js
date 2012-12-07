@@ -258,6 +258,19 @@ wtf.trace.snapshot = wtf.ENABLE_TRACING ? function(opt_targetValue) {
 
 
 /**
+ * Clears all data in the current session by resetting all buffers.
+ * This is only valid in snapshotting sessions.
+ */
+wtf.trace.reset = wtf.ENABLE_TRACING ? function() {
+  var traceManager = wtf.trace.getTraceManager();
+  var session = traceManager.getCurrentSession();
+  if (session instanceof wtf.trace.SnapshottingSession) {
+    session.reset();
+  }
+} : goog.nullFunction;
+
+
+/**
  * Stops the current session and disposes it.
  */
 wtf.trace.stop = function() {
