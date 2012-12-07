@@ -115,6 +115,23 @@ wtf.trace.SnapshottingSession.DEFAULT_BUFFER_SIZE_ = 1024 * 1024;
 
 
 /**
+ * Resets the session buffers to clear them.
+ * Calls to this are ignored if there are pending writes.
+ */
+wtf.trace.SnapshottingSession.prototype.reset = function() {
+  if (this.pendingWrites_) {
+    // Cannot reset while there are pending writes (yet).
+    return;
+  }
+
+  for (var n = 0; n < this.buffers_.length; n++) {
+    this.buffers_[n].offset = 0;
+    this.dirtyBuffers_[n] = false;
+  }
+};
+
+
+/**
  * Writes a snapshot of the current state.
  * @param {!function():!wtf.io.WriteStream} streamCreator Factory function for
  *     streams. This is only called if a snapshot is going to be created. After
