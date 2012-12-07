@@ -4,7 +4,7 @@
   // These can be copy/pasted directly between them.
   // ---------------------------------------------------------------------------
   "manifest_version": 2,
-  "version": "0.0.20",
+  "version": "0.0.21",
   "minimum_chrome_version": "21",
   "offline_enabled": true,
   "incognito": "split",
@@ -22,7 +22,9 @@
   ],
   "requirements": {
   },
-  "page_action": {},
+  "page_action": {
+    "workaround": "https://code.google.com/p/chromium/issues/detail?id=86449"
+  },
   "icons": {
   },
   //"homepage_url": "",
