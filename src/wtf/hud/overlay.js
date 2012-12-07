@@ -128,6 +128,9 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
 
   // Add buttons.
   this.addButton_(
+      true, 'wtfHudButtonClear', 'Clear current data', 'shift+esc',
+      this.clearSnapshotClicked_, this);
+  this.addButton_(
       true, 'wtfHudButtonSend', 'Send to UI', 'f9',
       this.sendSnapshotClicked_, this);
   this.addButton_(
@@ -453,6 +456,16 @@ wtf.hud.Overlay.prototype.addButton_ = function(
   var newMinWidth = this.buttonCount_ * 27 + 4;
   this.setSplitterLimits(newMinWidth, 500);
   this.setSplitterSize((splitterSize - oldMinWidth) + newMinWidth);
+};
+
+
+/**
+ * Handles clicks on the clear snapshot button.
+ * @private
+ */
+wtf.hud.Overlay.prototype.clearSnapshotClicked_ = function() {
+  // Clear the current snapshot by restarting the session.
+  wtf.trace.reset();
 };
 
 
