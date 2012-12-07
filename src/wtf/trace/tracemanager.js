@@ -350,6 +350,7 @@ wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
         wtf.now(),
         eventType.wireId,
         eventType.eventClass,
+        eventType.flags,
         eventType.name,
         eventType.getArgString());
   }
@@ -375,6 +376,7 @@ wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer) {
         wtf.now(),
         eventType.wireId,
         eventType.eventClass,
+        eventType.flags,
         eventType.name,
         eventType.getArgString(),
         buffer);

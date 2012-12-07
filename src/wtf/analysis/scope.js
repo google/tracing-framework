@@ -198,6 +198,22 @@ wtf.analysis.Scope.prototype.getChildren = function() {
 
 
 /**
+ * Subtracts this scopes duration from all of its ancestors.
+ * This can be used on system scopes to make the user time of ancestors less
+ * than their total time.
+ */
+wtf.analysis.Scope.prototype.adjustSystemTime = function() {
+  var duration = this.getTotalDuration();
+  this.totalChildSystemTime_ = duration;
+  var scope = this.parent_;
+  while (scope) {
+    scope.totalChildSystemTime_ += duration;
+    scope = scope.parent_;
+  }
+};
+
+
+/**
  * Gets the application-defined render data of the scope.
  * @return {Object|number|string} Render data, if any.
  */
