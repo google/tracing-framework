@@ -37,6 +37,13 @@ wtf.trace.events.create_ = wtf.ENABLE_TRACING ?
       var name = parsedSignature.name;
       var args = parsedSignature.args;
 
+      // Check if it exists.
+      var existingEventType = registry.getEventType(name);
+      if (existingEventType) {
+        // TODO(benvanik): assert the same event type (not a redefinition).
+        return existingEventType;
+      }
+
       // Create.
       var eventType = new wtf.trace.EventType(
           name, eventClass, flags, args);
