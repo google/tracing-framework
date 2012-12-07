@@ -177,6 +177,11 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
 
   var sortMode = this.sortMode_;
   table.forEach(function(entry) {
+    // Ignore system events.
+    if (entry.eventType.flags & wtf.data.EventFlag.SYSTEM) {
+      return;
+    }
+
     var el = this.buildTableRow_(entry, sortMode);
     dom.appendChild(contentEl, el);
   }, this, sortMode);

@@ -94,13 +94,13 @@ if (!COMPILED) {
  */
 wtf.trace.instrument = function(value, signature, opt_namePrefix,
     opt_generator, opt_pre) {
+  if (opt_namePrefix) {
+    signature = opt_namePrefix + signature;
+  }
+
   // Parse signature.
   var parsedSignature = wtf.data.Variable.parseSignature(signature);
-  var signatureName = parsedSignature.name;
   var argMap = parsedSignature.argMap;
-  if (opt_namePrefix) {
-    signatureName = opt_namePrefix + signatureName;
-  }
 
   // Define a custom event type at runtime.
   var customEvent = wtf.trace.events.createScope(signature);

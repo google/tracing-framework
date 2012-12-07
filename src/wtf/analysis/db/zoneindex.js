@@ -159,7 +159,7 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
               /** @type {!wtf.analysis.Scope} */ (e.scope));
         }
         this.currentScope_ = e.scope;
-        if (e.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+        if (e.eventType.flags & wtf.data.EventFlag.SYSTEM) {
           this.pendingSystemScopes_.push(e.scope);
         }
       } else if (e.eventType == this.eventTypes_.scopeLeave) {
@@ -205,7 +205,7 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
             /** @type {!wtf.analysis.Scope} */ (e.scope));
       }
       currentScope = e.scope;
-      if (e.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+      if (e.eventType.flags & wtf.data.EventFlag.SYSTEM) {
         this.pendingSystemScopes_.push(e.scope);
       }
     } else if (e.eventType == this.eventTypes_.scopeLeave) {

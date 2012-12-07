@@ -50,9 +50,9 @@ wtf.data.EventFlag = {
   HIGH_FREQUENCY: (1 << 1),
 
   /**
-   * Event represents some system time that should not be counted towards user
+   * Event represents some system event that should not be counted towards user
    * code. This can include things such as runtime events (GCs/etc) and tracing
    * framework time (buffer swaps/etc).
    */
-  SYSTEM_TIME: (1 << 2)
+  SYSTEM: (1 << 2)
 };
