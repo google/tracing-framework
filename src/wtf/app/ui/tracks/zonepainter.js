@@ -20,6 +20,7 @@ goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.app.ui.tracks.TrackPainter');
 goog.require('wtf.events');
+goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.RangeRenderer');
 
@@ -30,11 +31,12 @@ goog.require('wtf.ui.RangeRenderer');
  * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
- * @param {!wtf.analysis.EventFilter} filter Track filter.
+ * @param {!wtf.app.ui.Selection} selection Selection state.
  * @constructor
  * @extends {wtf.app.ui.tracks.TrackPainter}
  */
-wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex, filter) {
+wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex,
+    selection) {
   goog.base(this, parentContext, db);
 
   /**
@@ -45,11 +47,13 @@ wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex, filter) {
   this.zoneIndex_ = zoneIndex;
 
   /**
-   * Track filter.
-   * @type {!wtf.analysis.EventFilter}
+   * Selection state.
+   * @type {!wtf.app.ui.Selection}
    * @private
    */
-  this.filter_ = filter;
+  this.selection_ = selection;
+  this.selection_.addListener(
+      wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
 
   /**
    * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
@@ -202,7 +206,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
   this.resetScopeDrawing_(width);
 
-  var evaluator = this.filter_.getEvaluator();
+  var selectionStart = this.selection_.getTimeStart();
+  var selectionEnd = this.selection_.getTimeEnd();
+  var selectionEvaluator = this.selection_.getFilterEvaluator();
 
   // We need to draw all the rects before the labes so we keep track of the
   // labels to draw and then draw them after.
@@ -228,7 +234,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     }
 
     // Run filter against it.
-    var filtered = evaluator ? !evaluator(enter) : false;
+    var filtered =
+        (enter.time >= selectionStart || leave.time <= selectionEnd) &&
+        (selectionEvaluator ? !selectionEvaluator(enter) : false);
     var alpha = filtered ? 0.3 : 1;
 
     // Compute screen size.

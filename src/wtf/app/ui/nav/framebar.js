@@ -22,7 +22,6 @@ goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.nav.FramebarPainter');
 goog.require('wtf.app.ui.nav.HeatmapPainter');
 goog.require('wtf.app.ui.nav.framebar');
-goog.require('wtf.doc.View');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -186,8 +185,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   var viewList = doc.getViewList();
   viewList.forEach(function(view) {
     view.addListener(
-        wtf.doc.View.EventType.VISIBLE_RANGE_CHANGED,
-        this.requestRepaint, this);
+        wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
   }, this);
   viewList.addListener(
       wtf.events.ListEventType.VALUES_ADDED,
@@ -195,8 +193,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
         for (var n = 0; n < values.length; n++) {
           var view = values[n];
           view.addListener(
-              wtf.doc.View.EventType.VISIBLE_RANGE_CHANGED,
-              this.requestRepaint, this);
+              wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
         }
       }, this);
 

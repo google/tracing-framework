@@ -46,6 +46,16 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
    */
   this.tracksPanel_ = tracksPanel;
 
+  var docView = this.tracksPanel_.getDocumentView();
+  /**
+   * Selection state.
+   * @type {!wtf.app.ui.Selection}
+   * @private
+   */
+  this.selection_ = docView.getSelection();
+  this.selection_.addListener(
+      wtf.events.EventType.INVALIDATED, this.updateInfo_, this);
+
   /**
    * Search text field.
    * @type {!wtf.ui.SearchControl}
@@ -59,15 +69,10 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
       'filter_events', function(source, target, filterString) {
-        var parsed = filter.setFromString(filterString);
+        var parsed = this.selection_.setFilterExpression(filterString);
         this.searchControl_.toggleError(!parsed);
         this.searchControl_.setValue(filterString);
       }, this);
-
-  var filter = this.tracksPanel_.getFilter();
-  filter.addListener(
-      wtf.events.EventType.INVALIDATED,
-      this.updateInfo_, this);
 
   this.searchControl_.addListener(
       wtf.events.EventType.INVALIDATED,
@@ -127,6 +132,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
 
   // TODO(benvanik): only evaluate if the filter has changed
   // TODO(benvanik): cache outside of this function
+  return;
   var filter = this.tracksPanel_.getFilter();
   var table = new wtf.analysis.db.EventDataTable(db);
   table.rebuild(filter);

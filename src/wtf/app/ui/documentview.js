@@ -18,6 +18,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.app.ui.EmptyTabPanel');
+goog.require('wtf.app.ui.Selection');
 goog.require('wtf.app.ui.Statusbar');
 goog.require('wtf.app.ui.Tabbar');
 goog.require('wtf.app.ui.Toolbar');
@@ -57,6 +58,14 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.localView_ = doc.createView();
+
+  /**
+   * Selection state tracker.
+   * @type {!wtf.app.ui.Selection}
+   * @private
+   */
+  this.selection_ = new wtf.app.ui.Selection();
+  this.registerDisposable(this.selection_);
 
   // HACK(benvanik): replace with shared camera
   /**
@@ -155,6 +164,15 @@ wtf.app.ui.DocumentView.prototype.getDatabase = function() {
  */
 wtf.app.ui.DocumentView.prototype.getLocalView = function() {
   return this.localView_;
+};
+
+
+/**
+ * Gets the selection state object for the view.
+ * @return {!wtf.app.ui.Selection} Selection state.
+ */
+wtf.app.ui.DocumentView.prototype.getSelection = function() {
+  return this.selection_;
 };
 
 
