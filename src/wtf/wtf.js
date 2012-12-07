@@ -48,29 +48,81 @@ wtf.hasHighResolutionTimes =
 
 
 /**
+ * Create a high performance time function from window.performance, if present.
+ * @return {number} A time, in ms.
+ */
+wtf.performanceNow_ = (function() {
+  var performance = goog.global['performance'];
+  if (performance && performance['now']) {
+    return function() {
+      return performance['now']();
+    };
+  } else if (performance && performance['webkitNow']) {
+    return function() {
+      return performance['webkitNow']();
+    };
+  }
+  return undefined;
+})();
+
+
+/**
+ * Calculates a base time when using window.performance instead of using
+ * performance.timing.navigationStart. There are two reasons to do this:
+ * 1) navigationStart is an integer number of ms so navigationStart +
+ *    performance.now() will be off by some unknown value between 0 and 1 ms
+ *    (compared to other high precision wall clock measurements like gc events)
+ * 2) performance.now is based on a monotonic clock, so there's some risk
+ *    that it falls out of sync with wall time.
+ * We have a javascript way to access wall time - Date.now - but Date.now is
+ * only ms precision, so what we do here is query Date.now in a tight loop to
+ * find the edge of a ms, and then use THAT to calculate a base time which can
+ * be used with performance.now to get absolute times that are in sync with
+ * external time measurements.
+ * @return {number} An appropriate high precision base time to use with
+ *     performance.now.
+ */
+wtf.computeHighPrecissionTimebase_ = function() {
+  var initialDateNow = Date.now();
+  var syncedDateNow;
+  var syncedPerfNow;
+  // We limit the loop iterations to make sure we don't accidentaly infinite
+  // loop under some unnexpected behavior of Date.now. This should be plenty to
+  // reach a new millisecond because this loop can do on the order of 10k
+  // iterations per ms (250k gives some room for faster machines).
+  for (var i = 0; i < 250000; i++) {
+    syncedDateNow = Date.now();
+    if (syncedDateNow != initialDateNow) {
+      syncedPerfNow = wtf.performanceNow_();
+      break;
+    }
+  }
+  return syncedDateNow - syncedPerfNow;
+};
+
+
+/**
  * Returns the wall time that {@see wtf#now} is relative to.
  * This is often the page load time.
  *
  * @return {number} A time, in ms.
  */
 wtf.timebase = (function() {
+  var timebase;
+
   if (wtf.NODE) {
     var timeValue = goog.global['process']['hrtime']();
-    var timebase = timeValue[0] * 1000 + timeValue[1] / 1000000;
-    return function() {
-      return timebase;
-    };
+    timebase = timeValue[0] * 1000 + timeValue[1] / 1000000;
+  } else {
+    if (wtf.performanceNow_) {
+      timebase = wtf.computeHighPrecissionTimebase_();
+    } else {
+      timebase = Date.now();
+    }
   }
 
-  var navigationStart = 0;
-  var performance = goog.global['performance'];
-  if (performance && performance['timing']) {
-    navigationStart = performance['timing']['navigationStart'];
-  } else {
-    navigationStart = +new Date();
-  }
   return function() {
-    return navigationStart;
+    return timebase;
   };
 })();
 
@@ -101,20 +153,13 @@ wtf.now = (function() {
   // This dance is a little silly, but calling off of the closure object is
   // 2x+ faster than dereferencing the global and using a direct call instead of
   // a .call() is 2x+ on top of that.
-  var performance = goog.global['performance'];
-  if (performance && performance['now']) {
-    return function() {
-      return performance['now']();
-    };
-  } else if (performance && performance['webkitNow']) {
-    return function() {
-      return performance['webkitNow']();
-    };
+  if (wtf.performanceNow_) {
+    return wtf.performanceNow_;
   } else {
     var timebase = wtf.timebase();
     if (!Date.now) {
       return function() {
-        return +new Date() - timebase;
+        return Date.now() - timebase;
       };
     } else {
       return Date.now;
