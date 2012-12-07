@@ -43,6 +43,29 @@ Automatic instrumentation of an entire type:
           foo: 'foo(uint8 a)'
         });
 
+If you find yourself neededing to add arguments to a scope that was
+automatically created or is added conditionally, consider using an append event.
+
+    // Create the appending event:
+    var appendMyData = wtf.trace.events.createInstance(
+        'my.custom.append(uint32 a, uint32 b)',
+        wtf.data.EventFlag.APPEND_SCOPE_DATA);
+    // Call the method inside of scopes:
+    var scope = ...enter scope...();
+    appendMyData(wtf.now(), 123, 456);
+    scope.leave();
+
+If (and only if!) you're doing some debugging and need a bunch of data in your
+scopes you can use the super slow `wtf.trace.appendScopeData` method:
+
+    var scope = ...enter scope...();
+    // The value can be any JSONifiable value (numbers/arrays/objects).
+    wtf.trace.appendScopeData(wtf.now(), 'myBlob', {
+      'complex': ['objects'],
+      'prop': 123.456
+    });
+    scope.leave();
+
 If you need to do any expensive work that you don't want to show up as user
 time, use the built-in helper scope:
 

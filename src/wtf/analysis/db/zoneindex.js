@@ -15,6 +15,7 @@ goog.provide('wtf.analysis.db.ZoneIndex');
 
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.db.EventList');
+goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 
 
@@ -152,17 +153,18 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
       this.pendingOutOfOrderEvents_.push(e);
     } else {
       this.lastAddEventTime_ = e.time;
-      if (e instanceof wtf.analysis.ScopeEvent) {
+      var eventType = e.eventType;
+      if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
         // Scope enter event.
         if (this.currentScope_) {
           this.currentScope_.addChild(
               /** @type {!wtf.analysis.Scope} */ (e.scope));
         }
         this.currentScope_ = e.scope;
-        if (e.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+        if (eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
           this.pendingSystemScopes_.push(e.scope);
         }
-      } else if (e.eventType == this.eventTypes_.scopeLeave) {
+      } else if (eventType == this.eventTypes_.scopeLeave) {
         // Scope leave event.
         // Leaves the current scope, if any. Unmatched leaves are ignored.
         var scope = this.currentScope_;
@@ -170,6 +172,10 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
         if (scope) {
           scope.setLeaveEvent(e);
           this.currentScope_ = scope.getParent();
+        }
+      } else if (eventType.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA) {
+        if (this.currentScope_) {
+          this.currentScope_.addDataEvent(e);
         }
       } else {
         // Attach the event to the current scope.
@@ -198,21 +204,26 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   var currentScope = null;
   for (var n = 0; n < this.pendingOutOfOrderEvents_.length; n++) {
     var e = this.pendingOutOfOrderEvents_[n];
-    if (e instanceof wtf.analysis.ScopeEvent) {
+    var eventType = e.eventType;
+    if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
       var parentScope = this.findEnclosingScope(e.time);
       if (parentScope) {
         parentScope.addChild(
             /** @type {!wtf.analysis.Scope} */ (e.scope));
       }
       currentScope = e.scope;
-      if (e.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+      if (eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
         this.pendingSystemScopes_.push(e.scope);
       }
-    } else if (e.eventType == this.eventTypes_.scopeLeave) {
+    } else if (eventType == this.eventTypes_.scopeLeave) {
       e.setScope(currentScope);
       if (currentScope) {
         currentScope.setLeaveEvent(e);
         currentScope = null;
+      }
+    } else if (eventType.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA) {
+      if (currentScope) {
+        currentScope.addDataEvent(e);
       }
     } else {
       e.setScope(currentScope);

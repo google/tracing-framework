@@ -81,6 +81,13 @@ wtf.trace.BuiltinEvents = {
       wtf.data.EventFlag.INTERNAL),
 
   /**
+   * Appends data to the current scope.
+   */
+  appendScopeData: wtf.trace.events.createInstance(
+      'wtf.scope.appendData(ascii name, utf8 json)',
+      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
+
+  /**
    * Branches execution flow.
    */
   branchFlow: wtf.trace.events.createInstance(
