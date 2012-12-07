@@ -11,7 +11,6 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.trace.BuiltinAppendDataEvents');
 goog.provide('wtf.trace.BuiltinEvents');
 
 goog.require('wtf.data.EventFlag');
@@ -82,6 +81,13 @@ wtf.trace.BuiltinEvents = {
       wtf.data.EventFlag.INTERNAL),
 
   /**
+   * Appends data to the current scope.
+   */
+  appendScopeData: wtf.trace.events.createInstance(
+      'wtf.scope.appendData(ascii name, utf8 json)',
+      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
+
+  /**
    * Branches execution flow.
    */
   branchFlow: wtf.trace.events.createInstance(
@@ -107,39 +113,4 @@ wtf.trace.BuiltinEvents = {
    */
   mark: wtf.trace.events.createInstance(
       'wtf.mark(ascii msg)')
-};
-
-
-/**
- * Built-in utility functions for adding data to scopes.
- * @type {!Object.<!Function>}
- */
-wtf.trace.BuiltinAppendDataEvents = {
-  addInt8: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataInt8(ascii name, int8 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addInt16: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataInt16(ascii name, int16 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addInt32: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataInt32(ascii name, int32 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addUint8: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataUint8(ascii name, uint8 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addUint16: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataUint16(ascii name, uint16 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addUint32: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataUint32(ascii name, uint32 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addFloat32: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataFloat32(ascii name, float32 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addAscii: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataAscii(ascii name, ascii value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
-  addUtf8: wtf.trace.events.createInstance(
-      'wtf.scope.appendDataUtf8(ascii name, utf8 value)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA)
 };

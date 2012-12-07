@@ -470,6 +470,11 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
   var data = scope.getData();
   for (var argName in data) {
     var argValue = data[argName];
+    if (goog.isArray(argValue)) {
+      argValue = '[' + argValue + ']';
+    } else if (goog.isObject(argValue)) {
+      argValue = goog.global.JSON.stringify(argValue);
+    }
     lines.push(argName + ': ' + argValue);
   }
 
