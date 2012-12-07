@@ -39,52 +39,133 @@ wtf.analysis.db.EventDataTable = function(db) {
    */
   this.db_ = db;
 
+  // Hacky, but stash the well-known event types that we will be comparing
+  // with to dramatically improve performance.
+  var traceListener = db.getTraceListener();
+  /**
+   * Lookup for common event types.
+   * @type {!Object.<wtf.analysis.EventType>}
+   * @private
+   */
+  this.eventTypes_ = {
+    scopeLeave: traceListener.getEventType('wtf.scope.leave')
+  };
+
   /**
    * Event data keyed on event name.
    * @type {!Object.<!wtf.analysis.db.EventDataEntry>}
    * @private
    */
   this.table_ = {};
+
+  /**
+   * A list of all event entries.
+   * @type {!Array.<!wtf.analysis.db.EventDataEntry>}
+   * @private
+   */
+  this.list_ = [];
+
+  /**
+   * The current sort mode of the list.
+   * This is used to prevent successive sorts of the list.
+   * @type {wtf.analysis.db.EventDataTable.SortMode}
+   * @private
+   */
+  this.listSortMode_ = wtf.analysis.db.EventDataTable.SortMode.ANY;
+
+  /**
+   * Total number of filtered events.
+   * @type {number}
+   * @private
+   */
+  this.filteredEventCount_ = 0;
 };
 goog.inherits(wtf.analysis.db.EventDataTable, goog.Disposable);
 
 
 /**
  * Rebuilds the event data table.
+ * @param {number} startTime Starting time.
+ * @param {number} endTime Ending time.
+ * @param {function(!wtf.analysis.Event):boolean} evaluator Event filter.
  */
-wtf.analysis.db.EventDataTable.prototype.rebuild = function(filter) {
+wtf.analysis.db.EventDataTable.prototype.rebuild = function(
+    startTime, endTime, evaluator) {
+  // TODO(benvanik): cache? etc?
   var table = {};
-
-  var startTime = filter.getStartTime();
-  var endTime = filter.getEndTime();
-  var evaluator = filter.getEvaluator() || Boolean;
+  var list = [];
+  this.filteredEventCount_ = 0;
 
   var zoneIndices = this.db_.getZoneIndices();
   for (var n = 0; n < zoneIndices.length; n++) {
     var zoneIndex = zoneIndices[n];
     zoneIndex.forEach(startTime, endTime, function(e) {
-      if (evaluator(e)) {
-        var eventName = e.eventType.name;
-        var entry = table[eventName];
-        if (!entry) {
-          switch (e.eventType.eventClass) {
-            case wtf.data.EventClass.SCOPE:
-              entry = new wtf.analysis.db.ScopeEventDataEntry(e.eventType);
-              break;
-            case wtf.data.EventClass.INSTANCE:
-              entry = new wtf.analysis.db.InstanceEventDataEntry(e.eventType);
-              break;
-          }
-          table[eventName] = entry;
+      // Skip leaves, they aren't interesting here.
+      if (e.eventType == this.eventTypes_.scopeLeave) {
+        return;
+      }
+
+      // Ignore the event if it doesn't match.
+      if (!evaluator(e)) {
+        return;
+      }
+
+      var eventName = e.eventType.name;
+      var entry = table[eventName];
+      if (!entry) {
+        switch (e.eventType.eventClass) {
+          case wtf.data.EventClass.SCOPE:
+            entry = new wtf.analysis.db.ScopeEventDataEntry(e.eventType);
+            break;
+          case wtf.data.EventClass.INSTANCE:
+            entry = new wtf.analysis.db.InstanceEventDataEntry(e.eventType);
+            break;
         }
-        if (entry) {
-          entry.appendEvent(e);
-        }
+        table[eventName] = entry;
+        list.push(entry);
+      }
+      if (entry) {
+        entry.appendEvent(e);
+        this.filteredEventCount_++;
       }
     }, this);
   }
 
   this.table_ = table;
+  this.list_ = list;
+  this.listSortMode_ = wtf.analysis.db.EventDataTable.SortMode.ANY;
+};
+
+
+/**
+ * Gets the total number of events included in the table.
+ * @return {number} Event count.
+ */
+wtf.analysis.db.EventDataTable.prototype.getFilteredEventCount = function() {
+  return this.filteredEventCount_;
+};
+
+
+/**
+ * Gets the entry for an event type, if it exists.
+ * @param {string} eventName Event name.
+ * @return {wtf.analysis.db.EventDataTable.EventDataEntry} Event entry, if it
+ *     exists.
+ */
+wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry =
+    function(eventName) {
+  return this.table_[eventName] || null;
+};
+
+
+/**
+ * Sorting mode to use when retrieving entries.
+ * @enum {number}
+ */
+wtf.analysis.db.EventDataTable.SortMode = {
+  ANY: 0,
+  COUNT: 1,
+  TOTAL_TIME: 2
 };
 
 
@@ -93,12 +174,39 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(filter) {
  * @param {function(this: T, !wtf.analysis.db.EventDataEntry)} callback
  *     A function called for each entry.
  * @param {T=} opt_scope Callback scope.
+ * @param {wtf.analysis.db.EventDataTable.SortMode=} opt_sortMode Sort mode.
  * @template T
  */
 wtf.analysis.db.EventDataTable.prototype.forEach = function(
-    callback, opt_scope) {
-  for (var eventName in this.table_) {
-    callback.call(opt_scope, this.table_[eventName]);
+    callback, opt_scope, opt_sortMode) {
+  if (opt_sortMode && this.listSortMode_ != opt_sortMode) {
+    // Sort before enumerating if the sort order does not match the cached
+    // value.
+    this.listSortMode_ = opt_sortMode;
+    switch (this.listSortMode_) {
+      case wtf.analysis.db.EventDataTable.SortMode.COUNT:
+        this.list_.sort(function(a, b) {
+          return b.count - a.count;
+        });
+        break;
+      case wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME:
+        this.list_.sort(function(a, b) {
+          if (a instanceof wtf.analysis.db.ScopeEventDataEntry &&
+              b instanceof wtf.analysis.db.ScopeEventDataEntry) {
+            return b.totalTime_ - a.totalTime_;
+          } else if (a instanceof wtf.analysis.db.ScopeEventDataEntry) {
+            return -1;
+          } else if (b instanceof wtf.analysis.db.ScopeEventDataEntry) {
+            return 1;
+          } else {
+            return b.count - a.count;
+          }
+        });
+        break;
+    }
+  }
+  for (var n = 0; n < this.list_.length; n++) {
+    callback.call(opt_scope, this.list_[n]);
   }
 };
 

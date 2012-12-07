@@ -64,7 +64,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @type {!wtf.app.ui.Selection}
    * @private
    */
-  this.selection_ = new wtf.app.ui.Selection();
+  this.selection_ = new wtf.app.ui.Selection(doc.getDatabase());
   this.registerDisposable(this.selection_);
 
   // HACK(benvanik): replace with shared camera

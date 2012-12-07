@@ -126,19 +126,15 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.createDom = function(dom) {
  * @private
  */
 wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
-  var beginTime = wtf.now();
   var documentView = this.tracksPanel_.getDocumentView();
   var db = documentView.getDatabase();
 
-  // TODO(benvanik): only evaluate if the filter has changed
-  // TODO(benvanik): cache outside of this function
-  return;
-  var filter = this.tracksPanel_.getFilter();
-  var table = new wtf.analysis.db.EventDataTable(db);
-  table.rebuild(filter);
-
+  var beginTime = wtf.now();
+  var table = this.selection_.computeEventDataTable();
   var updateDuration = wtf.now() - beginTime;
   //goog.global.console.log('update info', updateDuration);
+
+  var sortMode = wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME;
 
   var rows = [];
   table.forEach(function(entry) {
@@ -157,10 +153,8 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
       // } else if (entry instanceof wtf.analysis.db.InstanceEventDataEntry) {
     }
     rows.push(row);
-  }, this);
+  }, this, sortMode);
   var infoString = rows.join('\n');
-
-  goog.dispose(table);
 
   // TODO(benvanik): build a table, make clickable to filter/etc
   var contentEl = this.getChildElement(

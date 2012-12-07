@@ -14,6 +14,7 @@
 goog.provide('wtf.app.ui.Selection');
 
 goog.require('wtf.analysis.EventFilter');
+goog.require('wtf.analysis.db.EventDataTable');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
 
@@ -21,10 +22,11 @@ goog.require('wtf.events.EventType');
 
 /**
  * Selection and filtering state.
+ * @param {!wtf.analysis.db.EventDatabase} db Event database.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.app.ui.Selection = function() {
+wtf.app.ui.Selection = function(db) {
   goog.base(this);
 
   /**
@@ -49,6 +51,25 @@ wtf.app.ui.Selection = function() {
    * @private
    */
   this.filter_ = new wtf.analysis.EventFilter();
+
+  /**
+   * Cached event data table.
+   * This is regenerated on demand as the selection changes.
+   * @type {!wtf.analysis.db.EventDataTable}
+   * @private
+   */
+  this.eventDataTable_ = new wtf.analysis.db.EventDataTable(db);
+  this.registerDisposable(this.eventDataTable_);
+
+  /**
+   * Whether the event data table is dirty and needs to be regenerated.
+   * @type {boolean}
+   * @private
+   */
+  this.eventDataTableDirty_ = true;
+
+  db.addListener(
+      wtf.events.EventType.INVALIDATED, this.invalidate_, this);
 };
 goog.inherits(wtf.app.ui.Selection, wtf.events.EventEmitter);
 
@@ -195,9 +216,27 @@ wtf.app.ui.Selection.prototype.getFilterEvaluator = function() {
 
 
 /**
+ * Computes an event data table for the current selection.
+ * This will return the same value on subsequent calls if the selection has
+ * not changed. Do not retain the returned value beyond the calling scope.
+ * @return {!wtf.analysis.db.EventDataTable} Event data table.
+ */
+wtf.app.ui.Selection.prototype.computeEventDataTable = function() {
+  if (this.eventDataTableDirty_) {
+    this.eventDataTable_.rebuild(
+        this.timeStart_, this.timeEnd_,
+        this.getFilterEvaluator());
+    this.eventDataTableDirty_ = false;
+  }
+  return this.eventDataTable_;
+};
+
+
+/**
  * Emits an invalidation event.
  * @private
  */
 wtf.app.ui.Selection.prototype.invalidate_ = function() {
+  this.eventDataTableDirty_ = true;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };

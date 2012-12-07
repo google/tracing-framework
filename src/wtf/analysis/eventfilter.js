@@ -14,7 +14,6 @@
 goog.provide('wtf.analysis.EventFilter');
 
 goog.require('goog.string');
-goog.require('wtf.events.EventEmitter');
 
 
 
@@ -52,7 +51,6 @@ wtf.analysis.EventFilter = function() {
    */
   this.evaluator_ = null;
 };
-goog.inherits(wtf.analysis.EventFilter, wtf.events.EventEmitter);
 
 
 /**
