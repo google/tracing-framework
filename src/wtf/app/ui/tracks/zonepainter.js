@@ -208,7 +208,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
-  var selectionEvaluator = this.selection_.getFilterEvaluator();
+  var selectionEvaluator = this.selection_.hasFilterSpecified() ?
+      this.selection_.getFilterEvaluator() : null;
 
   // We need to draw all the rects before the labes so we keep track of the
   // labels to draw and then draw them after.
@@ -233,12 +234,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
       continue;
     }
 
-    // Run filter against it.
-    var filtered =
-        (enter.time >= selectionStart || leave.time <= selectionEnd) &&
-        (selectionEvaluator ? !selectionEvaluator(enter) : false);
-    var alpha = filtered ? 0.3 : 1;
-
     // Compute screen size.
     var left = wtf.math.remap(enter.time, timeLeft, timeRight, 0, width);
     var right = wtf.math.remap(leave.time, timeLeft, timeRight, 0, width);
@@ -255,6 +250,26 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     if (!this.rangeRenderers_[depth]) {
       this.rangeRenderers_[depth] = new wtf.ui.RangeRenderer();
     }
+
+    var alpha = 1;
+    if (enter.time > selectionEnd || leave.time < selectionStart) {
+      // Outside of range, deemphasize.
+      alpha = 0.3;
+    } else if (selectionEvaluator) {
+      // Overlaps range and we have a filter, test the event.
+      var selected = selectionEvaluator(enter);
+      if (!selected) {
+        alpha = 0.3;
+      } else if (screenRight - screenLeft < 1) {
+        // Provide an alpha bump to tiny selected zones. By making these
+        // ranges more than 100% alpha they will remain fully opaque even
+        // with the antialiasing done in RangeRenderer.
+        alpha = 1 / (screenRight - screenLeft);
+      } else {
+        alpha = 1;
+      }
+    }
+
     this.rangeRenderers_[depth].drawRange(
         screenLeft, screenRight, color, alpha);
 
