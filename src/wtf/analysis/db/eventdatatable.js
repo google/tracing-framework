@@ -149,8 +149,7 @@ wtf.analysis.db.EventDataTable.prototype.getFilteredEventCount = function() {
 /**
  * Gets the entry for an event type, if it exists.
  * @param {string} eventName Event name.
- * @return {wtf.analysis.db.EventDataTable.EventDataEntry} Event entry, if it
- *     exists.
+ * @return {wtf.analysis.db.EventDataEntry} Event entry, if it exists.
  */
 wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry =
     function(eventName) {
@@ -165,7 +164,8 @@ wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry =
 wtf.analysis.db.EventDataTable.SortMode = {
   ANY: 0,
   COUNT: 1,
-  TOTAL_TIME: 2
+  TOTAL_TIME: 2,
+  MEAN_TIME: 3
 };
 
 
@@ -194,6 +194,20 @@ wtf.analysis.db.EventDataTable.prototype.forEach = function(
           if (a instanceof wtf.analysis.db.ScopeEventDataEntry &&
               b instanceof wtf.analysis.db.ScopeEventDataEntry) {
             return b.totalTime_ - a.totalTime_;
+          } else if (a instanceof wtf.analysis.db.ScopeEventDataEntry) {
+            return -1;
+          } else if (b instanceof wtf.analysis.db.ScopeEventDataEntry) {
+            return 1;
+          } else {
+            return b.count - a.count;
+          }
+        });
+        break;
+      case wtf.analysis.db.EventDataTable.SortMode.MEAN_TIME:
+        this.list_.sort(function(a, b) {
+          if (a instanceof wtf.analysis.db.ScopeEventDataEntry &&
+              b instanceof wtf.analysis.db.ScopeEventDataEntry) {
+            return b.getMeanTime() - a.getMeanTime();
           } else if (a instanceof wtf.analysis.db.ScopeEventDataEntry) {
             return -1;
           } else if (b instanceof wtf.analysis.db.ScopeEventDataEntry) {

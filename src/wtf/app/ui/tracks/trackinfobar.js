@@ -13,9 +13,13 @@
 
 goog.provide('wtf.app.ui.tracks.TrackInfoBar');
 
+goog.require('goog.dom.TagName');
+goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('goog.style');
 goog.require('wtf');
 goog.require('wtf.analysis.db.EventDataTable');
+goog.require('wtf.analysis.db.InstanceEventDataEntry');
 goog.require('wtf.analysis.db.ScopeEventDataEntry');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.events');
@@ -56,15 +60,47 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   this.selection_.addListener(
       wtf.events.EventType.INVALIDATED, this.updateInfo_, this);
 
+  var headerEl = this.getChildElement(
+      goog.getCssName('wtfAppUiTracksPanelInfoHeader'));
   /**
    * Search text field.
    * @type {!wtf.ui.SearchControl}
    * @private
    */
-  this.searchControl_ = new wtf.ui.SearchControl(
-      this.getChildElement(goog.getCssName('wtfAppUiTracksPanelInfoHeader')),
-      dom);
+  this.searchControl_ = new wtf.ui.SearchControl(headerEl, dom);
   this.registerDisposable(this.searchControl_);
+
+  /**
+   * Current sort mode.
+   * @type {wtf.analysis.db.EventDataTable.SortMode}
+   * @private
+   */
+  this.sortMode_ = wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME;
+
+  // Add sort buttons.
+  // TODO(benvanik): fancy dropdown popup button thing.
+  var eh = this.getHandler();
+  function addSortButton(title, tooltip, mode) {
+    var el = dom.createElement(goog.dom.TagName.A);
+    goog.style.setStyle(el, 'margin-left', '2px');
+    el.innerText = title;
+    el.title = tooltip;
+    eh.listen(el, goog.events.EventType.CLICK, function(e) {
+      e.preventDefault();
+      this.sortMode_ = mode;
+      this.updateInfo_();
+    });
+    dom.appendChild(headerEl, el);
+  };
+  addSortButton(
+      'count', 'Sort by total event count.',
+      wtf.analysis.db.EventDataTable.SortMode.COUNT);
+  addSortButton(
+      'total', 'Sort by total event time.',
+      wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME);
+  addSortButton(
+      'mean', 'Sort by average event duration.',
+      wtf.analysis.db.EventDataTable.SortMode.MEAN_TIME);
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
@@ -134,30 +170,80 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   var updateDuration = wtf.now() - beginTime;
   //goog.global.console.log('update info', updateDuration);
 
-  var sortMode = wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME;
-
-  var rows = [];
-  table.forEach(function(entry) {
-    var eventType = entry.getEventType();
-    var row = eventType.name + ': ' + entry.getCount();
-    if (entry instanceof wtf.analysis.db.ScopeEventDataEntry) {
-      var sumTime = Math.round(entry.getTotalTime());
-      if (sumTime < 1) {
-        sumTime = '<1';
-      }
-      var mean = Math.round(entry.getMeanTime());
-      if (mean < 1) {
-        mean = '<1';
-      }
-      row += ' ' + sumTime + 'ms ' + mean + 'ms';
-      // } else if (entry instanceof wtf.analysis.db.InstanceEventDataEntry) {
-    }
-    rows.push(row);
-  }, this, sortMode);
-  var infoString = rows.join('\n');
-
-  // TODO(benvanik): build a table, make clickable to filter/etc
   var contentEl = this.getChildElement(
       goog.getCssName('wtfAppUiTracksPanelInfoContent'));
-  contentEl.innerText = infoString;
+  var dom = this.getDom();
+  contentEl.innerText = '';
+
+  var sortMode = this.sortMode_;
+  table.forEach(function(entry) {
+    var el = this.buildTableRow_(entry, sortMode);
+    dom.appendChild(contentEl, el);
+  }, this, sortMode);
+};
+
+
+/**
+ * Builds the HTML for a table row.
+ * @param {!wtf.analysis.db.EventDataEntry} entry Event data entry.
+ * @param {wtf.analysis.db.EventDataTable.SortMode} sortMode Sort mode used.
+ * @return {!Element} HTML element.
+ * @private
+ */
+wtf.app.ui.tracks.TrackInfoBar.prototype.buildTableRow_ = function(
+    entry, sortMode) {
+  var dom = this.getDom();
+
+  var eventType = entry.getEventType();
+  var title = eventType.name;
+
+  var content = '';
+  if (entry instanceof wtf.analysis.db.ScopeEventDataEntry) {
+    var totalTime = Math.round(entry.getTotalTime());
+    if (totalTime < 1) {
+      totalTime = '<1';
+    }
+    totalTime += 'ms';
+    var userTime = Math.round(entry.getUserTime());
+    if (userTime < 1) {
+      userTime = '<1';
+    }
+    userTime += 'ms';
+    var meanTime = Math.round(entry.getMeanTime());
+    if (meanTime < 1) {
+      meanTime = '<1';
+    }
+    meanTime += 'ms';
+    content +=
+        entry.getCount() + ', ' +
+        totalTime + ' t, ' +
+        userTime + ' u, ' +
+        meanTime + ' a';
+  } else if (entry instanceof wtf.analysis.db.InstanceEventDataEntry) {
+    content += entry.getCount();
+  }
+
+  var value = '';
+  switch (sortMode) {
+    case wtf.analysis.db.EventDataTable.SortMode.COUNT:
+      value = String(entry.getCount());
+      break;
+    case wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME:
+      value = totalTime || '';
+      break;
+    case wtf.analysis.db.EventDataTable.SortMode.MEAN_TIME:
+      value = meanTime || '';
+      break;
+  }
+
+  var el = /** @type {!Element} */ (goog.soy.renderAsFragment(
+      wtf.app.ui.tracks.trackinfobar.entry, {
+        'title': title,
+        'value': value,
+        'content': content
+      }, undefined, dom));
+
+  // TODO(benvanik): add event handlers for expansion/etc.
+
+  return el;
 };
