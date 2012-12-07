@@ -85,7 +85,7 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
   wtf.analysis.EventType.createInstance(
       'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
           'ascii name, ascii args)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
       'wtf.discontinuity()'),
@@ -101,19 +101,20 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
       'wtf.scope.enter(ascii msg)'),
   wtf.analysis.EventType.createScope(
       'wtf.scope.enterTracing()',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME),
   wtf.analysis.EventType.createInstance(
-      'wtf.scope.leave()'),
+      'wtf.scope.leave()',
+      wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
       'wtf.flow.branch(flowId id, flowId parentId, ascii msg)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
       'wtf.flow.extend(flowId id, ascii msg)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
       'wtf.flow.terminate(flowId id, ascii msg)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
       'wtf.mark(ascii msg)')

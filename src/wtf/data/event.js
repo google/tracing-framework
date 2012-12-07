@@ -54,5 +54,11 @@ wtf.data.EventFlag = {
    * code. This can include things such as runtime events (GCs/etc) and tracing
    * framework time (buffer swaps/etc).
    */
-  SYSTEM: (1 << 2)
+  SYSTEM_TIME: (1 << 2),
+
+  /**
+   * Event represents some internal system event such as flow control events.
+   * These should not be shown in the UI.
+   */
+  INTERNAL: (1 << 3)
 };

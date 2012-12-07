@@ -160,4 +160,5 @@ wtf.ui.SearchControl.prototype.clear = function() {
 wtf.ui.SearchControl.prototype.focus = function() {
   var el = this.getRootElement();
   el.focus();
+  el.select();
 };

@@ -22,6 +22,7 @@ goog.require('wtf.analysis.db.EventDataTable');
 goog.require('wtf.analysis.db.InstanceEventDataEntry');
 goog.require('wtf.analysis.db.ScopeEventDataEntry');
 goog.require('wtf.app.ui.tracks.trackinfobar');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -178,7 +179,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   var sortMode = this.sortMode_;
   table.forEach(function(entry) {
     // Ignore system events.
-    if (entry.eventType.flags & wtf.data.EventFlag.SYSTEM) {
+    if (entry.eventType.flags & wtf.data.EventFlag.INTERNAL) {
       return;
     }
 

@@ -29,7 +29,7 @@ wtf.trace.BuiltinEvents = {
   defineEvent: wtf.trace.events.createInstance(
       'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
           'ascii name, ascii args)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
 
   /**
    * Marks a discontinuity in the trace.
@@ -71,34 +71,35 @@ wtf.trace.BuiltinEvents = {
    */
   enterTracingScope: wtf.trace.events.createScope(
       'wtf.scope.enterTracing()',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME),
 
   /**
    * Leaves an execution scope.
    */
   leaveScope: wtf.trace.events.createInstance(
-      'wtf.scope.leave()'),
+      'wtf.scope.leave()',
+      wtf.data.EventFlag.INTERNAL),
 
   /**
    * Branches execution flow.
    */
   branchFlow: wtf.trace.events.createInstance(
       'wtf.flow.branch(flowId id, flowId parentId, ascii msg)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
 
   /**
    * Continues execution flow.
    */
   extendFlow: wtf.trace.events.createInstance(
       'wtf.flow.extend(flowId id, ascii msg)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
 
   /**
    * Terminates execution flow.
    */
   terminateFlow: wtf.trace.events.createInstance(
       'wtf.flow.terminate(flowId id, ascii msg)',
-      wtf.data.EventFlag.SYSTEM),
+      wtf.data.EventFlag.INTERNAL),
 
   /**
    * Marks a generic event.
