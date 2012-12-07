@@ -50,6 +50,7 @@ wtf.hasHighResolutionTimes =
 /**
  * Create a high performance time function from window.performance, if present.
  * @return {number} A time, in ms.
+ * @private
  */
 wtf.performanceNow_ = (function() {
   var performance = goog.global['performance'];
@@ -81,6 +82,7 @@ wtf.performanceNow_ = (function() {
  * external time measurements.
  * @return {number} An appropriate high precision base time to use with
  *     performance.now.
+ * @private
  */
 wtf.computeHighPrecissionTimebase_ = function() {
   var initialDateNow = Date.now();

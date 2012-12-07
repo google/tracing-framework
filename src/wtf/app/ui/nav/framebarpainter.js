@@ -203,6 +203,7 @@ wtf.app.ui.nav.FramebarPainter.prototype.getInfoStringInternal = function(
  * @param {number} width Width of the paint canvas.
  * @param {number} height Height of the paint canvas.
  * @return {wtf.analysis.Event} Frame event, if any.
+ * @private
  */
 wtf.app.ui.nav.FramebarPainter.prototype.hitTestFrame_ = function(
     x, y, width, height) {

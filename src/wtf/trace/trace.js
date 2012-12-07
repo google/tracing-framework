@@ -348,6 +348,22 @@ wtf.trace.enterTracingScope = wtf.ENABLE_TRACING ?
 
 
 /**
+ * Appends a named argument of any type to the current scope.
+ * This is slow and should only be used for very infrequent appends.
+ * Prefer instead to use a custom instance event with the
+ * {@see wtf.data.EventFlag#APPEND_SCOPE_DATA} flag set.
+ *
+ * @param {number} time Time for the enter. Use {@code wtf.now()}.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {*} value Value. Will be JSON stringified.
+ */
+wtf.trace.appendScopeData = wtf.ENABLE_TRACING ? function(time, name, value) {
+  var json = goog.global.JSON.stringify(value);
+  wtf.trace.BuiltinEvents.appendScopeData(time, name, json);
+} : goog.nullFunction;
+
+
+/**
  * Branches the flow.
  * If no parent flow is given then the current global flow is used.
  * @param {string=} opt_msg Optional message string.
