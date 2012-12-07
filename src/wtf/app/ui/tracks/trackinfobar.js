@@ -244,6 +244,12 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.buildTableRow_ = function(
       }, undefined, dom));
 
   // TODO(benvanik): add event handlers for expansion/etc.
+  var eh = this.getHandler();
+  eh.listen(el, goog.events.EventType.CLICK, function(e) {
+    e.preventDefault();
+    var commandManager = wtf.events.getCommandManager();
+    commandManager.execute('filter_events', this, null, eventType.name);
+  }, true);
 
   return el;
 };

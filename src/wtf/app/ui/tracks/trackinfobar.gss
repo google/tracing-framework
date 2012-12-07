@@ -51,6 +51,7 @@
   font-size: 11px;
   border-bottom: 1px solid rgb(226, 226, 226);
   margin-bottom: 2px;
+  cursor: pointer;
 }
 .wtfAppUiTracksPanelInfoEntryHeader {
   position: relative;
