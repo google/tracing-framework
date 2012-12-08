@@ -37,7 +37,8 @@ wtf.pal.getPlatform = function() {
     if (wtf.NODE) {
       wtf.pal.sharedPlatform_ = new wtf.pal.NodePlatform();
     } else {
-      if (goog.global['chrome']['runtime']) {
+      if (goog.global['chrome'] &&
+          goog.global['chrome']['runtime']) {
         wtf.pal.sharedPlatform_ = new wtf.pal.ChromePlatform();
       } else {
         wtf.pal.sharedPlatform_ = new wtf.pal.BrowserPlatform();
