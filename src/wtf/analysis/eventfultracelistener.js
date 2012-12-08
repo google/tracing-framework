@@ -14,6 +14,7 @@
 goog.provide('wtf.analysis.EventfulTraceListener');
 
 goog.require('wtf.analysis.TraceListener');
+goog.require('wtf.data.EventFlag');
 
 
 
@@ -44,9 +45,8 @@ wtf.analysis.EventfulTraceListener.prototype.sourceAdded = function(
 /**
  * @override
  */
-wtf.analysis.EventfulTraceListener.prototype.traceEvent = function(
-    e, isCustom) {
-  if (isCustom) {
+wtf.analysis.EventfulTraceListener.prototype.traceEvent = function(e) {
+  if (!(e.eventType.flags & wtf.data.EventFlag.BUILTIN)) {
     this.emitEvent(wtf.analysis.EventfulTraceListener.EventType.CUSTOM, e);
   }
   this.emitEvent(e.eventType.name, e);

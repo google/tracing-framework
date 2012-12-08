@@ -351,8 +351,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.endEventBatch = function() {
 /**
  * @override
  */
-wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(
-    e, isCustom) {
+wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
   if (e.time < this.dirtyTimeStart_) {
     this.dirtyTimeStart_ = e.time;
   }

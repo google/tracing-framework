@@ -29,7 +29,7 @@ wtf.trace.BuiltinEvents = {
   defineEvent: wtf.trace.events.createInstance(
       'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
           'ascii name, ascii args)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Marks a discontinuity in the trace.
@@ -38,31 +38,36 @@ wtf.trace.BuiltinEvents = {
    * skipped.
    */
   discontinuity: wtf.trace.events.createInstance(
-      'wtf.discontinuity()'),
+      'wtf.discontinuity()',
+      wtf.data.EventFlag.BUILTIN),
 
   /**
    * Creates an execution zone.
    */
   createZone: wtf.trace.events.createInstance(
-      'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)'),
+      'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)',
+      wtf.data.EventFlag.BUILTIN),
 
   /**
    * Deletes an execution zone.
    */
   deleteZone: wtf.trace.events.createInstance(
-      'wtf.zone.delete(uint16 zoneId)'),
+      'wtf.zone.delete(uint16 zoneId)',
+      wtf.data.EventFlag.BUILTIN),
 
   /**
    * Sets an execution zone.
    */
   setZone: wtf.trace.events.createInstance(
-      'wtf.zone.set(uint16 zoneId)'),
+      'wtf.zone.set(uint16 zoneId)',
+      wtf.data.EventFlag.BUILTIN),
 
   /**
    * Enters an execution scope.
    */
   enterScope: wtf.trace.events.createScope(
-      'wtf.scope.enter(ascii msg)'),
+      'wtf.scope.enter(ascii msg)',
+      wtf.data.EventFlag.BUILTIN),
 
   /**
    * Enters a tracing framework overhead tracking scope.
@@ -71,46 +76,49 @@ wtf.trace.BuiltinEvents = {
    */
   enterTracingScope: wtf.trace.events.createScope(
       'wtf.scope.enterTracing()',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
+      wtf.data.EventFlag.SYSTEM_TIME),
 
   /**
    * Leaves an execution scope.
    */
   leaveScope: wtf.trace.events.createInstance(
       'wtf.scope.leave()',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Appends data to the current scope.
    */
   appendScopeData: wtf.trace.events.createInstance(
       'wtf.scope.appendData(ascii name, utf8 json)',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
+      wtf.data.EventFlag.APPEND_SCOPE_DATA),
 
   /**
    * Branches execution flow.
    */
   branchFlow: wtf.trace.events.createInstance(
       'wtf.flow.branch(flowId id, flowId parentId, ascii msg)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Continues execution flow.
    */
   extendFlow: wtf.trace.events.createInstance(
       'wtf.flow.extend(flowId id, ascii msg)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Terminates execution flow.
    */
   terminateFlow: wtf.trace.events.createInstance(
       'wtf.flow.terminate(flowId id, ascii msg)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Marks a generic event.
    */
   mark: wtf.trace.events.createInstance(
-      'wtf.mark(ascii msg)')
+      'wtf.mark(ascii msg)',
+      wtf.data.EventFlag.BUILTIN)
 };

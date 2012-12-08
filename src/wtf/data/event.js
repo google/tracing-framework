@@ -69,7 +69,14 @@ wtf.data.EventFlag = {
    * If this is combined with the INTERNAL flag then the event is assumed to
    * be a built-in system append event and will have special handling.
    */
-  APPEND_SCOPE_DATA: (1 << 4)
+  APPEND_SCOPE_DATA: (1 << 4),
+
+  /**
+   * Event is a builtin event.
+   * These may receive special handling and enable optimizations. User events
+   * should not have this flag set.
+   */
+  BUILTIN: (1 << 5)
 };
 
 
@@ -84,3 +91,5 @@ goog.exportProperty(wtf.data.EventFlag,
     'INTERNAL', wtf.data.EventFlag.INTERNAL);
 goog.exportProperty(wtf.data.EventFlag,
     'APPEND_SCOPE_DATA', wtf.data.EventFlag.APPEND_SCOPE_DATA);
+goog.exportProperty(wtf.data.EventFlag,
+    'BUILTIN', wtf.data.EventFlag.BUILTIN);
