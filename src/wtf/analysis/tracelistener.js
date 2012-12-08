@@ -78,6 +78,8 @@ goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
 /**
  * Builtin events.
  * This matches {@see wtf.trace.BuiltinEvents}.
+ * This list does not need to be exhaustive - it's only here to enable trace
+ * sources that want to omit defining built in events to function.
  * @type {!Array.<!wtf.analysis.EventType>}
  * @private
  */
@@ -85,39 +87,46 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
   wtf.analysis.EventType.createInstance(
       'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
           'ascii name, ascii args)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.discontinuity()'),
+      'wtf.discontinuity()',
+      wtf.data.EventFlag.BUILTIN),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)'),
+      'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)',
+      wtf.data.EventFlag.BUILTIN),
   wtf.analysis.EventType.createInstance(
-      'wtf.zone.delete(uint16 zoneId)'),
+      'wtf.zone.delete(uint16 zoneId)',
+      wtf.data.EventFlag.BUILTIN),
   wtf.analysis.EventType.createInstance(
-      'wtf.zone.set(uint16 zoneId)'),
+      'wtf.zone.set(uint16 zoneId)',
+      wtf.data.EventFlag.BUILTIN),
 
   wtf.analysis.EventType.createScope(
-      'wtf.scope.enter(ascii msg)'),
+      'wtf.scope.enter(ascii msg)',
+      wtf.data.EventFlag.BUILTIN),
   wtf.analysis.EventType.createScope(
       'wtf.scope.enterTracing()',
-      wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
+      wtf.data.EventFlag.SYSTEM_TIME),
   wtf.analysis.EventType.createInstance(
       'wtf.scope.leave()',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
       'wtf.flow.branch(flowId id, flowId parentId, ascii msg)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
       'wtf.flow.extend(flowId id, ascii msg)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
       'wtf.flow.terminate(flowId id, ascii msg)',
-      wtf.data.EventFlag.INTERNAL),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.mark(ascii msg)')
+      'wtf.mark(ascii msg)',
+      wtf.data.EventFlag.BUILTIN)
 ];
 
 
@@ -267,6 +276,5 @@ wtf.analysis.TraceListener.prototype.traceRawEvent = goog.nullFunction;
  * Signals an event in the stream.
  * This fires for all events that pass filtering, including built-in ones.
  * @param {!wtf.analysis.Event} e Event.
- * @param {boolean} isCustom True if the event is not a known built-in event.
  */
 wtf.analysis.TraceListener.prototype.traceEvent = goog.nullFunction;

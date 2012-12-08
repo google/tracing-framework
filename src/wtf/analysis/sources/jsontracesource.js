@@ -21,6 +21,7 @@ goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.TraceSource');
 goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.EventClass');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.data.Variable');
 
@@ -258,46 +259,50 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
   listener.traceRawEvent(eventType, zone, this.getTimebase(), time, args);
 
   // Handle built-in events.
+  // TODO(benvanik): share more of this in TraceSource
   // TODO(benvanik): something much more efficient for builtins
   var e = null;
-  var isCustom = false;
-  switch (eventType.name) {
-    case 'wtf.zone.create':
-      var newZone = listener.createOrGetZone(
-          args['name'], args['type'], args['location']);
-      this.zoneTable_[args['zoneId']] = newZone;
-      e = new wtf.analysis.ZoneEvent(
-          eventType, zone, time, args, newZone);
-      break;
-    case 'wtf.zone.delete':
-      var deadZone = this.zoneTable_[args['zoneId']] || null;
-      e = new wtf.analysis.ZoneEvent(
-          eventType, zone, time, args, deadZone);
-      break;
-    case 'wtf.zone.set':
-      this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
-      break;
+  if (eventType.flags & wtf.data.EventFlag.BUILTIN &&
+      eventType.eventClass != wtf.data.EventClass.SCOPE) {
+    switch (eventType.name) {
+      case 'wtf.zone.create':
+        var newZone = listener.createOrGetZone(
+            args['name'], args['type'], args['location']);
+        this.zoneTable_[args['zoneId']] = newZone;
+        e = new wtf.analysis.ZoneEvent(
+            eventType, zone, time, args, newZone);
+        break;
+      case 'wtf.zone.delete':
+        var deadZone = this.zoneTable_[args['zoneId']] || null;
+        e = new wtf.analysis.ZoneEvent(
+            eventType, zone, time, args, deadZone);
+        break;
+      case 'wtf.zone.set':
+        this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
+        break;
 
-    // TODO(benvanik): flow events
+      // TODO(benvanik): flow events
 
-    default:
-      switch (eventType.eventClass) {
-        case wtf.data.EventClass.SCOPE:
-          var newScope = new wtf.analysis.Scope();
-          e = new wtf.analysis.ScopeEvent(
-              eventType, zone, time, args, newScope);
-          newScope.setEnterEvent(e);
-          break;
-        default:
-        case wtf.data.EventClass.INSTANCE:
-          e = new wtf.analysis.Event(eventType, zone, time, args);
-          break;
-      }
-      isCustom = true;
-      break;
+      default:
+        e = new wtf.analysis.Event(eventType, zone, time, args);
+        break;
+    }
+  } else {
+    switch (eventType.eventClass) {
+      case wtf.data.EventClass.SCOPE:
+        var newScope = new wtf.analysis.Scope();
+        e = new wtf.analysis.ScopeEvent(
+            eventType, zone, time, args, newScope);
+        newScope.setEnterEvent(e);
+        break;
+      default:
+      case wtf.data.EventClass.INSTANCE:
+        e = new wtf.analysis.Event(eventType, zone, time, args);
+        break;
+    }
   }
 
   if (e) {
-    listener.traceEvent(e, isCustom);
+    listener.traceEvent(e);
   }
 };
