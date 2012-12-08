@@ -7232,7 +7232,7 @@ wtf.pal.NodePlatform.prototype.createListenSocket = function() {
 // Input 82
 wtf.pal.sharedPlatform_ = null;
 wtf.pal.getPlatform = function() {
-  wtf.pal.sharedPlatform_ || (wtf.pal.sharedPlatform_ = wtf.NODE ? new wtf.pal.NodePlatform : goog.global.chrome.runtime ? new wtf.pal.ChromePlatform : new wtf.pal.BrowserPlatform);
+  wtf.pal.sharedPlatform_ || (wtf.pal.sharedPlatform_ = wtf.NODE ? new wtf.pal.NodePlatform : goog.global.chrome && goog.global.chrome.runtime ? new wtf.pal.ChromePlatform : new wtf.pal.BrowserPlatform);
   return wtf.pal.sharedPlatform_
 };
 goog.exportSymbol("wtf.pal.getPlatform", wtf.pal.getPlatform);
