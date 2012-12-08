@@ -14,6 +14,7 @@
 goog.provide('wtf.app.ui.MainDisplay');
 
 goog.require('goog.asserts');
+goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
@@ -135,8 +136,8 @@ wtf.app.ui.MainDisplay = function(
   //     the URL.
   var queryString = dom.getWindow().location.search;
   if (queryString) {
-    var url = queryString.replace(/\?url=/, '');
-    this.loadNetworkTrace(url);
+    var urls = queryString.replace(/\?url=/, '');
+    this.loadNetworkTraces(urls.split(','));
   }
 };
 goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
@@ -379,17 +380,6 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
     return;
   }
 
-  var name = '';
-  if (binarySources.length) {
-    name = binarySources[0].name;
-  } else {
-    name = jsonSources[0].name;
-  }
-
-  var doc = new wtf.doc.Document(this.platform_);
-  this.openDocument(doc);
-
-  // Add all sources to the trace.
   // TODO(benvanik): move into wtf.analysis?
   var deferreds = [];
   for (var n = 0; n < binarySources.length; n++) {
@@ -398,6 +388,75 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   for (var n = 0; n < jsonSources.length; n++) {
     deferreds.push(goog.fs.FileReader.readAsText(jsonSources[n]));
   }
+  this.openDeferredSources_(deferreds);
+};
+
+
+/**
+ * Load trace files by url.
+ * @param {!Array.<!string>} urls Array of resources to load.
+ */
+wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
+  var binarySources = [];
+  var jsonSources = [];
+  for (var n = 0; n < urls.length; n++) {
+    var url = urls[n];
+    if (goog.string.endsWith(url, '.wtf-trace') ||
+        goog.string.endsWith(url, '.bin.part')) {
+      binarySources.push(url);
+    } else if (goog.string.endsWith(url, '.wtf-json')) {
+      jsonSources.push(url);
+    } else {
+      window.alert('bad file name...');
+    }
+  }
+  if (!binarySources.length && !jsonSources.length) {
+    return;
+  }
+
+  function loadUrl(url, responseType) {
+    var deferred = new goog.async.Deferred();
+
+    var xhr = new goog.net.XhrIo();
+    xhr.setResponseType(responseType);
+    goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
+      if (xhr.isSuccess()) {
+        var data = xhr.getResponse();
+        goog.asserts.assert(data);
+        deferred.callback(data);
+      } else {
+        deferred.errback('Failed to load');
+      }
+    });
+    xhr.send(url);
+
+    return deferred;
+  }
+
+  var deferreds = [];
+  for (var n = 0; n < binarySources.length; n++) {
+    deferreds.push(loadUrl(binarySources[n],
+        goog.net.XhrIo.ResponseType.ARRAY_BUFFER));
+  }
+  for (var n = 0; n < jsonSources.length; n++) {
+    deferreds.push(loadUrl(jsonSources[n],
+        goog.net.XhrIo.ResponseType.TEXT));
+  }
+
+  this.openDeferredSources_(deferreds);
+};
+
+
+/**
+ * Creates a document and adds sources for a set of deferred items. Each
+ * deferred should provide a ArrayBuffer of binary source data or a string
+ * of json data.
+ * @param {!Array.<!goog.async.Deferred>}
+ */
+wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
+  var doc = new wtf.doc.Document(this.platform_);
+  this.openDocument(doc);
+
   goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
       function(datas) {
         // Add all data.
@@ -420,52 +479,6 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
         // TODO(benvanik): handle errors better
         window.alert('Unable to load files');
       }, this);
-};
-
-
-/**
- * Loads a trace file by url.
- * @param {!string} url Resource to load.
- */
-wtf.app.ui.MainDisplay.prototype.loadNetworkTrace = function(url) {
-  var doc = new wtf.doc.Document(this.platform_);
-  this.openDocument(doc);
-
-  var responseType = goog.net.XhrIo.ResponseType.ARRAY_BUFFER;
-  if (goog.string.endsWith(url, '.wtf-trace') ||
-      goog.string.endsWith(url, '.bin.part')) {
-    responseType = goog.net.XhrIo.ResponseType.ARRAY_BUFFER;
-  } else if (goog.string.endsWith(url, '.wtf-json')) {
-    responseType = goog.net.XhrIo.ResponseType.TEXT;
-  }
-
-  var xhr = new goog.net.XhrIo();
-  xhr.setResponseType(responseType);
-  goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
-    var success = xhr.isSuccess();
-    if (!success) {
-      window.alert('Unable to load url: ' + url);
-      return;
-    }
-    var data = xhr.getResponse();
-    goog.asserts.assert(data);
-
-    // Add data.
-    if (data instanceof ArrayBuffer) {
-      doc.addBinaryEventSource(
-          new Uint8Array(/** @type {ArrayBuffer} */ (data)));
-    } else {
-      doc.addJsonEventSource(
-          /** @type {string} */ (data));
-    }
-
-    // Zoom to fit.
-    // TODO(benvanik): remove setTimeout when zoomToFit is based on view
-    wtf.timing.setTimeout(50, function() {
-      this.documentView_.zoomToFit();
-    }, this);
-  }, false, this);
-  xhr.send(url);
 };
 
 
