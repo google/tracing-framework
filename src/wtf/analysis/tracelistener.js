@@ -95,13 +95,13 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
 
   wtf.analysis.EventType.createInstance(
       'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
       'wtf.zone.delete(uint16 zoneId)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
       'wtf.zone.set(uint16 zoneId)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createScope(
       'wtf.scope.enter(ascii msg)',

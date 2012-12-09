@@ -18,6 +18,7 @@ goog.provide('wtf.analysis.db.ScopeEventDataEntry');
 
 goog.require('goog.Disposable');
 goog.require('wtf.data.EventClass');
+goog.require('wtf.data.EventFlag');
 
 
 
@@ -101,7 +102,8 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
     var zoneIndex = zoneIndices[n];
     zoneIndex.forEach(startTime, endTime, function(e) {
       // Skip leaves, they aren't interesting here.
-      if (e.eventType == this.eventTypes_.scopeLeave) {
+      if (e.eventType.flags & wtf.data.EventFlag.INTERNAL ||
+          e.eventType == this.eventTypes_.scopeLeave) {
         return;
       }
 

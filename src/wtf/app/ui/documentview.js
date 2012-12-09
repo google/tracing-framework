@@ -235,9 +235,8 @@ wtf.app.ui.DocumentView.prototype.navigate = function(path) {
  */
 wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
   var db = this.getDatabase();
-  var summaryIndex = db.getSummaryIndex();
-  var firstEventTime = summaryIndex.getFirstEventTime();
-  var lastEventTime = summaryIndex.getLastEventTime();
+  var firstEventTime = db.getFirstEventTime();
+  var lastEventTime = db.getLastEventTime();
   if (!lastEventTime) {
     return;
   }

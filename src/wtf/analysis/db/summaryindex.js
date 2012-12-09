@@ -132,7 +132,7 @@ wtf.analysis.db.SummaryIndex.prototype.addSummaryGenerator = function(
 
 /**
  * Gets the time of the first event in the index.
- * @return {number} Wall-time of the first event or 0 if no events.
+ * @return {number} Time of the first event or 0 if no events.
  */
 wtf.analysis.db.SummaryIndex.prototype.getFirstEventTime = function() {
   return this.rootNode_ ? this.firstEventTime_ : 0;
@@ -141,7 +141,7 @@ wtf.analysis.db.SummaryIndex.prototype.getFirstEventTime = function() {
 
 /**
  * Gets the time of the last event in the index.
- * @return {number} Wall-time of the last event or 0 if no events.
+ * @return {number} Time of the last event or 0 if no events.
  */
 wtf.analysis.db.SummaryIndex.prototype.getLastEventTime = function() {
   return this.rootNode_ ? this.lastEventTime_ : 0;

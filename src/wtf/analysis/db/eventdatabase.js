@@ -17,10 +17,10 @@ goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.events');
 goog.require('wtf.analysis.TraceListener');
-goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.analysis.db.EventIndex');
 goog.require('wtf.analysis.db.SummaryIndex');
 goog.require('wtf.analysis.db.ZoneIndex');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
 
@@ -57,6 +57,15 @@ wtf.analysis.db.EventDatabase = function() {
    * @private
    */
   this.sources_ = [];
+
+  /**
+   * Total number of events added.
+   * This excludes uninteresting events (like scope leaves) and should only be
+   * used for display.
+   * @type {number}
+   * @private
+   */
+  this.totalEventCount_ = 0;
 
   /**
    * Summary index.
@@ -124,6 +133,45 @@ wtf.analysis.db.EventDatabase.EventType = {
  */
 wtf.analysis.db.EventDatabase.prototype.getSources = function() {
   return this.sources_;
+};
+
+
+/**
+ * Gets the total number of interesting events.
+ * This excludes things such as scope leaves.
+ * @return {number} Event count.
+ */
+wtf.analysis.db.EventDatabase.prototype.getTotalEventCount = function() {
+  return this.totalEventCount_;
+};
+
+
+/**
+ * Gets the timebase that all event times are relative to.
+ * This, when added to an events time, can be used to compute the wall-time
+ * the event occurred at.
+ * @return {number} Timebase.
+ */
+wtf.analysis.db.EventDatabase.prototype.getTimebase = function() {
+  return this.listener_.getCommonTimebase();
+};
+
+
+/**
+ * Gets the time of the first event in the index.
+ * @return {number} Time of the first event or 0 if no events.
+ */
+wtf.analysis.db.EventDatabase.prototype.getFirstEventTime = function() {
+  return this.summaryIndex_.getFirstEventTime();
+};
+
+
+/**
+ * Gets the time of the last event in the index.
+ * @return {number} Time of the last event or 0 if no events.
+ */
+wtf.analysis.db.EventDatabase.prototype.getLastEventTime = function() {
+  return this.summaryIndex_.getLastEventTime();
 };
 
 
@@ -277,6 +325,16 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
    * @private
    */
   this.dirtyTimeEnd_ = 0;
+
+  /**
+   * Cached event types, for performance.
+   * @type {!Object.<!wtf.analysis.EventType>}
+   * @private
+   */
+  this.eventTypes_ = {
+    zoneCreate: this.getEventType('wtf.zone.create'),
+    scopeLeave: this.getEventType('wtf.scope.leave')
+  };
 };
 goog.inherits(wtf.analysis.db.EventDatabase.Listener_,
     wtf.analysis.TraceListener);
@@ -360,18 +418,22 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
   }
   this.insertedEventCount_++;
 
+  if (!(e.eventType.flags & wtf.data.EventFlag.INTERNAL ||
+      e.eventType == this.eventTypes_.scopeLeave)) {
+    // Scope leave - subtract from total count.
+    this.db_.totalEventCount_++;
+  }
+
   // Handle zone creation.
   // This happens first so that if we create a new zone it's added to the
   // event targets list.
-  if (e instanceof wtf.analysis.ZoneEvent) {
-    if (e.eventType.name == 'wtf.zone.create') {
-      // Create a new zone index.
-      var newZone = e.value;
-      var zoneIndex = new wtf.analysis.db.ZoneIndex(this, newZone);
-      this.db_.zoneIndices_.push(zoneIndex);
-      this.eventTargets_.push(zoneIndex);
-      zoneIndex.beginInserting();
-    }
+  if (e.eventType == this.eventTypes_.zoneCreate) {
+    // Create a new zone index.
+    var newZone = e.value;
+    var zoneIndex = new wtf.analysis.db.ZoneIndex(this, newZone);
+    this.db_.zoneIndices_.push(zoneIndex);
+    this.eventTargets_.push(zoneIndex);
+    zoneIndex.beginInserting();
   }
 
   // Dispatch to targets.

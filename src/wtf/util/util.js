@@ -16,6 +16,44 @@ goog.provide('wtf.util');
 goog.require('goog.asserts');
 /** @suppress {extraRequire} */
 goog.require('goog.debug.ErrorHandler');
+goog.require('goog.string');
+
+
+/**
+ * Formats a time value, maintaining all precision.
+ * @param {number} value Time value.
+ * @return {string} Formatted time string.
+ */
+wtf.util.formatTime = function(value) {
+  var elapsed = value;
+  if (value) {
+    // Round to just a few significant digits.
+    // largest power of 10 <= value
+    var magnitude = Math.floor(Math.log(elapsed) / Math.LN10);
+    // a number which will shift elapsed (in base 10) so that
+    // there are 4 digits to the left of the decimal.
+    var mult = Math.pow(10, 3 - magnitude);
+    elapsed = Math.round(elapsed * mult) / mult;
+  }
+  return elapsed + 'ms';
+};
+
+
+/**
+ * Formats time in the standard format.
+ * @param {number} value Wall-time.
+ * @return {string} Formatted time string.
+ */
+wtf.util.formatWallTime = function(value) {
+  // Format time: 05:33:28.105.25530
+  var dt = new Date(value);
+  return '' +
+      goog.string.padNumber(dt.getHours(), 2) + ':' +
+      goog.string.padNumber(dt.getMinutes(), 2) + ':' +
+      goog.string.padNumber(dt.getSeconds(), 2) + '.' +
+      String((dt.getMilliseconds() / 1000).toFixed(3)).slice(2, 5) + '.' +
+      goog.string.padNumber(Math.floor((value - Math.floor(value)) * 10000), 4);
+};
 
 
 /**

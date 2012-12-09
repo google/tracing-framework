@@ -19,6 +19,18 @@
  */
 {template .control}
   <div class="{css wtfAppUiStatusbar}">
-    [TODO: hover time, total time, user, time, etc]
+    <div class="{css wtfAppUiStatusbarLeft}">
+      <div class="{css wtfAppUiStatusbarSelection}"
+          title="selected events / total event count">
+      </div>
+    </div>
+    <div class="{css wtfAppUiStatusbarRight}">
+      <div class="{css wtfAppUiStatusbarTimeTotals}"
+          title="user time / total time (trace duration)">
+      </div>
+      <div class="{css wtfAppUiStatusbarTimeRange}"
+          title="trace time">
+      </div>
+    </div>
   </div>
 {/template}

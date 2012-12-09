@@ -46,21 +46,21 @@ wtf.trace.BuiltinEvents = {
    */
   createZone: wtf.trace.events.createInstance(
       'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Deletes an execution zone.
    */
   deleteZone: wtf.trace.events.createInstance(
       'wtf.zone.delete(uint16 zoneId)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Sets an execution zone.
    */
   setZone: wtf.trace.events.createInstance(
       'wtf.zone.set(uint16 zoneId)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Enters an execution scope.
