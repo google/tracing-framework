@@ -23,6 +23,7 @@ goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.RangeRenderer');
+goog.require('wtf.util');
 
 
 
@@ -465,20 +466,11 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
     scope) {
   var enter = scope.getEnterEvent();
   var leave = scope.getLeaveEvent();
-  var elapsed = leave.time - enter.time;
-  if (elapsed > 0) {
-    // Round to just a few significant digits.
-    // largest power of 10 <= value
-    var magnitude = Math.floor(Math.log(elapsed) / Math.LN10);
-    // a number which will shift elapsed (in base 10) so that
-    // there are 4 digits to the left of the decimal.
-    var mult = Math.pow(10, 3 - magnitude);
-    elapsed = Math.round(elapsed * mult) / mult;
-  }
+  var elapsed = wtf.util.formatTime(leave.time - enter.time);
 
   var eventType = enter.eventType;
   var lines = [
-    elapsed + 'ms: ' + eventType.name
+    elapsed + ': ' + eventType.name
   ];
 
   // Add arguments.

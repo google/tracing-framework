@@ -52,7 +52,6 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
 
   var doc = documentView.getDocument();
   var db = doc.getDatabase();
-  var summaryIndex = db.getSummaryIndex();
 
   /**
    * Document view.
@@ -130,7 +129,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   this.viewport_.addListener(
       wtf.events.EventType.INVALIDATED,
       function() {
-        var firstEventTime = summaryIndex.getFirstEventTime();
+        var firstEventTime = db.getFirstEventTime();
 
         // Update from viewport.
         var width = this.viewport_.getScreenWidth();
@@ -170,8 +169,8 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
 
   // HACK(benvanik): zoom to fit on change - this should follow other behavior
   function zoomToBounds() {
-    var firstEventTime = summaryIndex.getFirstEventTime();
-    var lastEventTime = summaryIndex.getLastEventTime();
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
     var width = this.viewport_.getScreenWidth();
     if (lastEventTime) {
       this.viewport_.set(
@@ -260,9 +259,8 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
     this.viewport_.zoomDelta(1 / 2.5);
   }, this);
   keyboardScope.addShortcut('home', function() {
-    var summaryIndex = this.db_.getSummaryIndex();
-    var firstEventTime = summaryIndex.getFirstEventTime();
-    var lastEventTime = summaryIndex.getLastEventTime();
+    var firstEventTime = this.db_.getFirstEventTime();
+    var lastEventTime = this.db_.getLastEventTime();
     this.viewport_.zoomToBounds(
         -1000, 0, lastEventTime - firstEventTime + 2000, 1);
   }, this);
@@ -276,8 +274,7 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
         if (frameIndex) {
           frameIndex.forEach(0, Number.MAX_VALUE, function(e) {
             if (e.args['number'] == frameNumber) {
-              var summaryIndex = this.db_.getSummaryIndex();
-              var firstEventTime = summaryIndex.getFirstEventTime();
+              var firstEventTime = this.db_.getFirstEventTime();
               var timeStart = e.time - e.args['duration'] / 1000;
               var timeEnd = e.time;
               this.viewport_.zoomToBounds(

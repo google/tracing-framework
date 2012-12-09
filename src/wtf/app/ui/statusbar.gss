@@ -15,13 +15,31 @@
 .wtfAppUiStatusbar {
   @mixin fitParent();
 
-  /* TEMPORARY */
-  padding-left: 45%;
-  padding-top: 4px;
   color: #777777;
   font-size: 12px;
-
+  font-family: monospace;
   background: white;
-
   border-top: 1px solid #EBEBEB;
+
+  padding-top: 7px;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+.wtfAppUiStatusbarLeft {
+  float: left;
+}
+.wtfAppUiStatusbarSelection {
+  float: left;
+}
+
+.wtfAppUiStatusbarRight {
+  float: right;
+}
+.wtfAppUiStatusbarTimeTotals {
+  float: left;
+  margin-right: 5px;
+}
+.wtfAppUiStatusbarTimeRange {
+  float: left;
 }
