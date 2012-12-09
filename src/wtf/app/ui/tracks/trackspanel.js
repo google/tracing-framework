@@ -45,7 +45,6 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   var doc = documentView.getDocument();
   var db = doc.getDatabase();
-  var summaryIndex = db.getSummaryIndex();
 
   /**
    * Database.
@@ -119,7 +118,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.viewport_.addListener(
       wtf.events.EventType.INVALIDATED,
       function() {
-        var firstEventTime = summaryIndex.getFirstEventTime();
+        var firstEventTime = db.getFirstEventTime();
 
         // Update from viewport.
         var width = this.viewport_.getScreenWidth();
