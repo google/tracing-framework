@@ -84,7 +84,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    */
   this.tooltip_ = new wtf.ui.Tooltip(body);
   this.registerDisposable(this.tooltip_);
-  this.tooltip_.bindEvents(this);
+  this.setTooltip(this.tooltip_);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
@@ -157,13 +157,6 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
   documentView.registerViewport(this.viewport_);
-
-  // TODO(benvanik): replace viewport stuff and share this binding in control.
-  this.viewport_.addListener(
-      wtf.ui.zoom.Viewport.EventType.CLICK,
-      function(x, y) {
-        paintContext.onClick(x, y);
-      }, this);
 
   // HACK(benvanik): zoom to fit on change - this should follow other behavior
   function zoomToBounds() {

@@ -13,10 +13,8 @@
 
 goog.provide('wtf.ui.Tooltip');
 
-goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.ui.Control');
 
@@ -50,37 +48,6 @@ wtf.ui.Tooltip.prototype.createDom = function(dom) {
     'white-space': 'pre'
   });
   return elem;
-};
-
-
-/**
- * Sets up the input events for showing/hiding the given tooltip on a control.
- * The control must have an initialized paint context.
- * @param {!wtf.ui.Control} control Target control.
- */
-wtf.ui.Tooltip.prototype.bindEvents = function(control) {
-  var paintContext = control.getPaintContext();
-  goog.asserts.assert(paintContext);
-  var canvas = paintContext.getCanvas();
-
-  this.getHandler().listen(
-      canvas,
-      goog.events.EventType.MOUSEMOVE,
-      function(e) {
-        var infoString = paintContext.getInfoString(e.offsetX, e.offsetY);
-        if (infoString) {
-          this.show(e.clientX, e.clientY, infoString);
-        } else {
-          this.hide();
-        }
-      });
-
-  this.getHandler().listen(
-      canvas,
-      goog.events.EventType.MOUSEOUT,
-      function(e) {
-        this.hide();
-      });
 };
 
 

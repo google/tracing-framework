@@ -310,23 +310,20 @@ wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
  * Handles click events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @return {boolean} True if the click was handled.
+ * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onClick = function(x, y) {
   var width = this.getScaledCanvasWidth();
   var height = this.getScaledCanvasHeight();
-
   if (this.onClickInternal(x, y, width, height)) {
     return true;
   }
-
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     if (childContext.onClick(x, y)) {
       return true;
     }
   }
-
   return false;
 };
 
@@ -337,10 +334,70 @@ wtf.ui.Painter.prototype.onClick = function(x, y) {
  * @param {number} y Y coordinate, relative to canvas.
  * @param {number} width Canvas width, in pixels.
  * @param {number} height Canvas height, in pixels.
- * @return {boolean|undefined} True if the click was handled.
+ * @return {boolean|undefined} True if the event was handled.
  * @protected
  */
 wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
+
+
+/**
+ * Handles mouse move events at the given pixel.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @return {boolean} True if the event was handled.
+ */
+wtf.ui.Painter.prototype.onMouseMove = function(x, y) {
+  var width = this.getScaledCanvasWidth();
+  var height = this.getScaledCanvasHeight();
+  if (this.onMouseMoveInternal(x, y, width, height)) {
+    return true;
+  }
+  for (var n = 0; n < this.childPainters_.length; n++) {
+    var childContext = this.childPainters_[n];
+    if (childContext.onMouseMove(x, y)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
+/**
+ * Handles mouse move events at the given pixel.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} width Canvas width, in pixels.
+ * @param {number} height Canvas height, in pixels.
+ * @return {boolean|undefined} True if the event was handled.
+ * @protected
+ */
+wtf.ui.Painter.prototype.onMouseMoveInternal = goog.nullFunction;
+
+
+/**
+ * Handles mouse leave events at the given pixel.
+ * @return {boolean} True if the event was handled.
+ */
+wtf.ui.Painter.prototype.onMouseOut = function() {
+  if (this.onMouseOutInternal()) {
+    return true;
+  }
+  for (var n = 0; n < this.childPainters_.length; n++) {
+    var childContext = this.childPainters_[n];
+    if (childContext.onMouseOut()) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
+/**
+ * Handles mouse leave events at the given pixel.
+ * @return {boolean|undefined} True if the event was handled.
+ * @protected
+ */
+wtf.ui.Painter.prototype.onMouseOutInternal = goog.nullFunction;
 
 
 /**
