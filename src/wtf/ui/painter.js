@@ -48,6 +48,13 @@ wtf.ui.Painter = function(canvas) {
   this.canvasContext2d_ = wtf.util.canvas.getContext2d(canvas);
 
   /**
+   * Canvas pixel ratio.
+   * @type {number}
+   * @private
+   */
+  this.pixelRatio_ = wtf.util.canvas.getCanvasPixelRatio(this.canvasContext2d_);
+
+  /**
    * Parent painter.
    * If this is null then this painter is the root.
    * @type {wtf.ui.Painter}
@@ -105,6 +112,24 @@ wtf.ui.Painter.prototype.getCanvas = function() {
  */
 wtf.ui.Painter.prototype.getCanvasContext2d = function() {
   return this.canvasContext2d_;
+};
+
+
+/**
+ * Gets the scaled canvas width in CSS pixels.
+ * @return {number} Canvas width.
+ */
+wtf.ui.Painter.prototype.getScaledCanvasWidth = function() {
+  return this.canvas_.width / this.pixelRatio_;
+};
+
+
+/**
+ * Gets the scaled canvas height in CSS pixels.
+ * @return {number} Canvas height.
+ */
+wtf.ui.Painter.prototype.getScaledCanvasHeight = function() {
+  return this.canvas_.height / this.pixelRatio_;
 };
 
 
@@ -199,12 +224,11 @@ wtf.ui.Painter.prototype.repaint = function() {
 
   // Prepare canvas. This should only occur on the root paint context.
   var ctx = this.canvasContext2d_;
-  var pixelRatio = wtf.util.canvas.getCanvasPixelRatio(ctx);
-  var width = this.canvas_.width / pixelRatio;
-  var height = this.canvas_.height / pixelRatio;
-  wtf.util.canvas.reset(ctx, pixelRatio);
+  wtf.util.canvas.reset(ctx, this.pixelRatio_);
 
   // Skip all drawing if too small.
+  var width = this.getScaledCanvasWidth();
+  var height = this.getScaledCanvasHeight();
   if (height <= 1) {
     return;
   }
@@ -286,18 +310,19 @@ wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
  * Handles click events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
  * @return {boolean} True if the click was handled.
  */
-wtf.ui.Painter.prototype.onClick = function(x, y, width, height) {
+wtf.ui.Painter.prototype.onClick = function(x, y) {
+  var width = this.getScaledCanvasWidth();
+  var height = this.getScaledCanvasHeight();
+
   if (this.onClickInternal(x, y, width, height)) {
     return true;
   }
 
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    if (childContext.onClickInternal(x, y, width, height)) {
+    if (childContext.onClick(x, y)) {
       return true;
     }
   }
@@ -310,8 +335,8 @@ wtf.ui.Painter.prototype.onClick = function(x, y, width, height) {
  * Handles click events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
+ * @param {number} width Canvas width, in pixels.
+ * @param {number} height Canvas height, in pixels.
  * @return {boolean|undefined} True if the click was handled.
  * @protected
  */
@@ -323,17 +348,18 @@ wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
  * populate a tooltip.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
  * @return {string|undefined} Info string or undefined for none.
  */
-wtf.ui.Painter.prototype.getInfoString = function(x, y, width, height) {
+wtf.ui.Painter.prototype.getInfoString = function(x, y) {
+  var width = this.getScaledCanvasWidth();
+  var height = this.getScaledCanvasHeight();
+
   var info = this.getInfoStringInternal(x, y, width, height);
   if (info) return info;
 
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    info = childContext.getInfoString(x, y, width, height);
+    info = childContext.getInfoString(x, y);
     if (info) return info;
   }
 
@@ -345,8 +371,8 @@ wtf.ui.Painter.prototype.getInfoString = function(x, y, width, height) {
  * Attempt to describe the pixel at x,y.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
+ * @param {number} width Canvas width, in pixels.
+ * @param {number} height Canvas height, in pixels.
  * @return {string|undefined} Info string or undefined for none.
  * @protected
  */

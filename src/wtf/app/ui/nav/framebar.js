@@ -32,7 +32,6 @@ goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
-goog.require('wtf.util.canvas');
 
 
 
@@ -163,12 +162,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   this.viewport_.addListener(
       wtf.ui.zoom.Viewport.EventType.CLICK,
       function(x, y) {
-        var canvas = paintContext.getCanvas();
-        var ctx = paintContext.getCanvasContext2d();
-        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
-        var width = canvas.width / scale;
-        var height = canvas.height / scale;
-        paintContext.onClick(x, y, width, height);
+        paintContext.onClick(x, y);
       }, this);
 
   // HACK(benvanik): zoom to fit on change - this should follow other behavior

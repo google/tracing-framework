@@ -19,7 +19,6 @@ goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.ui.Control');
-goog.require('wtf.util.canvas');
 
 
 
@@ -63,17 +62,12 @@ wtf.ui.Tooltip.prototype.bindEvents = function(control) {
   var paintContext = control.getPaintContext();
   goog.asserts.assert(paintContext);
   var canvas = paintContext.getCanvas();
-  var ctx = paintContext.getCanvasContext2d();
-  var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
 
   this.getHandler().listen(
       canvas,
       goog.events.EventType.MOUSEMOVE,
       function(e) {
-        var width = canvas.width / scale;
-        var height = canvas.height / scale;
-        var infoString = paintContext.getInfoString(
-            e.offsetX, e.offsetY, width, height);
+        var infoString = paintContext.getInfoString(e.offsetX, e.offsetY);
         if (infoString) {
           this.show(e.clientX, e.clientY, infoString);
         } else {
