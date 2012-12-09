@@ -23,13 +23,13 @@ goog.require('wtf.ui.TimeRangePainter');
 
 /**
  * Heatmap painter.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @constructor
  * @extends {wtf.ui.TimeRangePainter}
  */
-wtf.app.ui.nav.HeatmapPainter = function(parentContext, db) {
-  goog.base(this, parentContext);
+wtf.app.ui.nav.HeatmapPainter = function(canvas, db) {
+  goog.base(this, canvas);
 
   /**
    * Database.

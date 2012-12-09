@@ -20,12 +20,12 @@ goog.require('wtf.ui.TimeRangePainter');
 
 /**
  * Paints a ruler into the view.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @constructor
  * @extends {wtf.ui.TimeRangePainter}
  */
-wtf.ui.RulerPainter = function(parentContext) {
-  goog.base(this, parentContext);
+wtf.ui.RulerPainter = function(canvas) {
+  goog.base(this, canvas);
 
   /**
    * Y offset, in pixels.

@@ -89,6 +89,7 @@ wtf.analysis.Session.prototype.getStorage = function() {
 
 /**
  * Sets whether trace data storage is enabled.
+ * @param {boolean} value Toggle value.
  */
 wtf.analysis.Session.prototype.setStorageEnabled = function(value) {
   if (value == !!this.storage_) {

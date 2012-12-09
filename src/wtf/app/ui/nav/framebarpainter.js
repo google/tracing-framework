@@ -25,13 +25,13 @@ goog.require('wtf.ui.TimeRangePainter');
 
 /**
  * Framebar painter.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @constructor
  * @extends {wtf.ui.TimeRangePainter}
  */
-wtf.app.ui.nav.FramebarPainter = function(parentContext, db) {
-  goog.base(this, parentContext);
+wtf.app.ui.nav.FramebarPainter = function(canvas, db) {
+  goog.base(this, canvas);
 
   /**
    * Database.

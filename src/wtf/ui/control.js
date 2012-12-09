@@ -73,7 +73,7 @@ wtf.ui.Control = function(parentElement, opt_dom) {
 
   /**
    * Root paint context, if created.
-   * @type {wtf.ui.PaintContext}
+   * @type {wtf.ui.Painter}
    * @private
    */
   this.paintContext_ = null;
@@ -195,7 +195,7 @@ wtf.ui.Control.prototype.toggleButton = function(cssName, enabled) {
 
 /**
  * Gets the root paint context, if any.
- * @return {wtf.ui.PaintContext} Paint context, if any.
+ * @return {wtf.ui.Painter} Paint context, if any.
  */
 wtf.ui.Control.prototype.getPaintContext = function() {
   return this.paintContext_;
@@ -205,7 +205,7 @@ wtf.ui.Control.prototype.getPaintContext = function() {
 /**
  * Sets the root paint context.
  * This can only be called once.
- * @param {!wtf.ui.PaintContext} value New paint context.
+ * @param {!wtf.ui.Painter} value New paint context.
  */
 wtf.ui.Control.prototype.setPaintContext = function(value) {
   goog.asserts.assert(!this.paintContext_);

@@ -26,7 +26,7 @@ goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.events.EventType');
 goog.require('wtf.ui.GridPainter');
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
@@ -70,7 +70,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('wtfAppUiTracksPanelCanvas')));
 
-  var paintContext = new wtf.ui.PaintContext(this.trackCanvas_);
+  var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);
 
   var body = this.getDom().getDocument().body;
@@ -93,13 +93,15 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    */
   this.timeRangePainters_ = [];
 
-  var gridPainter = new wtf.ui.GridPainter(paintContext);
+  var gridPainter = new wtf.ui.GridPainter(this.trackCanvas_);
+  paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(paintContext);
+  var rulerPainter = new wtf.ui.RulerPainter(this.trackCanvas_);
+  paintContext.addChildPainter(rulerPainter);
   rulerPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
@@ -228,6 +230,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
-      paintContext, this.db_, zoneIndex, docView.getSelection());
+      this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
+  paintContext.addChildPainter(zonePainter);
   this.timeRangePainters_.push(zonePainter);
 };

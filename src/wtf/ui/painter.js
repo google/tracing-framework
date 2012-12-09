@@ -11,9 +11,11 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.ui.PaintContext');
+goog.provide('wtf.ui.Painter');
 
 goog.require('goog.Disposable');
+goog.require('goog.array');
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('wtf.timing');
 goog.require('wtf.util.canvas');
@@ -25,11 +27,10 @@ goog.require('wtf.util.canvas');
  * Supports child contexts to enable modular nested rendering.
  *
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {wtf.ui.PaintContext=} opt_parentContext Parent paint context.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.ui.PaintContext = function(canvas, opt_parentContext) {
+wtf.ui.Painter = function(canvas) {
   goog.base(this);
 
   /**
@@ -47,20 +48,20 @@ wtf.ui.PaintContext = function(canvas, opt_parentContext) {
   this.canvasContext2d_ = wtf.util.canvas.getContext2d(canvas);
 
   /**
-   * Parent painting context.
-   * If this is null then this context is the root.
-   * @type {wtf.ui.PaintContext}
+   * Parent painter.
+   * If this is null then this painter is the root.
+   * @type {wtf.ui.Painter}
    * @private
    */
-  this.parentContext_ = opt_parentContext || null;
+  this.parentPainter_ = null;
 
   /**
-   * Child painting contexts.
+   * Child painters.
    * These will be repainted after their parent is.
-   * @type {!Array.<!wtf.ui.PaintContext>}
+   * @type {!Array.<!wtf.ui.Painter>}
    * @private
    */
-  this.childContexts_ = [];
+  this.childPainters_ = [];
 
   /**
    * Whether a repaint has been requested and is pending the next frame.
@@ -76,20 +77,15 @@ wtf.ui.PaintContext = function(canvas, opt_parentContext) {
    * @private
    */
   this.ready_ = true;
-
-  // Add to parent.
-  if (this.parentContext_) {
-    this.parentContext_.childContexts_.push(this);
-  }
 };
-goog.inherits(wtf.ui.PaintContext, goog.Disposable);
+goog.inherits(wtf.ui.Painter, goog.Disposable);
 
 
 /**
  * @override
  */
-wtf.ui.PaintContext.prototype.disposeInternal = function() {
-  goog.disposeAll(this.childContexts_);
+wtf.ui.Painter.prototype.disposeInternal = function() {
+  goog.disposeAll(this.childPainters_);
   goog.base(this, 'disposeInternal');
 };
 
@@ -98,7 +94,7 @@ wtf.ui.PaintContext.prototype.disposeInternal = function() {
  * Gets the target canvas.
  * @return {!HTMLCanvasElement} Target canvas.
  */
-wtf.ui.PaintContext.prototype.getCanvas = function() {
+wtf.ui.Painter.prototype.getCanvas = function() {
   return this.canvas_;
 };
 
@@ -107,7 +103,7 @@ wtf.ui.PaintContext.prototype.getCanvas = function() {
  * Gets the canvas rendering context.
  * @return {!CanvasRenderingContext2D} Canvas rendering context.
  */
-wtf.ui.PaintContext.prototype.getCanvasContext2d = function() {
+wtf.ui.Painter.prototype.getCanvasContext2d = function() {
   return this.canvasContext2d_;
 };
 
@@ -117,8 +113,30 @@ wtf.ui.PaintContext.prototype.getCanvasContext2d = function() {
  * @return {!goog.dom.DomHelper} A dom helper for the document containing
  *     this paint context's canvas.
  */
-wtf.ui.PaintContext.prototype.getDom = function() {
+wtf.ui.Painter.prototype.getDom = function() {
   return goog.dom.getDomHelper(this.canvas_);
+};
+
+
+/**
+ * Gets the parent painter, if any.
+ * @return {wtf.ui.Painter} Parent painter or null if this is the
+ *     root.
+ */
+wtf.ui.Painter.prototype.getParentPainter = function() {
+  return this.parentPainter_;
+};
+
+
+/**
+ * Adds a child painter.
+ * @param {!wtf.ui.Painter} value Child painter.
+ */
+wtf.ui.Painter.prototype.addChildPainter = function(value) {
+  goog.asserts.assert(!value.parentPainter_);
+  goog.asserts.assert(!goog.array.contains(this.childPainters_, value));
+  this.childPainters_.push(value);
+  value.parentPainter_ = this;
 };
 
 
@@ -126,7 +144,7 @@ wtf.ui.PaintContext.prototype.getDom = function() {
  * Sets the ready state of the paint context.
  * @param {boolean} value New ready value.
  */
-wtf.ui.PaintContext.prototype.setReady = function(value) {
+wtf.ui.Painter.prototype.setReady = function(value) {
   this.ready_ = value;
   if (value) {
     this.requestRepaint();
@@ -141,9 +159,9 @@ wtf.ui.PaintContext.prototype.setReady = function(value) {
  * *must* be displayed immediately, such as in the case of a resize.
  * @protected
  */
-wtf.ui.PaintContext.prototype.requestRepaint = function() {
-  if (this.parentContext_) {
-    this.parentContext_.requestRepaint();
+wtf.ui.Painter.prototype.requestRepaint = function() {
+  if (this.parentPainter_) {
+    this.parentPainter_.requestRepaint();
   } else if (!this.repaintPending_) {
     this.repaintPending_ = true;
     wtf.timing.deferToNextFrame(this.repaintRequested_, this);
@@ -156,8 +174,8 @@ wtf.ui.PaintContext.prototype.requestRepaint = function() {
  * This is called on the edge of a new rAF.
  * @private
  */
-wtf.ui.PaintContext.prototype.repaintRequested_ = function() {
-  if (this.parentContext_ || !this.repaintPending_) {
+wtf.ui.Painter.prototype.repaintRequested_ = function() {
+  if (this.parentPainter_ || !this.repaintPending_) {
     return;
   }
   this.repaintPending_ = false;
@@ -168,9 +186,9 @@ wtf.ui.PaintContext.prototype.repaintRequested_ = function() {
 /**
  * Immediately repaints the controls contents.
  */
-wtf.ui.PaintContext.prototype.repaint = function() {
+wtf.ui.Painter.prototype.repaint = function() {
   // Ignore requests if a child.
-  if (this.parentContext_) {
+  if (this.parentPainter_) {
     return;
   }
 
@@ -205,8 +223,8 @@ wtf.ui.PaintContext.prototype.repaint = function() {
   }
 
   // Repaint all children.
-  for (var n = 0; n < this.childContexts_.length; n++) {
-    var childContext = this.childContexts_[n];
+  for (var n = 0; n < this.childPainters_.length; n++) {
+    var childContext = this.childPainters_[n];
     ctx.save();
     childContext.repaintInternal(ctx, width, height);
     ctx.restore();
@@ -222,7 +240,7 @@ wtf.ui.PaintContext.prototype.repaint = function() {
  * @return {boolean|undefined} True to prevent painting of children.
  * @protected
  */
-wtf.ui.PaintContext.prototype.repaintInternal = goog.nullFunction;
+wtf.ui.Painter.prototype.repaintInternal = goog.nullFunction;
 
 
 /**
@@ -233,7 +251,7 @@ wtf.ui.PaintContext.prototype.repaintInternal = goog.nullFunction;
  * @param {number} h Height.
  * @protected
  */
-wtf.ui.PaintContext.prototype.clip = function(x, y, w, h) {
+wtf.ui.Painter.prototype.clip = function(x, y, w, h) {
   var ctx = this.canvasContext2d_;
   ctx.beginPath();
   ctx.moveTo(x, y);
@@ -253,7 +271,7 @@ wtf.ui.PaintContext.prototype.clip = function(x, y, w, h) {
  * @param {number} h Height.
  * @param {(string|null)=} opt_color Color or null for transparent.
  */
-wtf.ui.PaintContext.prototype.clear = function(x, y, w, h, opt_color) {
+wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
   var ctx = this.canvasContext2d_;
   if (!opt_color) {
     ctx.clearRect(x, y, w, h);
@@ -272,13 +290,13 @@ wtf.ui.PaintContext.prototype.clear = function(x, y, w, h, opt_color) {
  * @param {number} height Height of the paint canvas.
  * @return {boolean} True if the click was handled.
  */
-wtf.ui.PaintContext.prototype.onClick = function(x, y, width, height) {
+wtf.ui.Painter.prototype.onClick = function(x, y, width, height) {
   if (this.onClickInternal(x, y, width, height)) {
     return true;
   }
 
-  for (var n = 0; n < this.childContexts_.length; n++) {
-    var childContext = this.childContexts_[n];
+  for (var n = 0; n < this.childPainters_.length; n++) {
+    var childContext = this.childPainters_[n];
     if (childContext.onClickInternal(x, y, width, height)) {
       return true;
     }
@@ -297,7 +315,7 @@ wtf.ui.PaintContext.prototype.onClick = function(x, y, width, height) {
  * @return {boolean|undefined} True if the click was handled.
  * @protected
  */
-wtf.ui.PaintContext.prototype.onClickInternal = goog.nullFunction;
+wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
 
 
 /**
@@ -309,12 +327,12 @@ wtf.ui.PaintContext.prototype.onClickInternal = goog.nullFunction;
  * @param {number} height Height of the paint canvas.
  * @return {string|undefined} Info string or undefined for none.
  */
-wtf.ui.PaintContext.prototype.getInfoString = function(x, y, width, height) {
+wtf.ui.Painter.prototype.getInfoString = function(x, y, width, height) {
   var info = this.getInfoStringInternal(x, y, width, height);
   if (info) return info;
 
-  for (var n = 0; n < this.childContexts_.length; n++) {
-    var childContext = this.childContexts_[n];
+  for (var n = 0; n < this.childPainters_.length; n++) {
+    var childContext = this.childPainters_[n];
     info = childContext.getInfoString(x, y, width, height);
     if (info) return info;
   }
@@ -332,4 +350,4 @@ wtf.ui.PaintContext.prototype.getInfoString = function(x, y, width, height) {
  * @return {string|undefined} Info string or undefined for none.
  * @protected
  */
-wtf.ui.PaintContext.prototype.getInfoStringInternal = goog.nullFunction;
+wtf.ui.Painter.prototype.getInfoStringInternal = goog.nullFunction;

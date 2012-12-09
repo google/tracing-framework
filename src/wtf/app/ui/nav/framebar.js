@@ -28,7 +28,7 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.GridPainter');
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
@@ -75,7 +75,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   this.framebarCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('wtfAppUiFramebarCanvas')));
 
-  var paintContext = new wtf.ui.PaintContext(this.framebarCanvas_);
+  var paintContext = new wtf.ui.Painter(this.framebarCanvas_);
   this.setPaintContext(paintContext);
 
   /**
@@ -96,21 +96,25 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    */
   this.timeRangePainters_ = [];
 
-  var gridPainter = new wtf.ui.GridPainter(paintContext);
+  var gridPainter = new wtf.ui.GridPainter(this.framebarCanvas_);
+  paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
   var framebarPainter = new wtf.app.ui.nav.FramebarPainter(
-      paintContext, db);
+      this.framebarCanvas_, db);
+  paintContext.addChildPainter(framebarPainter);
   this.timeRangePainters_.push(framebarPainter);
 
   var heatmapPainter = new wtf.app.ui.nav.HeatmapPainter(
-      paintContext, db);
+      this.framebarCanvas_, db);
+  paintContext.addChildPainter(heatmapPainter);
   this.timeRangePainters_.push(heatmapPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(paintContext);
+  var rulerPainter = new wtf.ui.RulerPainter(this.framebarCanvas_);
+  paintContext.addChildPainter(rulerPainter);
   rulerPainter.setGranularities(
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
