@@ -29,8 +29,16 @@
 .wtfAppUiStatusbarLeft {
   float: left;
 }
-.wtfAppUiStatusbarSelection {
+.wtfAppUiStatusbarSelectionCounts {
   float: left;
+  margin-right: 5px;
+  width: 100px;
+  text-align: center;
+}
+.wtfAppUiStatusbarSelectionTimes {
+  float: left;
+  width: 100px;
+  text-align: center;
 }
 
 .wtfAppUiStatusbarRight {

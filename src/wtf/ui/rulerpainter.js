@@ -109,8 +109,8 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
   ctx.fillRect(0, y + h - 1, width, 1);
 
   // Draw labels.
-  var timeLeft = this.timeLeft - this.timeOffset;
-  var timeRight = this.timeRight - this.timeOffset;
+  var timeLeft = this.timeLeft;
+  var timeRight = this.timeRight;
   var duration = timeRight - timeLeft;
   var granularity = this.minGranularity_;
   var n = 0;

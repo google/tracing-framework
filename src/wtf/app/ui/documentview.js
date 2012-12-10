@@ -25,7 +25,9 @@ goog.require('wtf.app.ui.Toolbar');
 goog.require('wtf.app.ui.documentview');
 goog.require('wtf.app.ui.nav.Navbar');
 goog.require('wtf.app.ui.tracks.TracksPanel');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.zoom.Viewport');
@@ -127,8 +129,31 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       this, 'something', 'Something'));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
       this, 'mumble', 'Mumble'));
+
+  var keyboard = wtf.events.getWindowKeyboard(dom);
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.registerSimpleCommand(
+      'select_all', function() {
+        this.selection_.clearTimeRange();
+      }, this);
+  keyboardScope.addShortcut('ctrl+a', function() {
+    commandManager.execute('select_all', this, null);
+  });
 };
 goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
+
+
+/**
+ * @override
+ */
+wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.unregisterCommand('select_all');
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
