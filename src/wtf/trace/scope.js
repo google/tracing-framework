@@ -31,10 +31,10 @@ wtf.trace.Scope = function() {
    * The flow this scope is tracking, if any.
    * Scopes can be given flows. When a scope is left the flow will be
    * terminated.
-   * @type {wtf.trace.Flow|undefined}
+   * @type {wtf.trace.Flow}
    * @private
    */
-  this.flow_ = undefined;
+  this.flow_ = null;
 
   /**
    * @type {number}
@@ -60,7 +60,24 @@ wtf.trace.Scope.pool_ = {
   /**
    * @type {number}
    */
-  unusedIndex: 0
+  unusedIndex: 0,
+
+  /**
+   * Current stack depth.
+   * This is an index into {@see #stack}.
+   * @type {number}
+   * @private
+   */
+  currentDepth: -1,
+
+  /**
+   * Scope stack.
+   * This is used to track the currently open scopes and close unmatched
+   * scopes. This array is grown as needed and the current index is
+   * {@see #currentDepth}.
+   * @type {!Array.<wtf.trace.Scope>}
+   */
+  stack: []
 };
 
 
@@ -70,48 +87,6 @@ wtf.trace.Scope.pool_ = {
  */
 wtf.trace.Scope.dummy =
     /** @type {!wtf.trace.Scope} */ (wtf.trace.util.DUMMY_SCOPE);
-
-
-/**
- * Enters a scope.
- * This will initialize a scope object and append an enter scope event.
- * Prefer using the {@see wtf.trace#enterScope} utility method over this.
- *
- * @param {string=} opt_msg Optional message string.
- * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
- * @param {number=} opt_time Time for the enter; omit to use the current time.
- * @return {!wtf.trace.Scope} An initialized scope.
- */
-wtf.trace.Scope.enter = function(opt_msg, opt_flow, opt_time) {
-  // Pop a scope from the pool or allocate a new one.
-  var pool = wtf.trace.Scope.pool_;
-  var scope;
-  if (pool.unusedIndex) {
-    scope = pool.unusedScopes[--pool.unusedIndex];
-  } else {
-    scope = new wtf.trace.Scope();
-  }
-
-  // Track scope stack. This allows for scope unwinding in the case of
-  // unbalanced scopes.
-  // TODO(benvanik): scope stack
-  var stackDepth = 0;
-
-  // Stash values.
-  scope.flow_ = opt_flow;
-  scope.stackDepth_ = stackDepth;
-
-  // Append event.
-  var time = opt_time || wtf.now();
-  wtf.trace.BuiltinEvents.enterScope(time, opt_flow, opt_msg);
-
-  // Extend flow, if present.
-  if (opt_flow) {
-    opt_flow.extend(undefined, time);
-  }
-
-  return scope;
-};
 
 
 /**
@@ -135,14 +110,11 @@ wtf.trace.Scope.enterTyped = function(flow, time) {
 
   // Track scope stack. This allows for scope unwinding in the case of
   // unbalanced scopes.
-  // TODO(benvanik): scope stack
-  var stackDepth = 0;
-
-  // Stash values.
-  scope.flow_ = flow;
-  scope.stackDepth_ = stackDepth;
+  scope.stackDepth_ = ++pool.currentDepth;
+  pool.stack[scope.stackDepth_] = scope;
 
   // Extend flow, if present.
+  scope.flow_ = flow;
   if (flow) {
     flow.extend(undefined, time);
   }
@@ -166,10 +138,20 @@ wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(
       // Time immediately after the scope - don't track our stuff.
       var time = opt_time || wtf.now();
 
+      // Unwind stack, if needed.
+      var pool = wtf.trace.Scope.pool_;
+      while (pool.currentDepth > this.stackDepth_) {
+        // TODO(benvanik): mark as bad? emit discontinuity?
+        var openScope = pool.stack[pool.currentDepth];
+        openScope.leave(undefined, time);
+      }
+      pool.currentDepth--;
+      pool.stack[this.stackDepth_] = null;
+
       // Terminate a flow, if one is attached.
       if (this.flow_) {
         this.flow_.terminate(undefined, time);
-        this.flow_ = undefined;
+        this.flow_ = null;
       }
 
       // Append event.
@@ -177,7 +159,6 @@ wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(
 
       // Return the scope to the pool.
       // Note that we have no thresholding here and will grow forever.
-      var pool = wtf.trace.Scope.pool_;
       pool.unusedScopes[pool.unusedIndex++] = this;
 
       return opt_result;
