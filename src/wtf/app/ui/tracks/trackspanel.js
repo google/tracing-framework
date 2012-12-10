@@ -20,6 +20,7 @@ goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
+goog.require('wtf.app.ui.SelectionPainter');
 goog.require('wtf.app.ui.TabPanel');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
@@ -62,6 +63,44 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.registerDisposable(this.infobar_);
 
   /**
+   * Zooming viewport.
+   * @type {!wtf.ui.zoom.Viewport}
+   * @private
+   */
+  this.viewport_ = new wtf.ui.zoom.Viewport();
+  this.registerDisposable(this.viewport_);
+  this.viewport_.setAllowedScales(
+      1000 / wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
+      1000 / wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
+  this.viewport_.addListener(
+      wtf.events.EventType.INVALIDATED,
+      function() {
+        var firstEventTime = db.getFirstEventTime();
+
+        // Update from viewport.
+        var width = this.viewport_.getScreenWidth();
+        var timeLeft = this.viewport_.screenToScene(0, 0).x;
+        var timeRight = this.viewport_.screenToScene(width, 0).x;
+        timeLeft += firstEventTime;
+        timeRight += firstEventTime;
+
+        // Update the main view.
+        // TODO(benvanik): better data flow
+        // var localView = documentView.getLocalView();
+        // localView.setVisibleRange(timeLeft, timeRight);
+
+        for (var n = 0; n < this.timeRangePainters_.length; n++) {
+          var painter = this.timeRangePainters_[n];
+          painter.setTimeRange(timeLeft, timeRight);
+        }
+
+        this.requestRepaint();
+      }, this);
+  // TODO(benvanik): set to something larger to get more precision.
+  this.viewport_.setSceneSize(1, 1);
+  documentView.registerViewport(this.viewport_);
+
+  /**
    * Track canvas.
    * @type {!HTMLCanvasElement}
    * @private
@@ -98,6 +137,16 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.timeRangePainters_.push(gridPainter);
 
   /**
+   * Selection painter.
+   * @type {!wtf.app.ui.SelectionPainter}
+   * @private
+   */
+  this.selectionPainter_ = new wtf.app.ui.SelectionPainter(
+      this.trackCanvas_, documentView.getSelection(), this.viewport_);
+  paintContext.addChildPainter(this.selectionPainter_);
+  this.timeRangePainters_.push(this.selectionPainter_);
+
+  /**
    * Ruler painter.
    * @type {!wtf.ui.RulerPainter}
    * @private
@@ -109,45 +158,6 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(this.rulerPainter_);
 
-  /**
-   * Zooming viewport.
-   * @type {!wtf.ui.zoom.Viewport}
-   * @private
-   */
-  this.viewport_ = new wtf.ui.zoom.Viewport();
-  this.registerDisposable(this.viewport_);
-  this.viewport_.setAllowedScales(
-      1000 / wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
-      1000 / wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.viewport_.addListener(
-      wtf.events.EventType.INVALIDATED,
-      function() {
-        var firstEventTime = db.getFirstEventTime();
-
-        // Update from viewport.
-        var width = this.viewport_.getScreenWidth();
-        var timeLeft = this.viewport_.screenToScene(0, 0).x;
-        var timeRight = this.viewport_.screenToScene(width, 0).x;
-        timeLeft += firstEventTime;
-        timeRight += firstEventTime;
-
-        // Update the main view.
-        // TODO(benvanik): better data flow
-        // var localView = documentView.getLocalView();
-        // localView.setVisibleRange(timeLeft, timeRight);
-
-        for (var n = 0; n < this.timeRangePainters_.length; n++) {
-          var painter = this.timeRangePainters_[n];
-          painter.setTimeRange(0, timeLeft, timeRight);
-        }
-
-        this.requestRepaint();
-      }, this);
-  this.viewport_.registerElement(this.trackCanvas_);
-  // TODO(benvanik): set to something larger to get more precision.
-  this.viewport_.setSceneSize(1, 1);
-  documentView.registerViewport(this.viewport_);
-
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
       function(zoneIndices) {
@@ -155,6 +165,9 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
       }, this);
   var zoneIndices = db.getZoneIndices();
   goog.array.forEach(zoneIndices, this.addZoneTrack_, this);
+
+  // Done last so any other handlers are properly registered.
+  this.viewport_.registerElement(this.trackCanvas_);
 
   this.requestRepaint();
 };
