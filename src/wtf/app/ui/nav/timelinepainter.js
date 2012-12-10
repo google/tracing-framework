@@ -68,7 +68,7 @@ wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
             function() {
               var timeLeft = this.frameIndex_.getFirstEventTime();
               var timeRight = this.frameIndex_.getLastEventTime();
-              this.setTimeRange(0, timeLeft, timeRight);
+              this.setTimeRange(timeLeft, timeRight);
               this.requestRepaint();
             }, this);
 

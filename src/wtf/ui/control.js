@@ -270,7 +270,7 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
       function(e) {
         var x = e.offsetX;
         var y = e.offsetY;
-        if (delta < 4) {
+        if (!e.shiftKey && delta < 4) {
           this.paintContext_.onClick(x, y);
         }
         lastX = lastY = delta = 0;

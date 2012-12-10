@@ -20,13 +20,16 @@
 {template .control}
   <div class="{css wtfAppUiStatusbar}">
     <div class="{css wtfAppUiStatusbarLeft}">
-      <div class="{css wtfAppUiStatusbarSelection}"
+      <div class="{css wtfAppUiStatusbarSelectionCounts}"
           title="selected events / total event count">
+      </div>
+      <div class="{css wtfAppUiStatusbarSelectionTimes}"
+          title="selected time duration / total time duration">
       </div>
     </div>
     <div class="{css wtfAppUiStatusbarRight}">
       <div class="{css wtfAppUiStatusbarTimeTotals}"
-          title="user time / total time (trace duration)">
+          title="user time / total time">
       </div>
       <div class="{css wtfAppUiStatusbarTimeRange}"
           title="trace time">

@@ -13,7 +13,6 @@
 
 goog.provide('wtf.app.ui.Statusbar');
 
-goog.require('goog.dom');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.statusbar');
 goog.require('wtf.events.EventType');
@@ -46,8 +45,10 @@ wtf.app.ui.Statusbar = function(documentView, parentElement) {
    * @private
    */
   this.divs_ = {
-    selection: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarSelection')),
+    selectionCounts: this.getChildElement(
+        goog.getCssName('wtfAppUiStatusbarSelectionCounts')),
+    selectionTimes: this.getChildElement(
+        goog.getCssName('wtfAppUiStatusbarSelectionTimes')),
     timeTotals: this.getChildElement(
         goog.getCssName('wtfAppUiStatusbarTimeTotals')),
     timeRange: this.getChildElement(
@@ -96,12 +97,6 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
     totalUserTime += zoneIndex.getRootUserTime();
   }
 
-  if (selection.hasTimeRangeSpecified()) {
-    var selectionTimeStart = selection.getTimeStart();
-    var selectionTimeEnd = selection.getTimeEnd();
-    //
-  }
-
   var table = selection.computeEventDataTable();
   var filteredEventCount = table.getFilteredEventCount();
 
@@ -109,15 +104,29 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
     filteredEventCount,
     totalEventCount
   ].join('/');
-  goog.dom.setTextContent(this.divs_.selection, selectionCounts);
+  dom.setTextContent(this.divs_.selectionCounts, selectionCounts);
 
-  goog.dom.setTextContent(this.divs_.timeTotals, [
+  var totalDuration = wtf.util.formatTime(lastEventTime - firstEventTime);
+  if (selection.hasTimeRangeSpecified()) {
+    var selectionTimeStart = selection.getTimeStart();
+    var selectionTimeEnd = selection.getTimeEnd();
+    dom.setTextContent(this.divs_.selectionTimes, [
+      wtf.util.formatTime(selectionTimeEnd - selectionTimeStart),
+      totalDuration
+    ].join('/'));
+  } else {
+    dom.setTextContent(this.divs_.selectionTimes, [
+      totalDuration,
+      totalDuration
+    ].join('/'));
+  }
+
+  dom.setTextContent(this.divs_.timeTotals, [
     wtf.util.formatTime(totalUserTime) + ' u',
     wtf.util.formatTime(totalTime) + ' t'
-  ].join('/') +
-      ' (' + wtf.util.formatTime(lastEventTime - firstEventTime) + ')');
+  ].join('/'));
 
-  goog.dom.setTextContent(this.divs_.timeRange, [
+  dom.setTextContent(this.divs_.timeRange, [
     wtf.util.formatWallTime(timebase + firstEventTime),
     wtf.util.formatWallTime(timebase + lastEventTime)
   ].join('-'));

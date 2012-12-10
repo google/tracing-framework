@@ -73,8 +73,8 @@ wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, width, height) {
   // Clip to extents.
   this.clip(0, y, width, h);
 
-  var timeLeft = this.timeLeft - this.timeOffset;
-  var timeRight = this.timeRight - this.timeOffset;
+  var timeLeft = this.timeLeft;
+  var timeRight = this.timeRight;
   var duration = timeRight - timeLeft;
   var granularity = this.minGranularity_;
   var n = 0;

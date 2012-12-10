@@ -82,7 +82,6 @@ goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimeRangePainter);
  */
 wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
     ctx, width, height) {
-  var timeOffset = this.timeOffset;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
   if (!(timeRight - timeLeft)) {
@@ -102,8 +101,7 @@ wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
   for (var n = 0; n < this.bars_.length; n++) {
     var bar = this.bars_[n];
     bar.draw(
-        ctx, width, height, barY, barHeight,
-        timeOffset, timeLeft, timeRight);
+        ctx, width, height, barY, barHeight, timeLeft, timeRight);
     barY += barHeight;
   }
 };
@@ -220,12 +218,11 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.prepare = function(color) {
  * @param {number} height Canvas height, in pixels.
  * @param {number} y Bar Y offset, in pixels.
  * @param {number} h Bar height, in pixels.
- * @param {number} timeOffset Time offset.
  * @param {number} timeLeft Left-most time.
  * @param {number} timeRight Right-most time.
  */
 wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
-    ctx, width, height, y, h, timeOffset, timeLeft, timeRight) {
+    ctx, width, height, y, h, timeLeft, timeRight) {
   // We use a bucket size that is an integral power of 2 in ms. So .5ms, 1ms,
   // 8ms, etc. We choose the power of 2 such that the screen size width of a
   // bucket is between 6 and 12 pixels. With this scheme we get relatively
