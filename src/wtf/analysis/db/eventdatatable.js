@@ -352,7 +352,11 @@ wtf.analysis.db.ScopeEventDataEntry.prototype.getUserTime = function() {
  */
 wtf.analysis.db.ScopeEventDataEntry.prototype.getMeanTime = function() {
   if (this.count) {
-    return this.userTime_ / this.count;
+    if (this.eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
+      return this.totalTime_ / this.count;
+    } else {
+      return this.userTime_ / this.count;
+    }
   } else {
     return 0;
   }
