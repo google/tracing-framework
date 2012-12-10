@@ -18,6 +18,7 @@ goog.provide('wtf.trace');
 goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('wtf');
+goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.io.CustomWriteStream');
 goog.require('wtf.io.LocalFileWriteStream');
 goog.require('wtf.io.MemoryWriteStream');
