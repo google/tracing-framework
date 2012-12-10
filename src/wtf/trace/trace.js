@@ -179,10 +179,20 @@ wtf.trace.createStream_ = function(options, opt_targetValue) {
       // TODO(benvanik): setup websocket target
       return new wtf.io.NullWriteStream();
     } else if (goog.string.startsWith(targetUrl, 'http://') ||
-        goog.string.startsWith(targetUrl, 'https://')) {
+        goog.string.startsWith(targetUrl, 'https://') ||
+        goog.string.startsWith(targetUrl, '//') ||
+        goog.string.startsWith(targetUrl, 'http-rel:')) {
       // HTTP target.
-      // TODO(benvanik): pick between streaming/buffered?
-      return new wtf.io.StreamingHttpWriteStream(targetUrl);
+      // We use the fake protocol http-rel to specify a relative url. In
+      // that case we just strip it off and take the rest as the url.
+      if (goog.string.startsWith(targetUrl, 'http-rel:')) {
+        targetUrl = targetUrl.substring('http-rel:'.length);
+      }
+      if (options.getOptionalString('wtf.trace.mode') == 'snapshotting') {
+        return new wtf.io.BufferedHttpWriteStream(targetUrl);
+      } else {
+        return new wtf.io.StreamingHttpWriteStream(targetUrl);
+      }
     } else if (goog.string.startsWith(targetUrl, 'file://')) {
       // File target.
       var targetFilename = wtf.trace.getTraceFilename_(targetUrl);
