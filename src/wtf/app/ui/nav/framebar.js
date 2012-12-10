@@ -13,7 +13,6 @@
 
 goog.provide('wtf.app.ui.nav.Framebar');
 
-goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.soy');
 goog.require('goog.string');
@@ -45,8 +44,6 @@ goog.require('wtf.ui.zoom.Viewport');
  */
 wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   var dom = documentView.getDom();
-  var body = dom.getDocument().body;
-  goog.asserts.assert(body);
   goog.base(this, parentElement, dom);
 
   var doc = documentView.getDocument();
@@ -82,7 +79,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    * @type {!wtf.ui.Tooltip}
    * @private
    */
-  this.tooltip_ = new wtf.ui.Tooltip(body);
+  this.tooltip_ = new wtf.ui.Tooltip(dom);
   this.registerDisposable(this.tooltip_);
   this.setTooltip(this.tooltip_);
 

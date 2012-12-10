@@ -422,6 +422,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
  * @param {number} width Width of the paint canvas.
  * @param {number} height Height of the paint canvas.
  * @return {wtf.analysis.Scope} Scope, if any.
+ * @private
  */
 wtf.app.ui.tracks.ZonePainter.prototype.hitTestScope_ = function(
     x, y, width, height) {

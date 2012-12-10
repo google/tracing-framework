@@ -13,41 +13,72 @@
 
 goog.provide('wtf.ui.Tooltip');
 
+goog.require('goog.Disposable');
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
-goog.require('wtf.ui.Control');
 
 
 
 /**
  * Tooltip control.
  *
- * @param {!Element} parentElement Element to display in.
- * @param {goog.dom.DomHelper=} opt_dom DOM helper.
+ * @param {!goog.dom.DomHelper} dom DOM helper.
  * @constructor
- * @extends {wtf.ui.Control}
+ * @extends {goog.Disposable}
  */
-wtf.ui.Tooltip = function(parentElement, opt_dom) {
-  goog.base(this, parentElement, opt_dom);
+wtf.ui.Tooltip = function(dom) {
+  goog.base(this);
+
+  /**
+   * DOM helper.
+   * @type {!goog.dom.DomHelper}
+   * @private
+   */
+  this.dom_ = dom;
+
+  /**
+   * Root control UI.
+   * @type {!Element}
+   * @private
+   */
+  this.rootElement_ = this.createDom(this.dom_);
+  goog.style.setUnselectable(this.rootElement_, true);
+
+  var body = dom.getDocument().body;
+  goog.asserts.assert(body);
+  this.dom_.appendChild(body, this.rootElement_);
 };
-goog.inherits(wtf.ui.Tooltip, wtf.ui.Control);
+goog.inherits(wtf.ui.Tooltip, goog.Disposable);
 
 
 /**
  * @override
  */
+wtf.ui.Tooltip.prototype.disposeInternal = function() {
+  this.dom_.removeNode(this.rootElement_);
+  goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * Creates the control UI DOM.
+ * @param {!goog.dom.DomHelper} dom DOM helper.
+ * @return {!Element} Control UI.
+ * @protected
+ */
 wtf.ui.Tooltip.prototype.createDom = function(dom) {
-  var elem = dom.createElement(goog.dom.TagName.DIV);
-  goog.style.showElement(elem, false);
-  goog.style.setStyle(elem, {
+  var el = dom.createElement(goog.dom.TagName.DIV);
+  goog.style.showElement(el, false);
+  goog.style.setStyle(el, {
     'position': 'absolute',
     'color': 'white',
     'backgroundColor': 'rgba(0,0,0,.7)',
     'padding': '5px',
     'white-space': 'pre'
   });
-  return elem;
+  return el;
 };
 
 
@@ -58,13 +89,13 @@ wtf.ui.Tooltip.prototype.createDom = function(dom) {
  * @param {string} content Tooltip content.
  */
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
-  var elem = this.getRootElement();
-  goog.dom.setTextContent(elem, content);
-  goog.style.setStyle(elem, {
+  var el = this.rootElement_;
+  goog.dom.setTextContent(el, content);
+  goog.style.setStyle(el, {
     'left': x + 10 + 'px',
     'top': y + 10 + 'px'
   });
-  goog.style.showElement(this.getRootElement(), true);
+  goog.style.showElement(el, true);
 };
 
 
@@ -72,5 +103,5 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
  * Hides the tooltip.
  */
 wtf.ui.Tooltip.prototype.hide = function() {
-  goog.style.showElement(this.getRootElement(), false);
+  goog.style.showElement(this.rootElement_, false);
 };

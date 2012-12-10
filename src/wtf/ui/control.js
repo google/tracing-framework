@@ -20,6 +20,8 @@ goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
+/** @suppress {extraRequire} */
+goog.require('wtf.ui.Tooltip');
 goog.require('wtf.util.canvas');
 
 
@@ -76,6 +78,7 @@ wtf.ui.Control = function(parentElement, opt_dom) {
    * Input event handler.
    * Makes it easier to rebind things.
    * @type {goog.events.EventHandler}
+   * @private
    */
   this.inputEventHandler_ = null;
 

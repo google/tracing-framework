@@ -72,14 +72,12 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);
 
-  var body = this.getDom().getDocument().body;
-  goog.asserts.assert(body);
   /**
    * Tooltip.
    * @type {!wtf.ui.Tooltip}
    * @private
    */
-  this.tooltip_ = new wtf.ui.Tooltip(body);
+  this.tooltip_ = new wtf.ui.Tooltip(this.getDom());
   this.registerDisposable(this.tooltip_);
   this.setTooltip(this.tooltip_);
 
