@@ -27,7 +27,7 @@ goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
 goog.require('wtf.app.ui.DocumentView');
-goog.require('wtf.app.ui.HelpOverlay');
+goog.require('wtf.app.ui.HelpDialog');
 goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events');
@@ -119,7 +119,7 @@ wtf.app.ui.MainDisplay = function(
   this.commandManager_.registerSimpleCommand(
       'show_settings', this.showSettings_, this);
   this.commandManager_.registerSimpleCommand(
-      'toggle_help', this.toggleHelpOverlay_, this);
+      'toggle_help', this.toggleHelpDialog_, this);
 
   // Setup keyboard shortcuts.
   var keyboard = wtf.events.getWindowKeyboard(dom);
@@ -560,10 +560,10 @@ wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
  * Toggles the display of the help overlay.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.toggleHelpOverlay_ = function() {
+wtf.app.ui.MainDisplay.prototype.toggleHelpDialog_ = function() {
   // Close existing help dialog (only).
   if (this.activeDialog_) {
-    if (this.activeDialog_ instanceof wtf.app.ui.HelpOverlay) {
+    if (this.activeDialog_ instanceof wtf.app.ui.HelpDialog) {
       goog.dispose(this.activeDialog_);
       this.activeDialog_ = null;
     }
@@ -573,7 +573,7 @@ wtf.app.ui.MainDisplay.prototype.toggleHelpOverlay_ = function() {
   // Show help dialog.
   var body = this.getDom().getDocument().body;
   goog.asserts.assert(body);
-  this.activeDialog_ = new wtf.app.ui.HelpOverlay(
+  this.activeDialog_ = new wtf.app.ui.HelpDialog(
       body,
       this.getDom());
   this.activeDialog_.addListener(wtf.ui.Dialog.EventType.CLOSED, function() {

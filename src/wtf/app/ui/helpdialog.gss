@@ -6,12 +6,12 @@
  */
 
 /**
- * Help overlay CSS.
+ * Help dialog CSS.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-.wtfAppUiHelpOverlay {
+.wtfAppUiHelpDialog {
   width: 800px;
   height: 400px;
   margin: 10px;
