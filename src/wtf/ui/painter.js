@@ -156,12 +156,13 @@ wtf.ui.Painter.prototype.getParentPainter = function() {
 /**
  * Adds a child painter.
  * @param {!wtf.ui.Painter} value Child painter.
+ * @param {wtf.ui.Painter=} opt_before Painter to insert before.
  */
-wtf.ui.Painter.prototype.addChildPainter = function(value) {
+wtf.ui.Painter.prototype.addChildPainter = function(value, opt_before) {
   goog.asserts.assert(!value.parentPainter_);
   goog.asserts.assert(!goog.array.contains(this.childPainters_, value));
-  this.childPainters_.push(value);
   value.parentPainter_ = this;
+  goog.array.insertBefore(this.childPainters_, value, opt_before);
 };
 
 

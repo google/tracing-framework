@@ -75,7 +75,7 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   /**
    * Input event handler.
    * Makes it easier to rebind things.
-   * @type {goog.events.EventHanlder}
+   * @type {goog.events.EventHandler}
    */
   this.inputEventHandler_ = null;
 
@@ -232,14 +232,16 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
   var canvas = this.paintContext_.getCanvas();
   var eh = this.inputEventHandler_;
 
+  var delta = 0;
+  var lastX = 0;
+  var lastY = 0;
+
   eh.listen(
       canvas,
-      goog.events.EventType.CLICK,
+      goog.events.EventType.MOUSEDOWN,
       function(e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        this.paintContext_.onClick(x, y);
-      }, this);
+        lastX = lastY = delta = 0;
+      });
 
   eh.listen(
       canvas,
@@ -247,6 +249,7 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
       function(e) {
         var x = e.offsetX;
         var y = e.offsetY;
+        delta += Math.abs(lastX - x) + Math.abs(lastY - y);
         if (!this.paintContext_.onMouseMove(x, y) &&
             this.tooltip_) {
           var infoString = this.paintContext_.getInfoString(x, y);
@@ -260,8 +263,21 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
 
   eh.listen(
       canvas,
+      goog.events.EventType.MOUSEUP,
+      function(e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        if (delta < 4) {
+          this.paintContext_.onClick(x, y);
+        }
+        lastX = lastY = delta = 0;
+      });
+
+  eh.listen(
+      canvas,
       goog.events.EventType.MOUSEOUT,
       function(e) {
+        lastX = lastY = delta = 0;
         if (this.tooltip_) {
           this.tooltip_.hide();
         }

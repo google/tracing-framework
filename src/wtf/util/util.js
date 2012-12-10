@@ -25,17 +25,7 @@ goog.require('goog.string');
  * @return {string} Formatted time string.
  */
 wtf.util.formatTime = function(value) {
-  var elapsed = value;
-  if (value) {
-    // Round to just a few significant digits.
-    // largest power of 10 <= value
-    var magnitude = Math.floor(Math.log(elapsed) / Math.LN10);
-    // a number which will shift elapsed (in base 10) so that
-    // there are 4 digits to the left of the decimal.
-    var mult = Math.pow(10, 3 - magnitude);
-    elapsed = Math.round(elapsed * mult) / mult;
-  }
-  return elapsed + 'ms';
+  return value.toFixed(3) + 'ms';
 };
 
 

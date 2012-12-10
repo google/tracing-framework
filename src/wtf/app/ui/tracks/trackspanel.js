@@ -99,12 +99,17 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(this.trackCanvas_);
-  paintContext.addChildPainter(rulerPainter);
-  rulerPainter.setGranularities(
+  /**
+   * Ruler painter.
+   * @type {!wtf.ui.RulerPainter}
+   * @private
+   */
+  this.rulerPainter_ = new wtf.ui.RulerPainter(this.trackCanvas_);
+  paintContext.addChildPainter(this.rulerPainter_);
+  this.rulerPainter_.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.timeRangePainters_.push(rulerPainter);
+  this.timeRangePainters_.push(this.rulerPainter_);
 
   /**
    * Zooming viewport.
@@ -218,6 +223,6 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
       this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
-  paintContext.addChildPainter(zonePainter);
+  paintContext.addChildPainter(zonePainter, this.rulerPainter_);
   this.timeRangePainters_.push(zonePainter);
 };
