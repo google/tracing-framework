@@ -35,7 +35,7 @@
   <script>
     window.onload = function() {
       var someLink = document.getElementById('someLink');
-      someLink.onclick = function(e) {
+      someLink.addEventListener('click', function(e) {
         e.preventDefault();
 
         // Enter scope
@@ -53,7 +53,7 @@
         }, 0);
 
         scope.leave();
-      };
+      });
 
       function unscopedMethod(x) {
         x++;
