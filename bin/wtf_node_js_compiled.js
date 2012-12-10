@@ -8262,61 +8262,6 @@ goog.events.EventHandler.prototype.handleEvent = function() {
 wtf.analysis.node = function() {
 };
 // Input 96
-wtf.io.CustomWriteStream = function(a) {
-  wtf.io.WriteStream.call(this);
-  goog.asserts.assert(a.write);
-  this.target_ = a
-};
-goog.inherits(wtf.io.CustomWriteStream, wtf.io.WriteStream);
-wtf.io.CustomWriteStream.prototype.disposeInternal = function() {
-  this.target_.close && this.target_.close();
-  wtf.io.CustomWriteStream.superClass_.disposeInternal.call(this)
-};
-wtf.io.CustomWriteStream.prototype.write = function(a, b, c) {
-  return this.target_.write(a.data, a.offset, function() {
-    b.call(c, a)
-  })
-};
-wtf.io.CustomWriteStream.prototype.flush = function() {
-  this.target_.flush && this.target_.flush()
-};
-// Input 97
-wtf.io.LocalFileWriteStream = function(a) {
-  wtf.io.WriteStream.call(this);
-  var b = new Date, b = "-" + b.getFullYear() + goog.string.padNumber(b.getMonth() + 1, 2) + goog.string.padNumber(b.getDate(), 2) + "T" + goog.string.padNumber(b.getHours(), 2) + goog.string.padNumber(b.getMinutes(), 2) + goog.string.padNumber(b.getSeconds(), 2);
-  this.filename_ = a + b + wtf.io.FILE_EXTENSION;
-  this.bufferDatas_ = []
-};
-goog.inherits(wtf.io.LocalFileWriteStream, wtf.io.WriteStream);
-wtf.io.LocalFileWriteStream.prototype.disposeInternal = function() {
-  var a = wtf.pal.getPlatform();
-  if(1 == this.bufferDatas_.length) {
-    a.writeBinaryFile(this.filename_, this.bufferDatas_[0])
-  }else {
-    var b = wtf.io.combineByteArrays(this.bufferDatas_);
-    a.writeBinaryFile(this.filename_, b)
-  }
-  this.bufferDatas_.length = 0;
-  wtf.io.LocalFileWriteStream.superClass_.disposeInternal.call(this)
-};
-wtf.io.LocalFileWriteStream.prototype.write = function(a) {
-  a = a.clone();
-  this.bufferDatas_.push(a.data);
-  return!0
-};
-wtf.io.LocalFileWriteStream.prototype.flush = function() {
-};
-// Input 98
-wtf.io.NullWriteStream = function() {
-  wtf.io.WriteStream.call(this)
-};
-goog.inherits(wtf.io.NullWriteStream, wtf.io.WriteStream);
-wtf.io.NullWriteStream.prototype.write = function() {
-  return!0
-};
-wtf.io.NullWriteStream.prototype.flush = function() {
-};
-// Input 99
 goog.net = {};
 goog.net.HttpStatus = {CONTINUE:100, SWITCHING_PROTOCOLS:101, OK:200, CREATED:201, ACCEPTED:202, NON_AUTHORITATIVE_INFORMATION:203, NO_CONTENT:204, RESET_CONTENT:205, PARTIAL_CONTENT:206, MULTIPLE_CHOICES:300, MOVED_PERMANENTLY:301, FOUND:302, SEE_OTHER:303, NOT_MODIFIED:304, USE_PROXY:305, TEMPORARY_REDIRECT:307, BAD_REQUEST:400, UNAUTHORIZED:401, PAYMENT_REQUIRED:402, FORBIDDEN:403, NOT_FOUND:404, METHOD_NOT_ALLOWED:405, NOT_ACCEPTABLE:406, PROXY_AUTHENTICATION_REQUIRED:407, REQUEST_TIMEOUT:408, 
 CONFLICT:409, GONE:410, LENGTH_REQUIRED:411, PRECONDITION_FAILED:412, REQUEST_ENTITY_TOO_LARGE:413, REQUEST_URI_TOO_LONG:414, UNSUPPORTED_MEDIA_TYPE:415, REQUEST_RANGE_NOT_SATISFIABLE:416, EXPECTATION_FAILED:417, INTERNAL_SERVER_ERROR:500, NOT_IMPLEMENTED:501, BAD_GATEWAY:502, SERVICE_UNAVAILABLE:503, GATEWAY_TIMEOUT:504, HTTP_VERSION_NOT_SUPPORTED:505, QUIRK_IE_NO_CONTENT:1223};
@@ -8340,14 +8285,14 @@ goog.net.HttpStatus.isSuccess = function(a) {
       return!1
   }
 };
-// Input 100
+// Input 97
 goog.net.XmlHttpFactory = function() {
 };
 goog.net.XmlHttpFactory.prototype.cachedOptions_ = null;
 goog.net.XmlHttpFactory.prototype.getOptions = function() {
   return this.cachedOptions_ || (this.cachedOptions_ = this.internalGetOptions())
 };
-// Input 101
+// Input 98
 goog.net.WrapperXmlHttpFactory = function(a, b) {
   goog.net.XmlHttpFactory.call(this);
   this.xhrFactory_ = a;
@@ -8360,7 +8305,7 @@ goog.net.WrapperXmlHttpFactory.prototype.createInstance = function() {
 goog.net.WrapperXmlHttpFactory.prototype.getOptions = function() {
   return this.optionsFactory_()
 };
-// Input 102
+// Input 99
 goog.net.XmlHttp = function() {
   return goog.net.XmlHttp.factory_.createInstance()
 };
@@ -8406,7 +8351,7 @@ goog.net.DefaultXmlHttpFactory.prototype.getProgId_ = function() {
   return this.ieProgId_
 };
 goog.net.XmlHttp.setGlobalFactory(new goog.net.DefaultXmlHttpFactory);
-// Input 103
+// Input 100
 goog.result = {};
 goog.result.Result = function() {
 };
@@ -8427,7 +8372,7 @@ goog.result.Result.CancelError = function(a) {
   goog.debug.Error.call(this, a || "Result canceled")
 };
 goog.inherits(goog.result.Result.CancelError, goog.debug.Error);
-// Input 104
+// Input 101
 goog.result.SimpleResult = function() {
   this.state_ = goog.result.Result.State.PENDING;
   this.handlers_ = []
@@ -8480,7 +8425,7 @@ goog.result.SimpleResult.prototype.cancel = function() {
 goog.result.SimpleResult.prototype.isCanceled = function() {
   return this.state_ == goog.result.Result.State.ERROR && this.error_ instanceof goog.result.Result.CancelError
 };
-// Input 105
+// Input 102
 goog.result.wait = function(a, b, c) {
   a.wait(c ? goog.bind(b, c) : b)
 };
@@ -8531,7 +8476,7 @@ goog.result.combineOnSuccess = function(a) {
   });
   return b
 };
-// Input 106
+// Input 103
 goog.labs = {};
 goog.labs.net = {};
 goog.labs.net.xhr = {};
@@ -8631,7 +8576,7 @@ goog.labs.net.xhr.TimeoutError = function(a, b) {
 };
 goog.inherits(goog.labs.net.xhr.TimeoutError, goog.labs.net.xhr.Error);
 goog.labs.net.xhr.TimeoutError.prototype.name = "XhrTimeoutError";
-// Input 107
+// Input 104
 wtf.io.HttpWriteStream = function() {
   wtf.io.WriteStream.call(this)
 };
@@ -8642,7 +8587,86 @@ wtf.io.HttpWriteStream.prototype.postData = function(a, b, c) {
   goog.asserts.assert(d);
   return goog.labs.net.xhr.post(a, d, {headers:{"Content-Type":b}, mimeType:b})
 };
+// Input 105
+wtf.io.BufferedHttpWriteStream = function(a) {
+  wtf.io.HttpWriteStream.call(this);
+  this.url_ = a;
+  this.buffers_ = []
+};
+goog.inherits(wtf.io.BufferedHttpWriteStream, wtf.io.HttpWriteStream);
+wtf.io.BufferedHttpWriteStream.prototype.disposeInternal = function() {
+  this.flush();
+  wtf.io.BufferedHttpWriteStream.superClass_.disposeInternal.call(this)
+};
+wtf.io.BufferedHttpWriteStream.prototype.write = function(a) {
+  a = a.clone();
+  this.buffers_.push(a);
+  return!0
+};
+wtf.io.BufferedHttpWriteStream.prototype.flush = function() {
+  for(var a = [], b = 0;b < this.buffers_.length;b++) {
+    a.push(this.buffers_[b].data)
+  }
+  a = wtf.io.combineByteArrays(a);
+  this.postData(this.url_, "application/x-extension-wtf-trace", a);
+  this.buffers_.length = 0
+};
+// Input 106
+wtf.io.CustomWriteStream = function(a) {
+  wtf.io.WriteStream.call(this);
+  goog.asserts.assert(a.write);
+  this.target_ = a
+};
+goog.inherits(wtf.io.CustomWriteStream, wtf.io.WriteStream);
+wtf.io.CustomWriteStream.prototype.disposeInternal = function() {
+  this.target_.close && this.target_.close();
+  wtf.io.CustomWriteStream.superClass_.disposeInternal.call(this)
+};
+wtf.io.CustomWriteStream.prototype.write = function(a, b, c) {
+  return this.target_.write(a.data, a.offset, function() {
+    b.call(c, a)
+  })
+};
+wtf.io.CustomWriteStream.prototype.flush = function() {
+  this.target_.flush && this.target_.flush()
+};
+// Input 107
+wtf.io.LocalFileWriteStream = function(a) {
+  wtf.io.WriteStream.call(this);
+  var b = new Date, b = "-" + b.getFullYear() + goog.string.padNumber(b.getMonth() + 1, 2) + goog.string.padNumber(b.getDate(), 2) + "T" + goog.string.padNumber(b.getHours(), 2) + goog.string.padNumber(b.getMinutes(), 2) + goog.string.padNumber(b.getSeconds(), 2);
+  this.filename_ = a + b + wtf.io.FILE_EXTENSION;
+  this.bufferDatas_ = []
+};
+goog.inherits(wtf.io.LocalFileWriteStream, wtf.io.WriteStream);
+wtf.io.LocalFileWriteStream.prototype.disposeInternal = function() {
+  var a = wtf.pal.getPlatform();
+  if(1 == this.bufferDatas_.length) {
+    a.writeBinaryFile(this.filename_, this.bufferDatas_[0])
+  }else {
+    var b = wtf.io.combineByteArrays(this.bufferDatas_);
+    a.writeBinaryFile(this.filename_, b)
+  }
+  this.bufferDatas_.length = 0;
+  wtf.io.LocalFileWriteStream.superClass_.disposeInternal.call(this)
+};
+wtf.io.LocalFileWriteStream.prototype.write = function(a) {
+  a = a.clone();
+  this.bufferDatas_.push(a.data);
+  return!0
+};
+wtf.io.LocalFileWriteStream.prototype.flush = function() {
+};
 // Input 108
+wtf.io.NullWriteStream = function() {
+  wtf.io.WriteStream.call(this)
+};
+goog.inherits(wtf.io.NullWriteStream, wtf.io.WriteStream);
+wtf.io.NullWriteStream.prototype.write = function() {
+  return!0
+};
+wtf.io.NullWriteStream.prototype.flush = function() {
+};
+// Input 109
 wtf.io.StreamingHttpWriteStream = function(a) {
   wtf.io.HttpWriteStream.call(this);
   this.endpoint_ = a;
@@ -8671,7 +8695,7 @@ wtf.io.StreamingHttpWriteStream.prototype.write = function(a, b, c) {
 };
 wtf.io.StreamingHttpWriteStream.prototype.flush = function() {
 };
-// Input 109
+// Input 110
 wtf.trace = {};
 wtf.trace.EventType = function(a, b, c, d) {
   this.name = a;
@@ -8705,7 +8729,7 @@ wtf.trace.EventType.getNameMap = function() {
   var a = goog.reflect.object(wtf.trace.EventType, {count:0}), a = goog.object.transpose(a);
   return{count:a[0]}
 };
-// Input 110
+// Input 111
 wtf.trace.util = {};
 wtf.trace.util.DUMMY_SCOPE = {leave:function(a) {
   return a
@@ -8714,7 +8738,7 @@ wtf.trace.util.ignoreListener = function(a) {
   a.__wtf_ignore__ = !0;
   return a
 };
-// Input 111
+// Input 112
 wtf.trace.EventTypeBuilder = function() {
   wtf.util.FunctionBuilder.call(this);
   this.eventTypeNames_ = wtf.trace.EventType.getNameMap();
@@ -8759,7 +8783,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(a, b) {
   c.eventType = b;
   return c
 };
-// Input 112
+// Input 113
 wtf.trace.EventRegistry = function() {
   wtf.events.EventEmitter.call(this);
   this.currentSessionPtr_ = [null];
@@ -8786,7 +8810,7 @@ wtf.trace.EventRegistry.getShared = function() {
   wtf.trace.EventRegistry.sharedInstance_ || (wtf.trace.EventRegistry.sharedInstance_ = new wtf.trace.EventRegistry);
   return wtf.trace.EventRegistry.sharedInstance_
 };
-// Input 113
+// Input 114
 wtf.trace.events = {};
 wtf.trace.events.create_ = wtf.ENABLE_TRACING ? function(a, b, c) {
   var d = wtf.trace.EventRegistry.getShared(), e = wtf.data.Variable.parseSignature(a), a = e.name, e = e.args, f = d.getEventType(a);
@@ -8803,12 +8827,12 @@ wtf.trace.events.createInstance = function(a, b) {
 wtf.trace.events.createScope = function(a, b) {
   return wtf.trace.events.create_(a, wtf.data.EventClass.SCOPE, b || 0).append
 };
-// Input 114
+// Input 115
 wtf.trace.BuiltinEvents = {defineEvent:wtf.trace.events.createInstance("wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ascii name, ascii args)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), discontinuity:wtf.trace.events.createInstance("wtf.discontinuity()", wtf.data.EventFlag.BUILTIN), createZone:wtf.trace.events.createInstance("wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), deleteZone:wtf.trace.events.createInstance("wtf.zone.delete(uint16 zoneId)", 
 wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), setZone:wtf.trace.events.createInstance("wtf.zone.set(uint16 zoneId)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), enterScope:wtf.trace.events.createScope("wtf.scope.enter(ascii msg)", wtf.data.EventFlag.BUILTIN), enterTracingScope:wtf.trace.events.createScope("wtf.scope.enterTracing()", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME), leaveScope:wtf.trace.events.createInstance("wtf.scope.leave()", 
 wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), appendScopeData:wtf.trace.events.createInstance("wtf.scope.appendData(ascii name, utf8 json)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA), branchFlow:wtf.trace.events.createInstance("wtf.flow.branch(flowId id, flowId parentId, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), extendFlow:wtf.trace.events.createInstance("wtf.flow.extend(flowId id, ascii msg)", wtf.data.EventFlag.BUILTIN | 
 wtf.data.EventFlag.INTERNAL), terminateFlow:wtf.trace.events.createInstance("wtf.flow.terminate(flowId id, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), mark:wtf.trace.events.createInstance("wtf.mark(ascii msg)", wtf.data.EventFlag.BUILTIN)};
-// Input 115
+// Input 116
 wtf.trace.Flow = function() {
   this.flowId_ = wtf.trace.Flow.invalidFlowId_
 };
@@ -8852,39 +8876,34 @@ wtf.trace.Flow.prototype.terminate = wtf.ENABLE_TRACING ? function(a, b) {
   c = wtf.trace.Flow.pool_;
   c.unusedFlows[c.unusedIndex++] = this
 } : goog.nullFunction;
-// Input 116
+// Input 117
 wtf.trace.Scope = function() {
-  this.flow_ = void 0;
+  this.flow_ = null;
   this.stackDepth_ = 0
 };
-wtf.trace.Scope.pool_ = {unusedScopes:[], unusedIndex:0};
+wtf.trace.Scope.pool_ = {unusedScopes:[], unusedIndex:0, currentDepth:-1, stack:[]};
 wtf.trace.Scope.dummy = wtf.trace.util.DUMMY_SCOPE;
-wtf.trace.Scope.enter = function(a, b, c) {
-  var d = wtf.trace.Scope.pool_, d = d.unusedIndex ? d.unusedScopes[--d.unusedIndex] : new wtf.trace.Scope;
-  d.flow_ = b;
-  d.stackDepth_ = 0;
-  c = c || wtf.now();
-  wtf.trace.BuiltinEvents.enterScope(c, b, a);
-  b && b.extend(void 0, c);
+wtf.trace.Scope.enterTyped = function(a, b) {
+  var c = wtf.trace.Scope.pool_, d;
+  d = c.unusedIndex ? c.unusedScopes[--c.unusedIndex] : new wtf.trace.Scope;
+  d.stackDepth_ = ++c.currentDepth;
+  c.stack[d.stackDepth_] = d;
+  (d.flow_ = a) && a.extend(void 0, b);
   return d
 };
-wtf.trace.Scope.enterTyped = function(a, b) {
-  var c = wtf.trace.Scope.pool_, c = c.unusedIndex ? c.unusedScopes[--c.unusedIndex] : new wtf.trace.Scope;
-  c.flow_ = a;
-  c.stackDepth_ = 0;
-  a && a.extend(void 0, b);
-  return c
-};
 wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(a, b) {
-  var c = b || wtf.now();
-  this.flow_ && (this.flow_.terminate(void 0, c), this.flow_ = void 0);
+  for(var c = b || wtf.now(), d = wtf.trace.Scope.pool_;d.currentDepth > this.stackDepth_;) {
+    d.stack[d.currentDepth].leave(void 0, c)
+  }
+  d.currentDepth--;
+  d.stack[this.stackDepth_] = null;
+  this.flow_ && (this.flow_.terminate(void 0, c), this.flow_ = null);
   wtf.trace.BuiltinEvents.leaveScope(c);
-  c = wtf.trace.Scope.pool_;
-  c.unusedScopes[c.unusedIndex++] = this;
+  d.unusedScopes[d.unusedIndex++] = this;
   return a
 } : goog.identityFunction;
 goog.exportProperty(wtf.trace.Scope.prototype, "leave", wtf.trace.Scope.prototype.leave);
-// Input 117
+// Input 118
 wtf.trace.Session = function(a, b, c) {
   goog.Disposable.call(this);
   this.traceManager_ = a;
@@ -8947,7 +8966,7 @@ wtf.trace.Session.prototype.acquireBuffer = function(a, b) {
 wtf.trace.Session.prototype.enterTypedScope = wtf.trace.Scope.enterTyped;
 goog.exportProperty(wtf.trace.Session.prototype, "acquireBuffer", wtf.trace.Session.prototype.acquireBuffer);
 goog.exportProperty(wtf.trace.Session.prototype, "enterTypedScope", wtf.trace.Session.prototype.enterTypedScope);
-// Input 118
+// Input 119
 wtf.trace.NullSession = function(a, b) {
   wtf.trace.Session.call(this, a, b, 0)
 };
@@ -8956,7 +8975,7 @@ wtf.trace.NullSession.prototype.nextBuffer = function() {
   return null
 };
 wtf.trace.NullSession.prototype.retireBuffer = goog.nullFunction;
-// Input 119
+// Input 120
 wtf.trace.SnapshottingSession = function(a, b) {
   wtf.trace.Session.call(this, a, b, wtf.trace.SnapshottingSession.DEFAULT_BUFFER_SIZE_);
   var c = Math.max(1, Math.floor(this.maximumMemoryUsage / this.bufferSize));
@@ -9017,7 +9036,7 @@ wtf.trace.SnapshottingSession.prototype.retireBuffer = function() {
   0 > a && (a = this.buffers_.length + a);
   this.dirtyBuffers_[a] = !0
 };
-// Input 120
+// Input 121
 wtf.timing = {};
 wtf.timing.Handle = function(a) {
   this.func_ = a
@@ -9034,7 +9053,7 @@ wtf.timing.Handle.prototype.callback = function() {
 wtf.timing.Handle.prototype.clear = function() {
   this.func_ = null
 };
-// Input 121
+// Input 122
 wtf.timing.BrowserInterval = function(a, b) {
   wtf.timing.Handle.call(this, a);
   var c = this;
@@ -9048,12 +9067,12 @@ wtf.timing.BrowserInterval.prototype.clear = function() {
   this.intervalId_ = null;
   wtf.timing.BrowserInterval.superClass_.clear.call(this)
 };
-// Input 122
+// Input 123
 wtf.timing.RenderInterval = function(a) {
   wtf.timing.Handle.call(this, a)
 };
 goog.inherits(wtf.timing.RenderInterval, wtf.timing.Handle);
-// Input 123
+// Input 124
 wtf.timing.util = {};
 wtf.timing.util.FRAMERATE = 60;
 wtf.timing.util.getWindowFunction_ = function(a) {
@@ -9099,7 +9118,7 @@ wtf.timing.util.getCancelRequestAnimationFrame = function(a) {
   }
   return null
 };
-// Input 124
+// Input 125
 wtf.timing.RenderTimer = function() {
   this.intervals_ = [];
   this.browserRequestAnimationFrame_ = wtf.timing.util.getRequestAnimationFrame();
@@ -9130,7 +9149,7 @@ wtf.timing.RenderTimer.prototype.clearInterval = function(a) {
   goog.array.remove(this.intervals_, a);
   this.intervals_.length || (this.browserRequestAnimationFrame_ ? (goog.asserts.assert(null !== this.browserRequestAnimationId_), this.browserCancelRequestAnimationFrame_(this.browserRequestAnimationId_), this.browserRequestAnimationId_ = null) : (goog.asserts.assert(null !== this.browserIntervalId_), (goog.global.clearInterval.raw || goog.global.clearInterval).call(goog.global, this.browserIntervalId_), this.browserIntervalId_ = null))
 };
-// Input 125
+// Input 126
 wtf.timing.MILLISECONDS_30HZ = 33;
 wtf.timing.MILLISECONDS_60HZ = 16;
 wtf.timing.renderTimer_ = null;
@@ -9184,7 +9203,7 @@ wtf.timing.runDeferredCallbacks_ = function() {
   }
   wtf.timing.waitingFrameCallbacks_.length = 0
 };
-// Input 126
+// Input 127
 wtf.trace.StreamingSession = function(a, b, c) {
   wtf.trace.Session.call(this, a, c, wtf.trace.StreamingSession.DEFAULT_BUFFER_SIZE_);
   this.stream_ = b;
@@ -9233,9 +9252,9 @@ wtf.trace.StreamingSession.prototype.returnBufferCallback_ = function(a) {
   this.unusedBuffers_.push(a);
   this.totalUnusedSize_ += a.capacity
 };
-// Input 127
-wtf.data.ZoneType = {SCRIPT:"script"};
 // Input 128
+wtf.data.ZoneType = {SCRIPT:"script"};
+// Input 129
 wtf.trace.Zone = function(a, b, c, d, e) {
   this.id = a;
   this.timestamp = b;
@@ -9243,7 +9262,7 @@ wtf.trace.Zone = function(a, b, c, d, e) {
   this.type = d;
   this.location = e
 };
-// Input 129
+// Input 130
 wtf.trace.ISessionListener = function() {
 };
 wtf.trace.ISessionListener.prototype.sessionStarted = goog.nullFunction;
@@ -9345,7 +9364,7 @@ wtf.trace.TraceManager.prototype.writeEventHeader = function(a) {
   }
   return!0
 };
-// Input 130
+// Input 131
 wtf.util.Options = function() {
   wtf.events.EventEmitter.call(this);
   this.obj_ = {};
@@ -9471,7 +9490,7 @@ wtf.util.Options.prototype.removeArrayValue = function(a, b) {
   var c = this.getArray(a, []);
   goog.array.remove(c, b) && this.setValue_(a, c.length ? c : void 0)
 };
-// Input 131
+// Input 132
 wtf.trace.traceManager_ = null;
 wtf.trace.getTraceManager = function() {
   if(wtf.trace.traceManager_) {
@@ -9515,8 +9534,8 @@ wtf.trace.createStream_ = function(a, b) {
     if("null" == c || goog.string.startsWith(c, "ws://")) {
       return new wtf.io.NullWriteStream
     }
-    if(goog.string.startsWith(c, "http://") || goog.string.startsWith(c, "https://")) {
-      return new wtf.io.StreamingHttpWriteStream(c)
+    if(goog.string.startsWith(c, "http://") || goog.string.startsWith(c, "https://") || goog.string.startsWith(c, "//") || goog.string.startsWith(c, "http-rel:")) {
+      return goog.string.startsWith(c, "http-rel:") && (c = c.substring(9)), "snapshotting" == a.getOptionalString("wtf.trace.mode") ? new wtf.io.BufferedHttpWriteStream(c) : new wtf.io.StreamingHttpWriteStream(c)
     }
     if(goog.string.startsWith(c, "file://")) {
       return c = wtf.trace.getTraceFilename_(c), new wtf.io.LocalFileWriteStream(c)
@@ -9573,7 +9592,9 @@ wtf.trace.pushZone = wtf.ENABLE_TRACING ? function(a) {
 wtf.trace.popZone = wtf.ENABLE_TRACING ? function() {
   wtf.trace.getTraceManager().popZone()
 } : goog.nullFunction;
-wtf.trace.enterScope = wtf.ENABLE_TRACING ? wtf.trace.Scope.enter : function() {
+wtf.trace.enterScope = wtf.ENABLE_TRACING ? function(a, b, c) {
+  return wtf.trace.BuiltinEvents.enterScope(c || wtf.now(), b, a)
+} : function() {
   return wtf.trace.Scope.dummy
 };
 wtf.trace.enterTracingScope = wtf.ENABLE_TRACING ? wtf.trace.BuiltinEvents.enterTracingScope : function() {
@@ -9595,7 +9616,7 @@ wtf.trace.mark = wtf.ENABLE_TRACING ? function(a, b) {
   wtf.trace.BuiltinEvents.mark(c, a)
 } : goog.nullFunction;
 wtf.trace.ignoreListener = wtf.trace.util.ignoreListener;
-// Input 132
+// Input 133
 wtf.util.formatTime = function(a) {
   return a.toFixed(3) + "ms"
 };
@@ -9640,7 +9661,7 @@ wtf.util.convertAsciiStringToUint8Array = function(a) {
   }
   return b
 };
-// Input 133
+// Input 134
 COMPILED || (wtf.trace.base = function(a, b, c) {
   var d = arguments.callee.caller;
   if(d.superClass_) {
@@ -9717,7 +9738,7 @@ wtf.trace.instrumentTypeSimple = function(a, b, c) {
     e && (b[e] = wtf.trace.instrument(b[e], d, a + "#"))
   }
 };
-// Input 134
+// Input 135
 wtf.trace.Provider = function() {
   goog.Disposable.call(this);
   this.injections_ = []
@@ -9736,7 +9757,7 @@ wtf.trace.Provider.prototype.injectFunction = function(a, b, c) {
   a[b] = c;
   c.raw = d
 };
-// Input 135
+// Input 136
 wtf.trace.providers = {};
 wtf.trace.providers.ConsoleProvider = function() {
   wtf.trace.Provider.call(this);
@@ -9755,7 +9776,7 @@ wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ = function
     })
   }
 };
-// Input 136
+// Input 137
 wtf.trace.providers.DomProvider = function() {
   wtf.trace.Provider.call(this);
   this.injectEvents_()
@@ -9862,14 +9883,14 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectObjectEvents = 
     }
   }
 };
-// Input 137
+// Input 138
 wtf.ipc = {};
 wtf.ipc.Channel = function() {
   wtf.events.EventEmitter.call(this)
 };
 goog.inherits(wtf.ipc.Channel, wtf.events.EventEmitter);
 wtf.ipc.Channel.EventType = {MESSAGE:goog.events.getUniqueId("message")};
-// Input 138
+// Input 139
 wtf.ipc.DomChannel = function(a, b) {
   wtf.ipc.Channel.call(this);
   this.el_ = a;
@@ -9899,7 +9920,7 @@ wtf.ipc.DomChannel.prototype.postMessage = function(a) {
   b.initCustomEvent(this.eventType_, !1, !1, a);
   this.el_.dispatchEvent(b)
 };
-// Input 139
+// Input 140
 wtf.ipc.ExtensionChannel = function(a) {
   wtf.ipc.Channel.call(this);
   this.port_ = a;
@@ -9924,7 +9945,7 @@ wtf.ipc.ExtensionChannel.prototype.handleMessage_ = function(a) {
 wtf.ipc.ExtensionChannel.prototype.postMessage = function(a) {
   this.port_ && (a = {data:a}, a[wtf.ipc.ExtensionChannel.PACKET_TOKEN] = !0, this.port_.postMessage(a))
 };
-// Input 140
+// Input 141
 wtf.ipc.MessageChannel = function(a, b) {
   wtf.ipc.Channel.call(this);
   this.recvPort_ = a;
@@ -9965,7 +9986,7 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(a, b) {
     }
   }
 };
-// Input 141
+// Input 142
 wtf.ipc.connectToParentWindow = function() {
   if(!window.opener) {
     return null
@@ -9993,7 +10014,7 @@ wtf.ipc.connectToExtension = function(a) {
 wtf.ipc.openDomChannel = function(a, b) {
   return new wtf.ipc.DomChannel(a, b)
 };
-// Input 142
+// Input 143
 wtf.trace.providers.ExtendedInfoProvider = function() {
   wtf.trace.Provider.call(this);
   this.events_ = {gc:wtf.trace.events.createScope("javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME)};
@@ -10019,7 +10040,7 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.traceGc_ = function(a) {
   var b = wtf.timebase(), c = a.endTime - b;
   this.events_.gc(a.startTime - b, null, a.usedHeapSize, a.usedHeapSizeDelta).leave(void 0, c)
 };
-// Input 143
+// Input 144
 wtf.trace.providers.TimingProvider = function() {
   wtf.trace.Provider.call(this);
   this.injectTimeouts_();
@@ -10128,14 +10149,14 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ = fu
   };
   i && this.injectFunction(goog.global, b, a)
 };
-// Input 144
+// Input 145
 wtf.trace.providers.setup = function() {
   var a = wtf.trace.getTraceManager();
   a.addProvider(new wtf.trace.providers.ConsoleProvider);
   a.addProvider(new wtf.trace.providers.TimingProvider);
   wtf.NODE || (a.addProvider(new wtf.trace.providers.DomProvider), a.addProvider(new wtf.trace.providers.ExtendedInfoProvider))
 };
-// Input 145
+// Input 146
 wtf.trace.exports = {};
 wtf.trace.providers.setup();
 wtf.trace.exports.ENABLE_EXPORTS = !0;
@@ -10143,7 +10164,7 @@ wtf.trace.exports.ENABLE_EXPORTS && (goog.exportSymbol("wtf.trace.prepare", wtf.
 wtf.trace.events.createScope), goog.exportSymbol("wtf.trace.createZone", wtf.trace.createZone), goog.exportSymbol("wtf.trace.deleteZone", wtf.trace.deleteZone), goog.exportSymbol("wtf.trace.pushZone", wtf.trace.pushZone), goog.exportSymbol("wtf.trace.popZone", wtf.trace.popZone), goog.exportSymbol("wtf.trace.enterScope", wtf.trace.enterScope), goog.exportSymbol("wtf.trace.enterTracingScope", wtf.trace.enterTracingScope), goog.exportSymbol("wtf.trace.appendScopeData", wtf.trace.appendScopeData), goog.exportSymbol("wtf.trace.branchFlow", 
 wtf.trace.branchFlow), goog.exportSymbol("wtf.trace.clearFlow", wtf.trace.clearFlow), goog.exportSymbol("wtf.trace.spanFlow", wtf.trace.spanFlow), goog.exportSymbol("wtf.trace.mark", wtf.trace.mark), goog.exportSymbol("wtf.trace.ignoreListener", wtf.trace.ignoreListener), goog.exportProperty(wtf.trace.Flow.prototype, "getId", wtf.trace.Flow.prototype.getId), goog.exportProperty(wtf.trace.Flow.prototype, "extend", wtf.trace.Flow.prototype.extend), goog.exportProperty(wtf.trace.Flow.prototype, "terminate", 
 wtf.trace.Flow.prototype.terminate), COMPILED || goog.exportSymbol("wtf.trace.base", wtf.trace.base), goog.exportSymbol("wtf.trace.instrument", wtf.trace.instrument), goog.exportSymbol("wtf.trace.instrumentType", wtf.trace.instrumentType), goog.exportSymbol("wtf.trace.instrumentTypeSimple", wtf.trace.instrumentTypeSimple));
-// Input 146
+// Input 147
 wtf.trace.node = {};
 wtf.NODE && (wtf.trace.node.start = function(a) {
   wtf.trace.start(a);
