@@ -6,15 +6,15 @@
  */
 
 /**
- * @fileoverview Help overlay screen.
+ * @fileoverview Help dialog screen.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.HelpOverlay');
+goog.provide('wtf.app.ui.HelpDialog');
 
 goog.require('goog.soy');
-goog.require('wtf.app.ui.helpoverlay');
+goog.require('wtf.app.ui.helpdialog');
 goog.require('wtf.ui.Dialog');
 
 
@@ -27,18 +27,18 @@ goog.require('wtf.ui.Dialog');
  * @constructor
  * @extends {wtf.ui.Dialog}
  */
-wtf.app.ui.HelpOverlay = function(parentElement, opt_dom) {
+wtf.app.ui.HelpDialog = function(parentElement, opt_dom) {
   goog.base(this, {
     modal: true
   }, parentElement, opt_dom);
 };
-goog.inherits(wtf.app.ui.HelpOverlay, wtf.ui.Dialog);
+goog.inherits(wtf.app.ui.HelpDialog, wtf.ui.Dialog);
 
 
 /**
  * @override
  */
-wtf.app.ui.HelpOverlay.prototype.createDom = function(dom) {
+wtf.app.ui.HelpDialog.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.helpoverlay.control, undefined, undefined, dom));
+      wtf.app.ui.helpdialog.control, undefined, undefined, dom));
 };
