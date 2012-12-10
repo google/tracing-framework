@@ -341,7 +341,10 @@ wtf.trace.popZone = wtf.ENABLE_TRACING ? function() {
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
 wtf.trace.enterScope = wtf.ENABLE_TRACING ?
-    wtf.trace.Scope.enter : function(opt_msg, opt_flow, opt_time) {
+    function(opt_msg, opt_flow, opt_time) {
+      return wtf.trace.BuiltinEvents.enterScope(
+          opt_time || wtf.now(), opt_flow, opt_msg);
+    } : function(opt_msg, opt_flow, opt_time) {
       return wtf.trace.Scope.dummy;
     };
 

@@ -147,6 +147,9 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
 
   // Always trigger a resize once style is available.
   wtf.timing.setImmediate(function() {
+    if (this.isDisposed()) {
+      return;
+    }
     this.sizeChanged();
   }, this);
 };
