@@ -25,7 +25,6 @@ var Extension = function() {
    * @private
    */
   this.options_ = new Options();
-  this.options_.load();
 
   chrome.tabs.onActivated.addListener(
       this.tabActivated_.bind(this));
@@ -56,6 +55,20 @@ var Extension = function() {
   chrome.management.onUninstalled.addListener(detectApplication);
   chrome.management.onEnabled.addListener(detectApplication);
   chrome.management.onDisabled.addListener(detectApplication);
+
+  // Rescan all open tabs to reload any that are whitelisted.
+  this.options_.load(function() {
+    var whitelist = this.options_.getWhitelistedPages();
+    for (var n = 0; n < whitelist.length; n++) {
+      chrome.tabs.query({
+        'url': whitelist[n]
+      }, function(tabs) {
+        for (var n = 0; n < tabs.length; n++) {
+          chrome.tabs.reload(tabs[n].id, {});
+        }
+      });
+    }
+  }, this);
 };
 
 
