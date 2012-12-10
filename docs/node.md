@@ -15,7 +15,7 @@
 
 ### Instrumenting
 
-See [tracing](tracing.md) for the `wtf.trace` API.
+See [api](api.md) for the `wtf.trace` API.
 
 ### Running
 
