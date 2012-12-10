@@ -29,16 +29,17 @@ goog.require('wtf.util');
 
 /**
  * Zone track painter.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
  * @param {!wtf.app.ui.Selection} selection Selection state.
  * @constructor
  * @extends {wtf.app.ui.tracks.TrackPainter}
  */
-wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex,
+wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
     selection) {
-  goog.base(this, parentContext, db);
+  goog.base(this, canvas, db);
+  var dom = this.getDom();
 
   /**
    * Zone index.
@@ -71,8 +72,8 @@ wtf.app.ui.tracks.ZonePainter = function(parentContext, db, zoneIndex,
    * @type {HTMLCanvasElement}
    * @private
    */
-  this.rangeStamper_ = /** @type {HTMLCanvasElement} */(parentContext.getDom().
-      createElement(goog.dom.TagName.CANVAS));
+  this.rangeStamper_ = /** @type {HTMLCanvasElement} */(
+      dom.createElement(goog.dom.TagName.CANVAS));
 
   // Initialize range stamper to 1x1. The first time we redraw this will be
   // resized to be as wide as our draw area.
@@ -421,6 +422,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
  * @param {number} width Width of the paint canvas.
  * @param {number} height Height of the paint canvas.
  * @return {wtf.analysis.Scope} Scope, if any.
+ * @private
  */
 wtf.app.ui.tracks.ZonePainter.prototype.hitTestScope_ = function(
     x, y, width, height) {

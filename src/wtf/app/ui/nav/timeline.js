@@ -19,7 +19,7 @@ goog.require('wtf.app.ui.nav.timeline');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.ui.Control');
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 
 
 
@@ -70,7 +70,7 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
         }
       }, this);
 
-  var paintContext = new wtf.ui.PaintContext(this.timelineCanvas_);
+  var paintContext = new wtf.ui.Painter(this.timelineCanvas_);
   this.setPaintContext(paintContext);
 
   /**
@@ -79,7 +79,8 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
    * @private
    */
   this.timelinePainter_ = new wtf.app.ui.nav.TimelinePainter(
-      paintContext, documentView);
+      this.timelineCanvas_, documentView);
+  paintContext.addChildPainter(this.timelinePainter_);
 
   this.requestRepaint();
 };

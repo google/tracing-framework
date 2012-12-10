@@ -13,18 +13,18 @@
 
 goog.provide('wtf.ui.TimeRangePainter');
 
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 
 
 
 /**
  * Paints a time range into the view.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @constructor
- * @extends {wtf.ui.PaintContext}
+ * @extends {wtf.ui.Painter}
  */
-wtf.ui.TimeRangePainter = function(parentContext) {
-  goog.base(this, parentContext.getCanvas(), parentContext);
+wtf.ui.TimeRangePainter = function(canvas) {
+  goog.base(this, canvas);
 
   /**
    * Time offset (time of the first event in the database).
@@ -47,7 +47,7 @@ wtf.ui.TimeRangePainter = function(parentContext) {
    */
   this.timeRight = 0;
 };
-goog.inherits(wtf.ui.TimeRangePainter, wtf.ui.PaintContext);
+goog.inherits(wtf.ui.TimeRangePainter, wtf.ui.Painter);
 
 
 /**

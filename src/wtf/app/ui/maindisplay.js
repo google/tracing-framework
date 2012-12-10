@@ -454,6 +454,7 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
  * @param {!Array.<!goog.async.Deferred>} deferreds a List of deferreds to wait
  *     on. Each should return an array buffer (for binary sources) or a string
  *     (for json sources).
+ * @private
  */
 wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
   var doc = new wtf.doc.Document(this.platform_);

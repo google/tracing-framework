@@ -108,6 +108,7 @@ wtf.trace.EventRegistry.prototype.getEventTypes = function() {
 
 /**
  * Gets the event type with the given name.
+ * @param {string} name Event name.
  * @return {wtf.trace.EventType} The event type with the given name, if it
  *     exists.
  */
