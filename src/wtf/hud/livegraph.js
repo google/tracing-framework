@@ -18,7 +18,7 @@ goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
 goog.require('wtf');
 goog.require('wtf.ui.Control');
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 goog.require('wtf.util.canvas');
 
 
@@ -73,7 +73,7 @@ wtf.hud.LiveGraph.prototype.setupPainter_ = function() {
   var canvas = /** @type {!HTMLCanvasElement} */ (this.getRootElement());
   goog.dom.classes.add(canvas, 'wtfHudGraphCanvas');
 
-  this.setPaintContext(new wtf.ui.PaintContext(canvas));
+  this.setPaintContext(new wtf.ui.Painter(canvas));
 };
 
 

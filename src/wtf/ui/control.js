@@ -17,8 +17,11 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
+goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
+/** @suppress {extraRequire} */
+goog.require('wtf.ui.Tooltip');
 goog.require('wtf.util.canvas');
 
 
@@ -72,8 +75,23 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   this.eh_ = null;
 
   /**
+   * Input event handler.
+   * Makes it easier to rebind things.
+   * @type {goog.events.EventHandler}
+   * @private
+   */
+  this.inputEventHandler_ = null;
+
+  /**
+   * Tooltip set on this control, if any.
+   * @type {wtf.ui.Tooltip}
+   * @private
+   */
+  this.tooltip_ = null;
+
+  /**
    * Root paint context, if created.
-   * @type {wtf.ui.PaintContext}
+   * @type {wtf.ui.Painter}
    * @private
    */
   this.paintContext_ = null;
@@ -88,6 +106,8 @@ goog.inherits(wtf.ui.Control, wtf.events.EventEmitter);
  * @override
  */
 wtf.ui.Control.prototype.disposeInternal = function() {
+  goog.dispose(this.inputEventHandler_);
+  goog.dispose(this.tooltip_);
   for (var n = 0; n < this.relatedElements_.length; n++) {
     this.dom_.removeNode(this.relatedElements_[n]);
   }
@@ -194,8 +214,106 @@ wtf.ui.Control.prototype.toggleButton = function(cssName, enabled) {
 
 
 /**
+ * Toggles input events on the control root, dispatching tooltip and paint
+ * events.
+ * @param {boolean} value True to enable events.
+ * @private
+ */
+wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
+  if (value == !!this.inputEventHandler_) {
+    return;
+  }
+  if (!value) {
+    goog.dispose(this.inputEventHandler_);
+    this.inputEventHandler_ = null;
+  }
+
+  if (!this.paintContext_) {
+    return;
+  }
+  this.inputEventHandler_ = new goog.events.EventHandler(this);
+  var canvas = this.paintContext_.getCanvas();
+  var eh = this.inputEventHandler_;
+
+  var delta = 0;
+  var lastX = 0;
+  var lastY = 0;
+
+  eh.listen(
+      canvas,
+      goog.events.EventType.MOUSEDOWN,
+      function(e) {
+        lastX = lastY = delta = 0;
+      });
+
+  eh.listen(
+      canvas,
+      goog.events.EventType.MOUSEMOVE,
+      function(e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        delta += Math.abs(lastX - x) + Math.abs(lastY - y);
+        if (!this.paintContext_.onMouseMove(x, y) &&
+            this.tooltip_) {
+          var infoString = this.paintContext_.getInfoString(x, y);
+          if (infoString) {
+            this.tooltip_.show(e.clientX, e.clientY, infoString);
+          } else {
+            this.tooltip_.hide();
+          }
+        }
+      });
+
+  eh.listen(
+      canvas,
+      goog.events.EventType.MOUSEUP,
+      function(e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        if (delta < 4) {
+          this.paintContext_.onClick(x, y);
+        }
+        lastX = lastY = delta = 0;
+      });
+
+  eh.listen(
+      canvas,
+      goog.events.EventType.MOUSEOUT,
+      function(e) {
+        lastX = lastY = delta = 0;
+        if (this.tooltip_) {
+          this.tooltip_.hide();
+        }
+        this.paintContext_.onMouseOut();
+      });
+};
+
+
+/**
+ * Gets the tooltip set on the control, if any.
+ * @return {wtf.ui.Tooltip} Tooltip.
+ */
+wtf.ui.Control.prototype.getTooltip = function() {
+  return this.tooltip_;
+};
+
+
+/**
+ * Sets (or clears) the tooltip on the control.
+ * @param {wtf.ui.Tooltip} value Tooltip.
+ */
+wtf.ui.Control.prototype.setTooltip = function(value) {
+  if (value == this.tooltip_) {
+    return;
+  }
+  goog.dispose(this.tooltip_);
+  this.tooltip_ = value;
+};
+
+
+/**
  * Gets the root paint context, if any.
- * @return {wtf.ui.PaintContext} Paint context, if any.
+ * @return {wtf.ui.Painter} Paint context, if any.
  */
 wtf.ui.Control.prototype.getPaintContext = function() {
   return this.paintContext_;
@@ -205,7 +323,7 @@ wtf.ui.Control.prototype.getPaintContext = function() {
 /**
  * Sets the root paint context.
  * This can only be called once.
- * @param {!wtf.ui.PaintContext} value New paint context.
+ * @param {!wtf.ui.Painter} value New paint context.
  */
 wtf.ui.Control.prototype.setPaintContext = function(value) {
   goog.asserts.assert(!this.paintContext_);
@@ -215,6 +333,8 @@ wtf.ui.Control.prototype.setPaintContext = function(value) {
   this.paintContext_ = value;
   this.registerDisposable(this.paintContext_);
   this.requestRepaint();
+
+  this.toggleInputEvents_(!!value);
 };
 
 

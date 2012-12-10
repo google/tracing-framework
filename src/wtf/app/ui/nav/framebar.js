@@ -13,7 +13,6 @@
 
 goog.provide('wtf.app.ui.nav.Framebar');
 
-goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.soy');
 goog.require('goog.string');
@@ -28,11 +27,10 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.GridPainter');
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
-goog.require('wtf.util.canvas');
 
 
 
@@ -46,8 +44,6 @@ goog.require('wtf.util.canvas');
  */
 wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   var dom = documentView.getDom();
-  var body = dom.getDocument().body;
-  goog.asserts.assert(body);
   goog.base(this, parentElement, dom);
 
   var doc = documentView.getDocument();
@@ -75,7 +71,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   this.framebarCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('wtfAppUiFramebarCanvas')));
 
-  var paintContext = new wtf.ui.PaintContext(this.framebarCanvas_);
+  var paintContext = new wtf.ui.Painter(this.framebarCanvas_);
   this.setPaintContext(paintContext);
 
   /**
@@ -83,9 +79,9 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    * @type {!wtf.ui.Tooltip}
    * @private
    */
-  this.tooltip_ = new wtf.ui.Tooltip(body);
+  this.tooltip_ = new wtf.ui.Tooltip(dom);
   this.registerDisposable(this.tooltip_);
-  this.tooltip_.bindEvents(this);
+  this.setTooltip(this.tooltip_);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
@@ -96,21 +92,25 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    */
   this.timeRangePainters_ = [];
 
-  var gridPainter = new wtf.ui.GridPainter(paintContext);
+  var gridPainter = new wtf.ui.GridPainter(this.framebarCanvas_);
+  paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
   var framebarPainter = new wtf.app.ui.nav.FramebarPainter(
-      paintContext, db);
+      this.framebarCanvas_, db);
+  paintContext.addChildPainter(framebarPainter);
   this.timeRangePainters_.push(framebarPainter);
 
   var heatmapPainter = new wtf.app.ui.nav.HeatmapPainter(
-      paintContext, db);
+      this.framebarCanvas_, db);
+  paintContext.addChildPainter(heatmapPainter);
   this.timeRangePainters_.push(heatmapPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(paintContext);
+  var rulerPainter = new wtf.ui.RulerPainter(this.framebarCanvas_);
+  paintContext.addChildPainter(rulerPainter);
   rulerPainter.setGranularities(
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
@@ -154,18 +154,6 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
   documentView.registerViewport(this.viewport_);
-
-  // TODO(benvanik): replace viewport stuff and share this binding in control.
-  this.viewport_.addListener(
-      wtf.ui.zoom.Viewport.EventType.CLICK,
-      function(x, y) {
-        var canvas = paintContext.getCanvas();
-        var ctx = paintContext.getCanvasContext2d();
-        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
-        var width = canvas.width / scale;
-        var height = canvas.height / scale;
-        paintContext.onClick(x, y, width, height);
-      }, this);
 
   // HACK(benvanik): zoom to fit on change - this should follow other behavior
   function zoomToBounds() {

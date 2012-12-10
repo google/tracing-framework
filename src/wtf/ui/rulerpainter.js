@@ -15,17 +15,18 @@ goog.provide('wtf.ui.RulerPainter');
 
 goog.require('wtf.math');
 goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.util');
 
 
 
 /**
  * Paints a ruler into the view.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @constructor
  * @extends {wtf.ui.TimeRangePainter}
  */
-wtf.ui.RulerPainter = function(parentContext) {
-  goog.base(this, parentContext);
+wtf.ui.RulerPainter = function(canvas) {
+  goog.base(this, canvas);
 
   /**
    * Y offset, in pixels.
@@ -47,6 +48,21 @@ wtf.ui.RulerPainter = function(parentContext) {
    * @private
    */
   this.maxGranularity_ = 0;
+
+  /**
+   * Whether to show the hover bar/time.
+   * @type {boolean}
+   * @private
+   */
+  this.showHoverTip_ = true;
+
+  /**
+   * Current X of the mouse, if it is hovering over the context.
+   * If this is zero then the mouse is not hovering.
+   * @type {number}
+   * @private
+   */
+  this.hoverX_ = 0;
 };
 goog.inherits(wtf.ui.RulerPainter, wtf.ui.TimeRangePainter);
 
@@ -76,6 +92,12 @@ wtf.ui.RulerPainter.prototype.setGranularities = function(min, max) {
 wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
   var y = this.y_;
   var h = wtf.ui.RulerPainter.HEIGHT;
+
+  // Hover UI.
+  if (this.showHoverTip_ && this.hoverX_) {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(this.hoverX_, this.y_, 1, height);
+  }
 
   // Clip to extents.
   this.clip(0, y, width, h);
@@ -121,4 +143,41 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
     granularity /= 10;
     n++;
   }
+
+  // Draw the hover time.
+  if (this.showHoverTip_ && this.hoverX_) {
+    var time = wtf.math.remap(this.hoverX_, 0, width, timeLeft, timeRight);
+    var timeString = wtf.util.formatTime(time);
+    var timeWidth = ctx.measureText(timeString).width;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(this.hoverX_ - timeWidth / 2 - 3, 0, timeWidth + 6, h - 1);
+    ctx.fillStyle = '#000000';
+    ctx.fillText(timeString, this.hoverX_ - timeWidth / 2, 10);
+  }
+};
+
+
+/**
+ * @override
+ */
+wtf.ui.RulerPainter.prototype.onMouseMoveInternal =
+    function(x, y, width, height) {
+  if (!this.showHoverTip_) {
+    return;
+  }
+  this.hoverX_ = x;
+  this.requestRepaint();
+};
+
+
+/**
+ * @override
+ */
+wtf.ui.RulerPainter.prototype.onMouseOutInternal = function() {
+  if (!this.showHoverTip_) {
+    return;
+  }
+  this.hoverX_ = 0;
+  this.requestRepaint();
 };

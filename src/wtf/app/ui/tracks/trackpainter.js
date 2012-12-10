@@ -19,13 +19,13 @@ goog.require('wtf.ui.TimeRangePainter');
 
 /**
  * Base track painter.
- * @param {!wtf.ui.PaintContext} parentContext Parent paint context.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @constructor
  * @extends {wtf.ui.TimeRangePainter}
  */
-wtf.app.ui.tracks.TrackPainter = function(parentContext, db) {
-  goog.base(this, parentContext);
+wtf.app.ui.tracks.TrackPainter = function(canvas, db) {
+  goog.base(this, canvas);
 
   /**
    * Database.

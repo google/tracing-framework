@@ -26,11 +26,10 @@ goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.events.EventType');
 goog.require('wtf.ui.GridPainter');
-goog.require('wtf.ui.PaintContext');
+goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
-goog.require('wtf.util.canvas');
 
 
 
@@ -70,19 +69,17 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('wtfAppUiTracksPanelCanvas')));
 
-  var paintContext = new wtf.ui.PaintContext(this.trackCanvas_);
+  var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);
 
-  var body = this.getDom().getDocument().body;
-  goog.asserts.assert(body);
   /**
    * Tooltip.
    * @type {!wtf.ui.Tooltip}
    * @private
    */
-  this.tooltip_ = new wtf.ui.Tooltip(body);
+  this.tooltip_ = new wtf.ui.Tooltip(this.getDom());
   this.registerDisposable(this.tooltip_);
-  this.tooltip_.bindEvents(this);
+  this.setTooltip(this.tooltip_);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
@@ -93,17 +90,24 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    */
   this.timeRangePainters_ = [];
 
-  var gridPainter = new wtf.ui.GridPainter(paintContext);
+  var gridPainter = new wtf.ui.GridPainter(this.trackCanvas_);
+  paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
 
-  var rulerPainter = new wtf.ui.RulerPainter(paintContext);
-  rulerPainter.setGranularities(
+  /**
+   * Ruler painter.
+   * @type {!wtf.ui.RulerPainter}
+   * @private
+   */
+  this.rulerPainter_ = new wtf.ui.RulerPainter(this.trackCanvas_);
+  paintContext.addChildPainter(this.rulerPainter_);
+  this.rulerPainter_.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.timeRangePainters_.push(rulerPainter);
+  this.timeRangePainters_.push(this.rulerPainter_);
 
   /**
    * Zooming viewport.
@@ -143,18 +147,6 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
   documentView.registerViewport(this.viewport_);
-
-  // TODO(benvanik): replace viewport stuff and share this binding in control.
-  this.viewport_.addListener(
-      wtf.ui.zoom.Viewport.EventType.CLICK,
-      function(x, y) {
-        var canvas = paintContext.getCanvas();
-        var ctx = paintContext.getCanvasContext2d();
-        var scale = wtf.util.canvas.getCanvasPixelRatio(ctx);
-        var width = canvas.width / scale;
-        var height = canvas.height / scale;
-        paintContext.onClick(x, y, width, height);
-      }, this);
 
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
@@ -228,6 +220,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
-      paintContext, this.db_, zoneIndex, docView.getSelection());
+      this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
+  paintContext.addChildPainter(zonePainter, this.rulerPainter_);
   this.timeRangePainters_.push(zonePainter);
 };
