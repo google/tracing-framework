@@ -97,8 +97,10 @@ Options.prototype.setDefaultEndpoint = function(mode, endpoint) {
 
 /**
  * Loads the options.
+ * @param {Function=} opt_callback Callback when loaded.
+ * @param {Object=} opt_scope Callback scope.
  */
-Options.prototype.load = function() {
+Options.prototype.load = function(opt_callback, opt_scope) {
   chrome.storage.local.get([
     'options'
   ], (function(items) {
@@ -110,6 +112,9 @@ Options.prototype.load = function() {
       this.pageWhitelist_ = values['pageWhitelist'] || [];
       this.pageBlacklist_ = values['pageBlacklist'] || [];
       this.pageOptions_ = values['pageOptions'] || {};
+    }
+    if (opt_callback) {
+      opt_callback.call(opt_scope, this);
     }
   }).bind(this));
 };
@@ -129,6 +134,15 @@ Options.prototype.save = function() {
       'pageOptions': this.pageOptions_
     }
   });
+};
+
+
+/**
+ * Gets a list of all pages that are whitelisted.
+ * @return {!Array.<string>} Whitelist.
+ */
+Options.prototype.getWhitelistedPages = function() {
+  return this.pageWhitelist_;
 };
 
 
