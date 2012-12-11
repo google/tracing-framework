@@ -365,6 +365,7 @@ archive_files(
     name='wtf-trace-web-api',
     srcs=[
         ':wtf_trace_web_release',
+        'wtf-trace-shim.js',
         ])
 
 file_set(
