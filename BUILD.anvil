@@ -151,8 +151,8 @@ closure_js_library(
         '--define=wtf.ENABLE_TRACING=true',
         '--define=wtf.hud.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
-        ],
-    wrap_with_global='window')
+        '--output_wrapper="if(!window.wtf){(function(){%output%}).call(window);}"',
+        ])
 
 file_set(
     name='wtf_trace_web_debug',

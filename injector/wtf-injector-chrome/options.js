@@ -247,6 +247,9 @@ Options.prototype.getDefaultPageOptions = function(url) {
   ];
 
   var options = {
+    // The presence of this indicates that the options come from the injector.
+    'wtf.injector': true,
+
     'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
@@ -295,6 +298,13 @@ Options.prototype.getPageOptions = function(url) {
  * @param {!Object} options Options object.
  */
 Options.prototype.setPageOptions = function(url, options) {
+  // If the options from the page don't have the sentinel, ignore.
+  // This prevents pages that override the options from manual embedding
+  // from overwritting injector settings.
+  if (!options['wtf.injector']) {
+    return;
+  }
+
   // Cleanup by removing all defaults that are still the same.
   var defaultOptions = this.getDefaultPageOptions(url);
   var cleanedOptions = {};
