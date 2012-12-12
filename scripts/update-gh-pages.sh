@@ -80,7 +80,7 @@ echo ""
 # =============================================================================
 echo "Pushing changes..."
 
-git push
+git push origin gh-pages
 
 echo ""
 
