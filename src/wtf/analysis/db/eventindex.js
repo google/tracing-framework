@@ -57,3 +57,8 @@ wtf.analysis.db.EventIndex.prototype.insertEvent = function(e) {
     wtf.analysis.db.EventList.prototype.insertEvent.call(this, e);
   }
 };
+
+
+goog.exportProperty(
+    wtf.analysis.db.EventIndex.prototype, 'getEventName',
+    wtf.analysis.db.EventIndex.prototype.getEventName);

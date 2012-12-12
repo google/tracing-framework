@@ -12,6 +12,7 @@
  */
 
 goog.provide('wtf.analysis.db.Granularity');
+goog.provide('wtf.analysis.db.SortMode');
 
 
 /**
@@ -34,3 +35,32 @@ wtf.analysis.db.Granularity = {
    */
   FINEST: 100
 };
+
+
+/**
+ * Sorting mode to use when retrieving entries.
+ * @enum {number}
+ */
+wtf.analysis.db.SortMode = {
+  ANY: 0,
+  COUNT: 1,
+  TOTAL_TIME: 2,
+  MEAN_TIME: 3
+};
+
+
+goog.exportSymbol(
+    'wtf.analysis.db.SortMode',
+    wtf.analysis.db.SortMode);
+goog.exportProperty(
+    wtf.analysis.db.SortMode, 'ANY',
+    wtf.analysis.db.SortMode.ANY);
+goog.exportProperty(
+    wtf.analysis.db.SortMode, 'COUNT',
+    wtf.analysis.db.SortMode.COUNT);
+goog.exportProperty(
+    wtf.analysis.db.SortMode, 'TOTAL_TIME',
+    wtf.analysis.db.SortMode.TOTAL_TIME);
+goog.exportProperty(
+    wtf.analysis.db.SortMode, 'MEAN_TIME',
+    wtf.analysis.db.SortMode.MEAN_TIME);

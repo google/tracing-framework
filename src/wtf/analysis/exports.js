@@ -18,9 +18,46 @@
 goog.provide('wtf.analysis.exports');
 
 goog.require('wtf.analysis');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.Event');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.EventType');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.Flow');
+/** @suppress {extraRequire} */
 goog.require('wtf.analysis.FlowEvent');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.Scope');
+/** @suppress {extraRequire} */
 goog.require('wtf.analysis.ScopeEvent');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.Zone');
+/** @suppress {extraRequire} */
 goog.require('wtf.analysis.ZoneEvent');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.EventDataEntry');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.EventDataTable');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.EventDatabase');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.EventIndex');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.EventList');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.InstanceEventDataEntry');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.ScopeEventDataEntry');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.SortMode');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.ZoneIndex');
+/** @suppress {extraRequire} */
+goog.require('wtf.data.EventClass');
+/** @suppress {extraRequire} */
+goog.require('wtf.data.EventFlag');
+/** @suppress {extraRequire} */
+goog.require('wtf.data.ZoneType');
 
 
 /**
@@ -42,14 +79,4 @@ if (wtf.analysis.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.analysis.run',
       wtf.analysis.run);
-
-  goog.exportSymbol(
-      'wtf.analysis.FlowEvent',
-      wtf.analysis.FlowEvent);
-  goog.exportSymbol(
-      'wtf.analysis.ScopeEvent',
-      wtf.analysis.ScopeEvent);
-  goog.exportSymbol(
-      'wtf.analysis.ZoneEvent',
-      wtf.analysis.ZoneEvent);
 }

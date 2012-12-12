@@ -452,3 +452,23 @@ wtf.analysis.db.EventList.prototype.reconcileChanges_ = function() {
 wtf.analysis.db.EventList.prototype.invalidate_ = function() {
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };
+
+
+goog.exportProperty(
+    wtf.analysis.db.EventList.prototype, 'getFirstEventTime',
+    wtf.analysis.db.EventList.prototype.getFirstEventTime);
+goog.exportProperty(
+    wtf.analysis.db.EventList.prototype, 'getLastEventTime',
+    wtf.analysis.db.EventList.prototype.getLastEventTime);
+goog.exportProperty(
+    wtf.analysis.db.EventList.prototype, 'getCount',
+    wtf.analysis.db.EventList.prototype.getCount);
+goog.exportProperty(
+    wtf.analysis.db.EventList.prototype, 'search',
+    wtf.analysis.db.EventList.prototype.search);
+goog.exportProperty(
+    wtf.analysis.db.EventList.prototype, 'findEnclosingScope',
+    wtf.analysis.db.EventList.prototype.findEnclosingScope);
+goog.exportProperty(
+    wtf.analysis.db.EventList.prototype, 'forEach',
+    wtf.analysis.db.EventList.prototype.forEach);

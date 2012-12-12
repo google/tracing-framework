@@ -285,3 +285,41 @@ wtf.analysis.Scope.prototype.getRenderData = function() {
 wtf.analysis.Scope.prototype.setRenderData = function(value) {
   this.renderData_ = value;
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.Scope',
+    wtf.analysis.Scope);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getId',
+    wtf.analysis.Scope.prototype.getId);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getEnterEvent',
+    wtf.analysis.Scope.prototype.getEnterEvent);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getLeaveEvent',
+    wtf.analysis.Scope.prototype.getLeaveEvent);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getData',
+    wtf.analysis.Scope.prototype.getData);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getParent',
+    wtf.analysis.Scope.prototype.getParent);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getDepth',
+    wtf.analysis.Scope.prototype.getDepth);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getTotalDuration',
+    wtf.analysis.Scope.prototype.getTotalDuration);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getUserDuration',
+    wtf.analysis.Scope.prototype.getUserDuration);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getChildren',
+    wtf.analysis.Scope.prototype.getChildren);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'getRenderData',
+    wtf.analysis.Scope.prototype.getRenderData);
+goog.exportProperty(
+    wtf.analysis.Scope.prototype, 'setRenderData',
+    wtf.analysis.Scope.prototype.setRenderData);

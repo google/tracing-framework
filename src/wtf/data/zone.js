@@ -22,3 +22,11 @@ goog.provide('wtf.data.ZoneType');
 wtf.data.ZoneType = {
   SCRIPT: 'script'
 };
+
+
+goog.exportSymbol(
+    'wtf.data.ZoneType',
+    wtf.data.ZoneType);
+goog.exportProperty(
+    wtf.data.ZoneType, 'SCRIPT',
+    wtf.data.ZoneType.SCRIPT);

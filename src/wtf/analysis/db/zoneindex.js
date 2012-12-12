@@ -256,3 +256,13 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   }, this);
 };
 
+
+goog.exportProperty(
+    wtf.analysis.db.ZoneIndex.prototype, 'getZone',
+    wtf.analysis.db.ZoneIndex.prototype.getZone);
+goog.exportProperty(
+    wtf.analysis.db.ZoneIndex.prototype, 'getRootTotalTime',
+    wtf.analysis.db.ZoneIndex.prototype.getRootTotalTime);
+goog.exportProperty(
+    wtf.analysis.db.ZoneIndex.prototype, 'getRootUserTime',
+    wtf.analysis.db.ZoneIndex.prototype.getRootUserTime);

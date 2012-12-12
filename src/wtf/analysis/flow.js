@@ -158,3 +158,26 @@ wtf.analysis.Flow.prototype.getTerminateEvent = function() {
 wtf.analysis.Flow.prototype.setTerminateEvent = function(e) {
   this.terminateEvent_ = e;
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.Flow',
+    wtf.analysis.Flow);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'getId',
+    wtf.analysis.Flow.prototype.getId);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'hasParent',
+    wtf.analysis.Flow.prototype.hasParent);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'getParent',
+    wtf.analysis.Flow.prototype.getParent);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'getBranchEvent',
+    wtf.analysis.Flow.prototype.getBranchEvent);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'getExtendEvent',
+    wtf.analysis.Flow.prototype.getExtendEvent);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'getTerminateEvent',
+    wtf.analysis.Flow.prototype.getTerminateEvent);
