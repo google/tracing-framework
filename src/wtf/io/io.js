@@ -194,6 +194,21 @@ wtf.io.stringToByteArray = function(value, target) {
 };
 
 
+/**
+ * Converts the given string to a byte array.
+ * @param {string} value String representation of a byte array.
+ * @return {wtf.io.ByteArray} Byte array, if the string was valid.
+ */
+wtf.io.stringToNewByteArray = function(value) {
+  // TODO(benvanik): optimize to create no garbage
+  var result = goog.crypt.base64.decodeStringToByteArray(value);
+  if (!result) {
+    return null;
+  }
+  return wtf.io.createByteArrayFromArray(result);
+};
+
+
 
 /**
  * Interface describing classes that can convert floating point numbers to

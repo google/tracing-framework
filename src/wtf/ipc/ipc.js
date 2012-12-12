@@ -20,21 +20,44 @@ goog.require('goog.events.EventType');
 goog.require('wtf.ipc.DomChannel');
 goog.require('wtf.ipc.ExtensionChannel');
 goog.require('wtf.ipc.MessageChannel');
+goog.require('wtf.timing');
 
 
 /**
  * Connects to the window that opened this window, if any.
- * @return {wtf.ipc.Channel} IPC channel.
+ * When running inside a Chrome extension this will connect to the background
+ * page.
+ * @param {!function(this: T, wtf.ipc.Channel)} callback Connect callback.
+ * @param {T=} opt_scope Scope for the callback.
+ * @template T
  */
-wtf.ipc.connectToParentWindow = function() {
-  if (!window.opener) {
-    return null;
+wtf.ipc.connectToParentWindow = function(callback, opt_scope) {
+  var chrome = goog.global['chrome'];
+  if (chrome && chrome['runtime'] &&
+      chrome['runtime']['getBackgroundPage']) {
+    chrome['runtime']['getBackgroundPage'](function(backgroundPage) {
+      var channel = new wtf.ipc.MessageChannel(window, backgroundPage);
+      channel.postMessage({
+        'hello': true
+      });
+      callback.call(opt_scope, channel);
+    });
+  } else {
+    if (!window.opener) {
+      wtf.timing.setImmediate(function() {
+        callback.call(opt_scope, null);
+      });
+      return;
+    }
+
+    var channel = new wtf.ipc.MessageChannel(window, window.opener);
+    channel.postMessage({
+      'hello': true
+    });
+    wtf.timing.setImmediate(function() {
+      callback.call(opt_scope, channel);
+    });
   }
-  var channel = new wtf.ipc.MessageChannel(window, window.opener);
-  channel.postMessage({
-    'hello': true
-  });
-  return channel;
 };
 
 
