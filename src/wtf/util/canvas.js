@@ -29,7 +29,7 @@ wtf.util.canvas.ENABLE_HIGH_DPI = true;
  * @return {boolean} True if <canvas> can be used.
  */
 wtf.util.canvas.isSupported = function() {
-  return !!window.HTMLCanvasElement;
+  return !!goog.global['HTMLCanvasElement'];
 };
 
 

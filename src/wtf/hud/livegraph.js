@@ -64,7 +64,7 @@ wtf.hud.LiveGraph.prototype.createDom = function(dom) {
  * @private
  */
 wtf.hud.LiveGraph.prototype.setupPainter_ = function() {
-  if (wtf.util.canvas.isSupported()) {
+  if (!wtf.util.canvas.isSupported()) {
     this.enabled_ = false;
     // TODO(benvanik): show 'canvas disabled' message.
     return;
@@ -72,6 +72,8 @@ wtf.hud.LiveGraph.prototype.setupPainter_ = function() {
 
   var canvas = /** @type {!HTMLCanvasElement} */ (this.getRootElement());
   goog.dom.classes.add(canvas, 'wtfHudGraphCanvas');
+  canvas.width = 1;
+  canvas.height = 1;
 
   this.setPaintContext(new wtf.ui.Painter(canvas));
 };
