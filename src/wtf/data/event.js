@@ -36,6 +36,17 @@ wtf.data.EventClass = {
 };
 
 
+goog.exportSymbol(
+    'wtf.data.EventClass',
+    wtf.data.EventClass);
+goog.exportProperty(
+    wtf.data.EventClass, 'INSTANCE',
+    wtf.data.EventClass.INSTANCE);
+goog.exportProperty(
+    wtf.data.EventClass, 'SCOPE',
+    wtf.data.EventClass.SCOPE);
+
+
 /**
  * Event behavior flag bitmask.
  * Values can be ORed together to indicate different behaviors an event has.
@@ -83,13 +94,18 @@ wtf.data.EventFlag = {
 goog.exportSymbol(
     'wtf.data.EventFlag',
     wtf.data.EventFlag);
-goog.exportProperty(wtf.data.EventFlag,
-    'HIGH_FREQUENCY', wtf.data.EventFlag.HIGH_FREQUENCY);
-goog.exportProperty(wtf.data.EventFlag,
-    'SYSTEM_TIME', wtf.data.EventFlag.SYSTEM_TIME);
-goog.exportProperty(wtf.data.EventFlag,
-    'INTERNAL', wtf.data.EventFlag.INTERNAL);
-goog.exportProperty(wtf.data.EventFlag,
-    'APPEND_SCOPE_DATA', wtf.data.EventFlag.APPEND_SCOPE_DATA);
-goog.exportProperty(wtf.data.EventFlag,
-    'BUILTIN', wtf.data.EventFlag.BUILTIN);
+goog.exportProperty(
+    wtf.data.EventFlag, 'HIGH_FREQUENCY',
+    wtf.data.EventFlag.HIGH_FREQUENCY);
+goog.exportProperty(
+    wtf.data.EventFlag, 'SYSTEM_TIME',
+    wtf.data.EventFlag.SYSTEM_TIME);
+goog.exportProperty(
+    wtf.data.EventFlag, 'INTERNAL',
+    wtf.data.EventFlag.INTERNAL);
+goog.exportProperty(
+    wtf.data.EventFlag, 'APPEND_SCOPE_DATA',
+    wtf.data.EventFlag.APPEND_SCOPE_DATA);
+goog.exportProperty(
+    wtf.data.EventFlag, 'BUILTIN',
+    wtf.data.EventFlag.BUILTIN);

@@ -441,3 +441,38 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
     this.eventTargets_[n].insertEvent(e);
   }
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.db.EventDatabase',
+    wtf.analysis.db.EventDatabase);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getSources',
+    wtf.analysis.db.EventDatabase.prototype.getSources);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getTotalEventCount',
+    wtf.analysis.db.EventDatabase.prototype.getTotalEventCount);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getTimebase',
+    wtf.analysis.db.EventDatabase.prototype.getTimebase);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getFirstEventTime',
+    wtf.analysis.db.EventDatabase.prototype.getFirstEventTime);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getLastEventTime',
+    wtf.analysis.db.EventDatabase.prototype.getLastEventTime);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getSummaryIndex',
+    wtf.analysis.db.EventDatabase.prototype.getSummaryIndex);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getZoneIndices',
+    wtf.analysis.db.EventDatabase.prototype.getZoneIndices);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'createEventIndex',
+    wtf.analysis.db.EventDatabase.prototype.createEventIndex);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getEventIndex',
+    wtf.analysis.db.EventDatabase.prototype.getEventIndex);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'getTraceListener',
+    wtf.analysis.db.EventDatabase.prototype.getTraceListener);

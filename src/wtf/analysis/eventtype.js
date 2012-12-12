@@ -86,6 +86,42 @@ wtf.analysis.EventType.prototype.toString = function() {
 };
 
 
+/**
+ * Gets the name of the event.
+ * @return {string} Event name.
+ */
+wtf.analysis.EventType.prototype.getName = function() {
+  return this.name;
+};
+
+
+/**
+ * Gets the class of the event.
+ * @return {wtf.data.EventClass} Event class.
+ */
+wtf.analysis.EventType.prototype.getClass = function() {
+  return this.eventClass;
+};
+
+
+/**
+ * Gets associated event flags.
+ * @return {number} A bitmask of {@see wtf.data.EventFlag}.
+ */
+wtf.analysis.EventType.prototype.getFlags = function() {
+  return this.flags;
+};
+
+
+/**
+ * Gets a list of additional arguments encoded with the event.
+ * @return {!Array.<!wtf.data.Variable>} Arguments.
+ */
+wtf.analysis.EventType.prototype.getArguments = function() {
+  return this.args;
+};
+
+
 // TODO(benvanik): move to BinaryTraceSource
 /**
  * Creates an event type from a serialized define event message.
@@ -160,3 +196,23 @@ wtf.analysis.EventType.getBuilder_ = function() {
   }
   return wtf.analysis.EventType.builder_;
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.EventType',
+    wtf.analysis.EventType);
+goog.exportProperty(
+    wtf.analysis.EventType.prototype, 'toString',
+    wtf.analysis.EventType.prototype.toString);
+goog.exportProperty(
+    wtf.analysis.EventType.prototype, 'getName',
+    wtf.analysis.EventType.prototype.getName);
+goog.exportProperty(
+    wtf.analysis.EventType.prototype, 'getClass',
+    wtf.analysis.EventType.prototype.getClass);
+goog.exportProperty(
+    wtf.analysis.EventType.prototype, 'getFlags',
+    wtf.analysis.EventType.prototype.getFlags);
+goog.exportProperty(
+    wtf.analysis.EventType.prototype, 'getArguments',
+    wtf.analysis.EventType.prototype.getArguments);
