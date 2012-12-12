@@ -1615,6 +1615,10 @@ wtf.io.stringToByteArray = function(a, b) {
   }
   return c.length
 };
+wtf.io.stringToNewByteArray = function(a) {
+  a = goog.crypt.base64.decodeStringToByteArray(a);
+  return!a ? null : wtf.io.createByteArrayFromArray(a)
+};
 wtf.io.IFloatConverter = function() {
 };
 wtf.io.JavaScriptFloatConverter_ = function() {
@@ -9620,6 +9624,9 @@ wtf.trace.ignoreListener = wtf.trace.util.ignoreListener;
 wtf.util.formatTime = function(a) {
   return a.toFixed(3) + "ms"
 };
+wtf.util.formatSmallTime = function(a) {
+  return 0 == a ? "0ms" : 1 > a ? a.toFixed(3) + "ms" : 10 > a ? a.toFixed(2) + "ms" : a.toFixed(0) + "ms"
+};
 wtf.util.formatWallTime = function(a) {
   var b = new Date(a);
   return"" + goog.string.padNumber(b.getHours(), 2) + ":" + goog.string.padNumber(b.getMinutes(), 2) + ":" + goog.string.padNumber(b.getSeconds(), 2) + "." + String((b.getMilliseconds() / 1E3).toFixed(3)).slice(2, 5) + "." + goog.string.padNumber(Math.floor(1E4 * (a - Math.floor(a))), 4)
@@ -9987,13 +9994,27 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(a, b) {
   }
 };
 // Input 142
-wtf.ipc.connectToParentWindow = function() {
-  if(!window.opener) {
-    return null
+wtf.ipc.connectToParentWindow = function(a, b) {
+  var c = goog.global.chrome;
+  if(c && c.runtime && c.runtime.getBackgroundPage) {
+    c.runtime.getBackgroundPage(function(c) {
+      c = new wtf.ipc.MessageChannel(window, c);
+      c.postMessage({hello:!0});
+      a.call(b, c)
+    })
+  }else {
+    if(window.opener) {
+      var d = new wtf.ipc.MessageChannel(window, window.opener);
+      d.postMessage({hello:!0});
+      wtf.timing.setImmediate(function() {
+        a.call(b, d)
+      })
+    }else {
+      wtf.timing.setImmediate(function() {
+        a.call(b, null)
+      })
+    }
   }
-  var a = new wtf.ipc.MessageChannel(window, window.opener);
-  a.postMessage({hello:!0});
-  return a
 };
 wtf.ipc.waitForChildWindow = function(a, b) {
   var c = goog.events.listen(window, goog.events.EventType.MESSAGE, function(d) {
