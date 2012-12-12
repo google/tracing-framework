@@ -18,9 +18,9 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf');
-goog.require('wtf.analysis.db.EventDataTable');
 goog.require('wtf.analysis.db.InstanceEventDataEntry');
 goog.require('wtf.analysis.db.ScopeEventDataEntry');
+goog.require('wtf.analysis.db.SortMode');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
@@ -74,10 +74,10 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
 
   /**
    * Current sort mode.
-   * @type {wtf.analysis.db.EventDataTable.SortMode}
+   * @type {wtf.analysis.db.SortMode}
    * @private
    */
-  this.sortMode_ = wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME;
+  this.sortMode_ = wtf.analysis.db.SortMode.TOTAL_TIME;
 
   // Add sort buttons.
   // TODO(benvanik): fancy dropdown popup button thing.
@@ -96,13 +96,13 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   };
   addSortButton(
       'count', 'Sort by total event count.',
-      wtf.analysis.db.EventDataTable.SortMode.COUNT);
+      wtf.analysis.db.SortMode.COUNT);
   addSortButton(
       'total', 'Sort by total event time.',
-      wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME);
+      wtf.analysis.db.SortMode.TOTAL_TIME);
   addSortButton(
       'mean', 'Sort by average event duration.',
-      wtf.analysis.db.EventDataTable.SortMode.MEAN_TIME);
+      wtf.analysis.db.SortMode.MEAN_TIME);
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
@@ -193,7 +193,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
 /**
  * Builds the HTML for a table row.
  * @param {!wtf.analysis.db.EventDataEntry} entry Event data entry.
- * @param {wtf.analysis.db.EventDataTable.SortMode} sortMode Sort mode used.
+ * @param {wtf.analysis.db.SortMode} sortMode Sort mode used.
  * @return {!Element} HTML element.
  * @private
  */
@@ -220,13 +220,13 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.buildTableRow_ = function(
 
   var value = '';
   switch (sortMode) {
-    case wtf.analysis.db.EventDataTable.SortMode.COUNT:
+    case wtf.analysis.db.SortMode.COUNT:
       value = String(entry.getCount());
       break;
-    case wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME:
+    case wtf.analysis.db.SortMode.TOTAL_TIME:
       value = totalTime || '';
       break;
-    case wtf.analysis.db.EventDataTable.SortMode.MEAN_TIME:
+    case wtf.analysis.db.SortMode.MEAN_TIME:
       value = meanTime || '';
       break;
   }

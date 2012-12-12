@@ -17,6 +17,7 @@ goog.provide('wtf.analysis.db.InstanceEventDataEntry');
 goog.provide('wtf.analysis.db.ScopeEventDataEntry');
 
 goog.require('goog.Disposable');
+goog.require('wtf.analysis.db.SortMode');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 
@@ -69,10 +70,10 @@ wtf.analysis.db.EventDataTable = function(db) {
   /**
    * The current sort mode of the list.
    * This is used to prevent successive sorts of the list.
-   * @type {wtf.analysis.db.EventDataTable.SortMode}
+   * @type {wtf.analysis.db.SortMode}
    * @private
    */
-  this.listSortMode_ = wtf.analysis.db.EventDataTable.SortMode.ANY;
+  this.listSortMode_ = wtf.analysis.db.SortMode.ANY;
 
   /**
    * Total number of filtered events.
@@ -135,7 +136,7 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
 
   this.table_ = table;
   this.list_ = list;
-  this.listSortMode_ = wtf.analysis.db.EventDataTable.SortMode.ANY;
+  this.listSortMode_ = wtf.analysis.db.SortMode.ANY;
 };
 
 
@@ -160,23 +161,11 @@ wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry =
 
 
 /**
- * Sorting mode to use when retrieving entries.
- * @enum {number}
- */
-wtf.analysis.db.EventDataTable.SortMode = {
-  ANY: 0,
-  COUNT: 1,
-  TOTAL_TIME: 2,
-  MEAN_TIME: 3
-};
-
-
-/**
  * Enumerates all event type entries in the data table.
  * @param {function(this: T, !wtf.analysis.db.EventDataEntry)} callback
  *     A function called for each entry.
  * @param {T=} opt_scope Callback scope.
- * @param {wtf.analysis.db.EventDataTable.SortMode=} opt_sortMode Sort mode.
+ * @param {wtf.analysis.db.SortMode=} opt_sortMode Sort mode.
  * @template T
  */
 wtf.analysis.db.EventDataTable.prototype.forEach = function(
@@ -186,12 +175,12 @@ wtf.analysis.db.EventDataTable.prototype.forEach = function(
     // value.
     this.listSortMode_ = opt_sortMode;
     switch (this.listSortMode_) {
-      case wtf.analysis.db.EventDataTable.SortMode.COUNT:
+      case wtf.analysis.db.SortMode.COUNT:
         this.list_.sort(function(a, b) {
           return b.count - a.count;
         });
         break;
-      case wtf.analysis.db.EventDataTable.SortMode.TOTAL_TIME:
+      case wtf.analysis.db.SortMode.TOTAL_TIME:
         this.list_.sort(function(a, b) {
           if (a instanceof wtf.analysis.db.ScopeEventDataEntry &&
               b instanceof wtf.analysis.db.ScopeEventDataEntry) {
@@ -205,7 +194,7 @@ wtf.analysis.db.EventDataTable.prototype.forEach = function(
           }
         });
         break;
-      case wtf.analysis.db.EventDataTable.SortMode.MEAN_TIME:
+      case wtf.analysis.db.SortMode.MEAN_TIME:
         this.list_.sort(function(a, b) {
           if (a instanceof wtf.analysis.db.ScopeEventDataEntry &&
               b instanceof wtf.analysis.db.ScopeEventDataEntry) {
@@ -225,6 +214,23 @@ wtf.analysis.db.EventDataTable.prototype.forEach = function(
     callback.call(opt_scope, this.list_[n]);
   }
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.db.EventDataTable',
+    wtf.analysis.db.EventDataTable);
+goog.exportProperty(
+    wtf.analysis.db.EventDataTable.prototype, 'rebuild',
+    wtf.analysis.db.EventDataTable.prototype.rebuild);
+goog.exportProperty(
+    wtf.analysis.db.EventDataTable.prototype, 'getFilteredEventCount',
+    wtf.analysis.db.EventDataTable.prototype.getFilteredEventCount);
+goog.exportProperty(
+    wtf.analysis.db.EventDataTable.prototype, 'getEventTypeEntry',
+    wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry);
+goog.exportProperty(
+    wtf.analysis.db.EventDataTable.prototype, 'forEach',
+    wtf.analysis.db.EventDataTable.prototype.forEach);
 
 
 
@@ -283,6 +289,20 @@ wtf.analysis.db.EventDataEntry.prototype.getFrequency = function() {
   // TODO(benvanik): compute frequency of events.
   return 0;
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.db.EventDataEntry',
+    wtf.analysis.db.EventDataEntry);
+goog.exportProperty(
+    wtf.analysis.db.EventDataEntry.prototype, 'getEventType',
+    wtf.analysis.db.EventDataEntry.prototype.getEventType);
+goog.exportProperty(
+    wtf.analysis.db.EventDataEntry.prototype, 'getCount',
+    wtf.analysis.db.EventDataEntry.prototype.getCount);
+goog.exportProperty(
+    wtf.analysis.db.EventDataEntry.prototype, 'getFrequency',
+    wtf.analysis.db.EventDataEntry.prototype.getFrequency);
 
 
 
@@ -363,6 +383,20 @@ wtf.analysis.db.ScopeEventDataEntry.prototype.getMeanTime = function() {
 };
 
 
+goog.exportSymbol(
+    'wtf.analysis.db.ScopeEventDataEntry',
+    wtf.analysis.db.ScopeEventDataEntry);
+goog.exportProperty(
+    wtf.analysis.db.ScopeEventDataEntry.prototype, 'getTotalTime',
+    wtf.analysis.db.ScopeEventDataEntry.prototype.getTotalTime);
+goog.exportProperty(
+    wtf.analysis.db.ScopeEventDataEntry.prototype, 'getUserTime',
+    wtf.analysis.db.ScopeEventDataEntry.prototype.getUserTime);
+goog.exportProperty(
+    wtf.analysis.db.ScopeEventDataEntry.prototype, 'getMeanTime',
+    wtf.analysis.db.ScopeEventDataEntry.prototype.getMeanTime);
+
+
 
 /**
  * An entry in the {@see wtf.analysis.db.EventDataTable} describing instance
@@ -384,3 +418,8 @@ goog.inherits(wtf.analysis.db.InstanceEventDataEntry,
 wtf.analysis.db.InstanceEventDataEntry.prototype.appendEvent = function(e) {
   this.count++;
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.db.InstanceEventDataEntry',
+    wtf.analysis.db.InstanceEventDataEntry);
