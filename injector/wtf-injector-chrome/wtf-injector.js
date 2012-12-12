@@ -244,7 +244,7 @@ function setupCommunications() {
           'command': 'show_snapshot',
           'page_url': data['page_url'],
           'content_type': data['content_type'],
-          'contents': convertUint8ArraysToArrays(data['contents'])
+          'contents': data['contents']
         });
         break;
     }

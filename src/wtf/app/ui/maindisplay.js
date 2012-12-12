@@ -102,12 +102,15 @@ wtf.app.ui.MainDisplay = function(
    * @type {wtf.ipc.Channel}
    * @private
    */
-  this.channel_ = wtf.ipc.connectToParentWindow();
-  if (this.channel_) {
-    this.channel_.addListener(
-        wtf.ipc.Channel.EventType.MESSAGE,
-        this.channelMessage_, this);
-  }
+  this.channel_ = null;
+  wtf.ipc.connectToParentWindow(function(channel) {
+    if (channel) {
+      this.channel_ = channel;
+      this.channel_.addListener(
+          wtf.ipc.Channel.EventType.MESSAGE,
+          this.channelMessage_, this);
+    }
+  }, this);
 
   // Setup command manager.
   this.commandManager_.registerSimpleCommand(
@@ -274,8 +277,10 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
 
   // Convert data from Arrays to ensure we are typed all the way through.
   for (var n = 0; n < datas.length; n++) {
-    if (!(datas[n] instanceof Uint8Array)) {
+    if (goog.isArray(datas[n])) {
       datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
+    } else if (goog.isString(datas[n])) {
+      datas[n] = wtf.io.stringToNewByteArray(datas[n]);
     }
   }
 

@@ -26,12 +26,29 @@ var Extension = function() {
    */
   this.options_ = new Options();
 
+  /**
+   * All popup window tab IDs mapped by opener tab ID.
+   * @type {!Object.<number, number>}
+   * @private
+   */
+  this.popupWindows_ = {};
+
   chrome.tabs.onActivated.addListener(
       this.tabActivated_.bind(this));
   chrome.tabs.onUpdated.addListener(
       this.tabUpdated_.bind(this));
   chrome.pageAction.onClicked.addListener(
       this.pageActionClicked_.bind(this));
+
+  // Handle tab closes.
+  chrome.tabs.onRemoved.addListener((function(tabId) {
+    for (var key in this.popupWindows_) {
+      if (this.popupWindows_[key] === tabId) {
+        delete this.popupWindows_[key];
+        break;
+      }
+    }
+  }).bind(this));
 
   // Listen for commands from content scripts.
   chrome.extension.onConnect.addListener(function(port) {
@@ -361,6 +378,7 @@ Extension.prototype.pageMessageReceived_ = function(data, port) {
       break;
     case 'show_snapshot':
       this.showSnapshot_(
+          tab,
           data['page_url'],
           data['content_type'],
           data['contents']);
@@ -371,12 +389,14 @@ Extension.prototype.pageMessageReceived_ = function(data, port) {
 
 /**
  * Shows a snapshot in a new window.
+ * @param {!Tab} sourceTab Source tab.
  * @param {string} pageUrl Page URL to open.
  * @param {string} contentType Data content type.
  * @param {!Array.<!Uint8Array>} contents Data.
  * @private
  */
-Extension.prototype.showSnapshot_ = function(pageUrl, contentType, contents) {
+Extension.prototype.showSnapshot_ = function(
+    sourceTab, pageUrl, contentType, contents) {
   // TODO(benvanik): generalize this into an IPC channel
   var waiter = function(e) {
     // This is a packet from the wtf.ipc.MessageChannel type.
@@ -404,5 +424,30 @@ Extension.prototype.showSnapshot_ = function(pageUrl, contentType, contents) {
     e.source.focus();
   };
   window.addEventListener('message', waiter, true);
-  var child = window.open(pageUrl, 'wtf_ui');
+
+  var existingTabId = this.popupWindows_[sourceTab.id];
+  if (existingTabId === undefined) {
+    // New tab needed.
+    chrome.tabs.create({
+      windowId: sourceTab.windowId,
+      index: sourceTab.index + 1,
+      url: pageUrl,
+      active: true,
+      openerTabId: sourceTab.id
+    }, (function(newTab) {
+      this.popupWindows_[sourceTab.id] = newTab.id;
+    }).bind(this));
+  } else {
+    // Switch to existing tab.
+    chrome.tabs.reload(existingTabId);
+    chrome.tabs.get(existingTabId, function(existingTab) {
+      chrome.windows.update(existingTab.windowId, {
+        focused: true,
+        drawAttention: true
+      });
+    });
+    chrome.tabs.update(existingTabId, {
+      active: true
+    });
+  }
 };
