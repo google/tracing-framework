@@ -26,6 +26,7 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.SettingsDialog');
 goog.require('wtf.hud.overlay');
+goog.require('wtf.io');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
@@ -541,12 +542,20 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
   if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
     // Opening in an extension window, need to marshal through the content
     // script to get it open.
+
+    // Since extension channels cannot take the typed arrays we convert to
+    // a string to make it flow faster through the system.
+    var stringBuffers = [];
+    for (var n = 0; n < buffers.length; n++) {
+      stringBuffers.push(wtf.io.byteArrayToString(buffers[n]));
+    }
+
     this.extensionChannel_.postMessage({
       'command': 'show_snapshot',
       'page_url': endpoint,
       'content_type': 'application/x-extension-wtf-trace',
-      'contents': buffers
-    }, buffers);
+      'contents': stringBuffers
+    });
   } else {
     // Create window and show.
     var target = window.open(endpoint, 'wtf_ui');
