@@ -20,12 +20,29 @@ goog.require('goog.string');
 
 
 /**
- * Formats a time value, maintaining all precision.
+ * Formats a time value, rounding to ms at 3 decimal places.
  * @param {number} value Time value.
  * @return {string} Formatted time string.
  */
 wtf.util.formatTime = function(value) {
   return value.toFixed(3) + 'ms';
+};
+
+
+/**
+ * Formats a time value, rounding to ms and to ms at 3 decimal places if <1.
+ * @param {number} value Time value.
+ * @return {string} Formatted time string, plus units.
+ */
+wtf.util.formatSmallTime = function(value) {
+  if (value == 0) {
+    return '0ms';
+  } else if (value < 1) {
+    return value.toFixed(3) + 'ms';
+  } else if (value < 10) {
+    return value.toFixed(2) + 'ms';
+  }
+  return value.toFixed(0) + 'ms';
 };
 
 

@@ -28,6 +28,7 @@ goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.SearchControl');
+goog.require('wtf.util');
 
 
 
@@ -205,27 +206,9 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.buildTableRow_ = function(
 
   var content = '';
   if (entry instanceof wtf.analysis.db.ScopeEventDataEntry) {
-    var totalTime = Math.round(entry.getTotalTime());
-    if (!totalTime) {
-      totalTime = '0';
-    } else if (totalTime < 1) {
-      totalTime = '<1';
-    }
-    totalTime += 'ms';
-    var userTime = Math.round(entry.getUserTime());
-    if (!userTime) {
-      userTime = '0';
-    } else if (userTime < 1) {
-      userTime = '<1';
-    }
-    userTime += 'ms';
-    var meanTime = Math.round(entry.getMeanTime());
-    if (!meanTime) {
-      meanTime = '0';
-    } else if (meanTime < 1) {
-      meanTime = '<1';
-    }
-    meanTime += 'ms';
+    var totalTime = wtf.util.formatSmallTime(entry.getTotalTime());
+    var userTime = wtf.util.formatSmallTime(entry.getUserTime());
+    var meanTime = wtf.util.formatSmallTime(entry.getMeanTime());
     content +=
         entry.getCount() + ', ' +
         totalTime + ' t, ' +
