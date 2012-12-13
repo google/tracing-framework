@@ -226,3 +226,17 @@ wtf.trace.Flow.prototype.terminate = wtf.ENABLE_TRACING ?
       var pool = wtf.trace.Flow.pool_;
       pool.unusedFlows[pool.unusedIndex++] = this;
     } : goog.nullFunction;
+
+
+goog.exportProperty(
+    wtf.trace.Flow.prototype,
+    'getId',
+    wtf.trace.Flow.prototype.getId);
+goog.exportProperty(
+    wtf.trace.Flow.prototype,
+    'extend',
+    wtf.trace.Flow.prototype.extend);
+goog.exportProperty(
+    wtf.trace.Flow.prototype,
+    'terminate',
+    wtf.trace.Flow.prototype.terminate);

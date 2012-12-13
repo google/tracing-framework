@@ -13,7 +13,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 JS_COMPILER_JAR='third_party:closure_compiler_jar'
 SOY_COMPILER_JAR='third_party:closure_templates_jar'
 file_set(
-    name='closure_externs',
+    name='all_externs',
     srcs=glob('externs/**/*.js'))
 
 
@@ -135,7 +135,7 @@ closure_js_library(
     mode='UNCOMPILED',
     entry_points=WTF_TRACE_WEB_ENTRY_POINTS + ['wtf.analysis.exports'],
     srcs=':all_trace_web_uncompiled_js',
-    externs=[':closure_externs'],
+    externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     wrap_with_global='this')
 
@@ -146,7 +146,7 @@ closure_js_library(
     mode='ADVANCED',
     entry_points=WTF_TRACE_WEB_ENTRY_POINTS,
     srcs=':all_trace_web_compiled_js',
-    externs=[':closure_externs'],
+    externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
         '--define=wtf.ENABLE_TRACING=true',
@@ -189,7 +189,7 @@ closure_js_library(
         'third_party:all_closure_js',
         ':wtf_src_js',
         ],
-    externs=[':closure_externs'],
+    externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
         '--define=goog.DEBUG=false',
@@ -249,7 +249,7 @@ closure_js_library(
     mode='UNCOMPILED',
     entry_points=WTF_UI_ENTRY_POINTS,
     srcs=':all_ui_uncompiled_js',
-    externs=[':closure_externs'],
+    externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     wrap_with_global='this',
     file_list_out='wtf_ui_js.list')
@@ -261,7 +261,7 @@ closure_js_library(
     mode='ADVANCED',
     entry_points=WTF_UI_ENTRY_POINTS,
     srcs=':all_ui_compiled_js',
-    externs=[':closure_externs'],
+    externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
         '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',

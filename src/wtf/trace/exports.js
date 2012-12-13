@@ -17,8 +17,17 @@
 
 goog.provide('wtf.trace.exports');
 
+/** @suppress {extraRequire} */
+goog.require('wtf.data.EventClass');
+/** @suppress {extraRequire} */
+goog.require('wtf.data.EventFlag');
+/** @suppress {extraRequire} */
+goog.require('wtf.data.ZoneType');
 goog.require('wtf.trace');
+/** @suppress {extraRequire} */
 goog.require('wtf.trace.Flow');
+/** @suppress {extraRequire} */
+goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
 goog.require('wtf.trace.instrument');
 goog.require('wtf.trace.instrumentType');
@@ -116,20 +125,6 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.ignoreListener',
       wtf.trace.ignoreListener);
-
-  // wtf.trace.Flow
-  goog.exportProperty(
-      wtf.trace.Flow.prototype,
-      'getId',
-      wtf.trace.Flow.prototype.getId);
-  goog.exportProperty(
-      wtf.trace.Flow.prototype,
-      'extend',
-      wtf.trace.Flow.prototype.extend);
-  goog.exportProperty(
-      wtf.trace.Flow.prototype,
-      'terminate',
-      wtf.trace.Flow.prototype.terminate);
 
   // Instrumentation utilities
   if (!COMPILED) {
