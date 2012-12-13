@@ -17,9 +17,12 @@
 
 goog.provide('wtf.analysis.exports');
 
+/** @suppress {extraRequire} */
 goog.require('wtf.analysis');
 /** @suppress {extraRequire} */
 goog.require('wtf.analysis.Event');
+/** @suppress {extraRequire} */
+goog.require('wtf.analysis.EventFilter');
 /** @suppress {extraRequire} */
 goog.require('wtf.analysis.EventType');
 /** @suppress {extraRequire} */
@@ -58,6 +61,8 @@ goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 /** @suppress {extraRequire} */
 goog.require('wtf.data.ZoneType');
+/** @suppress {extraRequire} */
+goog.require('wtf.util');
 
 
 /**
@@ -69,14 +74,3 @@ goog.require('wtf.data.ZoneType');
  * prevent renaming.
  */
 wtf.analysis.exports.ENABLE_EXPORTS = false;
-
-
-if (wtf.analysis.exports.ENABLE_EXPORTS) {
-  // wtf.analysis controls
-  goog.exportSymbol(
-      'wtf.analysis.createTraceListener',
-      wtf.analysis.createTraceListener);
-  goog.exportSymbol(
-      'wtf.analysis.run',
-      wtf.analysis.run);
-}
