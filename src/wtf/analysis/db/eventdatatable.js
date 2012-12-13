@@ -17,6 +17,8 @@ goog.provide('wtf.analysis.db.InstanceEventDataEntry');
 goog.provide('wtf.analysis.db.ScopeEventDataEntry');
 
 goog.require('goog.Disposable');
+goog.require('goog.object');
+goog.require('wtf.analysis.EventFilter');
 goog.require('wtf.analysis.db.SortMode');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
@@ -28,10 +30,12 @@ goog.require('wtf.data.EventFlag');
  * Caches detailed aggregate information about events.
  *
  * @param {!wtf.analysis.db.EventDatabase} db Event database.
+ * @param {wtf.analysis.EventFilter|wtf.analysis.EventFilterFunction=}
+ *     opt_filter Initial filter.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.analysis.db.EventDataTable = function(db) {
+wtf.analysis.db.EventDataTable = function(db, opt_filter) {
   goog.base(this);
 
   /**
@@ -61,6 +65,15 @@ wtf.analysis.db.EventDataTable = function(db) {
   this.table_ = {};
 
   /**
+   * All event data entries as objects keyed by event type name.
+   * @type {!Object.<!Object.<wtf.data.EventClass>>}
+   * @private
+   */
+  this.entriesByClass_ = {};
+  this.entriesByClass_[wtf.data.EventClass.INSTANCE] = {};
+  this.entriesByClass_[wtf.data.EventClass.SCOPE] = {};
+
+  /**
    * A list of all event entries.
    * @type {!Array.<!wtf.analysis.db.EventDataEntry>}
    * @private
@@ -81,6 +94,8 @@ wtf.analysis.db.EventDataTable = function(db) {
    * @private
    */
   this.filteredEventCount_ = 0;
+
+  this.rebuild(Number.MIN_VALUE, Number.MAX_VALUE, opt_filter);
 };
 goog.inherits(wtf.analysis.db.EventDataTable, goog.Disposable);
 
@@ -89,14 +104,27 @@ goog.inherits(wtf.analysis.db.EventDataTable, goog.Disposable);
  * Rebuilds the event data table.
  * @param {number} startTime Starting time.
  * @param {number} endTime Ending time.
- * @param {function(!wtf.analysis.Event):boolean} evaluator Event filter.
+ * @param {wtf.analysis.EventFilter|wtf.analysis.EventFilterFunction=}
+ *     opt_filter Event filter.
  */
 wtf.analysis.db.EventDataTable.prototype.rebuild = function(
-    startTime, endTime, evaluator) {
+    startTime, endTime, opt_filter) {
+  var evaluator = null;
+  if (opt_filter instanceof wtf.analysis.EventFilter) {
+    evaluator = opt_filter.getEvaluator();
+  } else {
+    evaluator = opt_filter || null;
+  }
+
   // TODO(benvanik): cache? etc?
   var table = {};
   var list = [];
   this.filteredEventCount_ = 0;
+
+  var scopeEntries = {};
+  this.entriesByClass_[wtf.data.EventClass.SCOPE] = scopeEntries;
+  var instanceEntries = {};
+  this.entriesByClass_[wtf.data.EventClass.INSTANCE] = instanceEntries;
 
   var zoneIndices = this.db_.getZoneIndices();
   for (var n = 0; n < zoneIndices.length; n++) {
@@ -109,7 +137,7 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
       }
 
       // Ignore the event if it doesn't match.
-      if (!evaluator(e)) {
+      if (evaluator && !evaluator(e)) {
         return;
       }
 
@@ -119,9 +147,11 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
         switch (e.eventType.eventClass) {
           case wtf.data.EventClass.SCOPE:
             entry = new wtf.analysis.db.ScopeEventDataEntry(e.eventType);
+            scopeEntries[eventName] = entry;
             break;
           case wtf.data.EventClass.INSTANCE:
             entry = new wtf.analysis.db.InstanceEventDataEntry(e.eventType);
+            instanceEntries[eventName] = entry;
             break;
         }
         table[eventName] = entry;
@@ -157,6 +187,41 @@ wtf.analysis.db.EventDataTable.prototype.getFilteredEventCount = function() {
 wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry =
     function(eventName) {
   return this.table_[eventName] || null;
+};
+
+
+/**
+ * Gets all entries from the table of the given type.
+ * @param {wtf.data.EventClass} eventClass Event class.
+ * @return {!Object.<!wtf.analysis.db.EventDataEntry>} All entries of the given
+ *     class, keyed by event type name.
+ */
+wtf.analysis.db.EventDataTable.prototype.getEntriesByClass =
+    function(eventClass) {
+  return this.entriesByClass_[eventClass];
+};
+
+
+/**
+ * Gets all of the event type names found in all of the given tables.
+ * @param {!Array.<!wtf.analysis.db.EventDataTable>} tables Tables.
+ * @param {wtf.data.EventClass=} opt_eventClass Class to limit to.
+ * @return {!Array.<string>} All event type names.
+ */
+wtf.analysis.db.EventDataTable.getAllEventTypeNames = function(tables,
+    opt_eventClass) {
+  var names = {};
+  for (var n = 0; n < tables.length; n++) {
+    var table = tables[n];
+    for (var m = 0; m < table.list_.length; m++) {
+      var eventType = table.list_[m].eventType;
+      if (opt_eventClass === undefined ||
+          eventType.eventClass == opt_eventClass) {
+        names[eventType.name] = true;
+      }
+    }
+  }
+  return goog.object.getKeys(names);
 };
 
 
@@ -231,6 +296,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.analysis.db.EventDataTable.prototype, 'forEach',
     wtf.analysis.db.EventDataTable.prototype.forEach);
+goog.exportSymbol(
+    'wtf.analysis.db.EventDataTable.getAllEventTypeNames',
+    wtf.analysis.db.EventDataTable.getAllEventTypeNames);
 
 
 
@@ -329,6 +397,13 @@ wtf.analysis.db.ScopeEventDataEntry = function(eventType) {
    * @private
    */
   this.userTime_ = 0;
+
+  /**
+   * Buckets of time, each 1ms.
+   * @type {!Uint32Array}
+   * @private
+   */
+  this.buckets_ = new Uint32Array(1000);
 };
 goog.inherits(wtf.analysis.db.ScopeEventDataEntry,
     wtf.analysis.db.EventDataEntry);
@@ -341,8 +416,15 @@ wtf.analysis.db.ScopeEventDataEntry.prototype.appendEvent = function(e) {
   this.count++;
 
   var scope = e.scope;
+  var userDuration = scope.getUserDuration();
   this.totalTime_ += scope.getTotalDuration();
-  this.userTime_ += scope.getUserDuration();
+  this.userTime_ += userDuration;
+
+  var bucketIndex = Math.round(userDuration) | 0;
+  if (bucketIndex >= 1000) {
+    bucketIndex = 999;
+  }
+  this.buckets_[bucketIndex]++;
 };
 
 
@@ -383,6 +465,16 @@ wtf.analysis.db.ScopeEventDataEntry.prototype.getMeanTime = function() {
 };
 
 
+/**
+ * Gets the distribution of the events over 0-1s.
+ * Any event that ran longer than 1s will be in the last bucket.
+ * @return {!Uint32Array} Distribution.
+ */
+wtf.analysis.db.ScopeEventDataEntry.prototype.getDistribution = function() {
+  return this.buckets_;
+};
+
+
 goog.exportSymbol(
     'wtf.analysis.db.ScopeEventDataEntry',
     wtf.analysis.db.ScopeEventDataEntry);
@@ -395,6 +487,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.analysis.db.ScopeEventDataEntry.prototype, 'getMeanTime',
     wtf.analysis.db.ScopeEventDataEntry.prototype.getMeanTime);
+goog.exportProperty(
+    wtf.analysis.db.ScopeEventDataEntry.prototype, 'getDistribution',
+    wtf.analysis.db.ScopeEventDataEntry.prototype.getDistribution);
 
 
 

@@ -131,3 +131,14 @@ wtf.util.convertAsciiStringToUint8Array = function(value) {
   }
   return buffer;
 };
+
+
+goog.exportSymbol(
+    'wtf.util.formatTime',
+    wtf.util.formatTime);
+goog.exportSymbol(
+    'wtf.util.formatSmallTime',
+    wtf.util.formatSmallTime);
+goog.exportSymbol(
+    'wtf.util.formatWallTime',
+    wtf.util.formatWallTime);

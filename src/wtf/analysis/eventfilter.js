@@ -12,8 +12,15 @@
  */
 
 goog.provide('wtf.analysis.EventFilter');
+goog.provide('wtf.analysis.EventFilterFunction');
 
 goog.require('goog.string');
+
+
+/**
+ * @typedef {function(!wtf.analysis.Event):boolean}
+ */
+wtf.analysis.EventFilterFunction;
 
 
 
@@ -33,9 +40,10 @@ goog.require('goog.string');
  * constructed from various sources, such as expression strings. See
  * {@see #setFromString} for more information.
  *
+ * @param {string=} opt_value Initial string value. See {@see #setFromString}.
  * @constructor
  */
-wtf.analysis.EventFilter = function() {
+wtf.analysis.EventFilter = function(opt_value) {
   /**
    * String that the filter is based on.
    * @type {string}
@@ -46,10 +54,14 @@ wtf.analysis.EventFilter = function() {
   /**
    * Current evaluator function.
    * This may be null, which indicates that all events should pass.
-   * @type {Function?}
+   * @type {wtf.analysis.EventFilterFunction?}
    * @private
    */
   this.evaluator_ = null;
+
+  if (opt_value) {
+    this.setFromString(opt_value);
+  }
 };
 
 
@@ -66,7 +78,8 @@ wtf.analysis.EventFilter.Result = {
 
 /**
  * Gets the evaluator function used to filter events.
- * @return {Function?} Evaluator function, or null if all should pass.
+ * @return {wtf.analysis.EventFilterFunction?} Evaluator function, or null if
+ *     all should pass.
  */
 wtf.analysis.EventFilter.prototype.getEvaluator = function() {
   return this.evaluator_;
@@ -177,3 +190,17 @@ wtf.analysis.EventFilter.prototype.generateEvaluatorFn_ =
     return expr.name.test(e.eventType.name);
   };
 };
+
+
+goog.exportSymbol(
+    'wtf.analysis.EventFilter',
+    wtf.analysis.EventFilter);
+goog.exportProperty(
+    wtf.analysis.EventFilter.prototype, 'clear',
+    wtf.analysis.EventFilter.prototype.clear);
+goog.exportProperty(
+    wtf.analysis.EventFilter.prototype, 'toString',
+    wtf.analysis.EventFilter.prototype.toString);
+goog.exportProperty(
+    wtf.analysis.EventFilter.prototype, 'setFromString',
+    wtf.analysis.EventFilter.prototype.setFromString);

@@ -18,6 +18,7 @@ goog.provide('wtf.analysis');
 goog.require('goog.string');
 goog.require('wtf.analysis.EventfulTraceListener');
 goog.require('wtf.analysis.Session');
+goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.io');
 goog.require('wtf.pal');
 /** @suppress {extraRequire} */
@@ -87,3 +88,31 @@ wtf.analysis.run = function(traceListener, input) {
 
   return true;
 };
+
+
+/**
+ * Creates and loads a database from the given input.
+ * @param {string|!wtf.io.ByteArray|!Object} input Input data.
+ *     This can be a filename (if in node.js) or a byte buffer.
+ * @return {wtf.analysis.db.EventDatabase} Event database, if it could be
+ *     loaded. It should be disposed when no longer needed.
+ */
+wtf.analysis.loadDatabase = function(input) {
+  var db = new wtf.analysis.db.EventDatabase();
+  if (!wtf.analysis.run(db.getTraceListener(), input)) {
+    goog.dispose(db);
+    return null;
+  }
+  return db;
+};
+
+
+goog.exportSymbol(
+    'wtf.analysis.createTraceListener',
+    wtf.analysis.createTraceListener);
+goog.exportSymbol(
+    'wtf.analysis.run',
+    wtf.analysis.run);
+goog.exportSymbol(
+    'wtf.analysis.loadDatabase',
+    wtf.analysis.loadDatabase);
