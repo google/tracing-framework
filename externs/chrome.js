@@ -31,8 +31,10 @@ chrome.runtime;
 /** @type {!ChromeEvent} */
 chrome.runtime.onStartup;
 
+
 /** @type {!ChromeEvent} */
 chrome.runtime.onInstalled;
+
 
 /** @type {!ChromeEvent} */
 chrome.runtime.onSuspend;
@@ -41,8 +43,10 @@ chrome.runtime.onSuspend;
 chrome.app;
 chrome.app.runtime;
 
+
 /** @type {!ChromeEvent} */
 chrome.app.runtime.onLaunched;
+
 
 /**
  * @typedef {{
@@ -51,6 +55,7 @@ chrome.app.runtime.onLaunched;
  * }}
  */
 var ChromeAppWindow;
+
 
 /**
  * @param {string} url
