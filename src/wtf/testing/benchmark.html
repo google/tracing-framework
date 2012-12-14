@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>wtf benchmark</title>
+    <script src="../../../wtf_trace_web_js_compiled.js"></script>
+    <script src="../../../node_modules/benchmark/benchmark.js"></script>
+    <script src="benchmark.js"></script>
+    <script src="../../../test/benchmarks.js"></script>
+  </head>
+  <body>
+    <table id="results">
+      <tr>
+        <td>[name]</td>
+        <td>[count]</td>
+        <td>[total]</td>
+        <td>[mean]</td>
+      </tr>
+    </table>
+    <script>
+
+/**
+ * Injects a function into the page.
+ * @param {!Function} fn Function to inject.
+ * @param {Array=} opt_args Arguments array. All must be string serializable.
+ */
+function injectScriptFunction(fn, opt_args) {
+  // Header to let users know what's up.
+  var header = [
+    '/* Web Tracing Framework injected benchmark function: ' + fn.name + ' */'
+  ].join('\n');
+
+  // Format args as strings that can go in the source.
+  var args = opt_args || [];
+  for (var n = 0; n < args.length; n++) {
+    if (typeof args[n] == 'string') {
+      // TODO(benvanik): escape
+      args[n] = '"' + args[n] + '"';
+    }
+  }
+  args = args.join(',');
+
+  // TODO(benvanik): escape fn source
+  var source = String(fn);
+
+  // Create script tag.
+  document.write('<script>' + header + '\n\n(' + source + ')(' + args + ');' +
+      '</sc' + 'ript>');
+};
+
+
+/**
+ * Sets up the benchmarks, loading the list and beginning the tests.
+ */
+function setupTesting() {
+  // Get the list of tests to run.
+  var benchmarkNames = [];
+  var query = window.location.search;
+  if (query.length) {
+    query = query.substring(1);
+    query = query.split('&')
+  }
+  for (var n = 0; n < query.length; n++) {
+    var tuple = query[n].split('=');
+    switch (tuple[0]) {
+      case 'tests':
+        benchmarkNames = tuple[1].split(',');
+        break;
+    }
+  }
+
+  // Remove bad entries.
+  for (var n = benchmarkNames.length - 1; n >= 0; n--) {
+    if (!benchmarkNames[n].length) {
+      benchmarkNames.splice(n, 1);
+    }
+  }
+
+  // If nothing provided, run all tests.
+  if (!benchmarkNames.length) {
+    for (var n = 0; n < benchmarkList.length; n++) {
+      var entry = benchmarkList[n];
+      if (entry) {
+        benchmarkNames.push(entry.name);
+      }
+    }
+  }
+
+  // TODO(benvanik): fuzzy search through testNames - if any contain *, lookup
+  // deps to find all matching namespaces.
+
+  // Sort test names.
+  // TODO(benvanik): sort by namespaces?
+  benchmarkNames.sort(function(a, b) {
+    return a < b;
+  });
+
+  // Set page title.
+  var prettyNames = [];
+  for (var n = 0; n < benchmarkNames.length; n++) {
+    prettyNames.push(benchmarkNames[n].replace('_test', ''));
+  }
+  document.title = 'WTF Benchmark: ' + prettyNames.join(', ');
+
+  // Require all benchmark files.
+  for (var n = 0; n < benchmarkNames.length; n++) {
+    var name = benchmarkNames[n];
+    var entry = null;
+    for (var m = 0; m < benchmarkList.length; m++) {
+      if (benchmarkList[m] && benchmarkList[m].name == name) {
+        entry = benchmarkList[m];
+        break;
+      }
+    }
+    if (entry) {
+      var scriptUrl = '../../../test/benchmarks/' + entry.script;
+      document.write('<script src="' + scriptUrl + '"></sc' + 'ript>');
+    } else {
+      reportBenchmarkError('Benchmark entry not found: ' + name);
+    }
+  }
+
+  // Launch the run.
+  injectScriptFunction(function(benchmarkNames) {
+    benchmark.run(benchmarkNames);
+  }, benchmarkNames);
+}
+
+
+/**
+ * Logs a benchmark error.
+ * @param {string} msg Message.
+ * @param {string=} opt_benchmarkName Benchmark that was running when the error
+ *     occurred.
+ */
+function reportBenchmarkError(msg, opt_benchmarkName) {
+  if (window.console) {
+    window.console.log(msg);
+  }
+
+  var errorDiv = document.createElement('div');
+  errorDiv.id = 'error';
+  errorDiv.innerText = msg;
+  document.body.insertBefore(errorDiv, document.body.firstChild);
+};
+
+
+/**
+ * Logs a benchmark result.
+ * @param {string} benchmarkName Benchmark name.
+ * @param {{
+ *   runCount: number,
+ *   totalTime: number,
+ *   userTime: number,
+ *   meanTime: number
+ * }} data Result data.
+ */
+function reportBenchmarkResult(benchmarkName, data) {
+  if (window.console) {
+    window.console.log(benchmarkName, data);
+  }
+
+  var row = document.createElement('tr');
+  row.innerHTML = [
+    '<td>' + benchmarkName + '</td>',
+    '<td>' + data.runCount + '</td>',
+    '<td>' + (data.totalTime * 1000).toFixed(3) + 'ms' + '</td>',
+    '<td>' + (data.meanTime * 1000).toFixed(5) + 'ms' + '</td>'
+  ].join('');
+
+  var resultsEl = document.getElementById('results');
+  resultsEl.appendChild(row);
+};
+
+
+setupTesting();
+
+    </script>
+  </body>
+</html>
