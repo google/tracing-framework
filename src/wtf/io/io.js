@@ -66,6 +66,9 @@ wtf.io.createByteArray = wtf.io.HAS_TYPED_ARRAYS ? function(size) {
  * @return {boolean} True if the input is a byte array.
  */
 wtf.io.isByteArray = function(value) {
+  if (!value) {
+    return false
+  }
   return (wtf.io.HAS_TYPED_ARRAYS && value instanceof Uint8Array) ||
       goog.isArray(value);
 };

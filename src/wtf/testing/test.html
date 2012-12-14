@@ -6,8 +6,22 @@
     <script src="../../../node_modules/mocha/mocha.js"></script>
     <script src="../../../node_modules/chai/chai.js"></script>
     <script>
+      var allMochaFailures = [];
       mocha.setup({
-        'ui': 'tdd'
+        'ui': 'tdd',
+        'globals': ['mochaCompletionWaiter'],
+        'reporter': function(runner, root) {
+          // Intercept the test reporter to log all failures.
+          Mocha.reporters.HTML.call(this, runner, root);
+          runner.on('fail', function(test, err) {
+            var name = test.title;
+            while (test.parent && !test.parent.root) {
+              test = test.parent;
+              name = test.title + ' > ' + name;
+            }
+            allMochaFailures.push([name, err]);
+          });
+        }
       });
     </script>
     <script src="../../../third_party/closure-library/closure/goog/base.js"></script>
