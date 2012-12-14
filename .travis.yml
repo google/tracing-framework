@@ -18,12 +18,25 @@ node_js:
   - 0.8
   - 0.9
 
-# Fetch submodules and install all dependencies
+# Environment variables.
+# Note that some of these are secure variables that must be set by users.
+env:
+  global:
+    # Currently expecting:
+    # - SAUCE_ACCESS_KEY=[guid from sauce]
+    # Set your own with:
+    # sudo gem install travis
+    # travis encrypt google/tracing-framework SAUCE_ACCESS_KEY=$SAUCE_ACCESS_KEY
+    - secure: "wX8PzI1jR0wLWUCpb/HC07qCXLCNxhLMm2JtTcJbU6UyHU2oYUEfvEnnwo5s\n4vXTIzlLvzRxDj/XLSlCxoUaKnPtdxDcEq2+9uH7sLt7RKKXmQgXPyLRoit2\n8shbnYsvHGJJfBnvtLFt+DNa9QgGR9LzFSsM8oHg+TLSeFpYjgM="
+
+# Fetch submodules and install all dependencies.
 before_script:
   - "./scripts/setup.sh"
 
 script:
-  # Do a full build to ensure things all work
+  # Do a full build to ensure things all work.
   - "./third_party/anvil-build/anvil-local.sh build :debug :release"
-  # Build :fast and run all tests
-  - "./run-tests.sh"
+  # Build :fast and run all tests.
+  - "./scripts/run-tests.sh"
+  # Run a full sauce test, if we have a key.
+  #- "./scripts/run-saucelabs.sh"

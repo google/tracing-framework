@@ -2,6 +2,7 @@ Web Tracing Framework
 ================================================================================
 
 [![Build Status](https://travis-ci.org/google/tracing-framework.png)](https://travis-ci.org/google/tracing-framework)
+[![Selenium Test Status](https://saucelabs.com/buildstatus/tracing-framework)](https://saucelabs.com/u/tracing-framework)
 
 The Web Tracing Framework is a set of libraries, tools, and visualizers for
 the tracing and investigation of complex web applications. You spend a small
