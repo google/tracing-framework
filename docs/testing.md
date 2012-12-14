@@ -13,10 +13,10 @@ Ensure your deps are up to date (only required when changing goog.requires):
 To run from the command-line, use the `run-tests.sh` script in the root:
 
     # Run all tests
-    ./run-tests.sh
+    ./scripts/run-tests.sh
 
     # Run just wtf.io tests
-    ./run-tests.sh wtf.io
+    ./scripts/run-tests.sh wtf.io
 
 To run the tests in the browser, navigate to the main test runner page:
 

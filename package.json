@@ -27,7 +27,10 @@
   },
   "devDependencies": {
     "mocha": "1.4.2",
-    "chai": "1.2.0"
+    "chai": "1.2.0",
+    "benchmark": "1.0.0",
+    "microtime": "0.3.3",
+    "wd": "*"
   },
 
   "files": [
