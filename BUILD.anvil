@@ -149,7 +149,6 @@ closure_js_library(
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
-        '--define=wtf.ENABLE_TRACING=true',
         '--define=wtf.hud.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
         '--output_wrapper="if(!window.wtf){(function(){%output%}).call(window);}"',
@@ -195,7 +194,6 @@ closure_js_library(
         '--define=goog.DEBUG=false',
         '--define=goog.asserts.ENABLE_ASSERTS=false',
         '--define=wtf.NODE=true',
-        '--define=wtf.ENABLE_TRACING=true',
         '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
         '--output_wrapper="module.exports = (function(exports){%output%;return this.wtf;}).call(global); delete global.wtf;"',

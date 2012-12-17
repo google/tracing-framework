@@ -13,7 +13,6 @@
 
 goog.provide('wtf.trace.events');
 
-goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.Variable');
 goog.require('wtf.trace.EventRegistry');
@@ -28,31 +27,30 @@ goog.require('wtf.trace.EventType');
  * @return {wtf.trace.EventType} New event type.
  * @private
  */
-wtf.trace.events.create_ = wtf.ENABLE_TRACING ?
-    function(signature, eventClass, flags) {
-      // A registry must exist to create the event.
-      var registry = wtf.trace.EventRegistry.getShared();
+wtf.trace.events.create_ = function(signature, eventClass, flags) {
+  // A registry must exist to create the event.
+  var registry = wtf.trace.EventRegistry.getShared();
 
-      var parsedSignature = wtf.data.Variable.parseSignature(signature);
-      var name = parsedSignature.name;
-      var args = parsedSignature.args;
+  var parsedSignature = wtf.data.Variable.parseSignature(signature);
+  var name = parsedSignature.name;
+  var args = parsedSignature.args;
 
-      // Check if it exists.
-      var existingEventType = registry.getEventType(name);
-      if (existingEventType) {
-        // TODO(benvanik): assert the same event type (not a redefinition).
-        return existingEventType;
-      }
+  // Check if it exists.
+  var existingEventType = registry.getEventType(name);
+  if (existingEventType) {
+    // TODO(benvanik): assert the same event type (not a redefinition).
+    return existingEventType;
+  }
 
-      // Create.
-      var eventType = new wtf.trace.EventType(
-          name, eventClass, flags, args);
+  // Create.
+  var eventType = new wtf.trace.EventType(
+      name, eventClass, flags, args);
 
-      // Register.
-      registry.registerEventType(eventType);
+  // Register.
+  registry.registerEventType(eventType);
 
-      return eventType;
-    } : goog.nullFunction;
+  return eventType;
+};
 
 
 /**
