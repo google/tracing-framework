@@ -13,14 +13,8 @@
 
 goog.provide('wtf');
 
-
-/**
- * Version identifier.
- * TODO(benvanik): something sane
- * @const
- * @type {number}
- */
-wtf.VERSION = 1;
+/** @suppress {extraRequire} */
+goog.require('wtf.version');
 
 
 /**
