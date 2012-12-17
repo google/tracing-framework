@@ -6,7 +6,7 @@
     # You may need to do this on Linux
     umask 0022
     # Clone the project
-    git clone git@github.com:benvanik/tracing-framework.git
+    git clone git@github.com:google/tracing-framework.git
     cd tracing-framework/
     # Run one-time setup of dependencies
     ./scripts/setup.sh
