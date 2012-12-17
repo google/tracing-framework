@@ -15,7 +15,6 @@ goog.provide('wtf.analysis.sources.BinaryTraceSource');
 
 goog.require('goog.asserts');
 goog.require('goog.math.Long');
-goog.require('wtf');
 goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.EventType');
 goog.require('wtf.analysis.Flow');
@@ -193,13 +192,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   }
 
   // Read version information to ensure we support the format.
-  // wtf.VERSION
+  // wtf.version.getBuild()
+  // We don't actually need these to match.
   var wtfVersion = buffer.readUint32();
-  if (wtfVersion != wtf.VERSION) {
-    // Runtime version mismatch.
-    goog.asserts.fail('Runtime version mismatch');
-    return false;
-  }
   // wtf.trace.Session.FORMAT_VERSION
   var formatVersion = buffer.readUint32();
   if (formatVersion != wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION) {
