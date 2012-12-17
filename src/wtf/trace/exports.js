@@ -34,10 +34,6 @@ goog.require('wtf.trace.instrumentType');
 goog.require('wtf.trace.providers');
 
 
-// This is a hack, but required to get things registered without cycles.
-wtf.trace.providers.setup();
-
-
 /**
  * @define {boolean} Whether to enable exporting of the wtf.trace
  *     types and namespace.
@@ -50,6 +46,9 @@ wtf.trace.exports.ENABLE_EXPORTS = false;
 
 
 if (wtf.trace.exports.ENABLE_EXPORTS) {
+  // This is a hack, but required to get things registered without cycles.
+  wtf.trace.providers.setup();
+
   goog.exportSymbol(
       'wtf.trace.getApiVersion',
       wtf.trace.getApiVersion);

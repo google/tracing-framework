@@ -17,24 +17,6 @@ goog.provide('wtf.trace.util');
 
 
 /**
- * Dummy scope object.
- * Has the same exported methods as a real {@see wtf.trace.Scope}.
- * @type {!Object}
- */
-wtf.trace.util.DUMMY_SCOPE = {
-  /**
-   * Leave mock.
-   * @param {T=} opt_result Optional result to chain.
-   * @return {T|undefined} The value of the {@code opt_result} parameter.
-   * @template T
-   */
-  leave: function(opt_result) {
-    return opt_result;
-  }
-};
-
-
-/**
  * Marks an event listener as being ignored, meaning that it will not show up
  * in traces.
  * @param {!T} listener Event listener.

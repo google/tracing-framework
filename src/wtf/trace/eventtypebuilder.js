@@ -16,7 +16,6 @@ goog.provide('wtf.trace.EventTypeBuilder');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.io.Buffer');
 goog.require('wtf.trace.EventType');
-goog.require('wtf.trace.util');
 goog.require('wtf.util.FunctionBuilder');
 
 
@@ -45,6 +44,24 @@ wtf.trace.EventTypeBuilder = function() {
    * @private
    */
   this.bufferNames_ = wtf.io.Buffer.getNameMap();
+
+  /**
+   * Dummy scope object.
+   * Has the same exported methods as a real {@see wtf.trace.Scope}.
+   * @type {!Object}
+   * @private
+   */
+  this.dummyScope_ = {
+    /**
+     * Leave mock.
+     * @param {T=} opt_result Optional result to chain.
+     * @return {T|undefined} The value of the {@code opt_result} parameter.
+     * @template T
+     */
+    'leave': function(opt_result) {
+      return opt_result;
+    }
+  };
 };
 goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
 
@@ -61,7 +78,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   // Begin building the function with default args.
   this.begin();
   this.addScopeVariable('sessionPtr', sessionPtr);
-  this.addScopeVariable('dummyScope', wtf.trace.util.DUMMY_SCOPE);
+  this.addScopeVariable('dummyScope', this.dummyScope_);
   this.addScopeVariable('eventType', eventType);
 
   this.addArgument('time');

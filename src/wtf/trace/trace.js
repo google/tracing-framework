@@ -16,6 +16,7 @@
 goog.provide('wtf.trace');
 
 goog.require('goog.asserts');
+goog.require('goog.json');
 goog.require('goog.string');
 goog.require('wtf');
 goog.require('wtf.io.BufferedHttpWriteStream');
@@ -28,7 +29,6 @@ goog.require('wtf.io.WriteStream');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.NullSession');
-goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
@@ -91,15 +91,15 @@ wtf.trace.getTraceManager = function() {
  *
  * @return {*} Ignored.
  */
-wtf.trace.prepare = wtf.ENABLE_TRACING ? function() {
+wtf.trace.prepare = function() {
   return wtf.trace.getTraceManager();
-} : goog.nullFunction;
+};
 
 
 /**
  * Shuts down the tracing system.
  */
-wtf.trace.shutdown = wtf.ENABLE_TRACING ? function() {
+wtf.trace.shutdown = function() {
   goog.asserts.assert(wtf.trace.traceManager_);
   if (!wtf.trace.traceManager_) {
     return;
@@ -111,7 +111,7 @@ wtf.trace.shutdown = wtf.ENABLE_TRACING ? function() {
   // Cleanup shared state.
   goog.dispose(wtf.trace.traceManager_);
   wtf.trace.traceManager_ = null;
-} : goog.nullFunction;
+};
 
 
 /**
@@ -119,10 +119,10 @@ wtf.trace.shutdown = wtf.ENABLE_TRACING ? function() {
  * These are retained by the trace manager for the life of the runtime.
  * @param {!wtf.trace.ISessionListener} listener Event listener.
  */
-wtf.trace.addSessionListener = wtf.ENABLE_TRACING ? function(listener) {
+wtf.trace.addSessionListener = function(listener) {
   var traceManager = wtf.trace.getTraceManager();
   traceManager.addListener(listener);
-} : goog.nullFunction;
+};
 
 
 /**
@@ -228,7 +228,7 @@ wtf.trace.createStream_ = function(options, opt_targetValue) {
  * more information.
  * @param {Object=} opt_options Options overrides.
  */
-wtf.trace.start = wtf.ENABLE_TRACING ? function(opt_options) {
+wtf.trace.start = function(opt_options) {
   var traceManager = wtf.trace.getTraceManager();
 
   // Get combined options.
@@ -255,7 +255,7 @@ wtf.trace.start = wtf.ENABLE_TRACING ? function(opt_options) {
 
   // Begin session.
   traceManager.startSession(session);
-} : goog.nullFunction;
+};
 
 
 /**
@@ -264,7 +264,7 @@ wtf.trace.start = wtf.ENABLE_TRACING ? function(opt_options) {
  * does not support snapshotting.
  * @param {wtf.io.WriteStream|*=} opt_targetValue Stream target value.
  */
-wtf.trace.snapshot = wtf.ENABLE_TRACING ? function(opt_targetValue) {
+wtf.trace.snapshot = function(opt_targetValue) {
   var traceManager = wtf.trace.getTraceManager();
   var session = traceManager.getCurrentSession();
   if (session instanceof wtf.trace.SnapshottingSession) {
@@ -276,20 +276,20 @@ wtf.trace.snapshot = wtf.ENABLE_TRACING ? function(opt_targetValue) {
       });
     }
   }
-} : goog.nullFunction;
+};
 
 
 /**
  * Clears all data in the current session by resetting all buffers.
  * This is only valid in snapshotting sessions.
  */
-wtf.trace.reset = wtf.ENABLE_TRACING ? function() {
+wtf.trace.reset = function() {
   var traceManager = wtf.trace.getTraceManager();
   var session = traceManager.getCurrentSession();
   if (session instanceof wtf.trace.SnapshottingSession) {
     session.reset();
   }
-} : goog.nullFunction;
+};
 
 
 /**
@@ -311,48 +311,42 @@ wtf.trace.stop = function() {
  * @param {string} name Zone name.
  * @param {string} type Zone type.
  * @param {string} location Zone location (such as URI of the script).
- * @return {wtf.trace.Zone} Zone used for future calls.
+ * @return {!wtf.trace.Zone} Zone used for future calls.
  */
-wtf.trace.createZone = wtf.ENABLE_TRACING ? function(name, type, location) {
+wtf.trace.createZone = function(name, type, location) {
   var traceManager = wtf.trace.getTraceManager();
   return traceManager.createZone(name, type, location);
-} : function(name, type, location) {
-  return null;
 };
 
 
 /**
  * Deletes an execution zone.
  * The zone ID may be reused.
- * @param {wtf.trace.Zone} zone Zone returned from {@see #createZone}.
+ * @param {!wtf.trace.Zone} zone Zone returned from {@see #createZone}.
  */
-wtf.trace.deleteZone = wtf.ENABLE_TRACING ? function(zone) {
-  if (zone) {
-    var traceManager = wtf.trace.getTraceManager();
-    traceManager.deleteZone(zone);
-  }
-} : goog.nullFunction;
+wtf.trace.deleteZone = function(zone) {
+  var traceManager = wtf.trace.getTraceManager();
+  traceManager.deleteZone(zone);
+};
 
 
 /**
  * Pushes a zone.
- * @param {wtf.trace.Zone} zone Zone returned from {@see #createZone}.
+ * @param {!wtf.trace.Zone} zone Zone returned from {@see #createZone}.
  */
-wtf.trace.pushZone = wtf.ENABLE_TRACING ? function(zone) {
-  if (zone) {
-    var traceManager = wtf.trace.getTraceManager();
-    traceManager.pushZone(zone);
-  }
-} : goog.nullFunction;
+wtf.trace.pushZone = function(zone) {
+  var traceManager = wtf.trace.getTraceManager();
+  traceManager.pushZone(zone);
+};
 
 
 /**
  * Pops the active zone.
  */
-wtf.trace.popZone = wtf.ENABLE_TRACING ? function() {
+wtf.trace.popZone = function() {
   var traceManager = wtf.trace.getTraceManager();
   traceManager.popZone();
-} : goog.nullFunction;
+};
 
 
 /**
@@ -362,13 +356,10 @@ wtf.trace.popZone = wtf.ENABLE_TRACING ? function() {
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
-wtf.trace.enterScope = wtf.ENABLE_TRACING ?
-    function(opt_msg, opt_flow, opt_time) {
-      return wtf.trace.BuiltinEvents.enterScope(
-          opt_time || wtf.now(), opt_flow, opt_msg);
-    } : function(opt_msg, opt_flow, opt_time) {
-      return wtf.trace.Scope.dummy;
-    };
+wtf.trace.enterScope = function(opt_msg, opt_flow, opt_time) {
+  return wtf.trace.BuiltinEvents.enterScope(
+      opt_time || wtf.now(), opt_flow, opt_msg);
+};
 
 
 /**
@@ -379,10 +370,7 @@ wtf.trace.enterScope = wtf.ENABLE_TRACING ?
  * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
-wtf.trace.enterTracingScope = wtf.ENABLE_TRACING ?
-    wtf.trace.BuiltinEvents.enterTracingScope : function(time, opt_flow) {
-      return wtf.trace.Scope.dummy;
-    };
+wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
 
 
 /**
@@ -395,10 +383,10 @@ wtf.trace.enterTracingScope = wtf.ENABLE_TRACING ?
  * @param {string} name Argument name. Must be ASCII.
  * @param {*} value Value. Will be JSON stringified.
  */
-wtf.trace.appendScopeData = wtf.ENABLE_TRACING ? function(time, name, value) {
-  var json = goog.global.JSON.stringify(value);
+wtf.trace.appendScopeData = function(time, name, value) {
+  var json = goog.json.serialize(value);
   wtf.trace.BuiltinEvents.appendScopeData(time, name, json);
-} : goog.nullFunction;
+};
 
 
 /**
@@ -409,30 +397,23 @@ wtf.trace.appendScopeData = wtf.ENABLE_TRACING ? function(time, name, value) {
  * @param {number=} opt_time Time for the branch; omit to use the current time.
  * @return {!wtf.trace.Flow} An initialized flow object.
  */
-wtf.trace.branchFlow = wtf.ENABLE_TRACING ?
-    wtf.trace.Flow.branch : function(opt_msg, opt_parentFlow, opt_time) {
-      return wtf.trace.Flow.dummy;
-    };
+wtf.trace.branchFlow = wtf.trace.Flow.branch;
 
 
 /**
  * Clears the current global flow.
  * This should be called at the end of any runtime callback.
  */
-wtf.trace.clearFlow = wtf.ENABLE_TRACING ?
-    wtf.trace.Flow.clearCurrent : goog.nullFunction;
+wtf.trace.clearFlow = wtf.trace.Flow.clearCurrent;
 
 
 /**
  * Spans the flow across processes.
  * Flows must have been branched before this can be used.
- * @param {!wtf.io.ByteArray} flowId Flow ID.
+ * @param {number} flowId Flow ID.
  * @return {!wtf.trace.Flow} An initialized flow object.
  */
-wtf.trace.spanFlow = wtf.ENABLE_TRACING ?
-    wtf.trace.Flow.span : function(flowId) {
-      return wtf.trace.Flow.dummy;
-    };
+wtf.trace.spanFlow = wtf.trace.Flow.span;
 
 
 /**
@@ -442,10 +423,10 @@ wtf.trace.spanFlow = wtf.ENABLE_TRACING ?
  * @param {string=} opt_msg Optional message string.
  * @param {number=} opt_time Time for the branch; omit to use the current time.
  */
-wtf.trace.mark = wtf.ENABLE_TRACING ? function(opt_msg, opt_time) {
+wtf.trace.mark = function(opt_msg, opt_time) {
   var time = opt_time || wtf.now();
   wtf.trace.BuiltinEvents.mark(time, opt_msg);
-} : goog.nullFunction;
+};
 
 
 /**

@@ -15,7 +15,6 @@ goog.provide('wtf.trace.Scope');
 
 goog.require('wtf');
 goog.require('wtf.trace.BuiltinEvents');
-goog.require('wtf.trace.util');
 
 
 
@@ -82,14 +81,6 @@ wtf.trace.Scope.pool_ = {
 
 
 /**
- * Dummy scope used when the tracing library is disabled.
- * @type {!wtf.trace.Scope}
- */
-wtf.trace.Scope.dummy =
-    /** @type {!wtf.trace.Scope} */ (wtf.trace.util.DUMMY_SCOPE);
-
-
-/**
  * Enters a typed scope.
  * This method should only be used by internally generated code. It assumes that
  * there is generated code around it that is properly recording events.
@@ -133,36 +124,35 @@ wtf.trace.Scope.enterTyped = function(flow, time) {
  * @return {?} The value passed as {@code opt_result}.
  * @this {wtf.trace.Scope}
  */
-wtf.trace.Scope.prototype.leave = wtf.ENABLE_TRACING ? function(
-    opt_result, opt_time) {
-      // Time immediately after the scope - don't track our stuff.
-      var time = opt_time || wtf.now();
+wtf.trace.Scope.prototype.leave = function(opt_result, opt_time) {
+  // Time immediately after the scope - don't track our stuff.
+  var time = opt_time || wtf.now();
 
-      // Unwind stack, if needed.
-      var pool = wtf.trace.Scope.pool_;
-      while (pool.currentDepth > this.stackDepth_) {
-        // TODO(benvanik): mark as bad? emit discontinuity?
-        var openScope = pool.stack[pool.currentDepth];
-        openScope.leave(undefined, time);
-      }
-      pool.currentDepth--;
-      pool.stack[this.stackDepth_] = null;
+  // Unwind stack, if needed.
+  var pool = wtf.trace.Scope.pool_;
+  while (pool.currentDepth > this.stackDepth_) {
+    // TODO(benvanik): mark as bad? emit discontinuity?
+    var openScope = pool.stack[pool.currentDepth];
+    openScope.leave(undefined, time);
+  }
+  pool.currentDepth--;
+  pool.stack[this.stackDepth_] = null;
 
-      // Terminate a flow, if one is attached.
-      if (this.flow_) {
-        this.flow_.terminate(undefined, time);
-        this.flow_ = null;
-      }
+  // Terminate a flow, if one is attached.
+  if (this.flow_) {
+    this.flow_.terminate(undefined, time);
+    this.flow_ = null;
+  }
 
-      // Append event.
-      wtf.trace.BuiltinEvents.leaveScope(time);
+  // Append event.
+  wtf.trace.BuiltinEvents.leaveScope(time);
 
-      // Return the scope to the pool.
-      // Note that we have no thresholding here and will grow forever.
-      pool.unusedScopes[pool.unusedIndex++] = this;
+  // Return the scope to the pool.
+  // Note that we have no thresholding here and will grow forever.
+  pool.unusedScopes[pool.unusedIndex++] = this;
 
-      return opt_result;
-    } : goog.identityFunction;
+  return opt_result;
+};
 
 
 // Always export names used in generated code.
