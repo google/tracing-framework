@@ -37,6 +37,17 @@ goog.require('wtf.util.Options');
 
 
 /**
+ * Gets a version number indicating the API version of the tracing methods.
+ * This can be used by wrapper libraries to conditionally enable/disable
+ * methods based on whether the version matches.
+ * @return {number} Version number.
+ */
+wtf.trace.getApiVersion = function() {
+  return 1;
+};
+
+
+/**
  * Trace manager setup by {@see wtf.trace#prepare}.
  * @type {wtf.trace.TraceManager}
  * @private

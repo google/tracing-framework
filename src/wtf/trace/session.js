@@ -19,6 +19,7 @@ goog.require('goog.math.Long');
 goog.require('wtf');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Scope');
+goog.require('wtf.version');
 
 
 
@@ -166,7 +167,7 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
   buffer.writeUint32(0xDEADBEEF);
 
   // Write version information.
-  buffer.writeUint32(wtf.VERSION);
+  buffer.writeUint32(wtf.version.getBuild());
   buffer.writeUint32(wtf.trace.Session.FORMAT_VERSION);
 
   // Write context information.
