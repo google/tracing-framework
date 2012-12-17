@@ -24,7 +24,7 @@ wtf.testing.mocha.run = function() {
   var mocha = goog.global['mocha'];
   mocha['run'](function() {
     // Fired when tests have completed.
-    wtf.testing.mocha.hasCompleted = true;
+    wtf.testing.mocha.run.hasCompleted = true;
     var mochaCompletionWaiter = goog.global['mochaCompletionWaiter'];
     if (mochaCompletionWaiter) {
       mochaCompletionWaiter();
@@ -37,7 +37,7 @@ wtf.testing.mocha.run = function() {
  * Set to true when the mocha run has completed.
  * @type {boolean}
  */
-wtf.testing.mocha.hasCompleted = false;
+wtf.testing.mocha.run.hasCompleted = false;
 
 
 wtf.testing.mocha.run();

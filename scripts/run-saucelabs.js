@@ -119,7 +119,7 @@ runTest(
       // Unfortunately executeAsync isn't supported everywhere, so poll.
       function poll() {
         browser.execute([
-          'if (wtf.testing.mocha.hasCompleted) {',
+          'if (wtf.testing.mocha.run.hasCompleted) {',
           '  return allMochaFailures;',
           '} else {',
           '  return null;',
@@ -156,7 +156,7 @@ runTest(
       // TODO(benvanik): use executeAsync when it's supported by Android/etc.
       // browser.executeAsync([
       //   '(function(callback) {',
-      //   '  if (wtf.testing.mocha.hasCompleted) {',
+      //   '  if (wtf.testing.mocha.run.hasCompleted) {',
       //   '    callback(allMochaFailures);',
       //   '  } else {',
       //   '    window.mochaCompletionWaiter = function() {',
