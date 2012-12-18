@@ -428,8 +428,8 @@ wtf.trace.mark = wtf.trace.BuiltinEvents.mark;
  * This is synonymous to {@code console.timeStamp}, and can be used to place
  * simple arg-less instance events in the timeline.
  * Prefer using custom events for faster, more flexible events.
- * @param {string} name Marker name.
- * @param {number=} opt_time Time for the mark; omit to use the current time.
+ * @param {string} name Time stamp name.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
  */
 wtf.trace.timeStamp = wtf.trace.BuiltinEvents.timeStamp;
 
