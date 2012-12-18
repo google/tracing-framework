@@ -14,7 +14,6 @@
 goog.provide('wtf.ext.Registry');
 
 goog.require('goog.Disposable');
-goog.require('wtf');
 goog.require('wtf.ext.AppExtension');
 goog.require('wtf.ext.Manifest');
 goog.require('wtf.ext.TraceExtension');
@@ -55,14 +54,14 @@ wtf.ext.Registry.prototype.registerExtension = function(url, json) {
 
   // Create trace extension, if needed.
   var traceExtension = null;
-  if (wtf.ENABLE_TRACING && manifest.getTracingInfo()) {
+  if (manifest.getTracingInfo()) {
     traceExtension = new wtf.ext.TraceExtension(manifest);
     this.registerDisposable(traceExtension);
   }
 
   // Create app extension, if needed.
   var appExtension = null;
-  if (!wtf.ENABLE_TRACING && manifest.getAppInfo()) {
+  if (manifest.getAppInfo()) {
     appExtension = new wtf.ext.AppExtension(manifest);
     this.registerDisposable(appExtension);
   }

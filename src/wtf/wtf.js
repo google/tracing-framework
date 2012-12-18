@@ -25,12 +25,6 @@ wtf.NODE = false;
 
 
 /**
- * @define {boolean} True to enable the tracing API.
- */
-wtf.ENABLE_TRACING = true;
-
-
-/**
  * Whether the runtime can provide high-resolution times.
  * @type {boolean}
  */

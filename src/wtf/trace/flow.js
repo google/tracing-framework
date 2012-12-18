@@ -67,13 +67,6 @@ wtf.trace.Flow.invalidFlowId_ = 0;
 
 
 /**
- * Dummy flow used when the tracing library is disabled.
- * @type {!wtf.trace.Flow}
- */
-wtf.trace.Flow.dummy = new wtf.trace.Flow();
-
-
-/**
  * Generates a new semi-unique flow ID.
  * @return {number} Flow ID.
  * @private
@@ -195,15 +188,14 @@ wtf.trace.Flow.prototype.getId = function() {
  * @param {number=} opt_time Time for the event, or 0 to use the current time.
  * @this {wtf.trace.Flow}
  */
-wtf.trace.Flow.prototype.extend = wtf.ENABLE_TRACING ?
-    function(opt_msg, opt_time) {
-      // Reset current local flow.
-      wtf.trace.Flow.current_ = this;
+wtf.trace.Flow.prototype.extend = function(opt_msg, opt_time) {
+  // Reset current local flow.
+  wtf.trace.Flow.current_ = this;
 
-      // Append event.
-      var time = opt_time || wtf.now();
-      wtf.trace.BuiltinEvents.extendFlow(time, this.flowId_, opt_msg);
-    } : goog.nullFunction;
+  // Append event.
+  var time = opt_time || wtf.now();
+  wtf.trace.BuiltinEvents.extendFlow(time, this.flowId_, opt_msg);
+};
 
 
 /**
@@ -212,20 +204,19 @@ wtf.trace.Flow.prototype.extend = wtf.ENABLE_TRACING ?
  * @param {number=} opt_time Time for the event, or 0 to use the current time.
  * @this {wtf.trace.Flow}
  */
-wtf.trace.Flow.prototype.terminate = wtf.ENABLE_TRACING ?
-    function(opt_msg, opt_time) {
-      // Reset current local flow.
-      wtf.trace.Flow.current_ = null;
+wtf.trace.Flow.prototype.terminate = function(opt_msg, opt_time) {
+  // Reset current local flow.
+  wtf.trace.Flow.current_ = null;
 
-      // Append event.
-      var time = opt_time || wtf.now();
-      wtf.trace.BuiltinEvents.terminateFlow(time, this.flowId_, opt_msg);
+  // Append event.
+  var time = opt_time || wtf.now();
+  wtf.trace.BuiltinEvents.terminateFlow(time, this.flowId_, opt_msg);
 
-      // Return the scope to the pool.
-      // Note that we have no thresholding here and will grow forever.
-      var pool = wtf.trace.Flow.pool_;
-      pool.unusedFlows[pool.unusedIndex++] = this;
-    } : goog.nullFunction;
+  // Return the scope to the pool.
+  // Note that we have no thresholding here and will grow forever.
+  var pool = wtf.trace.Flow.pool_;
+  pool.unusedFlows[pool.unusedIndex++] = this;
+};
 
 
 goog.exportProperty(
