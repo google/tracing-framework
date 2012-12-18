@@ -26,6 +26,8 @@ goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.data.formats.BinaryTrace');
+goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.io.EventType');
 
 
@@ -168,14 +170,6 @@ wtf.analysis.sources.BinaryTraceSource.prototype.processBuffer_ =
 
 
 /**
- * Wire format version.
- * @const
- * @type {number}
- */
-wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION = 3;
-
-
-/**
  * Reads a trace header from a buffer.
  * @param {!wtf.io.Buffer} buffer Source buffer.
  * @return {boolean} True if the read succeeded.
@@ -195,9 +189,8 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   // wtf.version.getBuild()
   // We don't actually need these to match.
   var wtfVersion = buffer.readUint32();
-  // wtf.trace.Session.FORMAT_VERSION
   var formatVersion = buffer.readUint32();
-  if (formatVersion != wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION) {
+  if (formatVersion != wtf.data.formats.BinaryTrace.VERSION) {
     // Format version mismatch.
     goog.asserts.fail('Format version mismatch');
     return false;
@@ -211,16 +204,25 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
     return false;
   }
 
-  // Read time information.
-  var hasHighResolutionTimes = buffer.readUint8() ? true : false;
+  // Read flags information.
+  var flags = buffer.readUint32();
+  var hasHighResolutionTimes =
+      !!(flags & wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES);
   var longTimebase = goog.math.Long.fromBits(
       buffer.readUint32(), buffer.readUint32());
   var timebase = longTimebase.toNumber();
   var timeDelay = this.traceListener.computeTimeDelay(timebase);
 
+  // Read metadata blob.
+  var metadataString = buffer.readUtf8String();
+  var metadata = metadataString ? goog.global.JSON.parse(metadataString) : {};
+  if (!goog.isObject(metadata)) {
+    metadata = {};
+  }
+
   // Initialize the trace source.
   // Only call when all other parsing has been successful.
-  this.initialize(contextInfo, hasHighResolutionTimes, timebase, timeDelay);
+  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
 
   return true;
 };

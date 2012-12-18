@@ -24,6 +24,8 @@ goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.data.Variable');
+goog.require('wtf.data.formats.FileFlags');
+goog.require('wtf.data.formats.JsonTrace');
 
 
 
@@ -181,17 +183,28 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
 
   entry = entry || {};
 
+  // Check supported version.
   var formatVersion = entry['format_version'] || 1;
+  if (formatVersion != wtf.data.formats.JsonTrace.VERSION) {
+    // TODO(benvanik): error on version mismatch
+    goog.asserts.fail('File format mismatch');
+  }
+
   var hasHighResolutionTimes = goog.isDef(entry['high_resolution_times']) ?
       entry['high_resolution_times'] : true;
+  var flags = 0;
+  if (hasHighResolutionTimes) {
+    flags |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
+  }
   var timebase = entry['timebase'] || 0;
+  var metadata = entry['metadata'] || {};
 
   // TODO(benvanik): embed context info.
   // TODO(benvanik): a better default context info.
   var contextInfo = new wtf.data.ScriptContextInfo();
 
   var timeDelay = listener.computeTimeDelay(timebase);
-  this.initialize(contextInfo, hasHighResolutionTimes, timebase, timeDelay);
+  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
   listener.sourceAdded(this.getTimebase(), contextInfo);
 };
 
