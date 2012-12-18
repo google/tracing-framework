@@ -55,6 +55,14 @@
         scope.leave();
       });
 
+      var el = document.createElement('a');
+      el.innerText = 'aaa';
+      document.body.appendChild(el);
+      console.log(el);
+      el.onclick = function() {
+        console.log('woo');
+      };
+
       function unscopedMethod(x) {
         x++;
         return x;

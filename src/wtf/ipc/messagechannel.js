@@ -13,9 +13,9 @@
 
 goog.provide('wtf.ipc.MessageChannel');
 
-goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.trace.util');
 
 
 
@@ -46,14 +46,6 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
   this.sendPort_ = sendPort;
 
   /**
-   * Event handler.
-   * @type {!goog.events.EventHandler}
-   * @private
-   */
-  this.eh_ = new goog.events.EventHandler(this);
-  this.registerDisposable(this.eh_);
-
-  /**
    * Whether the send port supports transferrable objects.
    * This check is done on the first post as there's no way to detect it
    * otherwise.
@@ -62,11 +54,17 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
    */
   this.hasTransferablePostMessage_ = undefined;
 
-  this.eh_.listen(
-      this.recvPort_,
-      goog.events.EventType.MESSAGE,
-      this.handleMessage_,
-      true);
+  /**
+   * Bound/ignored version of {@see handleMessage_}.
+   * @type {Function}
+   * @private
+   */
+  this.boundHandleMessage_ = wtf.trace.util.ignoreListener(
+      goog.bind(this.handleMessage_, this));
+
+  this.recvPort_.addEventListener(goog.events.EventType.MESSAGE,
+      /** @type {function ((Event|null)): (boolean|undefined)} */ (
+          this.boundHandleMessage_), true);
 };
 goog.inherits(wtf.ipc.MessageChannel, wtf.ipc.Channel);
 
@@ -75,6 +73,8 @@ goog.inherits(wtf.ipc.MessageChannel, wtf.ipc.Channel);
  * @override
  */
 wtf.ipc.MessageChannel.prototype.disposeInternal = function() {
+  this.recvPort_.removeEventListener(
+      goog.events.EventType.MESSAGE, this.boundHandleMessage_, true);
   this.recvPort_ = null;
   this.sendPort_ = null;
   goog.base(this, 'disposeInternal');
@@ -117,12 +117,10 @@ wtf.ipc.MessageChannel.prototype.focus = function() {
 
 /**
  * Handles incoming messages.
- * @param {!goog.events.BrowserEvent} browserEvent Event.
+ * @param {!Event} e Event.
  * @private
  */
-wtf.ipc.MessageChannel.prototype.handleMessage_ = function(browserEvent) {
-  var e = browserEvent.getBrowserEvent();
-
+wtf.ipc.MessageChannel.prototype.handleMessage_ = function(e) {
   var packet = /** @type {wtf.ipc.MessageChannel.Packet} */ (e.data);
   if (!packet || !packet[wtf.ipc.MessageChannel.PACKET_TOKEN]) {
     return;

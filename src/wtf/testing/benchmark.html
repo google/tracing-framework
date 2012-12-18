@@ -49,6 +49,23 @@ function injectScriptFunction(fn, opt_args) {
 
 
 /**
+ * Loads all benchmark files.
+ */
+function loadResources() {
+  // Require all benchmark files.
+  for (var n = 0; n < benchmarkList.length; n++) {
+    var scriptUrl = '../../../test/benchmarks/' + benchmarkList[n];
+    document.write('<script src="' + scriptUrl + '"></sc' + 'ript>');
+  }
+
+  // Setup the test environment after the scripts are loaded.
+  injectScriptFunction(function() {
+    setupTesting();
+  });
+};
+
+
+/**
  * Sets up the benchmarks, loading the list and beginning the tests.
  */
 function setupTesting() {
@@ -75,19 +92,6 @@ function setupTesting() {
     }
   }
 
-  // If nothing provided, run all tests.
-  if (!benchmarkNames.length) {
-    for (var n = 0; n < benchmarkList.length; n++) {
-      var entry = benchmarkList[n];
-      if (entry) {
-        benchmarkNames.push(entry.name);
-      }
-    }
-  }
-
-  // TODO(benvanik): fuzzy search through testNames - if any contain *, lookup
-  // deps to find all matching namespaces.
-
   // Sort test names.
   // TODO(benvanik): sort by namespaces?
   benchmarkNames.sort(function(a, b) {
@@ -95,35 +99,10 @@ function setupTesting() {
   });
 
   // Set page title.
-  var prettyNames = [];
-  for (var n = 0; n < benchmarkNames.length; n++) {
-    prettyNames.push(benchmarkNames[n].replace('_test', ''));
-  }
-  document.title = 'WTF Benchmark: ' + prettyNames.join(', ');
+  document.title = 'WTF Benchmark: ' + benchmarkNames.join(', ');
 
-  // Require all benchmark files.
-  for (var n = 0; n < benchmarkNames.length; n++) {
-    var name = benchmarkNames[n];
-    var entry = null;
-    for (var m = 0; m < benchmarkList.length; m++) {
-      if (benchmarkList[m] && benchmarkList[m].name == name) {
-        entry = benchmarkList[m];
-        break;
-      }
-    }
-    if (entry) {
-      var scriptUrl = '../../../test/benchmarks/' + entry.script;
-      document.write('<script src="' + scriptUrl + '"></sc' + 'ript>');
-    } else {
-      reportBenchmarkError('Benchmark entry not found: ' + name);
-    }
-  }
-
-  // Launch the run.
-  injectScriptFunction(function(benchmarkNames) {
-    benchmark.run(benchmarkNames);
-  }, benchmarkNames);
-}
+  benchmark.run(benchmarkNames);
+};
 
 
 /**
@@ -172,7 +151,7 @@ function reportBenchmarkResult(benchmarkName, data) {
 };
 
 
-setupTesting();
+loadResources();
 
     </script>
   </body>

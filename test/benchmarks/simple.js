@@ -12,9 +12,8 @@
  */
 
 
-benchmark.register('simple', function(a, b) {
+benchmark.register('simple', function() {
   var scope = wtf.trace.enterScope();
   //
   scope.leave();
-  return a + b;
 });

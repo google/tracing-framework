@@ -124,7 +124,7 @@ wtf.trace.providers.TimingProvider.prototype.injectTimeouts_ = function() {
         // NOTE: flow is branched below so event order is correct
         var flowRef = [];
         var intervalId = originalSetInterval.call(goog.global, function() {
-          var scope = setIntervalCallbackEvent(flowRef[0], intervalIdRef[0]);
+          var scope = setIntervalCallbackEvent(intervalIdRef[0], flowRef[0]);
           try {
             // Support both functions and strings as callbacks.
             if (funcOrCode) {

@@ -27,3 +27,18 @@ wtf.trace.util.ignoreListener = function(listener) {
   listener['__wtf_ignore__'] = true;
   return listener;
 };
+
+
+/**
+ * Marks an entire tree of DOM elements as being ignored, meaning that no
+ * events from them will show up in traces.
+ * @param {!Element} el Root DOM element.
+ */
+wtf.trace.util.ignoreDomTree = function(el) {
+  // Add the 'ignore me' property to all of the elements.
+  el['__wtf_ignore__'] = true;
+  var all = el.getElementsByTagName('*');
+  for (var n = 0; n < all.length; n++) {
+    all[n]['__wtf_ignore__'] = true;
+  }
+};

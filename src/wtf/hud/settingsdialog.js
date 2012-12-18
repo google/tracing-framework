@@ -18,6 +18,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.hud.settingsdialog');
+goog.require('wtf.trace');
 goog.require('wtf.ui.Dialog');
 
 
@@ -93,6 +94,8 @@ wtf.hud.SettingsDialog = function(options, parentElement, opt_dom) {
   }
 
   this.loadSettings();
+
+  wtf.trace.ignoreDomTree(this.getRootElement());
 };
 goog.inherits(wtf.hud.SettingsDialog, wtf.ui.Dialog);
 
