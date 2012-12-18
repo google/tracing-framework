@@ -12,8 +12,6 @@
  */
 
 
-benchmark.register('simple', function() {
-  var scope = wtf.trace.enterScope();
-  //
-  scope.leave();
-});
+benchmark.register('dom.image', function() {
+  new Image();
+}, ['browser']);

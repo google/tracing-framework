@@ -21,4 +21,4 @@ else
   echo "Running benchmarks matching '$GREP'..."
 fi
 
-./scripts/run-benchmarks.js $GREP
+node ./scripts/run-benchmarks.js $GREP

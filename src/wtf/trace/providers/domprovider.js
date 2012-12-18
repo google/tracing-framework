@@ -15,6 +15,7 @@ goog.provide('wtf.trace.providers.DomProvider');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.userAgent.product');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
 
@@ -32,6 +33,52 @@ wtf.trace.providers.DomProvider = function() {
   this.injectEvents_();
 };
 goog.inherits(wtf.trace.providers.DomProvider, wtf.trace.Provider);
+
+
+/**
+ * Detected browser support for crazy constructs.
+ *
+ * prototypeEventDefine: whether on* events can be redefined on the prototype.
+ * redefineEvent: whether on* events can be redefined at all.
+ *
+ * @type {{
+ *   prototypeEventDefine: boolean,
+ *   redefineEvent: boolean
+ * }}
+ * @private
+ */
+wtf.trace.providers.DomProvider.support_ = (function() {
+  var prototypeEventDefine = false;
+  var redefineEvent = false;
+  if (goog.userAgent.product.CHROME) {
+    // TODO(benvanik): real feature testing for this.
+    prototypeEventDefine = true;
+    redefineEvent = true;
+  } else if (Object.defineProperty) {
+    try {
+      var image = new Image();
+      delete image['onload'];
+      var propertyValue = 123;
+      Object.defineProperty(image, 'onload', {
+        'configurable': false,
+        'enumerable': false,
+        'get': function() { return propertyValue; },
+        'set': function(value) { propertyValue = value; }
+      });
+      image['onload'] = 456;
+      if (image['onload'] == 456 &&
+          propertyValue == 456) {
+        redefineEvent = true;
+      }
+    } catch (e) {
+      // Nope!
+    }
+  }
+  return {
+    prototypeEventDefine: prototypeEventDefine,
+    redefineEvent: redefineEvent
+  };
+})();
 
 
 /**
@@ -133,54 +180,48 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   }
 
   // Always instrument Window, as the events live on its prototype.
-  instrumentedTypeMap['Window'].injectObjectEvents(
+  instrumentedTypeMap['Window'].hookObjectEvents(
       goog.global['Window'].prototype);
 
   // Inject document, as it's already existing, and body if it's there.
-  instrumentedTypeMap['Document'].injectObjectEvents(
+  instrumentedTypeMap['Document'].hookObjectEvents(
       goog.global['document']);
   if (goog.global['document']['body']) {
     // TODO(benvanik): this doesn't really work - the DOM has been initialized
     //     and if an event has already been set then it will be queued for
     //     dispatch unwrapped. Need to find a better way.
-    instrumentedTypeMap['HTMLBodyElement'].injectObjectEvents(
+    instrumentedTypeMap['HTMLBodyElement'].hookObjectEvents(
         goog.global['document']['body']);
   }
 
   // Special case a few types.
   // Rewrite constructors for non-HTML elements.
-  //'Audio'
-  //'File'
-  //'FileReader'
-  var originalImage = goog.global['Image'];
-  var imageInstrumentedType = instrumentedTypeMap['Image'];
-  goog.global['Image'] = function Image() {
-    var result = new originalImage();
-    imageInstrumentedType.injectObjectEvents(result);
-    return result;
-  };
-  var originalXhr = goog.global['XMLHttpRequest'];
-  var xhrInstrumentedType = instrumentedTypeMap['XMLHttpRequest'];
-  goog.global['XMLHttpRequest'] = function XMLHttpRequest() {
-    var result = new originalXhr();
-    xhrInstrumentedType.injectObjectEvents(result);
-    return result;
-  };
+  var eventInstrumentedTypes = [
+    // 'Audio',
+    // 'File',
+    // 'FileReader',
+    'Image',
+    'XMLHttpRequest'
+  ];
+  for (var n = 0; n < eventInstrumentedTypes.length; n++) {
+    var instrumentedType = instrumentedTypeMap[eventInstrumentedTypes[n]];
+    instrumentedType.hookObjectEvents();
+  }
 
   // Hook document.createElement to inject object events.
-  var documentPrototype = goog.global.HTMLDocument ?
-      HTMLDocument.prototype : Document.prototype;
-  var originalCreateElement = documentPrototype['createElement'];
-  this.injectFunction(documentPrototype, 'createElement',
-      function(name) {
-        var result = originalCreateElement.apply(this, arguments);
-        var ctorName = result.constructor.name;
-        var instrumentedType = instrumentedTypeMap[ctorName];
-        if (instrumentedType) {
-          instrumentedType.injectObjectEvents(result);
-        }
-        return result;
-      });
+  // var documentPrototype = goog.global.HTMLDocument ?
+  //     HTMLDocument.prototype : Document.prototype;
+  // var originalCreateElement = documentPrototype['createElement'];
+  // this.injectFunction(documentPrototype, 'createElement',
+  //     function(name) {
+  //       var result = originalCreateElement.apply(this, arguments);
+  //       var ctorName = result.constructor.name;
+  //       var instrumentedType = instrumentedTypeMap[ctorName];
+  //       if (instrumentedType) {
+  //         instrumentedType.injectObjectEvents(result);
+  //       }
+  //       return result;
+  //     });
 
   // TODO(benvanik): find a way to add object events to HTML elements?
 };
@@ -339,51 +380,107 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
 
 
 /**
- * Adds on* event hooks to the given object.
- * @param {!Object} target Target object.
+ * Rewrites the constructor and attempts to hook all on* events.
+ * @param {Object=} opt_target Target object override
+ *     (instead of the prototype).
  */
-wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectObjectEvents =
-    function(target) {
-  var prefix = this.name_;
-  var eventMap = this.eventMap_;
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
+    function(opt_target) {
+  var originalCtor = this.classConstructor_;
 
-  var allKeys = Object.getOwnPropertyNames(target);
-  for (var n = 0; n < allKeys.length; n++) {
-    var key = allKeys[n];
-    if (key.indexOf('on') == 0 &&
-        key.toLowerCase() == key) {
-      // This is likely an event!
-      try {
-        // Delete the original (defineProperty does not allow redefinition).
-        delete target[key];
-
-        // Hook the event.
-        (function(key) {
-          // TODO(benvanik): better event tracking support and reset behavior.
-          var currentValue = null;
-          Object.defineProperty(target, key, {
-            'configurable': false,
-            'enumerable': false,
-            'get': function() {
-              return currentValue;
-            },
-            'set': function(value) {
-              if (currentValue) {
-                this.removeEventListener(key.substr(2), currentValue, false);
-              }
-              if (value) {
-                this.addEventListener(key.substr(2), value, false);
-              }
-              currentValue = value;
+  // Generate event code for each discovered event.
+  var eventInfos = [];
+  var allNames = Object.getOwnPropertyNames(opt_target || new originalCtor());
+  for (var n = 0; n < allNames.length; n++) {
+    var name = allNames[n];
+    if (name.indexOf('on') == 0 && name.toLowerCase() == name) {
+      var key = name.substr(2);
+      var hiddenName = '__wtf_event_value_' + key;
+      // TODO(benvanik): better event tracking support and reset behavior.
+      eventInfos.push({
+        name: name,
+        key: key,
+        getter: (function(hiddenName) {
+          return function() {
+            return this[hiddenName];
+          };
+        })(hiddenName),
+        setter: (function(hiddenName, key) {
+          return function(value) {
+            var currentValue = this[hiddenName];
+            if (currentValue) {
+              this.removeEventListener(key, currentValue, false);
             }
-          });
-        })(key);
-      } catch (e) {
-        // Hmm, this will likely not work then...
-        // This is seen in Safari, which doesn't let you change these events.
-        // So, no event injection in Safari! Boo!
-        continue;
-      }
+            if (value) {
+              this.addEventListener(key, value, false);
+            }
+            this[hiddenName] = value;
+          };
+        })(hiddenName, key)
+      });
     }
+  }
+
+  // If given a target, process that.
+  if (opt_target) {
+    // Swap all properties.
+    for (var n = 0; n < eventInfos.length; n++) {
+      var eventInfo = eventInfos[n];
+      delete opt_target[eventInfo.name];
+      Object.defineProperty(opt_target, eventInfo.name, {
+        'configurable': false,
+        'enumerable': false,
+        'get': eventInfo.getter,
+        'set': eventInfo.setter
+      });
+    }
+    return;
+  }
+
+  if (wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
+    // The browser allows defining the event handlers on the prototype.
+    // Not all browsers support this, but it's faster by an order of magnitude
+    // in Chrome, so do it there.
+    for (var n = 0; n < eventInfos.length; n++) {
+      var eventInfo = eventInfos[n];
+      Object.defineProperty(this.classPrototype_, eventInfo.name, {
+        'configurable': false,
+        'enumerable': false,
+        'get': eventInfo.getter,
+        'set': eventInfo.setter
+      });
+    }
+
+    // Hook constructor.
+    goog.global[this.name_] = function() {
+      var result = new originalCtor();
+      // Delete the original keys (defineProperty does not allow redefinition).
+      for (var n = 0; n < eventInfos.length; n++) {
+        delete result[eventInfos[n].name];
+      }
+      return result;
+    };
+  } else if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
+    // Hook constructor.
+    goog.global[this.name_] = function() {
+      var result = new originalCtor();
+
+      // Swap all properties.
+      for (var n = 0; n < eventInfos.length; n++) {
+        var eventInfo = eventInfos[n];
+        delete result[eventInfo.name];
+        Object.defineProperty(result, eventInfo.name, {
+          'configurable': false,
+          'enumerable': false,
+          'get': eventInfo.getter,
+          'set': eventInfo.setter
+        });
+      }
+
+      return result;
+    };
+  } else {
+    // No way to do this?
+    // TODO(benvanik): investigate fallback for Safari.
   }
 };
