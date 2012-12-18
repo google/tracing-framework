@@ -86,6 +86,75 @@ wtf.trace.providers.DomProvider.support_ = (function() {
  * @private
  */
 wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
+  var elementTypes = {
+    'HTMLAnchorElement': 'a',
+    'HTMLAppletElement': 'applet',
+    'HTMLAreaElement': 'area',
+    'HTMLAudioElement': 'audio',
+    'HTMLBRElement': 'br',
+    'HTMLBaseElement': 'base',
+    'HTMLBaseFontElement': 'basefont',
+    'HTMLBodyElement': 'body',
+    'HTMLButtonElement': 'button',
+    'HTMLCanvasElement': 'canvas',
+    'HTMLContentElement': 'content',
+    'HTMLDListElement': 'dl',
+    'HTMLDirectoryElement': 'dir',
+    'HTMLDivElement': 'div',
+    // ['HTMLDocument',
+    // ['HTMLElement',
+    'HTMLEmbedElement': 'embed',
+    'HTMLFieldSetElement': 'fieldset',
+    'HTMLFontElement': 'font',
+    'HTMLFormElement': 'form',
+    'HTMLFrameElement': 'frame',
+    'HTMLFrameSetElement': 'frameset',
+    'HTMLHRElement': 'hr',
+    'HTMLHeadElement': 'head',
+    'HTMLHeadingElement': 'h1',
+    'HTMLHtmlElement': 'html',
+    'HTMLIFrameElement': 'iframe',
+    'HTMLImageElement': 'img',
+    'HTMLInputElement': 'input',
+    'HTMLKeygenElement': 'keygen',
+    'HTMLLIElement': 'li',
+    'HTMLLabelElement': 'label',
+    'HTMLLegendElement': 'legend',
+    'HTMLLinkElement': 'link',
+    'HTMLMapElement': 'map',
+    'HTMLMarqueeElement': 'marquee',
+    'HTMLMediaElement': 'media',
+    'HTMLMenuElement': 'menu',
+    'HTMLMetaElement': 'meta',
+    'HTMLMeterElement': 'meter',
+    'HTMLModElement': 'ins',
+    'HTMLOListElement': 'ol',
+    'HTMLObjectElement': 'object',
+    'HTMLOptGroupElement': 'optgroup',
+    'HTMLOptionElement': 'option',
+    'HTMLOutputElement': 'output',
+    'HTMLParagraphElement': 'p',
+    'HTMLPreElement': 'pre',
+    'HTMLProgressElement': 'progress',
+    'HTMLQuoteElement': 'quote',
+    'HTMLScriptElement': 'script',
+    'HTMLSelectElement': 'select',
+    'HTMLSourceElement': 'source',
+    'HTMLSpanElement': 'span',
+    'HTMLStyleElement': 'style',
+    'HTMLTableCaptionElement': 'caption',
+    'HTMLTableCellElement': 'td',
+    'HTMLTableColElement': 'col',
+    'HTMLTableElement': 'table',
+    'HTMLTableRowElement': 'tr',
+    'HTMLTableSectionElement': 'thead',
+    'HTMLTextAreaElement': 'textarea',
+    'HTMLTitleElement': 'title',
+    'HTMLTrackElement': 'track',
+    'HTMLUListElement': 'ul',
+    'HTMLUnknownElement': 'UNKNOWN',
+    'HTMLVideoElement': 'video'
+  };
   var domTypes = [
     'Audio',
     'Document',
@@ -93,77 +162,11 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
     'FileReader',
     'Image',
     'Window',
-    'XMLHttpRequest',
-    'HTMLAnchorElement',
-    'HTMLAppletElement',
-    'HTMLAreaElement',
-    'HTMLAudioElement',
-    'HTMLBRElement',
-    'HTMLBaseElement',
-    'HTMLBaseFontElement',
-    'HTMLBodyElement',
-    'HTMLButtonElement',
-    'HTMLCanvasElement',
-    'HTMLContentElement',
-    'HTMLDListElement',
-    'HTMLDataListElement',
-    'HTMLDirectoryElement',
-    'HTMLDivElement',
-    // 'HTMLDocument',
-    // 'HTMLElement',
-    'HTMLEmbedElement',
-    'HTMLFieldSetElement',
-    'HTMLFontElement',
-    'HTMLFormElement',
-    'HTMLFrameElement',
-    'HTMLFrameSetElement',
-    'HTMLHRElement',
-    'HTMLHeadElement',
-    'HTMLHeadingElement',
-    'HTMLHtmlElement',
-    'HTMLIFrameElement',
-    'HTMLImageElement',
-    'HTMLInputElement',
-    'HTMLKeygenElement',
-    'HTMLLIElement',
-    'HTMLLabelElement',
-    'HTMLLegendElement',
-    'HTMLLinkElement',
-    'HTMLMapElement',
-    'HTMLMarqueeElement',
-    'HTMLMediaElement',
-    'HTMLMenuElement',
-    'HTMLMetaElement',
-    'HTMLMeterElement',
-    'HTMLModElement',
-    'HTMLOListElement',
-    'HTMLObjectElement',
-    'HTMLOptGroupElement',
-    'HTMLOptionElement',
-    'HTMLOutputElement',
-    'HTMLParagraphElement',
-    'HTMLPreElement',
-    'HTMLProgressElement',
-    'HTMLQuoteElement',
-    'HTMLScriptElement',
-    'HTMLSelectElement',
-    'HTMLShadowElement',
-    'HTMLSourceElement',
-    'HTMLSpanElement',
-    'HTMLStyleElement',
-    'HTMLTableCaptionElement',
-    'HTMLTableCellElement',
-    'HTMLTableColElement',
-    'HTMLTableElement',
-    'HTMLTableRowElement',
-    'HTMLTableSectionElement',
-    'HTMLTextAreaElement',
-    'HTMLTitleElement',
-    'HTMLTrackElement',
-    'HTMLUListElement',
-    'HTMLUnknownElement',
-    'HTMLVideoElement'
+    'XMLHttpRequest'
   ];
+  for (var name in elementTypes) {
+    domTypes.push(name);
+  }
 
   var instrumentedTypeMap = {};
   for (var n = 0; n < domTypes.length; n++) {
@@ -174,6 +177,7 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
       var instrumentedType =
           new wtf.trace.providers.DomProvider.InstrumentedType(
               typeName, classConstructor, classPrototype);
+      instrumentedType.prepareOnEventHooks(elementTypes[typeName]);
       this.registerDisposable(instrumentedType);
       instrumentedTypeMap[typeName] = instrumentedType;
     }
@@ -194,8 +198,7 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
         goog.global['document']['body']);
   }
 
-  // Special case a few types.
-  // Rewrite constructors for non-HTML elements.
+  // Hook special type on* events.
   var eventInstrumentedTypes = [
     // 'Audio',
     // 'File',
@@ -205,23 +208,33 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   ];
   for (var n = 0; n < eventInstrumentedTypes.length; n++) {
     var instrumentedType = instrumentedTypeMap[eventInstrumentedTypes[n]];
+    instrumentedType.prepareOnEventHooks();
     instrumentedType.hookObjectEvents();
   }
 
-  // Hook document.createElement to inject object events.
-  // var documentPrototype = goog.global.HTMLDocument ?
-  //     HTMLDocument.prototype : Document.prototype;
-  // var originalCreateElement = documentPrototype['createElement'];
-  // this.injectFunction(documentPrototype, 'createElement',
-  //     function(name) {
-  //       var result = originalCreateElement.apply(this, arguments);
-  //       var ctorName = result.constructor.name;
-  //       var instrumentedType = instrumentedTypeMap[ctorName];
-  //       if (instrumentedType) {
-  //         instrumentedType.injectObjectEvents(result);
-  //       }
-  //       return result;
-  //     });
+  // Hook DOM element on* events.
+  // If prototype events can be defined we can do that, otherwise we must
+  // rewrite document.createElement.
+  if (wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
+    for (var name in elementTypes) {
+      var instrumentedType = instrumentedTypeMap[name];
+      instrumentedType.hookObjectEvents();
+    }
+  } else if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
+    var documentPrototype = goog.global.HTMLDocument ?
+        HTMLDocument.prototype : Document.prototype;
+    var originalCreateElement = documentPrototype['createElement'];
+    this.injectFunction(documentPrototype, 'createElement',
+        function(name) {
+          var result = originalCreateElement.apply(this, arguments);
+          var ctorName = result.constructor.name;
+          var instrumentedType = instrumentedTypeMap[ctorName];
+          if (instrumentedType) {
+            instrumentedType.hookObjectEvents(result);
+          }
+          return result;
+        });
+  }
 
   // TODO(benvanik): find a way to add object events to HTML elements?
 };
@@ -259,6 +272,13 @@ wtf.trace.providers.DomProvider.InstrumentedType = function(
    * @private
    */
   this.classPrototype_ = classPrototype;
+
+  /**
+   * Cached on* event info from {@see #prepareOnEventHooks}.
+   * @type {!Array.<!Object>}
+   * @private
+   */
+  this.onEventInfos_ = [];
 
   /**
    * A list of injections performed by this provider.
@@ -335,7 +355,7 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
   var originalAddEventListener = classPrototype['addEventListener'];
   this.injectFunction_(classPrototype, 'addEventListener',
       function addEventListener(type, listener, opt_useCapture) {
-        if (listener['__wtf_ignore__']) {
+        if (this['__wtf_ignore__'] || listener['__wtf_ignore__']) {
           // Ignored - do a normal add.
           originalAddEventListener.call(this, type, listener, opt_useCapture);
           return;
@@ -348,7 +368,7 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
           eventMap[type] = eventType;
         }
         var wrappedEventListener = function wrappedEventListener(e) {
-          var scope = eventType();
+          var scope = this['__wtf_ignore__'] ? null : eventType();
           try {
             if (listener['handleEvent']) {
               // Listener is an EventListener.
@@ -358,7 +378,9 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
               return listener.apply(this, arguments);
             }
           } finally {
-            scope.leave();
+            if (scope) {
+              scope.leave();
+            }
           }
         };
         listener['__wrapped__'] = wrappedEventListener;
@@ -380,17 +402,28 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
 
 
 /**
- * Rewrites the constructor and attempts to hook all on* events.
- * @param {Object=} opt_target Target object override
- *     (instead of the prototype).
+ * Prepares and caches information needed for hooking on* events.
+ * @param {string=} opt_tag HTML tag name. If present, used instead of the
+ *     class constructor.
  */
-wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
-    function(opt_target) {
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.prepareOnEventHooks =
+    function(opt_tag) {
   var originalCtor = this.classConstructor_;
+
+  var target = null;
+  if (opt_tag) {
+    target = document.createElement(opt_tag);
+  } else {
+    try {
+      target = new originalCtor();
+    } catch (e) {
+      target = this.classPrototype_;
+    }
+  }
 
   // Generate event code for each discovered event.
   var eventInfos = [];
-  var allNames = Object.getOwnPropertyNames(opt_target || new originalCtor());
+  var allNames = Object.getOwnPropertyNames(target);
   for (var n = 0; n < allNames.length; n++) {
     var name = allNames[n];
     if (name.indexOf('on') == 0 && name.toLowerCase() == name) {
@@ -420,6 +453,20 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
       });
     }
   }
+
+  this.onEventInfos_ = eventInfos;
+};
+
+
+/**
+ * Rewrites the constructor and attempts to hook all on* events.
+ * @param {Object=} opt_target Target object override
+ *     (instead of the prototype).
+ */
+wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
+    function(opt_target) {
+  var originalCtor = this.classConstructor_;
+  var eventInfos = this.onEventInfos_;
 
   // If given a target, process that.
   if (opt_target) {

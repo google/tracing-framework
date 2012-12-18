@@ -458,3 +458,11 @@ wtf.trace.timeStamp = wtf.trace.BuiltinEvents.timeStamp;
  * @template T
  */
 wtf.trace.ignoreListener = wtf.trace.util.ignoreListener;
+
+
+/**
+ * Marks an entire tree of DOM elements as being ignored, meaning that no
+ * events from them will show up in traces.
+ * @param {!Element} el Root DOM element.
+ */
+wtf.trace.ignoreDomTree = wtf.trace.util.ignoreDomTree;
