@@ -106,48 +106,8 @@ wtfapi.io.ByteArray;
 wtfapi.trace.Zone;
 
 
-
 /**
- * Dummy scope object.
- * Has the same exported methods as a real {@see wtfapi.trace.Scope}.
- * @constructor
- * @private
- */
-wtfapi.MockScope_ = function() {
-};
-
-
-/**
- * Leave mock.
- * @param {T=} opt_result Optional result to chain.
- * @return {T|undefined} The value of the {@code opt_result} parameter.
- * @template T
- */
-wtfapi.MockScope_.prototype['leave'] = function(opt_result) {
-  return opt_result;
-};
-
-
-/**
- * Dummy scope.
- * @type {!wtfapi.MockScope_}
- * @private
- */
-wtfapi.DUMMY_SCOPE_ = new wtfapi.MockScope_();
-
-
-/**
- * A function that returns the dummy scope.
- * @return {!wtfapi.MockScope_} Dummy scope.
- * @private
- */
-wtfapi.DUMMY_SCOPE_GENERATOR_ = function() {
-  return wtfapi.DUMMY_SCOPE_;
-};
-
-
-/**
- * @typedef {wtfapi.MockScope_}
+ * @typedef {Object}
  */
 wtfapi.trace.Scope;
 
@@ -232,11 +192,7 @@ wtfapi.trace.events.createInstance = wtfapi.PRESENT ?
  * @return {Function} New event type.
  */
 wtfapi.trace.events.createScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['events']['createScope'] : function() {
-      // Always return a dummy scope so that code calling scope.leave still
-      // works without a null check.
-      return wtfapi.DUMMY_SCOPE_GENERATOR_;
-    };
+    goog.global['wtf']['trace']['events']['createScope'] : goog.nullFunction;
 
 
 /**
@@ -283,13 +239,10 @@ wtfapi.trace.popZone = wtfapi.PRESENT ?
  * @param {wtfapi.trace.Flow=} opt_flow A flow to terminate on scope leave, if
  *     any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
- * @return {!wtfapi.trace.Scope} An initialized scope object.
+ * @return {wtfapi.trace.Scope} An initialized scope object.
  */
 wtfapi.trace.enterScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['enterScope'] :
-    function(opt_msg, opt_flow, opt_time) {
-      return wtfapi.DUMMY_SCOPE_;
-    };
+    goog.global['wtf']['trace']['enterScope'] : goog.nullFunction;
 
 
 /**
@@ -299,13 +252,22 @@ wtfapi.trace.enterScope = wtfapi.PRESENT ?
  * @param {wtfapi.trace.Flow=} opt_flow A flow to terminate on scope leave, if
  *     any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
- * @return {!wtfapi.trace.Scope} An initialized scope object.
+ * @return {wtfapi.trace.Scope} An initialized scope object.
  */
 wtfapi.trace.enterTracingScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['enterTracingScope'] :
-    function(opt_flow, opt_time) {
-      return wtfapi.DUMMY_SCOPE_;
-    };
+    goog.global['wtf']['trace']['enterTracingScope'] : goog.nullFunction;
+
+
+/**
+ * Leaves a scope.
+ * @param {wtf.trace.Scope} scope Scope to leave.
+ * @param {T=} opt_result Optional result to chain.
+ * @param {number=} opt_time Time for the leave; omit to use the current time.
+ * @return {T|undefined} The value of the {@code opt_result} parameter.
+ * @template T
+ */
+wtfapi.trace.leaveScope = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['leaveScope'] : goog.identityFunction;
 
 
 /**
