@@ -15,12 +15,12 @@
 goog.provide('wtf.ipc');
 
 goog.require('goog.asserts');
-goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('wtf.ipc.DomChannel');
 goog.require('wtf.ipc.ExtensionChannel');
 goog.require('wtf.ipc.MessageChannel');
 goog.require('wtf.timing');
+goog.require('wtf.trace.util');
 
 
 /**
@@ -68,25 +68,20 @@ wtf.ipc.connectToParentWindow = function(callback, opt_scope) {
  * @template T
  */
 wtf.ipc.waitForChildWindow = function(callback, opt_scope) {
-  var key = goog.events.listen(
-      window,
-      goog.events.EventType.MESSAGE,
-      /**
-       * @param {!goog.events.BrowserEvent} browserEvent Event.
-       */
-      function(browserEvent) {
-        var e = browserEvent.getBrowserEvent();
-        if (e.data && e.data[wtf.ipc.MessageChannel.PACKET_TOKEN] &&
-            e.data.data && e.data.data['hello'] == true) {
-          e.stopPropagation();
-          goog.events.unlistenByKey(key);
+  var boundHandler = wtf.trace.util.ignoreListener(function(e) {
+    if (e.data && e.data[wtf.ipc.MessageChannel.PACKET_TOKEN] &&
+        e.data.data && e.data.data['hello'] == true) {
+      e.stopPropagation();
+      window.removeEventListener(
+          goog.events.EventType.MESSAGE, boundHandler, true);
 
-          goog.asserts.assert(e.source);
-          var channel = new wtf.ipc.MessageChannel(window, e.source);
-          callback.call(opt_scope, channel);
-        }
-      },
-      true);
+      goog.asserts.assert(e.source);
+      var channel = new wtf.ipc.MessageChannel(window, e.source);
+      callback.call(opt_scope, channel);
+    }
+  });
+  window.addEventListener(
+      goog.events.EventType.MESSAGE, boundHandler, true);
 };
 
 
@@ -98,24 +93,20 @@ wtf.ipc.waitForChildWindow = function(callback, opt_scope) {
  * @template T
  */
 wtf.ipc.listenForChildWindows = function(callback, opt_scope) {
-  goog.events.listen(
-      window,
-      goog.events.EventType.MESSAGE,
-      /**
-       * @param {!goog.events.BrowserEvent} browserEvent Event.
-       */
-      function(browserEvent) {
-        var e = browserEvent.getBrowserEvent();
-        if (e.data && e.data[wtf.ipc.MessageChannel.PACKET_TOKEN] &&
-            e.data.data && e.data.data['hello'] == true) {
-          e.stopPropagation();
+  var boundHandler = wtf.trace.util.ignoreListener(function(e) {
+    if (e.data && e.data[wtf.ipc.MessageChannel.PACKET_TOKEN] &&
+        e.data.data && e.data.data['hello'] == true) {
+      e.stopPropagation();
+      window.removeEventListener(
+          goog.events.EventType.MESSAGE, boundHandler, true);
 
-          goog.asserts.assert(e.source);
-          var channel = new wtf.ipc.MessageChannel(window, e.source);
-          callback.call(opt_scope, channel);
-        }
-      },
-      true);
+      goog.asserts.assert(e.source);
+      var channel = new wtf.ipc.MessageChannel(window, e.source);
+      callback.call(opt_scope, channel);
+    }
+  });
+  window.addEventListener(
+      goog.events.EventType.MESSAGE, boundHandler, true);
 };
 
 

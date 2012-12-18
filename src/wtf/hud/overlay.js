@@ -177,6 +177,8 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   //   var eventInfo = providerInfo.getEventByName(nameParts[1]);
   //   //
   // }
+
+  wtf.trace.ignoreDomTree(this.getRootElement());
 };
 goog.inherits(wtf.hud.Overlay, wtf.ui.ResizableControl);
 

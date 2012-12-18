@@ -22,6 +22,13 @@ global.benchmark = benchmark;
 global.wtf = require('../build-out/wtf_node_js_compiled');
 
 
+// Require all benchmark files.
+for (var n = 0; n < benchmarkList.length; n++) {
+  var scriptUrl = './test/benchmarks/' + benchmarkList[n];
+  vm.runInThisContext(fs.readFileSync(scriptUrl), scriptUrl);
+}
+
+
 function padLeft(value, width) {
   value = String(value);
   while (value.length < width) {
@@ -73,58 +80,15 @@ global.reportBenchmarkResult = function(benchmarkName, data) {
 };
 
 
-// Get the list of tests to run.
-var benchmarkNames = process.argv.slice(2);
-
-// Remove bad entries.
-for (var n = benchmarkNames.length - 1; n >= 0; n--) {
-  if (!benchmarkNames[n].length) {
-    benchmarkNames.splice(n, 1);
-  }
-}
-
-// If nothing provided, run all tests.
-if (!benchmarkNames.length) {
-  for (var n = 0; n < benchmarkList.length; n++) {
-    var entry = benchmarkList[n];
-    if (entry) {
-      benchmarkNames.push(entry.name);
-    }
-  }
-}
-
-// TODO(benvanik): fuzzy search through testNames - if any contain *, lookup
-// deps to find all matching namespaces.
-
-// Sort test names.
-// TODO(benvanik): sort by namespaces?
-benchmarkNames.sort(function(a, b) {
-  return a < b;
-});
-
-// Require all benchmark files.
-for (var n = 0; n < benchmarkNames.length; n++) {
-  var name = benchmarkNames[n];
-  var entry = null;
-  for (var m = 0; m < benchmarkList.length; m++) {
-    if (benchmarkList[m] && benchmarkList[m].name == name) {
-      entry = benchmarkList[m];
-      break;
-    }
-  }
-  if (entry) {
-    var scriptUrl = './test/benchmarks/' + entry.script;
-		vm.runInThisContext(fs.readFileSync(scriptUrl), scriptUrl);
-  } else {
-    reportBenchmarkError('Benchmark entry not found: ' + name);
-  }
-}
-
 console.log(
       padLeft('[name]', 32) + ' ' +
       padRight('[count]', PAD_RIGHT) + ' ' +
       padRight('[total]', PAD_RIGHT) + ' ' +
       padRight('[mean]', PAD_RIGHT));
 
+
+// Get the list of tests to run.
+var benchmarkNames = process.argv.slice(2);
+
 // Launch the run.
-benchmark.run.apply(null, benchmarkNames);
+benchmark.run(benchmarkNames);
