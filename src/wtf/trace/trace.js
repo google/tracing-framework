@@ -18,7 +18,6 @@ goog.provide('wtf.trace');
 goog.require('goog.asserts');
 goog.require('goog.json');
 goog.require('goog.string');
-goog.require('wtf');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.io.CustomWriteStream');
 goog.require('wtf.io.LocalFileWriteStream');
@@ -43,7 +42,7 @@ goog.require('wtf.util.Options');
  * @return {number} Version number.
  */
 wtf.trace.getApiVersion = function() {
-  return 1;
+  return 2;
 };
 
 
@@ -351,23 +350,20 @@ wtf.trace.popZone = function() {
 
 /**
  * Enters a scope.
- * @param {string=} opt_msg Optional message string.
+ * @param {string} name Scope name.
  * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
-wtf.trace.enterScope = function(opt_msg, opt_flow, opt_time) {
-  return wtf.trace.BuiltinEvents.enterScope(
-      opt_time || wtf.now(), opt_flow, opt_msg);
-};
+wtf.trace.enterScope = wtf.trace.BuiltinEvents.enterScope;
 
 
 /**
  * Enters a tracing implementation overhead scope.
  * This should only be used by the tracing framework and extension to indicate
  * time used by non-user tasks.
- * @param {number} time Time for the enter. Use {@code wtf.now()}.
  * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
+ * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
 wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
@@ -379,13 +375,14 @@ wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
  * Prefer instead to use a custom instance event with the
  * {@see wtf.data.EventFlag#APPEND_SCOPE_DATA} flag set.
  *
- * @param {number} time Time for the enter. Use {@code wtf.now()}.
  * @param {string} name Argument name. Must be ASCII.
  * @param {*} value Value. Will be JSON stringified.
+ * @param {number=} opt_time Time for the enter; omit to use the current time.
  */
-wtf.trace.appendScopeData = function(time, name, value) {
+wtf.trace.appendScopeData = function(name, value, opt_time) {
+  // TODO(benvanik): optimize simple cases (null/number/string/etc).
   var json = goog.json.serialize(value);
-  wtf.trace.BuiltinEvents.appendScopeData(time, name, json);
+  wtf.trace.BuiltinEvents.appendScopeData(name, json, opt_time);
 };
 
 
@@ -423,10 +420,7 @@ wtf.trace.spanFlow = wtf.trace.Flow.span;
  * @param {string} name Marker name.
  * @param {number=} opt_time Time for the mark; omit to use the current time.
  */
-wtf.trace.mark = function(name, opt_time) {
-  var time = opt_time || wtf.now();
-  wtf.trace.BuiltinEvents.mark(time, name);
-};
+wtf.trace.mark = wtf.trace.BuiltinEvents.mark;
 
 
 /**
@@ -437,10 +431,7 @@ wtf.trace.mark = function(name, opt_time) {
  * @param {string} name Marker name.
  * @param {number=} opt_time Time for the mark; omit to use the current time.
  */
-wtf.trace.timeStamp = function(name, opt_time) {
-  var time = opt_time || wtf.now();
-  wtf.trace.BuiltinEvents.timeStamp(time, name);
-};
+wtf.trace.timeStamp = wtf.trace.BuiltinEvents.timeStamp;
 
 
 /**

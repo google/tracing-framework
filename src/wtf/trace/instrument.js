@@ -15,7 +15,6 @@ goog.provide('wtf.trace.instrument');
 goog.provide('wtf.trace.instrumentType');
 
 goog.require('goog.asserts');
-goog.require('wtf');
 goog.require('wtf.data.Variable');
 goog.require('wtf.trace');
 goog.require('wtf.trace.events');
@@ -117,22 +116,19 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
       if (opt_pre) {
         opt_pre.call(this);
       }
-      var scope = customEvent(wtf.now(), null);
+      var scope = customEvent();
       var result = value.apply(this, arguments);
       return scope.leave(result);
     };
   } else {
     // Custom arguments.
-    var eventArgs = new Array(2 + argMap.length);
-    eventArgs[0] = 0;
-    eventArgs[1] = null; // no flow
+    var eventArgs = new Array(argMap.length);
     result = function() {
       if (opt_pre) {
         opt_pre.call(this);
       }
-      eventArgs[0] = wtf.now();
       for (var n = 0; n < argMap.length; n++) {
-        eventArgs[n + 2] = arguments[argMap[n].ordinal];
+        eventArgs[n] = arguments[argMap[n].ordinal];
       }
       var scope = customEvent.apply(customEvent, eventArgs);
       var result = value.apply(this, arguments);

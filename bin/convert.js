@@ -70,7 +70,7 @@ function runTool(platform, args) {
         'pid': e.zone.toString(),
         'tid': '',
         'ts': e.time * 1000,
-        'name': e.args['msg'] || e.eventType.name
+        'name': e.args['name'] || e.eventType.name
       });
     },
     'wtf.scope#leave': function(e) {

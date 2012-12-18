@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.EventTypeBuilder');
 
+goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.io.Buffer');
 goog.require('wtf.trace.EventType');
@@ -80,14 +81,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   this.addScopeVariable('sessionPtr', sessionPtr);
   this.addScopeVariable('dummyScope', this.dummyScope_);
   this.addScopeVariable('eventType', eventType);
-
-  this.addArgument('time');
-  switch (eventType.eventClass) {
-    case wtf.data.EventClass.SCOPE:
-      // Custom typed scope - take flow to pass down to enterTypedScope.
-      this.addArgument('flow');
-      break;
-  }
+  this.addScopeVariable('now', wtf.now);
 
   // Build a complete list of custom data arguments.
   // Each variable maps to an argument to the function.
@@ -105,7 +99,14 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
     }
   }
 
-  // Always accept an optional buffer.
+  // Additional optional arguments.
+  switch (eventType.eventClass) {
+    case wtf.data.EventClass.SCOPE:
+      // Custom typed scope - take flow to pass down to enterTypedScope.
+      this.addArgument('opt_flow');
+      break;
+  }
+  this.addArgument('opt_time');
   this.addArgument('opt_buffer');
 
   this.append(
@@ -117,6 +118,9 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
     this.append(
         'if (!session) { return; }');
   }
+
+  this.append(
+      'var time = opt_time || now();');
 
   // Write buffer acquisition code (and size calculate if variable size).
   if (!isVariableSize) {
@@ -181,7 +185,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   // Enter scope/flow/etc.
   if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
     this.append(
-        'return session.enterTypedScope(flow, time);');
+        'return session.enterTypedScope(opt_flow, time);');
   }
 
   // Save off the final function.

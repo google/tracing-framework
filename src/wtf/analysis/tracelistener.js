@@ -104,7 +104,7 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createScope(
-      'wtf.scope#enter(ascii msg)',
+      'wtf.scope#enter(ascii name)',
       wtf.data.EventFlag.BUILTIN),
   wtf.analysis.EventType.createScope(
       'wtf.scope#enterTracing()',

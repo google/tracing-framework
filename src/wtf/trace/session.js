@@ -289,7 +289,7 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
     // of nasty state tracking.
     var zone = this.traceManager_.getCurrentZone();
     if (zone) {
-      wtf.trace.BuiltinEvents.setZone(time, zone.id, buffer);
+      wtf.trace.BuiltinEvents.setZone(zone.id, time, buffer);
     }
 
     // Ignore if size can't fit in the buffer.

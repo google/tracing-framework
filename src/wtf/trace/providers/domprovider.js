@@ -15,7 +15,6 @@ goog.provide('wtf.trace.providers.DomProvider');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
-goog.require('wtf');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
 
@@ -308,7 +307,7 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
           eventMap[type] = eventType;
         }
         var wrappedEventListener = function wrappedEventListener(e) {
-          var scope = eventType(wtf.now(), null);
+          var scope = eventType();
           try {
             if (listener['handleEvent']) {
               // Listener is an EventListener.

@@ -66,7 +66,7 @@ wtf.trace.BuiltinEvents = {
    * Enters an execution scope.
    */
   enterScope: wtf.trace.events.createScope(
-      'wtf.scope#enter(ascii msg)',
+      'wtf.scope#enter(ascii name)',
       wtf.data.EventFlag.BUILTIN),
 
   /**
