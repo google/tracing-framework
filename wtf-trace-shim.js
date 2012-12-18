@@ -1,5 +1,4 @@
 /**
- * @license
  * https://github.com/google/tracing-framework
  * Copyright 2012 Google, Inc. All Rights Reserved.
  * Use of this source code is governed by a BSD-style license that can be
