@@ -55,7 +55,7 @@ Manual control:
     $ node
     > var wtf = require('tracing-framework');
     > wtf.analysis.run(wtf.analysis.createTraceListener({
-        'wtf.scope.enter': function(e) {
+        'wtf.scope#enter': function(e) {
           console.log(e.time);
         }
       }), 'test.wtf-trace');

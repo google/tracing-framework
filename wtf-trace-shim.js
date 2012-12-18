@@ -44,13 +44,29 @@ wtfapi.ENABLED = true;
 
 
 /**
+ * The API version expected by the shim.
+ * If WTF is present but its {@code wtf.trace.getApiVersion()} does not match
+ * this value it will be ignored. This allows code instrumented with older
+ * versions of the API to keep working (without tracing) when a newer version
+ * of the API is present in the page.
+ * @type {number}
+ * @const
+ * @private
+ */
+wtfapi.EXPECTED_API_VERSION_ = 2;
+
+
+/**
  * Whether WTF is enabled and present in the current global context.
- * This will only be true if the master enabled flag is true and 'wtf' is in the
- * global scope.
+ * This will only be true if the master enabled flag is true, 'wtf' is in the
+ * global scope, and the version of WTF matches this shim.
  * @type {boolean}
  * @const
  */
-wtfapi.PRESENT = wtfapi.ENABLED && !!goog.global['wtf'];
+wtfapi.PRESENT = wtfapi.ENABLED && !!goog.global['wtf'] &&
+    goog.global['wtf']['trace']['getApiVersion'] &&
+    (goog.global['wtf']['trace']['getApiVersion']() ==
+        wtfapi.EXPECTED_API_VERSION_);
 
 
 /**
@@ -118,6 +134,16 @@ wtfapi.MockScope_.prototype['leave'] = function(opt_result) {
  * @private
  */
 wtfapi.DUMMY_SCOPE_ = new wtfapi.MockScope_();
+
+
+/**
+ * A function that returns the dummy scope.
+ * @return {!wtfapi.MockScope_} Dummy scope.
+ * @private
+ */
+wtfapi.DUMMY_SCOPE_GENERATOR_ = function() {
+  return wtfapi.DUMMY_SCOPE_;
+};
 
 
 /**
@@ -206,7 +232,11 @@ wtfapi.trace.events.createInstance = wtfapi.PRESENT ?
  * @return {Function} New event type.
  */
 wtfapi.trace.events.createScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['events']['createScope'] : goog.nullFunction;
+    goog.global['wtf']['trace']['events']['createScope'] : function() {
+      // Always return a dummy scope so that code calling scope.leave still
+      // works without a null check.
+      return wtfapi.DUMMY_SCOPE_GENERATOR_;
+    };
 
 
 /**
@@ -249,7 +279,7 @@ wtfapi.trace.popZone = wtfapi.PRESENT ?
 
 /**
  * Enters a scope.
- * @param {string=} opt_msg Optional message string.
+ * @param {string} name Scope name.
  * @param {wtfapi.trace.Flow=} opt_flow A flow to terminate on scope leave, if
  *     any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
@@ -266,14 +296,14 @@ wtfapi.trace.enterScope = wtfapi.PRESENT ?
  * Enters a tracing implementation overhead scope.
  * This should only be used by the tracing framework and extension to indicate
  * time used by non-user tasks.
- * @param {number} time Time for the enter. Use {@code wtfapi.now()}.
  * @param {wtfapi.trace.Flow=} opt_flow A flow to terminate on scope leave, if
  *     any.
+ * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtfapi.trace.Scope} An initialized scope object.
  */
 wtfapi.trace.enterTracingScope = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['enterTracingScope'] :
-    function(time, opt_flow) {
+    function(opt_flow, opt_time) {
       return wtfapi.DUMMY_SCOPE_;
     };
 
@@ -284,9 +314,9 @@ wtfapi.trace.enterTracingScope = wtfapi.PRESENT ?
  * Prefer instead to use a custom instance event with the
  * {@see wtfapi.data.EventFlag#APPEND_SCOPE_DATA} flag set.
  *
- * @param {number} time Time for the enter. Use {@code wtfapi.now()}.
  * @param {string} name Argument name. Must be ASCII.
  * @param {*} value Value. Will be JSON stringified.
+ * @param {number=} opt_time Time for the enter; omit to use the current time.
  */
 wtfapi.trace.appendScopeData = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['appendScopeData'] : goog.nullFunction;
@@ -324,13 +354,25 @@ wtfapi.trace.spanFlow = wtfapi.PRESENT ?
 
 /**
  * Marks the stream with a generic instance event.
- * This can be used for logging information or indicating status.
+ * This is used by the UI to construct a simple navigation structure.
  * It's best to use custom events that make filtering easier, if possible.
- * @param {string=} opt_msg Optional message string.
- * @param {number=} opt_time Time for the branch; omit to use the current time.
+ * @param {string} name Marker name.
+ * @param {number=} opt_time Time for the mark; omit to use the current time.
  */
 wtfapi.trace.mark = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['mark'] : goog.nullFunction;
+
+
+/**
+ * Adds a timestamped event to the stream.
+ * This is synonymous to {@code console.timeStamp}, and can be used to place
+ * simple arg-less instance events in the timeline.
+ * Prefer using custom events for faster, more flexible events.
+ * @param {string} name Time stamp name.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
+ */
+wtfapi.trace.timeStamp = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['timeStamp'] : goog.nullFunction;
 
 
 /**

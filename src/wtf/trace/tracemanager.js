@@ -205,7 +205,7 @@ wtf.trace.TraceManager.prototype.createZone = function(name, type, location) {
 
   // Append event.
   wtf.trace.BuiltinEvents.createZone(
-      zone.timestamp, zone.id, zone.name, zone.type, zone.location);
+      zone.id, zone.name, zone.type, zone.location, zone.timestamp);
 
   return zone;
 };
@@ -220,7 +220,7 @@ wtf.trace.TraceManager.prototype.deleteZone = function(zone) {
   goog.asserts.assert(!goog.array.contains(this.zoneStack_, zone));
 
   // Append event.
-  wtf.trace.BuiltinEvents.deleteZone(wtf.now(), zone.id);
+  wtf.trace.BuiltinEvents.deleteZone(zone.id);
 
   // NOTE: zones are never deleted.
 };
@@ -238,13 +238,12 @@ wtf.trace.TraceManager.prototype.appendAllZones = function(buffer) {
     var zone = this.allZones_[key];
     // Note that we use 0 instead of zone.timestamp to prevent skewing traces
     wtf.trace.BuiltinEvents.createZone(
-        0, zone.id, zone.name, zone.type, zone.location,
-        buffer);
+        zone.id, zone.name, zone.type, zone.location, 0, buffer);
   }
 
   var currentZone = this.getCurrentZone();
   if (currentZone) {
-    wtf.trace.BuiltinEvents.setZone(0, currentZone.id, buffer);
+    wtf.trace.BuiltinEvents.setZone(currentZone.id, 0, buffer);
   }
 };
 
@@ -260,7 +259,7 @@ wtf.trace.TraceManager.prototype.pushZone = function(zone) {
   // Note that we avoid doing clever things here around de-duping events
   // as the frequency of this should be low and snappshotting could cause
   // events to end up missing.
-  wtf.trace.BuiltinEvents.setZone(wtf.now(), zone.id);
+  wtf.trace.BuiltinEvents.setZone(zone.id);
 };
 
 
@@ -273,7 +272,7 @@ wtf.trace.TraceManager.prototype.popZone = function() {
 
   // Append event.
   var zone = this.getCurrentZone();
-  wtf.trace.BuiltinEvents.setZone(wtf.now(), zone.id);
+  wtf.trace.BuiltinEvents.setZone(zone.id);
 };
 
 
@@ -347,7 +346,6 @@ wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
   if (this.currentSession_) {
     // Append to the stream.
     wtf.trace.BuiltinEvents.defineEvent(
-        wtf.now(),
         eventType.wireId,
         eventType.eventClass,
         eventType.flags,
@@ -373,12 +371,12 @@ wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer) {
 
     // Append to the header.
     wtf.trace.BuiltinEvents.defineEvent(
-        wtf.now(),
         eventType.wireId,
         eventType.eventClass,
         eventType.flags,
         eventType.name,
         eventType.getArgString(),
+        undefined,
         buffer);
   }
 

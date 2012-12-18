@@ -37,20 +37,20 @@
           // Enter scope, resume flow
           var scope = wtf.trace.enterScope('setTimeout callback', flow);
 
-          wtf.trace.appendScopeData(wtf.now(), 'number', -1);
-          wtf.trace.appendScopeData(wtf.now(), 'string', 'hello');
-          wtf.trace.appendScopeData(wtf.now(), 'array', [1, 2, 3]);
-          wtf.trace.appendScopeData(wtf.now(), 'obj', {
+          wtf.trace.appendScopeData('number', -1);
+          wtf.trace.appendScopeData('string', 'hello');
+          wtf.trace.appendScopeData('array', [1, 2, 3]);
+          wtf.trace.appendScopeData('obj', {
             a: 1,
             b: 2
           });
-          wtf.trace.appendScopeData(wtf.now(), 'complex', {
+          wtf.trace.appendScopeData('complex', {
             a: [1, 2, 3],
             d: {
               b: [4, 5, 6]
             }
           });
-          customAppend(wtf.now(), 123, 456);
+          customAppend(123, 456);
 
           console.log('hi');
 

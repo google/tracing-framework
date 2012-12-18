@@ -12,14 +12,14 @@ Emitting an instance event:
     // Create the event and cache the event object:
     var myEvent = wtf.trace.events.createInstance('myEvent(uint32 foo)');
     // At some point in the future, append it:
-    myEvent(wtf.now(), 12345);
+    myEvent(12345);
 
 Emitting a scope event:
 
     // Create the event and cache the event object:
     var myScopeEvent = wtf.trace.events.createScope('myScopeEvent(utf8 bar)');
     // Enter/leave the scope:
-    var scope = myScopeEvent(wtf.now(), null, 'hello world');
+    var scope = myScopeEvent('hello world');
     // ...
     return scope.leave(someResult);
 
@@ -52,7 +52,7 @@ automatically created or is added conditionally, consider using an append event.
         wtf.data.EventFlag.APPEND_SCOPE_DATA);
     // Call the method inside of scopes:
     var scope = ...enter scope...();
-    appendMyData(wtf.now(), 123, 456);
+    appendMyData(123, 456);
     scope.leave();
 
 If (and only if!) you're doing some debugging and need a bunch of data in your
@@ -60,7 +60,7 @@ scopes you can use the super slow `wtf.trace.appendScopeData` method:
 
     var scope = ...enter scope...();
     // The value can be any JSONifiable value (numbers/arrays/objects).
-    wtf.trace.appendScopeData(wtf.now(), 'myBlob', {
+    wtf.trace.appendScopeData('myBlob', {
       'complex': ['objects'],
       'prop': 123.456
     });
@@ -69,7 +69,7 @@ scopes you can use the super slow `wtf.trace.appendScopeData` method:
 If you need to do any expensive work that you don't want to show up as user
 time, use the built-in helper scope:
 
-    var traceScope = wtf.trace.enterTracingScope(wtf.now());
+    var traceScope = wtf.trace.enterTracingScope();
     // Expensive work...
     traceScope.leave();
 

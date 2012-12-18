@@ -45,6 +45,16 @@ wtf.analysis.EventfulTraceListener.prototype.sourceAdded = function(
 /**
  * @override
  */
+wtf.analysis.EventfulTraceListener.prototype.sourceError = function(
+    message, opt_detail) {
+  this.emitEvent(wtf.analysis.EventfulTraceListener.EventType.SOURCE_ERROR,
+      message, opt_detail);
+};
+
+
+/**
+ * @override
+ */
 wtf.analysis.EventfulTraceListener.prototype.traceEvent = function(e) {
   if (!(e.eventType.flags & wtf.data.EventFlag.BUILTIN)) {
     this.emitEvent(wtf.analysis.EventfulTraceListener.EventType.CUSTOM, e);
@@ -64,49 +74,59 @@ wtf.analysis.EventfulTraceListener.EventType = {
   SOURCE_ADDED: 'sourceAdded',
 
   /**
-   * Args: [wtf.analysis.Event]
+   * Args: [message, opt_detail]
    */
-  DISCONTINUITY: 'wtf.discontinuity',
-
-  /**
-   * Args: [wtf.analysis.ZoneEvent]
-   */
-  CREATE_ZONE: 'wtf.zone.create',
-
-  /**
-   * Args: [wtf.analysis.ZoneEvent]
-   */
-  DELETE_ZONE: 'wtf.zone.delete',
-
-  /**
-   * Args: [wtf.analysis.ScopeEvent]
-   */
-  ENTER_SCOPE: 'wtf.scope.enter',
-
-  /**
-   * Args: [wtf.analysis.ScopeEvent]
-   */
-  LEAVE_SCOPE: 'wtf.scope.leave',
-
-  /**
-   * Args: [wtf.analysis.FlowEvent]
-   */
-  BRANCH_FLOW: 'wtf.flow.branch',
-
-  /**
-   * Args: [wtf.analysis.FlowEvent]
-   */
-  EXTEND_FLOW: 'wtf.flow.extend',
-
-  /**
-   * Args: [wtf.analysis.FlowEvent]
-   */
-  TERMINATE_FLOW: 'wtf.flow.terminate',
+  SOURCE_ERROR: 'sourceError',
 
   /**
    * Args: [wtf.analysis.Event]
    */
-  MARK: 'wtf.mark',
+  DISCONTINUITY: 'wtf.trace#discontinuity',
+
+  /**
+   * Args: [wtf.analysis.ZoneEvent]
+   */
+  CREATE_ZONE: 'wtf.zone#create',
+
+  /**
+   * Args: [wtf.analysis.ZoneEvent]
+   */
+  DELETE_ZONE: 'wtf.zone#delete',
+
+  /**
+   * Args: [wtf.analysis.ScopeEvent]
+   */
+  ENTER_SCOPE: 'wtf.scope#enter',
+
+  /**
+   * Args: [wtf.analysis.ScopeEvent]
+   */
+  LEAVE_SCOPE: 'wtf.scope#leave',
+
+  /**
+   * Args: [wtf.analysis.FlowEvent]
+   */
+  BRANCH_FLOW: 'wtf.flow#branch',
+
+  /**
+   * Args: [wtf.analysis.FlowEvent]
+   */
+  EXTEND_FLOW: 'wtf.flow#extend',
+
+  /**
+   * Args: [wtf.analysis.FlowEvent]
+   */
+  TERMINATE_FLOW: 'wtf.flow#terminate',
+
+  /**
+   * Args: [wtf.analysis.Event]
+   */
+  MARK: 'wtf.trace#mark',
+
+  /**
+   * Args: [wtf.analysis.Event]
+   */
+  TIMESTAMP: 'wtf.trace#timeStamp',
 
   /**
    * Args: [wtf.analysis.Event]

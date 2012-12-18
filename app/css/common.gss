@@ -619,3 +619,35 @@ em {
   @mixin boxShadow(0, 4px, 16px, rgba(0,0,0,0.2));
   cursor: default;
 }
+.kDialogHeader {
+  background-color: #f1f1f1;
+  border-bottom: 1px solid #ccc;
+  height: 71px;
+}
+.kDialogHeader h1 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: normal;
+  color: #222;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  padding-top: 26px;
+  padding-left: 42px;
+  cursor: default;
+}
+.kDialogHeaderButtons {
+  float: right;
+  padding-right: 26px;
+  padding-top: 22px;
+  margin: 0;
+}
+.kDialogContent {
+  margin: 10px;
+}
+.kDialogFooter {
+  position: absolute;
+  bottom: 0;
+  margin: 10px;
+}

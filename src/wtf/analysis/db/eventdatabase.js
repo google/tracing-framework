@@ -120,6 +120,12 @@ wtf.analysis.db.EventDatabase.EventType = {
   SOURCES_CHANGED: goog.events.getUniqueId('sources_changed'),
 
   /**
+   * A source had an error parsing an input.
+   * Args: [message, opt_detail]
+   */
+  SOURCE_ERROR: goog.events.getUniqueId('source_error'),
+
+  /**
    * One or more zones was added. Args include a list of the added zones.
    */
   ZONES_ADDED: goog.events.getUniqueId('zones_added')
@@ -332,8 +338,8 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
    * @private
    */
   this.eventTypes_ = {
-    zoneCreate: this.getEventType('wtf.zone.create'),
-    scopeLeave: this.getEventType('wtf.scope.leave')
+    zoneCreate: this.getEventType('wtf.zone#create'),
+    scopeLeave: this.getEventType('wtf.scope#leave')
   };
 };
 goog.inherits(wtf.analysis.db.EventDatabase.Listener_,
@@ -348,6 +354,16 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.sourceAdded =
   this.db_.sources_.push(contextInfo);
   this.db_.emitEvent(wtf.analysis.db.EventDatabase.EventType.SOURCES_CHANGED);
   this.db_.invalidate_();
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.Listener_.prototype.sourceError =
+    function(message, opt_detail) {
+  this.db_.emitEvent(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
+      message, opt_detail);
 };
 
 

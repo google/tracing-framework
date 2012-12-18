@@ -24,6 +24,8 @@ goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.data.Variable');
+goog.require('wtf.data.formats.FileFlags');
+goog.require('wtf.data.formats.JsonTrace');
 
 
 
@@ -110,6 +112,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseJson_ = function(source) {
 /**
  * Parses all the events in the stream and emits them.
  * @param {!Array} source JSON list.
+ * @return {boolean} True if the source was parsed successfully.
  * @private
  */
 wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
@@ -122,7 +125,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
   var eventTable = [];
 
   // Define builtin events.
-  eventTable[-1] = listener.getEventType('wtf.scope.leave');
+  eventTable[-1] = listener.getEventType('wtf.scope#leave');
 
   var hasBegunBatch = false;
   for (var n = 0; n < source.length; n++) {
@@ -140,19 +143,26 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
       var time = entry['time'];
       var argList = entry['args'] || null;
       var eventType = eventTable[eventRef] || listener.getEventType(eventRef);
-      if (eventType) {
-        this.dispatchEvent_(eventType, time, argList);
+      if (!eventType) {
+        listener.sourceError(
+            'Undefined event type',
+            'The file tried to reference an event it didn\'t define. Perhaps ' +
+            'it\'s corrupted?');
+        return false;
       }
+      this.dispatchEvent_(eventType, time, argList);
     } else {
       switch (entry['type']) {
-        case 'wtf.json.header':
+        case 'wtf.json#header':
           if (!hasBegunBatch) {
-            this.parseHeader_(entry);
+            if (!this.parseHeader_(entry)) {
+              return false;
+            }
             listener.beginEventBatch(this.getContextInfo());
             hasBegunBatch = true;
           }
           break;
-        case 'wtf.event.define':
+        case 'wtf.event#define':
           var eventType = listener.defineEventType(
               this.parseEventType_(entry));
           var eventId = entry['event_id'];
@@ -167,11 +177,13 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
   if (hasBegunBatch) {
     listener.endEventBatch();
   }
+
+  return true;
 };
 
 
 /**
- * Parses a {@code wtf.json.header} entry and sets up the trace source.
+ * Parses a {@code wtf.json#header} entry and sets up the trace source.
  * If no entry is provided default options will be used.
  * @param {Object} entry Header entry, if any.
  * @private
@@ -181,17 +193,30 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
 
   entry = entry || {};
 
+  // Check supported version.
   var formatVersion = entry['format_version'] || 1;
+  if (formatVersion != wtf.data.formats.JsonTrace.VERSION) {
+    // TODO(benvanik): error on version mismatch
+    listener.sourceError(
+        'File version not supported or too old',
+        'Sorry, the parser for this file version is not available :(');
+  }
+
   var hasHighResolutionTimes = goog.isDef(entry['high_resolution_times']) ?
       entry['high_resolution_times'] : true;
+  var flags = 0;
+  if (hasHighResolutionTimes) {
+    flags |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
+  }
   var timebase = entry['timebase'] || 0;
+  var metadata = entry['metadata'] || {};
 
   // TODO(benvanik): embed context info.
   // TODO(benvanik): a better default context info.
   var contextInfo = new wtf.data.ScriptContextInfo();
 
   var timeDelay = listener.computeTimeDelay(timebase);
-  this.initialize(contextInfo, hasHighResolutionTimes, timebase, timeDelay);
+  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
   listener.sourceAdded(this.getTimebase(), contextInfo);
 };
 
@@ -265,19 +290,19 @@ wtf.analysis.sources.JsonTraceSource.prototype.dispatchEvent_ = function(
   if (eventType.flags & wtf.data.EventFlag.BUILTIN &&
       eventType.eventClass != wtf.data.EventClass.SCOPE) {
     switch (eventType.name) {
-      case 'wtf.zone.create':
+      case 'wtf.zone#create':
         var newZone = listener.createOrGetZone(
             args['name'], args['type'], args['location']);
         this.zoneTable_[args['zoneId']] = newZone;
         e = new wtf.analysis.ZoneEvent(
             eventType, zone, time, args, newZone);
         break;
-      case 'wtf.zone.delete':
+      case 'wtf.zone#delete':
         var deadZone = this.zoneTable_[args['zoneId']] || null;
         e = new wtf.analysis.ZoneEvent(
             eventType, zone, time, args, deadZone);
         break;
-      case 'wtf.zone.set':
+      case 'wtf.zone#set':
         this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
         break;
 
