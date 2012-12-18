@@ -370,6 +370,22 @@ wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
 
 
 /**
+ * Leaves a scope.
+ * @param {wtf.trace.Scope} scope Scope to leave.
+ * @param {T=} opt_result Optional result to chain.
+ * @param {number=} opt_time Time for the leave; omit to use the current time.
+ * @return {T|undefined} The value of the {@code opt_result} parameter.
+ * @template T
+ */
+wtf.trace.leaveScope = function(scope, opt_result, opt_time) {
+  if (scope) {
+    scope.leave(opt_result, opt_time);
+  }
+  return opt_result;
+};
+
+
+/**
  * Appends a named argument of any type to the current scope.
  * This is slow and should only be used for very infrequent appends.
  * Prefer instead to use a custom instance event with the
