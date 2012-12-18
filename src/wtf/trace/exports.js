@@ -135,6 +135,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.ignoreListener',
       wtf.trace.ignoreListener);
+  goog.exportSymbol(
+      'wtf.trace.ignoreDomTree',
+      wtf.trace.ignoreDomTree);
 
   // Instrumentation utilities
   if (!COMPILED) {

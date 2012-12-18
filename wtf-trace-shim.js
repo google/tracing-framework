@@ -349,6 +349,15 @@ wtfapi.trace.ignoreListener = wtfapi.PRESENT ?
 
 
 /**
+ * Marks an entire tree of DOM elements as being ignored, meaning that no
+ * events from them will show up in traces.
+ * @param {!Element} el Root DOM element.
+ */
+wtfapi.trace.ignoreDomTree = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['ignoreDomTree'] : goog.nullFunction;
+
+
+/**
  * Automatically instruments a method.
  * This will likely produce code slower than manually instrumenting, but is
  * much more readable.
