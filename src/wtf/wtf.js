@@ -29,7 +29,7 @@ wtf.NODE = false;
  * @type {boolean}
  */
 wtf.hasHighResolutionTimes =
-    !!(goog.global['process'] && goog.global['process']['hrtime']) ||
+    wtf.NODE ||
     !!(goog.global['performance'] && (
         goog.global['performance']['now'] ||
         goog.global['performance']['webkitNow']));
@@ -101,8 +101,13 @@ wtf.timebase = (function() {
   var timebase;
 
   if (wtf.NODE) {
-    var timeValue = goog.global['process']['hrtime']();
-    timebase = timeValue[0] * 1000 + timeValue[1] / 1000000;
+    try {
+      var microtime = require('microtime');
+      timebase = microtime['nowDouble']();
+    } catch (e) {
+      var timeValue = goog.global['process']['hrtime']();
+      timebase = timeValue[0] * 1000 + timeValue[1] / 1000000;
+    }
   } else {
     if (wtf.performanceNow_) {
       timebase = wtf.computeHighPrecissionTimebase_();
@@ -130,14 +135,19 @@ wtf.timebase = (function() {
  */
 wtf.now = (function() {
   if (wtf.NODE) {
-    // TODO(benvanik): use node-microtime if available instead?
     var timebase = wtf.timebase();
-    var hrtime = goog.global['process']['hrtime'];
-    var lastTime = hrtime();
-    return function() {
-      var timeValue = hrtime();
-      return (timeValue[0] * 1000 - timebase) + timeValue[1] / 1000000;
-    };
+    try {
+      var microtime = require('microtime');
+      return function wtfNowMicrotime() {
+        return microtime['nowDouble']() - timebase;
+      };
+    } catch (e) {
+      var hrtime = goog.global['process']['hrtime'];
+      return function wtfNowHrtime() {
+        var timeValue = hrtime();
+        return (timeValue[0] * 1000 - timebase) + timeValue[1] / 1000000;
+      };
+    }
   }
 
   // This dance is a little silly, but calling off of the closure object is
@@ -148,7 +158,7 @@ wtf.now = (function() {
   } else {
     var timebase = wtf.timebase();
     if (!Date.now) {
-      return function() {
+      return function wtfNowDate() {
         return Date.now() - timebase;
       };
     } else {

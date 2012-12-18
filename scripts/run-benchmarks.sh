@@ -10,7 +10,7 @@
 
 
 # Fast build and ensure test dependencies exist.
-./third_party/anvil-build/anvil-local.sh build :debug :release
+./third_party/anvil-build/anvil-local.sh build :wtf_node_js_compiled
 
 
 GREP="$1"
