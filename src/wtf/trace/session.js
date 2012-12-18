@@ -15,8 +15,11 @@ goog.provide('wtf.trace.Session');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.json');
 goog.require('goog.math.Long');
 goog.require('wtf');
+goog.require('wtf.data.formats.BinaryTrace');
+goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.version');
@@ -51,6 +54,13 @@ wtf.trace.Session = function(traceManager, options, defaultBufferSize) {
    * @private
    */
   this.options_ = options;
+
+  /**
+   * Metadata to be written with the session.
+   * @type {!Object}
+   * @private
+   */
+  this.metadata_ = {};
 
   /**
    * Maximum memory usage, in bytes.
@@ -97,14 +107,6 @@ goog.inherits(wtf.trace.Session, goog.Disposable);
 
 
 /**
- * Wire format version.
- * @const
- * @type {number}
- */
-wtf.trace.Session.FORMAT_VERSION = 2;
-
-
-/**
  * Default maximum memory usage.
  * @const
  * @type {number}
@@ -139,6 +141,17 @@ wtf.trace.Session.prototype.getOptions = function() {
 
 
 /**
+ * Gets a modifiable metadata object.
+ * Any properties set on the returned object will be serialized in the trace
+ * file header.
+ * @return {!Object} Metadata.
+ */
+wtf.trace.Session.prototype.getMetadata = function() {
+  return this.metadata_;
+};
+
+
+/**
  * Starts a recording session.
  * Events will start recording and be directed through to the targets (depending
  * on the active mode).
@@ -168,7 +181,7 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
 
   // Write version information.
   buffer.writeUint32(wtf.version.getBuild());
-  buffer.writeUint32(wtf.trace.Session.FORMAT_VERSION);
+  buffer.writeUint32(wtf.data.formats.BinaryTrace.VERSION);
 
   // Write context information.
   var contextInfo = this.traceManager_.detectContextInfo();
@@ -177,11 +190,19 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
   }
 
   // Write time information.
-  buffer.writeUint8(wtf.hasHighResolutionTimes ? 1 : 0);
+  var flags = 0;
+  if (wtf.hasHighResolutionTimes) {
+    flags |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
+  }
+  buffer.writeUint32(flags);
   var timebase = wtf.timebase();
   var longTimebase = goog.math.Long.fromNumber(timebase);
   buffer.writeUint32(longTimebase.getLowBits());
   buffer.writeUint32(longTimebase.getHighBits());
+
+  // Write metadata.
+  var metadataString = goog.json.serialize(this.metadata_);
+  buffer.writeUtf8String(metadataString);
 
   // Write event info.
   if (!this.traceManager_.writeEventHeader(buffer)) {
@@ -268,7 +289,7 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
     // of nasty state tracking.
     var zone = this.traceManager_.getCurrentZone();
     if (zone) {
-      wtf.trace.BuiltinEvents.setZone(time, zone.id, buffer);
+      wtf.trace.BuiltinEvents.setZone(zone.id, time, buffer);
     }
 
     // Ignore if size can't fit in the buffer.

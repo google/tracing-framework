@@ -49,10 +49,10 @@ wtf.app.ui.nav.HeatmapPainter = function(canvas, db) {
 
   // TODO(benvanik): pull from profile
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'scopes', [
-    'wtf.scope.leave'
+    'wtf.scope#leave'
   ]));
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'branches', [
-    'wtf.flow.branch'
+    'wtf.flow#branch'
   ]));
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'GCs', [
     'javascript#gc'

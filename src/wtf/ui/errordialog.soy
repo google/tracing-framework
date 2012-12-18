@@ -1,0 +1,39 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Error dialog DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.ui.errordialog}
+
+
+/**
+ * Root control UI.
+ * @param message Error message.
+ * @param detail Detailed information.
+ */
+{template .control}
+  <div class="{css wtfUiErrorDialog}">
+    <div class="{css kDialogHeader}">
+      <div class="{css kDialogHeaderButtons}">
+        <a class="{css kButton} {css wtfUiErrorDialogButtonClose}">OK</a>
+      </div>
+      <h1>Error</h1>
+    </div>
+    <div class="{css kDialogContent} {css wtfUiErrorDialogContents}">
+      <div class="{css wtfUiErrorDialogMessage}">{$message}</div>
+      <div class="{css wtfUiErrorDialogDetails}">{$detail}</div>
+    </div>
+    <div class="{css kDialogFooter}">
+      <a href="https://github.com/google/tracing-framework/" target="_blank">tracing-framework github</a>,&nbsp;
+      <a href="https://github.com/google/tracing-framework/issues" target="_blank">issues</a>
+    </div>
+  </div>
+{/template}

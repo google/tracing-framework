@@ -123,6 +123,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.mark',
       wtf.trace.mark);
+  goog.exportSymbol(
+      'wtf.trace.timeStamp',
+      wtf.trace.timeStamp);
 
   // wtf.trace utilities
   goog.exportSymbol(

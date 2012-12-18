@@ -41,30 +41,30 @@ function runTool(platform, args) {
       util.logContextInfo(contextInfo);
     },
 
-    'wtf.discontinuity': function(e) {
+    'wtf.trace#discontinuity': function(e) {
       util.logEvent(e);
     },
 
-    'wtf.scope.enter': function(e) {
+    'wtf.scope#enter': function(e) {
       var scopeId = e.scope ? e.scope.getId() : null;
       util.logEvent(e, scopeId, e.args);
     },
-    'wtf.scope.leave': function(e) {
+    'wtf.scope#leave': function(e) {
       var scopeId = e.scope ? e.scope.getId() : null;
       util.logEvent(e, scopeId);
     },
 
-    'wtf.flow.branch': function(e) {
+    'wtf.flow#branch': function(e) {
       util.logEvent(e, e.flow.getId(), e.args);
     },
-    'wtf.flow.extend': function(e) {
+    'wtf.flow#extend': function(e) {
       util.logEvent(e, e.flow.getId(), e.args);
     },
-    'wtf.flow.terminate': function(e) {
+    'wtf.flow#terminate': function(e) {
       util.logEvent(e, e.flow.getId(), e.args);
     },
 
-    'wtf.mark': function(e) {
+    'wtf.trace#mark': function(e) {
       util.logEvent(e, undefined, e.args);
     },
 

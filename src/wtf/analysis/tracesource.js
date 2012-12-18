@@ -15,6 +15,7 @@ goog.provide('wtf.analysis.TraceSource');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('wtf.data.formats.FileFlags');
 
 
 
@@ -58,11 +59,19 @@ wtf.analysis.TraceSource = function(traceListener) {
   this.contextInfo_ = null;
 
   /**
-   * Whether the trace times are high resolution.
-   * @type {boolean}
+   * File header flags.
+   * A bitmask of {@see wtf.data.formats.FileFlags} values.
+   * @type {number}
    * @private
    */
-  this.hasHighResolutionTimes_ = false;
+  this.flags_ = 0;
+
+  /**
+   * File metadata.
+   * @type {!Object}
+   * @private
+   */
+  this.metadata_ = {};
 
   /**
    * Base wall-time for all relative times in the trace.
@@ -105,12 +114,30 @@ wtf.analysis.TraceSource.prototype.getContextInfo = function() {
 
 
 /**
+ * Gets file header flags.
+ * @return {number} A bitmask of {@see wtf.data.formats.FileFlags} values.
+ */
+wtf.analysis.TraceSource.prototype.getFlags = function() {
+  return this.flags_;
+};
+
+
+/**
  * Gets a value indicating whether times in the trace are high resolution.
  * @return {boolean} True if the times are high resolution.
  */
 wtf.analysis.TraceSource.prototype.hasHighResolutionTimes = function() {
   goog.asserts.assert(this.isInitialized_);
-  return this.hasHighResolutionTimes_;
+  return !!(this.flags_ & wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES);
+};
+
+
+/**
+ * Gets embedded file metadata.
+ * @return {!Object} Metadata.
+ */
+wtf.analysis.TraceSource.prototype.getMetadata = function() {
+  return this.metadata_;
 };
 
 
@@ -140,18 +167,20 @@ wtf.analysis.TraceSource.prototype.getTimeDelay = function() {
  * been read. It must be called before any other events are dispatched to
  * the trace source.
  * @param {!wtf.data.ContextInfo} contextInfo Context information.
- * @param {boolean} hasHighResolutionTimes Whether times are high-resolution.
+ * @param {number} flags A bitmask of {@see wtf.data.formats.FileFlags} values.
+ * @param {!Object} metadata File metadata.
  * @param {number} timebase Time base for all time values read.
  * @param {number} timeDelay Estimated time delay.
  * @protected
  */
 wtf.analysis.TraceSource.prototype.initialize = function(
-    contextInfo, hasHighResolutionTimes, timebase, timeDelay) {
+    contextInfo, flags, metadata, timebase, timeDelay) {
   goog.asserts.assert(!this.isInitialized_);
   this.isInitialized_ = true;
 
   this.contextInfo_ = contextInfo;
-  this.hasHighResolutionTimes_ = hasHighResolutionTimes;
+  this.flags_ = flags;
+  this.metadata_ = metadata;
   this.timebase_ = timebase;
   this.timeDelay_ = timeDelay;
 };

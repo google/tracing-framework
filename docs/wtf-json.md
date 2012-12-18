@@ -47,7 +47,7 @@ merge trace files together. If the header is omitted the default values below
 are used.
 
     {
-      "type": "wtf.json.header",
+      "type": "wtf.json#header",
       "format_version": 1,
       "high_resolution_times": true,
       "timebase": 0
@@ -71,7 +71,7 @@ To decrease filesize it's possible to assign an `event_id` that will be
 referenced instead of the event name. This is optional.
 
     {
-      "type": "wtf.event.define",
+      "type": "wtf.event#define",
       "signature": "my.custom#event(uint32 foo)"
       "class": "scope",
       "flags": 0,
@@ -81,7 +81,7 @@ referenced instead of the event name. This is optional.
 The minimal possible definition for a scope event:
 
     {
-      "type": "wtf.event.define",
+      "type": "wtf.event#define",
       "signature": "my.custom#event(uint32 foo)"
     }
 
@@ -120,7 +120,7 @@ TODO(benvanik): context info
 TODO(benvanik): support zones with some sugar
 
       {
-        "event": "wtf.zone.create",
+        "event": "wtf.zone#create",
         "time": 0,
         "args": [
           1000,         <-- ID
@@ -130,7 +130,7 @@ TODO(benvanik): support zones with some sugar
         ]
       },
       {
-        "event": "wtf.zone.set",
+        "event": "wtf.zone#set",
         "time": 0,
         "args": [
           1000          <-- ID
@@ -146,13 +146,13 @@ TODO(benvanik): support flows
 To help reduce the file length, certain system events are built in to the
 format.
 
-### wtf.scope.leave
+### wtf.scope#leave
 
 Leaves a scope event. This is implicitly defined as:
 
     {
-      "type": "wtf.event.define",
-      "signature": "wtf.scope.leave",
+      "type": "wtf.event#define",
+      "signature": "wtf.scope#leave",
       "event_id": -1
     }
 
@@ -169,7 +169,7 @@ Smallest possible file:
 
     [
       {
-        "type": "wtf.event.define",
+        "type": "wtf.event#define",
         "signature": "my.custom#event",
         "class": "instance"
       },
@@ -187,16 +187,16 @@ Efficient file:
 
     [
       {
-        "type": "wtf.json.header",
+        "type": "wtf.json#header",
         "timebase": 123450000
       },
       {
-        "type": "wtf.event.define",
+        "type": "wtf.event#define",
         "signature": "my.custom#scopeEvent",
         "event_id": 1
       },
       {
-        "type": "wtf.event.define",
+        "type": "wtf.event#define",
         "signature": "my.custom#instanceEvent",
         "event_id": 2
       },

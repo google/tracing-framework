@@ -17,6 +17,7 @@ goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
+goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.EmptyTabPanel');
 goog.require('wtf.app.ui.Selection');
 goog.require('wtf.app.ui.Statusbar');
@@ -29,6 +30,7 @@ goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
+goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.zoom.Viewport');
 
@@ -142,6 +144,13 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   keyboardScope.addShortcut('ctrl+a', function() {
     commandManager.execute('select_all', this, null);
   });
+
+  var db = doc.getDatabase();
+  db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
+      function(message, opt_detail) {
+        goog.global.console.log(message, opt_detail);
+        wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
+      }, this);
 };
 goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
 

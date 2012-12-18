@@ -26,6 +26,8 @@ goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.data.formats.BinaryTrace');
+goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.io.EventType');
 
 
@@ -70,7 +72,7 @@ wtf.analysis.sources.BinaryTraceSource = function(traceListener, readStream) {
   this.eventTable_ = [];
 
   // Always add 'defineEvent'.
-  this.eventTable_[1] = traceListener.getEventType('wtf.event.define');
+  this.eventTable_[1] = traceListener.getEventType('wtf.event#define');
 
   /**
    * All seen zones, indexed by zone ID.
@@ -151,6 +153,10 @@ wtf.analysis.sources.BinaryTraceSource.prototype.processBuffer_ =
     var eventType = this.eventTable_[eventWireId];
     if (!eventType) {
       successful = false;
+      this.traceListener.sourceError(
+          'Undefined event type',
+          'The file tried to reference an event it didn\'t define. Perhaps ' +
+          'it\'s corrupted?');
       break;
     }
 
@@ -168,14 +174,6 @@ wtf.analysis.sources.BinaryTraceSource.prototype.processBuffer_ =
 
 
 /**
- * Wire format version.
- * @const
- * @type {number}
- */
-wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION = 2;
-
-
-/**
  * Reads a trace header from a buffer.
  * @param {!wtf.io.Buffer} buffer Source buffer.
  * @return {boolean} True if the read succeeded.
@@ -187,7 +185,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   var magicNumber = buffer.readUint32();
   if (magicNumber != 0xDEADBEEF) {
     // Magic number mismatch.
-    goog.asserts.fail('Magic number mismatch');
+    this.traceListener.sourceError(
+        'File type not supported or corrupt',
+        'The header of the file doesn\'t match the expected value.');
     return false;
   }
 
@@ -195,11 +195,12 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   // wtf.version.getBuild()
   // We don't actually need these to match.
   var wtfVersion = buffer.readUint32();
-  // wtf.trace.Session.FORMAT_VERSION
   var formatVersion = buffer.readUint32();
-  if (formatVersion != wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION) {
+  if (formatVersion != wtf.data.formats.BinaryTrace.VERSION) {
     // Format version mismatch.
-    goog.asserts.fail('Format version mismatch');
+    this.traceListener.sourceError(
+        'File version not supported or too old',
+        'Sorry, the parser for this file version is not available :(');
     return false;
   }
 
@@ -207,20 +208,30 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   var contextInfo = wtf.data.ContextInfo.parse(buffer);
   if (!contextInfo) {
     // Bad context info or unknown context.
-    goog.asserts.fail('Bad context information');
+    this.traceListener.sourceError(
+        'Invalid context information');
     return false;
   }
 
-  // Read time information.
-  var hasHighResolutionTimes = buffer.readUint8() ? true : false;
+  // Read flags information.
+  var flags = buffer.readUint32();
+  var hasHighResolutionTimes =
+      !!(flags & wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES);
   var longTimebase = goog.math.Long.fromBits(
       buffer.readUint32(), buffer.readUint32());
   var timebase = longTimebase.toNumber();
   var timeDelay = this.traceListener.computeTimeDelay(timebase);
 
+  // Read metadata blob.
+  var metadataString = buffer.readUtf8String();
+  var metadata = metadataString ? goog.global.JSON.parse(metadataString) : {};
+  if (!goog.isObject(metadata)) {
+    metadata = {};
+  }
+
   // Initialize the trace source.
   // Only call when all other parsing has been successful.
-  this.initialize(contextInfo, hasHighResolutionTimes, timebase, timeDelay);
+  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
 
   return true;
 };
@@ -252,29 +263,29 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   if (eventType.flags & wtf.data.EventFlag.BUILTIN &&
       eventType.eventClass != wtf.data.EventClass.SCOPE) {
     switch (eventType.name) {
-      case 'wtf.event.define':
+      case 'wtf.event#define':
         var newEventType = listener.defineEventType(
             wtf.analysis.EventType.parse(args));
         this.eventTable_[args['wireId']] = newEventType;
         break;
 
-      case 'wtf.zone.create':
+      case 'wtf.zone#create':
         var newZone = listener.createOrGetZone(
             args['name'], args['type'], args['location']);
         this.zoneTable_[args['zoneId']] = newZone;
         e = new wtf.analysis.ZoneEvent(
             eventType, zone, time, args, newZone);
         break;
-      case 'wtf.zone.delete':
+      case 'wtf.zone#delete':
         var deadZone = this.zoneTable_[args['zoneId']] || null;
         e = new wtf.analysis.ZoneEvent(
             eventType, zone, time, args, deadZone);
         break;
-      case 'wtf.zone.set':
+      case 'wtf.zone#set':
         this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
         break;
 
-      case 'wtf.flow.branch':
+      case 'wtf.flow#branch':
         var parentFlowId = args['parentId'];
         var parentFlow = parentFlowId ? this.flowTable_[parentFlowId] : null;
         var flowId = args['id'];
@@ -284,7 +295,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
             eventType, zone, time, args, flow);
         flow.setBranchEvent(e);
         break;
-      case 'wtf.flow.extend':
+      case 'wtf.flow#extend':
         var flowId = args['id'];
         var flow = this.flowTable_[flowId];
         if (!flow) {
@@ -295,7 +306,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
             eventType, zone, time, args, flow);
         flow.setExtendEvent(e);
         break;
-      case 'wtf.flow.terminate':
+      case 'wtf.flow#terminate':
         var flowId = args['id'];
         var flow = this.flowTable_[flowId];
         if (!flow) {

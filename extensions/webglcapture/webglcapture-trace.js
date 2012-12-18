@@ -73,7 +73,6 @@ function setCurrentContext(ctx) {
     currentContextWidth = ctx.drawingBufferWidth;
     currentContextHeight = ctx.drawingBufferHeight;
     setContextEvent(
-        wtf.now(),
         getHandle(ctx),
         ctx.drawingBufferWidth, ctx.drawingBufferHeight);
   }
@@ -100,7 +99,7 @@ function instrumentContext(raw) {
   instrumentMethod('activeTexture(uint32 texture)');
   instrumentMethod('attachShader(uint32 program, uint32 shader)', function(fn, eventType) {
     return function attachShader(program, shader) {
-      var scope = eventType(wtf.now(), null, getHandle(program), getHandle(shader));
+      var scope = eventType(getHandle(program), getHandle(shader));
       fn.call(this, program, shader);
       scope.leave();
     };
@@ -108,7 +107,7 @@ function instrumentContext(raw) {
   instrumentMethod('bindAttribLocation(uint32 program, uint32 index, utf8 name)', function(fn, eventType) {
     return function bindAttribLocation(program, index, name) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program), index, name);
+      var scope = eventType(getHandle(program), index, name);
       fn.call(this, program, index, name);
       scope.leave();
     };
@@ -116,7 +115,7 @@ function instrumentContext(raw) {
   instrumentMethod('bindBuffer(uint32 target, uint32 buffer)', function(fn, eventType) {
     return function bindBuffer(target, buffer) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, target, getHandle(buffer));
+      var scope = eventType(target, getHandle(buffer));
       fn.call(this, target, buffer);
       scope.leave();
     };
@@ -124,7 +123,7 @@ function instrumentContext(raw) {
   instrumentMethod('bindFramebuffer(uint32 target, uint32 framebuffer)', function(fn, eventType) {
     return function bindFramebuffer(target, framebuffer) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, target, getHandle(framebuffer));
+      var scope = eventType(target, getHandle(framebuffer));
       fn.call(this, target, framebuffer);
       scope.leave();
     };
@@ -132,7 +131,7 @@ function instrumentContext(raw) {
   instrumentMethod('bindRenderbuffer(uint32 target, uint32 renderbuffer)', function(fn, eventType) {
     return function bindRenderbuffer(target, renderbuffer) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, target, getHandle(renderbuffer));
+      var scope = eventType(target, getHandle(renderbuffer));
       fn.call(this, target, renderbuffer);
       scope.leave();
     };
@@ -140,7 +139,7 @@ function instrumentContext(raw) {
   instrumentMethod('bindTexture(uint32 target, uint32 texture)', function(fn, eventType) {
     return function bindTexture(target, texture) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, target, getHandle(texture));
+      var scope = eventType(target, getHandle(texture));
       fn.call(this, target, texture);
       scope.leave();
     };
@@ -154,7 +153,7 @@ function instrumentContext(raw) {
     return function bufferData(target, data, usage) {
       setCurrentContext(this);
       if (typeof data == 'number') {
-        var scope = eventType(wtf.now(), null, target, data, usage, []);
+        var scope = eventType(target, data, usage, []);
         fn.call(this, target, data, usage);
         scope.leave();
       } else {
@@ -164,7 +163,7 @@ function instrumentContext(raw) {
           data = new Uint8Array(data.buffer);
         }
         var wrapper = new Uint8Array(data.buffer);
-        var scope = eventType(wtf.now(), null, target, data.length, usage, data);
+        var scope = eventType(target, data.length, usage, data);
         fn.call(this, target, data, usage);
         scope.leave();
       }
@@ -178,7 +177,7 @@ function instrumentContext(raw) {
       } else if (!(data instanceof Uint8Array)) {
         data = new Uint8Array(data.buffer);
       }
-      var scope = eventType(wtf.now(), null, target, offset, data);
+      var scope = eventType(target, offset, data);
       fn.call(this, target, offset, data);
       scope.leave();
     };
@@ -192,7 +191,7 @@ function instrumentContext(raw) {
   instrumentMethod('compileShader(uint32 shader)', function(fn, eventType) {
     return function compileShader(shader) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(shader));
+      var scope = eventType(getHandle(shader));
       fn.call(this, shader);
       scope.leave();
     };
@@ -209,9 +208,9 @@ function instrumentContext(raw) {
         setCurrentContext(this);
         var id = nextObjectId++;
         if (opt_arg) {
-          eventType(wtf.now(), null, arg, id).leave();
+          eventType(arg, id).leave();
         } else {
-          eventType(wtf.now(), null, id).leave();
+          eventType(id).leave();
         }
         var obj = fn.call(this, opt_arg ? arg : undefined);
         if (obj) {
@@ -233,7 +232,7 @@ function instrumentContext(raw) {
     instrumentMethod(signature, function(fn, eventType) {
       return function(value) {
         setCurrentContext(this);
-        var scope = eventType(wtf.now(), null, getHandle(value));
+        var scope = eventType(getHandle(value));
         fn.call(this, value);
         scope.leave();
       };
@@ -251,7 +250,7 @@ function instrumentContext(raw) {
   instrumentMethod('detachShader(uint32 program, uint32 shader)', function(fn, eventType) {
     return function detachShader(program, shader) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program), getHandle(shader));
+      var scope = eventType(getHandle(program), getHandle(shader));
       fn.call(this, program, shader);
       scope.leave();
     };
@@ -267,7 +266,7 @@ function instrumentContext(raw) {
   instrumentMethod('framebufferRenderbuffer(uint32 target, uint32 attachment, uint32 renderbuffertarget, uint32 renderbuffer)', function(fn, eventType) {
     return function framebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, target, attachment, renderbuffertarget, getHandle(renderbuffer));
+      var scope = eventType(target, attachment, renderbuffertarget, getHandle(renderbuffer));
       fn.call(this, target, attachment, renderbuffertarget, renderbuffer);
       scope.leave();
     };
@@ -275,7 +274,7 @@ function instrumentContext(raw) {
   instrumentMethod('framebufferTexture2D(uint32 target, uint32 attachment, uint32 textarget, uint32 texture, int32 level)', function(fn, eventType) {
     return function framebufferTexture2D(target, attachment, textarget, texture, level) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, target, attachment, textarget, getHandle(texture), level);
+      var scope = eventType(target, attachment, textarget, getHandle(texture), level);
       fn.call(this, target, attachment, textarget, texture, level);
       scope.leave();
     };
@@ -285,21 +284,21 @@ function instrumentContext(raw) {
   instrumentMethod('getActiveAttrib(uint32 program, uint32 index)', function(fn, eventType) {
     return function getActiveAttrib(program, index) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program), index);
+      var scope = eventType(getHandle(program), index);
       return scope.leave(fn.call(this, program, index));
     };
   });
   instrumentMethod('getActiveUniform(uint32 program, uint32 index)', function(fn, eventType) {
     return function getActiveUniform(program, index) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program), index);
+      var scope = eventType(getHandle(program), index);
       return scope.leave(fn.call(this, program, index));
     };
   });
   instrumentMethod('getAttachedShaders(uint32 program)', function(fn, eventType) {
     return function getAttachedShaders(program) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program));
+      var scope = eventType(getHandle(program));
       return scope.leave(fn.call(this, program));
     };
   });
@@ -307,7 +306,7 @@ function instrumentContext(raw) {
     return function getAttribLocation(program, name) {
       setCurrentContext(this);
       // TODO(benvanik): record result and build mapping table
-      var scope = eventType(wtf.now(), null, getHandle(program), name);
+      var scope = eventType(getHandle(program), name);
       return scope.leave(fn.call(this, program, name));
     };
   });
@@ -318,14 +317,14 @@ function instrumentContext(raw) {
   instrumentMethod('getProgramParameter(uint32 program, uint32 pname)', function(fn, eventType) {
     return function getProgramParameter(program, pname) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program), pname);
+      var scope = eventType(getHandle(program), pname);
       return scope.leave(fn.call(this, program, pname));
     };
   });
   instrumentMethod('getProgramInfoLog(uint32 program)', function(fn, eventType) {
     return function getProgramInfoLog(program) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program));
+      var scope = eventType(getHandle(program));
       return scope.leave(fn.call(this, program));
     };
   });
@@ -333,7 +332,7 @@ function instrumentContext(raw) {
   instrumentMethod('getShaderParameter(uint32 shader, uint32 pname)', function(fn, eventType) {
     return function getShaderParameter(shader, pname) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(shader), pname);
+      var scope = eventType(getHandle(shader), pname);
       return scope.leave(fn.call(this, shader, pname));
     };
   });
@@ -341,14 +340,14 @@ function instrumentContext(raw) {
   instrumentMethod('getShaderInfoLog(uint32 shader)', function(fn, eventType) {
     return function getShaderInfoLog(shader) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(shader));
+      var scope = eventType(getHandle(shader));
       return scope.leave(fn.call(this, shader));
     };
   });
   instrumentMethod('getShaderSource(uint32 shader)', function(fn, eventType) {
     return function getShaderSource(shader) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(shader));
+      var scope = eventType(getHandle(shader));
       return scope.leave(fn.call(this, shader));
     };
   });
@@ -360,7 +359,7 @@ function instrumentContext(raw) {
       // TODO(benvanik): better tracking mechanism/string table/etc, as an app
       //     calling this each frame will quickly eat up IDs
       var id = nextObjectId++;
-      var scope = eventType(wtf.now(), null, getHandle(program), name, id);
+      var scope = eventType(getHandle(program), name, id);
       var obj = fn.call(this, program, name);
       if (obj) {
         setHandle(obj, id);
@@ -379,9 +378,9 @@ function instrumentContext(raw) {
         setCurrentContext(this);
         var scope;
         if (value && getHandle(value)) {
-          scope = eventType(wtf.now(), null, getHandle(value));
+          scope = eventType(getHandle(value));
         } else {
-          scope = eventType(wtf.now(), null, 0);
+          scope = eventType(0);
         }
         return scope.leave(fn.call(this, value));
       };
@@ -397,7 +396,7 @@ function instrumentContext(raw) {
   instrumentMethod('linkProgram(uint32 program)', function(fn, eventType) {
     return function linkProgram(program) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program));
+      var scope = eventType(getHandle(program));
       fn.call(this, program);
       scope.leave();
     };
@@ -411,7 +410,7 @@ function instrumentContext(raw) {
   instrumentMethod('shaderSource(uint32 shader, utf8 source)', function(fn, eventType) {
     return function shaderSource(shader, source) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(shader), source);
+      var scope = eventType(getHandle(shader), source);
       fn.call(this, shader, source);
       scope.leave();
     };
@@ -547,17 +546,16 @@ function instrumentContext(raw) {
       if (arguments.length == 9) {
         // Pixels variant.
         if (arguments[8]) {
-          scope = eventType(wtf.now(), null, target, level, internalformat, arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], arguments[8], 'pixels');
+          scope = eventType(target, level, internalformat, arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], arguments[8], 'pixels');
         } else {
-          scope = eventType(wtf.now(), null, target, level, internalformat, arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], [], 'null');
+          scope = eventType(target, level, internalformat, arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], [], 'null');
         }
       } else {
         // DOM element variant.
-        var traceScope = wtf.trace.enterTracingScope(wtf.now());
+        var traceScope = wtf.trace.enterTracingScope();
         var imageData = extractImageData(arguments[5], internalformat);
         traceScope.leave();
         scope = eventType(
-            wtf.now(), null,
             target,
             level,
             internalformat,
@@ -584,17 +582,16 @@ function instrumentContext(raw) {
       if (arguments.length == 9) {
         // Pixels variant.
         if (arguments[8]) {
-          scope = eventType(wtf.now(), null, target, level, xoffset, yoffset, arguments[4], arguments[5], arguments[6], arguments[7], arguments[8], 'pixels');
+          scope = eventType(target, level, xoffset, yoffset, arguments[4], arguments[5], arguments[6], arguments[7], arguments[8], 'pixels');
         } else {
-          scope = eventType(wtf.now(), null, target, level, xoffset, yoffset, arguments[4], arguments[5], arguments[6], arguments[7], [], 'null');
+          scope = eventType(target, level, xoffset, yoffset, arguments[4], arguments[5], arguments[6], arguments[7], [], 'null');
         }
       } else {
         // DOM element variant.
-        var traceScope = wtf.trace.enterTracingScope(wtf.now());
+        var traceScope = wtf.trace.enterTracingScope();
         var imageData = extractImageData(arguments[6], arguments[4]);
         traceScope.leave();
         scope = eventType(
-            wtf.now(), null,
             target,
             level,
             xoffset, yoffset,
@@ -623,7 +620,7 @@ function instrumentContext(raw) {
         instrumentMethod(signature, function(fn, eventType) {
           return function(location, x) {
             setCurrentContext(this);
-            var scope = eventType(wtf.now(), null, getHandle(location), x);
+            var scope = eventType(getHandle(location), x);
             fn.call(this, location, x);
             scope.leave();
           };
@@ -633,7 +630,7 @@ function instrumentContext(raw) {
         instrumentMethod(signature, function(fn, eventType) {
           return function(location, x, y) {
             setCurrentContext(this);
-            var scope = eventType(wtf.now(), null, getHandle(location), x, y);
+            var scope = eventType(getHandle(location), x, y);
             fn.call(this, location, x, y);
             scope.leave();
           };
@@ -643,7 +640,7 @@ function instrumentContext(raw) {
         instrumentMethod(signature, function(fn, eventType) {
           return function(location, x, y, z) {
             setCurrentContext(this);
-            var scope = eventType(wtf.now(), null, getHandle(location), x, y, z);
+            var scope = eventType(getHandle(location), x, y, z);
             fn.call(this, location, x, y, z);
             scope.leave();
           };
@@ -653,7 +650,7 @@ function instrumentContext(raw) {
         instrumentMethod(signature, function(fn, eventType) {
           return function(location, x, y, z, w) {
             setCurrentContext(this);
-            var scope = eventType(wtf.now(), null, getHandle(location), x, y, z, w);
+            var scope = eventType(getHandle(location), x, y, z, w);
             fn.call(this, location, x, y, z, w);
             scope.leave();
           };
@@ -666,7 +663,7 @@ function instrumentContext(raw) {
     instrumentMethod(signature, function(fn, eventType) {
       return function(location, v) {
         setCurrentContext(this);
-        var scope = eventType(wtf.now(), null, getHandle(location), v);
+        var scope = eventType(getHandle(location), v);
         fn.call(this, location, v);
         scope.leave();
       };
@@ -677,7 +674,7 @@ function instrumentContext(raw) {
     instrumentMethod(signature, function(fn, eventType) {
       return function(location, transpose, v) {
         setCurrentContext(this);
-        var scope = eventType(wtf.now(), null, getHandle(location), transpose, v);
+        var scope = eventType(getHandle(location), transpose, v);
         fn.call(this, location, transpose, v);
         scope.leave();
       };
@@ -705,7 +702,7 @@ function instrumentContext(raw) {
   instrumentMethod('useProgram(uint32 program)', function(fn, eventType) {
     return function useProgram(program) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program));
+      var scope = eventType(getHandle(program));
       fn.call(this, program);
       scope.leave();
     };
@@ -713,7 +710,7 @@ function instrumentContext(raw) {
   instrumentMethod('validateProgram(uint32 program)', function(fn, eventType) {
     return function validateProgram(program) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, getHandle(program));
+      var scope = eventType(getHandle(program));
       fn.call(this, program);
       scope.leave();
     };
@@ -722,7 +719,7 @@ function instrumentContext(raw) {
   instrumentMethod('vertexAttrib1fv(uint8 indx, float x)', function(fn, eventType) {
     return function vertexAttrib4fv(indx, values) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, values[0]);
+      var scope = eventType(values[0]);
       fn.call(this, indx, values);
       scope.leave();
     };
@@ -731,7 +728,7 @@ function instrumentContext(raw) {
   instrumentMethod('vertexAttrib2fv(uint8 indx, float x, float y)', function(fn, eventType) {
     return function vertexAttrib4fv(indx, values) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null, values[0], values[1]);
+      var scope = eventType(values[0], values[1]);
       fn.call(this, indx, values);
       scope.leave();
     };
@@ -740,8 +737,7 @@ function instrumentContext(raw) {
   instrumentMethod('vertexAttrib3fv(uint8 indx, float x, float y, float z)', function(fn, eventType) {
     return function vertexAttrib3fv(indx, values) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null,
-          values[0], values[1], values[2]);
+      var scope = eventType(values[0], values[1], values[2]);
       fn.call(this, indx, values);
       scope.leave();
     };
@@ -750,8 +746,7 @@ function instrumentContext(raw) {
   instrumentMethod('vertexAttrib4fv(uint8 indx, float x, float y, float z, float w)', function(fn, eventType) {
     return function vertexAttrib4fv(indx, values) {
       setCurrentContext(this);
-      var scope = eventType(wtf.now(), null,
-          values[0], values[1], values[2], values[3]);
+      var scope = eventType(values[0], values[1], values[2], values[3]);
       fn.call(this, indx, values);
       scope.leave();
     };
@@ -778,7 +773,7 @@ HTMLCanvasElement.prototype.getContext = function getContext(name, opt_attrs) {
     return originalGetContext.call(this, name, opt_attrs);
   }
 
-  var scope = getContextEvent(wtf.now(), null);
+  var scope = getContextEvent();
   var context = originalGetContext.apply(this, arguments);
   if (name == 'experimental-webgl' &&
       allGlContexts.indexOf(context) == -1) {
@@ -786,7 +781,6 @@ HTMLCanvasElement.prototype.getContext = function getContext(name, opt_attrs) {
     nextContextId++;
     setHandle(context, nextContextId);
     createContextEvent(
-        wtf.now(),
         nextContextId,
         JSON.stringify(opt_attrs || {}));
   }
