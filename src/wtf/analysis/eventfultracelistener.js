@@ -45,6 +45,16 @@ wtf.analysis.EventfulTraceListener.prototype.sourceAdded = function(
 /**
  * @override
  */
+wtf.analysis.EventfulTraceListener.prototype.sourceError = function(
+    message, opt_detail) {
+  this.emitEvent(wtf.analysis.EventfulTraceListener.EventType.SOURCE_ERROR,
+      message, opt_detail);
+};
+
+
+/**
+ * @override
+ */
 wtf.analysis.EventfulTraceListener.prototype.traceEvent = function(e) {
   if (!(e.eventType.flags & wtf.data.EventFlag.BUILTIN)) {
     this.emitEvent(wtf.analysis.EventfulTraceListener.EventType.CUSTOM, e);
@@ -62,6 +72,11 @@ wtf.analysis.EventfulTraceListener.EventType = {
    * Args: [timebase, wtf.data.ContextInfo]
    */
   SOURCE_ADDED: 'sourceAdded',
+
+  /**
+   * Args: [message, opt_detail]
+   */
+  SOURCE_ERROR: 'sourceError',
 
   /**
    * Args: [wtf.analysis.Event]

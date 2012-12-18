@@ -1,0 +1,32 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Error dialog CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.wtfUiErrorDialog {
+  width: 400px;
+  height: 300px;
+}
+
+.wtfUiErrorDialogButtonClose {
+}
+
+.wtfUiErrorDialogContents {
+  @mixin allowSelect();
+}
+.wtfUiErrorDialogMessage {
+  font-weight: bold;
+  padding-bottom: 5px;
+  @mixin allowSelect();
+}
+.wtfUiErrorDialogDetails {
+  @mixin allowSelect();
+}

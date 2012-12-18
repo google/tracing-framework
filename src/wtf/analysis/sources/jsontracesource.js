@@ -112,6 +112,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseJson_ = function(source) {
 /**
  * Parses all the events in the stream and emits them.
  * @param {!Array} source JSON list.
+ * @return {boolean} True if the source was parsed successfully.
  * @private
  */
 wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
@@ -142,14 +143,21 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
       var time = entry['time'];
       var argList = entry['args'] || null;
       var eventType = eventTable[eventRef] || listener.getEventType(eventRef);
-      if (eventType) {
-        this.dispatchEvent_(eventType, time, argList);
+      if (!eventType) {
+        listener.sourceError(
+            'Undefined event type',
+            'The file tried to reference an event it didn\'t define. Perhaps ' +
+            'it\'s corrupted?');
+        return false;
       }
+      this.dispatchEvent_(eventType, time, argList);
     } else {
       switch (entry['type']) {
         case 'wtf.json#header':
           if (!hasBegunBatch) {
-            this.parseHeader_(entry);
+            if (!this.parseHeader_(entry)) {
+              return false;
+            }
             listener.beginEventBatch(this.getContextInfo());
             hasBegunBatch = true;
           }
@@ -169,6 +177,8 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
   if (hasBegunBatch) {
     listener.endEventBatch();
   }
+
+  return true;
 };
 
 
@@ -187,7 +197,9 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
   var formatVersion = entry['format_version'] || 1;
   if (formatVersion != wtf.data.formats.JsonTrace.VERSION) {
     // TODO(benvanik): error on version mismatch
-    goog.asserts.fail('File format mismatch');
+    listener.sourceError(
+        'File version not supported or too old',
+        'Sorry, the parser for this file version is not available :(');
   }
 
   var hasHighResolutionTimes = goog.isDef(entry['high_resolution_times']) ?

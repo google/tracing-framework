@@ -153,6 +153,10 @@ wtf.analysis.sources.BinaryTraceSource.prototype.processBuffer_ =
     var eventType = this.eventTable_[eventWireId];
     if (!eventType) {
       successful = false;
+      this.traceListener.sourceError(
+          'Undefined event type',
+          'The file tried to reference an event it didn\'t define. Perhaps ' +
+          'it\'s corrupted?');
       break;
     }
 
@@ -181,7 +185,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   var magicNumber = buffer.readUint32();
   if (magicNumber != 0xDEADBEEF) {
     // Magic number mismatch.
-    goog.asserts.fail('Magic number mismatch');
+    this.traceListener.sourceError(
+        'File type not supported or corrupt',
+        'The header of the file doesn\'t match the expected value.');
     return false;
   }
 
@@ -192,7 +198,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   var formatVersion = buffer.readUint32();
   if (formatVersion != wtf.data.formats.BinaryTrace.VERSION) {
     // Format version mismatch.
-    goog.asserts.fail('Format version mismatch');
+    this.traceListener.sourceError(
+        'File version not supported or too old',
+        'Sorry, the parser for this file version is not available :(');
     return false;
   }
 
@@ -200,7 +208,8 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   var contextInfo = wtf.data.ContextInfo.parse(buffer);
   if (!contextInfo) {
     // Bad context info or unknown context.
-    goog.asserts.fail('Bad context information');
+    this.traceListener.sourceError(
+        'Invalid context information');
     return false;
   }
 

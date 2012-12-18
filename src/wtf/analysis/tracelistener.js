@@ -248,6 +248,14 @@ wtf.analysis.TraceListener.prototype.sourceAdded = goog.nullFunction;
 
 
 /**
+ * Signals that an error occurred while parsing a trace source.
+ * @param {string} message Error message.
+ * @param {string=} opt_detail Detailed information.
+ */
+wtf.analysis.TraceListener.prototype.sourceError = goog.nullFunction;
+
+
+/**
  * Begins a batch of events.
  * This will be called immediately before a new batch of events are dispatched.
  * All events dispatched will be from the given source.
