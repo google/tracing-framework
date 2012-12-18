@@ -7,13 +7,13 @@
 
 /**
  * @fileoverview WTF version utilities.
+ * The versions set in this file come from {@code scripts/update-version.sh} and
+ * should not be set manually.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
 goog.provide('wtf.version');
-
-goog.require('goog.string');
 
 
 /**
@@ -23,22 +23,17 @@ goog.require('goog.string');
  * @return {number} Build number, as an integer.
  */
 wtf.version.getBuild = function() {
-  // TODO(benvanik): get this from the current build date? or update-version.sh?
-  return 1355734800000;
+  return 1355821200000; /* set via update-version.sh */
 };
 
 
 /**
  * Gets the version as a human-readable string that matches the version string
- * used elsewhere, such as {@code 2012.12.12.2}.
+ * used elsewhere, such as {@code 2012.12.12-2}.
  * @return {string} Version string.
  */
 wtf.version.toString = function() {
-  var dt = new Date(wtf.version.getBuild());
-  return dt.getFullYear() + '.' +
-      goog.string.padNumber(dt.getMonth() + 1, 2) + '.' +
-      goog.string.padNumber(dt.getDate(), 2) + '.' +
-      goog.string.padNumber(dt.getHours(), 1);
+  return '2012.12.18-1'; /* set via update-version.sh */
 };
 
 
