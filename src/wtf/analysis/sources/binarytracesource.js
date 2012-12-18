@@ -70,7 +70,7 @@ wtf.analysis.sources.BinaryTraceSource = function(traceListener, readStream) {
   this.eventTable_ = [];
 
   // Always add 'defineEvent'.
-  this.eventTable_[1] = traceListener.getEventType('wtf.event.define');
+  this.eventTable_[1] = traceListener.getEventType('wtf.event#define');
 
   /**
    * All seen zones, indexed by zone ID.
@@ -172,7 +172,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.processBuffer_ =
  * @const
  * @type {number}
  */
-wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION = 2;
+wtf.analysis.sources.BinaryTraceSource.FORMAT_VERSION = 3;
 
 
 /**
@@ -252,29 +252,29 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   if (eventType.flags & wtf.data.EventFlag.BUILTIN &&
       eventType.eventClass != wtf.data.EventClass.SCOPE) {
     switch (eventType.name) {
-      case 'wtf.event.define':
+      case 'wtf.event#define':
         var newEventType = listener.defineEventType(
             wtf.analysis.EventType.parse(args));
         this.eventTable_[args['wireId']] = newEventType;
         break;
 
-      case 'wtf.zone.create':
+      case 'wtf.zone#create':
         var newZone = listener.createOrGetZone(
             args['name'], args['type'], args['location']);
         this.zoneTable_[args['zoneId']] = newZone;
         e = new wtf.analysis.ZoneEvent(
             eventType, zone, time, args, newZone);
         break;
-      case 'wtf.zone.delete':
+      case 'wtf.zone#delete':
         var deadZone = this.zoneTable_[args['zoneId']] || null;
         e = new wtf.analysis.ZoneEvent(
             eventType, zone, time, args, deadZone);
         break;
-      case 'wtf.zone.set':
+      case 'wtf.zone#set':
         this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
         break;
 
-      case 'wtf.flow.branch':
+      case 'wtf.flow#branch':
         var parentFlowId = args['parentId'];
         var parentFlow = parentFlowId ? this.flowTable_[parentFlowId] : null;
         var flowId = args['id'];
@@ -284,7 +284,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
             eventType, zone, time, args, flow);
         flow.setBranchEvent(e);
         break;
-      case 'wtf.flow.extend':
+      case 'wtf.flow#extend':
         var flowId = args['id'];
         var flow = this.flowTable_[flowId];
         if (!flow) {
@@ -295,7 +295,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
             eventType, zone, time, args, flow);
         flow.setExtendEvent(e);
         break;
-      case 'wtf.flow.terminate':
+      case 'wtf.flow#terminate':
         var flowId = args['id'];
         var flow = this.flowTable_[flowId];
         if (!flow) {

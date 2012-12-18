@@ -66,47 +66,52 @@ wtf.analysis.EventfulTraceListener.EventType = {
   /**
    * Args: [wtf.analysis.Event]
    */
-  DISCONTINUITY: 'wtf.discontinuity',
+  DISCONTINUITY: 'wtf.trace#discontinuity',
 
   /**
    * Args: [wtf.analysis.ZoneEvent]
    */
-  CREATE_ZONE: 'wtf.zone.create',
+  CREATE_ZONE: 'wtf.zone#create',
 
   /**
    * Args: [wtf.analysis.ZoneEvent]
    */
-  DELETE_ZONE: 'wtf.zone.delete',
+  DELETE_ZONE: 'wtf.zone#delete',
 
   /**
    * Args: [wtf.analysis.ScopeEvent]
    */
-  ENTER_SCOPE: 'wtf.scope.enter',
+  ENTER_SCOPE: 'wtf.scope#enter',
 
   /**
    * Args: [wtf.analysis.ScopeEvent]
    */
-  LEAVE_SCOPE: 'wtf.scope.leave',
+  LEAVE_SCOPE: 'wtf.scope#leave',
 
   /**
    * Args: [wtf.analysis.FlowEvent]
    */
-  BRANCH_FLOW: 'wtf.flow.branch',
+  BRANCH_FLOW: 'wtf.flow#branch',
 
   /**
    * Args: [wtf.analysis.FlowEvent]
    */
-  EXTEND_FLOW: 'wtf.flow.extend',
+  EXTEND_FLOW: 'wtf.flow#extend',
 
   /**
    * Args: [wtf.analysis.FlowEvent]
    */
-  TERMINATE_FLOW: 'wtf.flow.terminate',
+  TERMINATE_FLOW: 'wtf.flow#terminate',
 
   /**
    * Args: [wtf.analysis.Event]
    */
-  MARK: 'wtf.mark',
+  MARK: 'wtf.trace#mark',
+
+  /**
+   * Args: [wtf.analysis.Event]
+   */
+  TIMESTAMP: 'wtf.trace#timeStamp',
 
   /**
    * Args: [wtf.analysis.Event]

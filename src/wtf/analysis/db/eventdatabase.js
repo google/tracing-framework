@@ -332,8 +332,8 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
    * @private
    */
   this.eventTypes_ = {
-    zoneCreate: this.getEventType('wtf.zone.create'),
-    scopeLeave: this.getEventType('wtf.scope.leave')
+    zoneCreate: this.getEventType('wtf.zone#create'),
+    scopeLeave: this.getEventType('wtf.scope#leave')
   };
 };
 goog.inherits(wtf.analysis.db.EventDatabase.Listener_,

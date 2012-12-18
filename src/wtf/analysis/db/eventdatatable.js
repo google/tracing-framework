@@ -54,7 +54,7 @@ wtf.analysis.db.EventDataTable = function(db, opt_filter) {
    * @private
    */
   this.eventTypes_ = {
-    scopeLeave: traceListener.getEventType('wtf.scope.leave')
+    scopeLeave: traceListener.getEventType('wtf.scope#leave')
   };
 
   /**

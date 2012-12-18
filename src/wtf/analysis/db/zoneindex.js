@@ -60,7 +60,7 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    * @private
    */
   this.eventTypes_ = {
-    scopeLeave: traceListener.getEventType('wtf.scope.leave')
+    scopeLeave: traceListener.getEventType('wtf.scope#leave')
   };
 
   /**

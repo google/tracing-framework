@@ -61,10 +61,10 @@ function runTool(platform, args) {
       });
     },
 
-    'wtf.discontinuity': function(e) {
+    'wtf.trace#discontinuity': function(e) {
     },
 
-    'wtf.scope.enter': function(e) {
+    'wtf.scope#enter': function(e) {
       eventJson.push({
         'ph': 'B',
         'pid': e.zone.toString(),
@@ -73,7 +73,7 @@ function runTool(platform, args) {
         'name': e.args['msg'] || e.eventType.name
       });
     },
-    'wtf.scope.leave': function(e) {
+    'wtf.scope#leave': function(e) {
       eventJson.push({
         'ph': 'E',
         'pid': e.zone.toString(),
@@ -82,53 +82,53 @@ function runTool(platform, args) {
       });
     },
 
-    'wtf.flow.branch': function(e) {
+    'wtf.flow#branch': function(e) {
       eventJson.push({
         'ph': 'S',
         'pid': e.zone.toString(),
         'tid': '',
         'ts': e.time * 1000,
         'id': e.flow.getId(),
-        'name': 'wtf.flow.branch',
+        'name': 'wtf.flow#branch',
         'args': {
           'msg': e.args['msg']
         }
       });
     },
-    'wtf.flow.extend': function(e) {
+    'wtf.flow#extend': function(e) {
       eventJson.push({
         'ph': 'T',
         'pid': e.zone.toString(),
         'tid': '',
         'ts': e.time * 1000,
         'id': e.flow.getId(),
-        'name': 'wtf.flow.extend',
+        'name': 'wtf.flow#extend',
         'args': {
           'msg': e.args['msg']
         }
       });
     },
-    'wtf.flow.terminate': function(e) {
+    'wtf.flow#terminate': function(e) {
       eventJson.push({
         'ph': 'F',
         'pid': e.zone.toString(),
         'tid': '',
         'ts': e.time * 1000,
         'id': e.flow.getId(),
-        'name': 'wtf.flow.terminate',
+        'name': 'wtf.flow#terminate',
         'args': {
           'msg': e.args['msg']
         }
       });
     },
 
-    'wtf.mark': function(e) {
+    'wtf.trace#mark': function(e) {
       eventJson.push({
         'ph': 'E',
         'pid': e.zone.toString(),
         'tid': '',
         'ts': e.time * 1000,
-        'name': 'wtf.mark',
+        'name': 'wtf.trace#mark',
         'args': {
           'msg': e.args['msg']
         }

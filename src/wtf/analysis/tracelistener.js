@@ -85,48 +85,50 @@ goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
  */
 wtf.analysis.TraceListener.BuiltinEvents_ = [
   wtf.analysis.EventType.createInstance(
-      'wtf.event.define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
+      'wtf.event#define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
           'ascii name, ascii args)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.discontinuity()',
+      'wtf.trace.#discontinuity()',
       wtf.data.EventFlag.BUILTIN),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.zone.create(uint16 zoneId, ascii name, ascii type, ascii location)',
+      'wtf.zone#create(uint16 zoneId, ascii name, ascii type, ascii location)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
-      'wtf.zone.delete(uint16 zoneId)',
+      'wtf.zone#delete(uint16 zoneId)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
-      'wtf.zone.set(uint16 zoneId)',
+      'wtf.zone#set(uint16 zoneId)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createScope(
-      'wtf.scope.enter(ascii msg)',
+      'wtf.scope#enter(ascii msg)',
       wtf.data.EventFlag.BUILTIN),
   wtf.analysis.EventType.createScope(
-      'wtf.scope.enterTracing()',
+      'wtf.scope#enterTracing()',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
       wtf.data.EventFlag.SYSTEM_TIME),
   wtf.analysis.EventType.createInstance(
-      'wtf.scope.leave()',
+      'wtf.scope#leave()',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.flow.branch(flowId id, flowId parentId, ascii msg)',
+      'wtf.flow#branch(flowId id, flowId parentId, ascii msg)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
-      'wtf.flow.extend(flowId id, ascii msg)',
+      'wtf.flow#extend(flowId id, ascii msg)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   wtf.analysis.EventType.createInstance(
-      'wtf.flow.terminate(flowId id, ascii msg)',
+      'wtf.flow#terminate(flowId id, ascii msg)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   wtf.analysis.EventType.createInstance(
-      'wtf.mark(ascii msg)',
-      wtf.data.EventFlag.BUILTIN)
+      'wtf.trace#mark(ascii name)',
+      wtf.data.EventFlag.BUILTIN),
+  wtf.analysis.EventType.createInstance(
+      'wtf.trace#timeStamp(ascii name)')
 ];
 
 

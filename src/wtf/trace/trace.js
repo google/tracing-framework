@@ -417,15 +417,29 @@ wtf.trace.spanFlow = wtf.trace.Flow.span;
 
 
 /**
- * Marks the stream with a generic instance event.
- * This can be used for logging information or indicating status.
+ * Marks the stream with a named bookmark.
+ * This is used by the UI to construct a simple navigation structure.
  * It's best to use custom events that make filtering easier, if possible.
- * @param {string=} opt_msg Optional message string.
- * @param {number=} opt_time Time for the branch; omit to use the current time.
+ * @param {string} name Marker name.
+ * @param {number=} opt_time Time for the mark; omit to use the current time.
  */
-wtf.trace.mark = function(opt_msg, opt_time) {
+wtf.trace.mark = function(name, opt_time) {
   var time = opt_time || wtf.now();
-  wtf.trace.BuiltinEvents.mark(time, opt_msg);
+  wtf.trace.BuiltinEvents.mark(time, name);
+};
+
+
+/**
+ * Adds a timestamped event to the stream.
+ * This is synonymous to {@code console.timeStamp}, and can be used to place
+ * simple arg-less instance events in the timeline.
+ * Prefer using custom events for faster, more flexible events.
+ * @param {string} name Marker name.
+ * @param {number=} opt_time Time for the mark; omit to use the current time.
+ */
+wtf.trace.timeStamp = function(name, opt_time) {
+  var time = opt_time || wtf.now();
+  wtf.trace.BuiltinEvents.timeStamp(time, name);
 };
 
 

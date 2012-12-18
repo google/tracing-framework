@@ -101,7 +101,7 @@ goog.inherits(wtf.trace.Session, goog.Disposable);
  * @const
  * @type {number}
  */
-wtf.trace.Session.FORMAT_VERSION = 2;
+wtf.trace.Session.FORMAT_VERSION = 3;
 
 
 /**
