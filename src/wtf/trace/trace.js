@@ -395,8 +395,24 @@ wtf.trace.leaveScope = function(scope, opt_result, opt_time) {
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  */
 wtf.trace.appendScopeData = function(name, value, opt_time) {
-  // TODO(benvanik): optimize simple cases (null/number/string/etc).
-  var json = goog.json.serialize(value);
+  // TODO(benvanik): make this even faster.
+  var json = null;
+  if (typeof value == 'number') {
+    json = '' + value;
+  } else if (typeof value == 'boolean') {
+    json = '' + value;
+  } else if (!value) {
+    json = null;
+  } else if (typeof value == 'string') {
+    json = '"' + value + '"';
+  } else {
+    // JSON is faster and generates less garbage.
+    if (goog.global.JSON) {
+      json = goog.global.JSON.stringify(value);
+    } else {
+      json = goog.json.serialize(value);
+    }
+  }
   wtf.trace.BuiltinEvents.appendScopeData(name, json, opt_time);
 };
 

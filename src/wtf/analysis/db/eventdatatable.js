@@ -132,6 +132,7 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
     zoneIndex.forEach(startTime, endTime, function(e) {
       // Skip leaves, they aren't interesting here.
       if (e.eventType.flags & wtf.data.EventFlag.INTERNAL ||
+          e.eventType.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA ||
           e.eventType == this.eventTypes_.scopeLeave) {
         return;
       }
