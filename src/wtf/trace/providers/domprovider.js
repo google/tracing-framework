@@ -218,7 +218,9 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   if (wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
     for (var name in elementTypes) {
       var instrumentedType = instrumentedTypeMap[name];
-      instrumentedType.hookObjectEvents();
+      if (instrumentedType) {
+        instrumentedType.hookObjectEvents();
+      }
     }
   } else if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
     var documentPrototype = goog.global.HTMLDocument ?
