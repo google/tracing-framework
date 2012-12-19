@@ -473,15 +473,17 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
   // If given a target, process that.
   if (opt_target) {
     // Swap all properties.
-    for (var n = 0; n < eventInfos.length; n++) {
-      var eventInfo = eventInfos[n];
-      delete opt_target[eventInfo.name];
-      Object.defineProperty(opt_target, eventInfo.name, {
-        'configurable': false,
-        'enumerable': false,
-        'get': eventInfo.getter,
-        'set': eventInfo.setter
-      });
+    if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
+      for (var n = 0; n < eventInfos.length; n++) {
+        var eventInfo = eventInfos[n];
+        delete opt_target[eventInfo.name];
+        Object.defineProperty(opt_target, eventInfo.name, {
+          'configurable': false,
+          'enumerable': false,
+          'get': eventInfo.getter,
+          'set': eventInfo.setter
+        });
+      }
     }
     return;
   }
