@@ -50,13 +50,13 @@ wtf.app.ui.nav.FramebarPainter = function(canvas, db) {
   this.frameIndex_ = null;
 
   var deferreds = [];
-  deferreds.push(db.createEventIndex('timing.frameEnd'));
+  deferreds.push(db.createEventIndex('wtf.timing#frameEnd'));
 
   this.setReady(false);
   new goog.async.DeferredList(deferreds).addCallbacks(
       function() {
         // Grab indicies.
-        var frameIndex = db.getEventIndex('timing.frameEnd');
+        var frameIndex = db.getEventIndex('wtf.timing#frameEnd');
         goog.asserts.assert(frameIndex);
         this.frameIndex_ = frameIndex;
         this.frameIndex_.addListener(

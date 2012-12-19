@@ -55,13 +55,13 @@ wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
   this.frameIndex_ = null;
 
   var deferreds = [];
-  deferreds.push(this.db_.createEventIndex('timing.frameEnd'));
+  deferreds.push(this.db_.createEventIndex('wtf.timing#frameEnd'));
 
   this.setReady(false);
   new goog.async.DeferredList(deferreds).addCallbacks(
       function() {
         // Grab indicies.
-        var frameIndex = this.db_.getEventIndex('timing.frameEnd');
+        var frameIndex = this.db_.getEventIndex('wtf.timing#frameEnd');
         goog.asserts.assert(frameIndex);
         this.frameIndex_ = frameIndex;
         this.frameIndex_.addListener(wtf.events.EventType.INVALIDATED,

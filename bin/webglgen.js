@@ -53,7 +53,7 @@ function runTool(platform, args) {
       frameStart = timebase;
     },
 
-    'timing.frameStart': function(e) {
+    'wtf.timing#frameStart': function(e) {
       log('}, [' + resources.join(', ') + ']);');
       resources.length = 0;
       frameNumber = e.args['number'];
@@ -65,7 +65,7 @@ function runTool(platform, args) {
       log('  var gl = ctxs[' + currentContext + '];');
       frameStart = e.time;
     },
-    'timing.frameEnd': function(e) {
+    'wtf.timing#frameEnd': function(e) {
       log('}, [' + resources.join(', ') + '], "' + util.formatTime(e.time) + '");');
       resources.length = 0;
       log('intraFrame(function(ctxs, objs, resources) {');
