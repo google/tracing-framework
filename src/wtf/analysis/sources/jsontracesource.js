@@ -186,6 +186,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
  * Parses a {@code wtf.json#header} entry and sets up the trace source.
  * If no entry is provided default options will be used.
  * @param {Object} entry Header entry, if any.
+ * @return {boolean} True if the header parsed successfully.
  * @private
  */
 wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
@@ -200,6 +201,7 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
     listener.sourceError(
         'File version not supported or too old',
         'Sorry, the parser for this file version is not available :(');
+    return false;
   }
 
   var hasHighResolutionTimes = goog.isDef(entry['high_resolution_times']) ?
@@ -218,6 +220,8 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(entry) {
   var timeDelay = listener.computeTimeDelay(timebase);
   this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
   listener.sourceAdded(this.getTimebase(), contextInfo);
+
+  return true;
 };
 
 
