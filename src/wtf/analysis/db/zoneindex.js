@@ -52,6 +52,13 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    */
   this.rootUserTime_ = 0;
 
+  /**
+   * Maximum scope depth.
+   * @type {number}
+   * @private
+   */
+  this.maxScopeDepth_ = 0;
+
   // Hacky, but stash the well-known event types that we will be comparing
   // with to dramatically improve performance.
   /**
@@ -130,6 +137,15 @@ wtf.analysis.db.ZoneIndex.prototype.getRootUserTime = function() {
 
 
 /**
+ * Gets the maximum depth of any scope in the zone.
+ * @return {number} Maximum scope depth.
+ */
+wtf.analysis.db.ZoneIndex.prototype.getMaximumScopeDepth = function() {
+  return this.maxScopeDepth_;
+};
+
+
+/**
  * @override
  */
 wtf.analysis.db.ZoneIndex.prototype.beginInserting = function() {
@@ -159,6 +175,9 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
         if (this.currentScope_) {
           this.currentScope_.addChild(
               /** @type {!wtf.analysis.Scope} */ (e.scope));
+          if (e.scope.getDepth() > this.maxScopeDepth_) {
+            this.maxScopeDepth_ = e.scope.getDepth();
+          }
         }
         this.currentScope_ = e.scope;
         if (eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
@@ -210,6 +229,9 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
       if (parentScope) {
         parentScope.addChild(
             /** @type {!wtf.analysis.Scope} */ (e.scope));
+        if (e.scope.getDepth() > this.maxScopeDepth_) {
+          this.maxScopeDepth_ = e.scope.getDepth();
+        }
       }
       currentScope = e.scope;
       if (eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
