@@ -51,8 +51,8 @@ wtf.trace.exports.ENABLE_EXPORTS = false;
 
 if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
-      'wtf.trace.getApiVersion',
-      wtf.trace.getApiVersion);
+      'wtf.trace.API_VERSION',
+      wtf.trace.API_VERSION);
 
   // wtf.trace.prepare
   goog.exportSymbol(

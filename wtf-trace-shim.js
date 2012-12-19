@@ -45,7 +45,7 @@ wtfapi.ENABLED = true;
 
 /**
  * The API version expected by the shim.
- * If WTF is present but its {@code wtf.trace.getApiVersion()} does not match
+ * If WTF is present but its {@code wtf.trace.API_VERSION} does not match
  * this value it will be ignored. This allows code instrumented with older
  * versions of the API to keep working (without tracing) when a newer version
  * of the API is present in the page.
@@ -64,8 +64,7 @@ wtfapi.EXPECTED_API_VERSION_ = 2;
  * @const
  */
 wtfapi.PRESENT = wtfapi.ENABLED && !!goog.global['wtf'] &&
-    goog.global['wtf']['trace']['getApiVersion'] &&
-    (goog.global['wtf']['trace']['getApiVersion']() ==
+    (goog.global['wtf']['trace']['API_VERSION'] ==
         wtfapi.EXPECTED_API_VERSION_);
 
 
