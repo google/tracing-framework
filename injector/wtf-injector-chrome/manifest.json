@@ -25,6 +25,9 @@
   "page_action": {
     "workaround": "https://code.google.com/p/chromium/issues/detail?id=86449"
   },
+  "omnibox": {
+    "keyword": "wtf"
+  },
   "icons": {
   },
   //"homepage_url": "",
