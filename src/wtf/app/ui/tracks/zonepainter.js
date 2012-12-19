@@ -17,8 +17,10 @@ goog.require('goog.dom.TagName');
 goog.require('goog.math');
 goog.require('goog.string');
 goog.require('wtf.analysis.FlowEvent');
+goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.app.ui.tracks.TrackPainter');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
@@ -118,6 +120,24 @@ wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ = 18;
 
 
 /**
+ * Height of an instance event (including border), in px.
+ * @const
+ * @type {number}
+ * @private
+ */
+wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_ = 9;
+
+
+/**
+ * Fake amount of time given to instance events so they show up.
+ * @const
+ * @type {number}
+ * @private
+ */
+wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_ = 0.001;
+
+
+/**
  * @override
  */
 wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
@@ -135,7 +155,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
 
   // We iterate all events and splice up by type so that we can batch them all
   // and ensure proper ordering.
-  // TODO(benvanik): cache lists
+  // TODO(benvanik): cache lists? keep separate lists inside the zone?
   var scopeCount = 0;
   var flowCount = 0;
   var otherCount = 0;
@@ -151,7 +171,11 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
     } else if (e instanceof wtf.analysis.FlowEvent) {
       flowEvents[flowCount++] = e;
     } else {
-      otherEvents[otherCount++] = e;
+      // Ignore leaves.
+      // TODO(benvanik): ignore all builtin?
+      if (!(e.eventType.flags & wtf.data.EventFlag.INTERNAL)) {
+        otherEvents[otherCount++] = e;
+      }
     }
   });
 
@@ -165,19 +189,27 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
       scopeEvents, scopeCount);
 
   // Draw flow lines.
+  // TODO(benvanik): draw flow lines/arrows/etc.
 
   // Draw instance events.
+  this.drawInstanceEvents_(
+      ctx, width, height, top, timeLeft, timeRight,
+      otherEvents, otherCount);
 
   this.endRepaint(ctx, width, height);
 };
 
 
 /**
- * Resets scope drawing caches.
+ * Resets scope/event drawing caches.
  * @param {number} width Width of the canvas.
  * @private
  */
-wtf.app.ui.tracks.ZonePainter.prototype.resetScopeDrawing_ = function(width) {
+wtf.app.ui.tracks.ZonePainter.prototype.resetRangeRenderers_ = function(width) {
+  var maxScopeDepth = this.zoneIndex_.getMaximumScopeDepth();
+  while (this.rangeRenderers_.length < maxScopeDepth) {
+    this.rangeRenderers_.push(new wtf.ui.RangeRenderer());
+  }
   for (var n = 0; n < this.rangeRenderers_.length; n++) {
     this.rangeRenderers_[n].reset(width);
   }
@@ -206,14 +238,14 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     ctx, width, height, top, timeLeft, timeRight, scopeEvents, scopeCount) {
   var scopeColors = wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_;
 
-  this.resetScopeDrawing_(width);
+  this.resetRangeRenderers_(width);
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
   var selectionEvaluator = this.selection_.hasFilterSpecified() ?
       this.selection_.getFilterEvaluator() : null;
 
-  // We need to draw all the rects before the labes so we keep track of the
+  // We need to draw all the rects before the labels so we keep track of the
   // labels to draw and then draw them after.
   var labelsToDraw = [];
 
@@ -221,7 +253,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
   for (var n = 0; n < scopeCount; n++) {
     var e = scopeEvents[n];
     var scope = e.scope;
-    var depth = scope.getDepth();
     var enter = scope.getEnterEvent();
     var leave = scope.getLeaveEvent();
 
@@ -249,10 +280,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     var screenRight = Math.min(width - .999, right);
     if (screenLeft >= screenRight) continue;
 
-    if (!this.rangeRenderers_[depth]) {
-      this.rangeRenderers_[depth] = new wtf.ui.RangeRenderer();
-    }
-
     var alpha = 1;
     if (enter.time > selectionEnd || leave.time < selectionStart) {
       // Outside of range, deemphasize.
@@ -272,6 +299,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
       }
     }
 
+    var depth = scope.getDepth();
     this.rangeRenderers_[depth].drawRange(
         screenLeft, screenRight, color, alpha);
 
@@ -384,17 +412,119 @@ wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
 
 
 /**
+ * Draw instance events.
+ * @param {!CanvasRenderingContext2D} ctx Target canvas context.
+ * @param {number} width Canvas backing store width.
+ * @param {number} height Canvas backing store height.
+ * @param {number} top Y to start drawing at.
+ * @param {number} timeLeft Left-most visible time.
+ * @param {number} timeRight Right-most visible time.
+ * @param {!Array.<!wtf.analysis.Event>} events Instance events.
+ * @param {number} eventCount Total number of instance events to draw.
+ * @private
+ */
+wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
+    ctx, width, height, top, timeLeft, timeRight, events, eventCount) {
+  var scopeColors = wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_;
+
+  this.resetRangeRenderers_(width);
+
+  var selectionStart = this.selection_.getTimeStart();
+  var selectionEnd = this.selection_.getTimeEnd();
+  var selectionEvaluator = this.selection_.hasFilterSpecified() ?
+      this.selection_.getFilterEvaluator() : null;
+
+  // Draw all events.
+  var instanceTimeWidth = wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
+  for (var n = 0; n < eventCount; n++) {
+    var e = events[n];
+
+    // Compute screen offset.
+    var endTime = e.time + instanceTimeWidth;
+    if (e.scope && e.scope.getLeaveEvent()) {
+      endTime = Math.min(endTime, e.scope.getLeaveEvent().time);
+    }
+    var left = wtf.math.remap(e.time, timeLeft, timeRight, 0, width);
+    var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
+
+    // Get color in the palette used for filling.
+    var colorIndex = 0;//this.getColorIndexForScope_(scope);
+    var color = scopeColors[colorIndex];
+
+    var screenLeft = Math.max(0, left);
+    var screenRight = Math.min(width - .999, right);
+    if (screenLeft >= screenRight) continue;
+
+    var alpha = 1;
+    if (e.time > selectionEnd || e.time < selectionStart) {
+      // Outside of range, deemphasize.
+      alpha = 0.3;
+    } else if (selectionEvaluator) {
+      // Overlaps range and we have a filter, test the event.
+      var selected = selectionEvaluator(e);
+      if (!selected) {
+        alpha = 0.3;
+      } else if (screenRight - screenLeft < 1) {
+        // Provide an alpha bump to tiny selected zones. By making these
+        // ranges more than 100% alpha they will remain fully opaque even
+        // with the antialiasing done in RangeRenderer.
+        alpha = 1 / (screenRight - screenLeft);
+      } else {
+        alpha = 1;
+      }
+    }
+
+    var depth = e.scope ? e.scope.getDepth() : 0;
+    this.rangeRenderers_[depth].drawRange(
+        screenLeft, screenRight, color, alpha);
+  }
+
+  // Now blit the nicely rendered ranges onto the screen.
+  var y = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ +
+      wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  var h = wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_;
+  for (var i = 0; i < this.rangeRenderers_.length; i++) {
+    this.rangeRenderers_[i].getPixels(this.rangeStamperImageData_.data);
+    this.rangeStamperContext_.putImageData(
+        this.rangeStamperImageData_, 0, 0);
+    // Draw the ranges for this depth, stretching to height h.
+    ctx.drawImage(this.rangeStamper_, 0, y, width, h);
+    y += wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  }
+};
+
+
+/**
  * @override
  */
 wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
     function(x, y, width, height) {
-  var scope = this.hitTestScope_(x, y, width, height);
-  var newFilterString;
-  if (scope) {
-    var eventName = scope.getEnterEvent().eventType.name;
+  var result = this.hitTest_(x, y, width, height);
+  var newFilterString = '';
+  if (result instanceof wtf.analysis.Scope) {
+    // Single scope clicked.
+    var eventName = '/^' + result.getEnterEvent().eventType.name + '$/';
     newFilterString = eventName;
-  } else {
-    newFilterString = '';
+  } else if (result && result.length) {
+    // Assume a list of instance events.
+    if (result.length == 1) {
+      newFilterString = '/^' + result[0].eventType.name + '$/';
+    } else {
+      newFilterString = '/';
+      var matched = {};
+      for (var n = 0; n < result.length; n++) {
+        var e = result[n];
+        if (matched[e.eventType.name]) {
+          continue;
+        }
+        matched[e.eventType.name] = true;
+        if (n) {
+          newFilterString += '|';
+        }
+        newFilterString += '^' + e.eventType.name + '$';
+      }
+      newFilterString += '/';
+    }
   }
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('filter_events', this, null, newFilterString);
@@ -407,9 +537,11 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
  */
 wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     function(x, y, width, height) {
-  var scope = this.hitTestScope_(x, y, width, height);
-  if (scope) {
-    return this.generateScopeTooltip_(scope);
+  var result = this.hitTest_(x, y, width, height);
+  if (result instanceof wtf.analysis.Scope) {
+    return this.generateScopeTooltip_(result);
+  } else if (result && result.length) {
+    return this.generateInstancesTooltip_(result);
   }
   return undefined;
 };
@@ -421,10 +553,11 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
  * @param {number} y Y coordinate, relative to canvas.
  * @param {number} width Width of the paint canvas.
  * @param {number} height Height of the paint canvas.
- * @return {wtf.analysis.Scope} Scope, if any.
+ * @return {wtf.analysis.Scope|Array.<!wtf.analysis.Event>} Scope, a list of
+ *     instance events, or nothing.
  * @private
  */
-wtf.app.ui.tracks.ZonePainter.prototype.hitTestScope_ = function(
+wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
     x, y, width, height) {
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
@@ -446,9 +579,22 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTestScope_ = function(
     var scopeTop = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ +
         depth * scopeHeight;
     var scopeBottom = scopeTop + scopeHeight;
-    if (enter && leave && scopeTop <= y && y <= scopeBottom) {
+    if (enter && leave && scopeTop <= y) {
       if (leave.time >= time) {
-        return scope;
+        if (y <= scopeBottom) {
+          // Fully within the scope.
+          return scope;
+        } else {
+          // Underneath the scope. Check instances.
+          if (y <= scopeBottom +
+              wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_) {
+            time -= wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
+            var endTime = Math.min(
+                time + wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_,
+                leave.time);
+            return zoneIndex.findInstances(time, endTime, scope);
+          }
+        }
       }
       break;
     }
@@ -475,8 +621,51 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
     elapsed + ': ' + eventType.name
   ];
 
-  // Add arguments.
   var data = scope.getData();
+  if (data) {
+    this.addArgumentLines_(data, lines);
+  }
+
+  return lines.join('\n');
+};
+
+
+/**
+ * Generates a tooltip string from a list of instance events.
+ * @param {!Array.<wtf.analysis.Event>} events Event list.
+ * @return {string} Tooltip string.
+ * @private
+ */
+wtf.app.ui.tracks.ZonePainter.prototype.generateInstancesTooltip_ = function(
+    events) {
+  var lines = [
+  ];
+
+  for (var n = 0; n < events.length; n++) {
+    if (n) {
+      lines.push('\n');
+    }
+    var e = events[n];
+    var eventType = e.eventType;
+    lines.push(eventType.name);
+    var args = e.getArguments();
+    if (args) {
+      this.addArgumentLines_(args, lines);
+    }
+  }
+
+  return lines.join('\n');
+};
+
+
+/**
+ * Adds event argument lines to the tooltip.
+ * @param {!Object} data Argument data object.
+ * @param {!Array.<string>} lines List of lines that will be added to.
+ * @private
+ */
+wtf.app.ui.tracks.ZonePainter.prototype.addArgumentLines_ = function(
+    data, lines) {
   for (var argName in data) {
     var argValue = data[argName];
     if (goog.isArray(argValue)) {
@@ -486,6 +675,4 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
     }
     lines.push(argName + ': ' + argValue);
   }
-
-  return lines.join('\n');
 };

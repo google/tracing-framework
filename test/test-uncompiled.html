@@ -47,6 +47,15 @@
           // Enter scope, resume flow
           var scope = wtf.trace.enterScope('setTimeout callback', flow);
 
+          wtf.trace.timeStamp('hello1');
+          wtf.trace.timeStamp('hello2');
+
+          var scope2 = wtf.trace.enterScope('xx');
+          var t = wtf.now();
+          wtf.trace.timeStamp('hello3a', t);
+          wtf.trace.timeStamp('hello3b', t);
+          scope2.leave();
+
           console.log('hi');
 
           scope.leave();

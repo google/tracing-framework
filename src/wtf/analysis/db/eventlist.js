@@ -16,6 +16,8 @@ goog.provide('wtf.analysis.db.EventList');
 goog.require('goog.asserts');
 goog.require('wtf.analysis.db.Chunk');
 goog.require('wtf.analysis.db.IEventTarget');
+goog.require('wtf.data.EventClass');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
 
@@ -263,10 +265,57 @@ wtf.analysis.db.EventList.prototype.findEnclosingScope = function(time) {
 
 
 /**
+ * Finds all instance events in the given time range.
+ * Optionally, only instance events with the given parent scope will be
+ * returned.
+ * @param {number} timeStart Start time range.
+ * @param {number} timeEnd End time range.
+ * @param {wtf.analysis.Scope=} opt_parentScope Scope to restrict results to.
+ * @return {Array.<!wtf.analysis.Event>} A list of events or null if none were
+ *     found.
+ */
+wtf.analysis.db.EventList.prototype.findInstances = function(
+    timeStart, timeEnd, opt_parentScope) {
+  var searchFunction = opt_parentScope ? function(e) {
+    return e.scope == opt_parentScope &&
+        e.eventType.eventClass == wtf.data.EventClass.INSTANCE &&
+        !(e.eventType.flags & wtf.data.EventFlag.INTERNAL);
+  } : function(e) {
+    return e.eventType.eventClass == wtf.data.EventClass.INSTANCE &&
+        !(e.eventType.flags & wtf.data.EventFlag.INTERNAL);
+  };
+  return this.find(timeStart, timeEnd, searchFunction);
+};
+
+
+/**
+ * Finds all events matching the given filter.
+ * This creates garbage, so call infrequently.
+ *
+ * @param {number} timeStart Start time range.
+ * @param {number} timeEnd End time range.
+ * @param {!function(!wtf.analysis.Event):boolean} callback
+ *     Function to call with the event nodes. Return {@code true} to match.
+ * @param {Object=} opt_scope Scope to call the function in.
+ * @return {!Array.<!wtf.analysis.Event>} Found events.
+ */
+wtf.analysis.db.EventList.prototype.find = function(
+    timeStart, timeEnd, callback, opt_scope) {
+  var results = [];
+  this.forEach(timeStart, timeEnd, function(e) {
+    if (callback.call(opt_scope, e)) {
+      results.push(e);
+    }
+  });
+  return results;
+};
+
+
+/**
  * Iterates over the list returning all events in the given time range.
  *
- * @param {number} timeStart Start wall-time range.
- * @param {number} timeEnd End wall-time range.
+ * @param {number} timeStart Start time range.
+ * @param {number} timeEnd End time range.
  * @param {!function(!wtf.analysis.Event):(boolean|undefined)} callback
  *     Function to call with the event nodes. Return {@code false} to cancel.
  * @param {Object=} opt_scope Scope to call the function in.
