@@ -10493,9 +10493,7 @@ wtf.util.Options.prototype.removeArrayValue = function(a, b) {
   goog.array.remove(c, b) && this.setValue_(a, c.length ? c : void 0)
 };
 // Input 147
-wtf.trace.getApiVersion = function() {
-  return 2
-};
+wtf.trace.API_VERSION = 2;
 wtf.trace.traceManager_ = null;
 wtf.trace.getTraceManager = function() {
   if(wtf.trace.traceManager_) {
@@ -11195,7 +11193,7 @@ wtf.trace.providers.setup = function() {
 wtf.trace.exports = {};
 wtf.trace.providers.setup();
 wtf.trace.exports.ENABLE_EXPORTS = !0;
-wtf.trace.exports.ENABLE_EXPORTS && (goog.exportSymbol("wtf.trace.getApiVersion", wtf.trace.getApiVersion), goog.exportSymbol("wtf.trace.prepare", wtf.trace.prepare), goog.exportSymbol("wtf.trace.shutdown", wtf.trace.shutdown), goog.exportSymbol("wtf.trace.start", wtf.trace.start), goog.exportSymbol("wtf.trace.snapshot", wtf.trace.snapshot), goog.exportSymbol("wtf.trace.reset", wtf.trace.reset), goog.exportSymbol("wtf.trace.stop", wtf.trace.stop), goog.exportSymbol("wtf.trace.events.createInstance", 
+wtf.trace.exports.ENABLE_EXPORTS && (goog.exportSymbol("wtf.trace.API_VERSION", wtf.trace.API_VERSION), goog.exportSymbol("wtf.trace.prepare", wtf.trace.prepare), goog.exportSymbol("wtf.trace.shutdown", wtf.trace.shutdown), goog.exportSymbol("wtf.trace.start", wtf.trace.start), goog.exportSymbol("wtf.trace.snapshot", wtf.trace.snapshot), goog.exportSymbol("wtf.trace.reset", wtf.trace.reset), goog.exportSymbol("wtf.trace.stop", wtf.trace.stop), goog.exportSymbol("wtf.trace.events.createInstance", 
 wtf.trace.events.createInstance), goog.exportSymbol("wtf.trace.events.createScope", wtf.trace.events.createScope), goog.exportSymbol("wtf.trace.createZone", wtf.trace.createZone), goog.exportSymbol("wtf.trace.deleteZone", wtf.trace.deleteZone), goog.exportSymbol("wtf.trace.pushZone", wtf.trace.pushZone), goog.exportSymbol("wtf.trace.popZone", wtf.trace.popZone), goog.exportSymbol("wtf.trace.enterScope", wtf.trace.enterScope), goog.exportSymbol("wtf.trace.enterTracingScope", wtf.trace.enterTracingScope), 
 goog.exportSymbol("wtf.trace.leaveScope", wtf.trace.leaveScope), goog.exportSymbol("wtf.trace.appendScopeData", wtf.trace.appendScopeData), goog.exportSymbol("wtf.trace.branchFlow", wtf.trace.branchFlow), goog.exportSymbol("wtf.trace.clearFlow", wtf.trace.clearFlow), goog.exportSymbol("wtf.trace.spanFlow", wtf.trace.spanFlow), goog.exportSymbol("wtf.trace.mark", wtf.trace.mark), goog.exportSymbol("wtf.trace.timeStamp", wtf.trace.timeStamp), goog.exportSymbol("wtf.trace.ignoreListener", wtf.trace.ignoreListener), 
 goog.exportSymbol("wtf.trace.ignoreDomTree", wtf.trace.ignoreDomTree), COMPILED || goog.exportSymbol("wtf.trace.base", wtf.trace.base), goog.exportSymbol("wtf.trace.instrument", wtf.trace.instrument), goog.exportSymbol("wtf.trace.instrumentType", wtf.trace.instrumentType), goog.exportSymbol("wtf.trace.instrumentTypeSimple", wtf.trace.instrumentTypeSimple));
