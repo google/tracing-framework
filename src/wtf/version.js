@@ -23,7 +23,7 @@ goog.provide('wtf.version');
  * @return {number} Build number, as an integer.
  */
 wtf.version.getBuild = function() {
-  return 1355824800000; /* set via update-version.sh */
+  return 1355907600000; /* set via update-version.sh */
 };
 
 
@@ -33,7 +33,7 @@ wtf.version.getBuild = function() {
  * @return {string} Version string.
  */
 wtf.version.toString = function() {
-  return '2012.12.18-2'; /* set via update-version.sh */
+  return '2012.12.19-1'; /* set via update-version.sh */
 };
 
 
