@@ -263,9 +263,9 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrame_ =
   // Events used by rAF - created once to prevent duplicates.
   var events = {
     frameStart: wtf.trace.events.createInstance(
-        'timing.frameStart(uint32 number)'),
+        'wtf.timing#frameStart(uint32 number)'),
     frameEnd: wtf.trace.events.createInstance(
-        'timing.frameEnd(uint32 number, uint32 duration)'),
+        'wtf.timing#frameEnd(uint32 number, uint32 duration)'),
     requestAnimationFrame: wtf.trace.events.createInstance(
         'window#requestAnimationFrame(uint32 handle)'),
     requestAnimationFrameCallback: wtf.trace.events.createScope(
@@ -277,7 +277,7 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrame_ =
   // window.requestAnimationFrame
   // window.cancelAnimationFrame
   var rafNames = wtf.trace.providers.TimingProvider.RAF_NAMES_;
-  for (var n = 0; n < rafNames.length / 2; n += 2) {
+  for (var n = 0; n < rafNames.length; n += 2) {
     var requestName = rafNames[n];
     var cancelName = rafNames[n + 1];
     if (goog.global[requestName]) {
