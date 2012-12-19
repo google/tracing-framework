@@ -5063,10 +5063,10 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 // Input 52
 wtf.version = {};
 wtf.version.getBuild = function() {
-  return 13558212E5
+  return 13558248E5
 };
 wtf.version.toString = function() {
-  return"2012.12.18-1"
+  return"2012.12.18-2"
 };
 goog.exportSymbol("wtf.version.getBuild", wtf.version.getBuild);
 goog.exportSymbol("wtf.version.toString", wtf.version.toString);
@@ -10771,7 +10771,7 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   }
   if(wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
     for(c in a) {
-      g = d[c], g.hookObjectEvents()
+      (g = d[c]) && g.hookObjectEvents()
     }
   }else {
     if(wtf.trace.providers.DomProvider.support_.redefineEvent) {
