@@ -260,7 +260,7 @@ wtfapi.trace.enterTracingScope = wtfapi.PRESENT ?
 
 /**
  * Leaves a scope.
- * @param {wtf.trace.Scope} scope Scope to leave.
+ * @param {wtfapi.trace.Scope} scope Scope to leave.
  * @param {T=} opt_result Optional result to chain.
  * @param {number=} opt_time Time for the leave; omit to use the current time.
  * @return {T|undefined} The value of the {@code opt_result} parameter.
