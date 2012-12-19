@@ -5063,10 +5063,10 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 // Input 52
 wtf.version = {};
 wtf.version.getBuild = function() {
-  return 13558248E5
+  return 13559076E5
 };
 wtf.version.toString = function() {
-  return"2012.12.18-2"
+  return"2012.12.19-1"
 };
 goog.exportSymbol("wtf.version.getBuild", wtf.version.getBuild);
 goog.exportSymbol("wtf.version.toString", wtf.version.toString);
@@ -8081,7 +8081,7 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(a, b, c) {
   this.entriesByClass_[wtf.data.EventClass.INSTANCE] = h;
   for(var c = this.db_.getZoneIndices(), i = 0;i < c.length;i++) {
     c[i].forEach(a, b, function(a) {
-      if(!(a.eventType.flags & wtf.data.EventFlag.INTERNAL || a.eventType == this.eventTypes_.scopeLeave)) {
+      if(!(a.eventType.flags & wtf.data.EventFlag.INTERNAL || a.eventType.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA || a.eventType == this.eventTypes_.scopeLeave)) {
         if(!d || d(a)) {
           var b = a.eventType.name, c = e[b];
           if(!c) {
@@ -10600,8 +10600,8 @@ wtf.trace.leaveScope = function(a, b, c) {
   return b
 };
 wtf.trace.appendScopeData = function(a, b, c) {
-  b = goog.json.serialize(b);
-  wtf.trace.BuiltinEvents.appendScopeData(a, b, c)
+  var d = null, d = "number" == typeof b ? "" + b : "boolean" == typeof b ? "" + b : b ? "string" == typeof b ? '"' + b + '"' : goog.global.JSON ? goog.global.JSON.stringify(b) : goog.json.serialize(b) : null;
+  wtf.trace.BuiltinEvents.appendScopeData(a, d, c)
 };
 wtf.trace.branchFlow = wtf.trace.Flow.branch;
 wtf.trace.clearFlow = wtf.trace.Flow.clearCurrent;
@@ -10874,10 +10874,12 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.prepareOnEventHooks =
 wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents = function(a) {
   var b = this.classConstructor_, c = this.onEventInfos_;
   if(a) {
-    for(var d = 0;d < c.length;d++) {
-      var e = c[d];
-      delete a[e.name];
-      Object.defineProperty(a, e.name, {configurable:!1, enumerable:!1, get:e.getter, set:e.setter})
+    if(wtf.trace.providers.DomProvider.support_.redefineEvent) {
+      for(var d = 0;d < c.length;d++) {
+        var e = c[d];
+        delete a[e.name];
+        Object.defineProperty(a, e.name, {configurable:!1, enumerable:!1, get:e.getter, set:e.setter})
+      }
     }
   }else {
     if(wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
@@ -11150,8 +11152,8 @@ wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
 };
 wtf.trace.providers.TimingProvider.RAF_NAMES_ = "requestAnimationFrame cancelAnimationFrame mozRequestAnimationFrame mozCancelAnimationFrame msRequestAnimationFrame msCAncelAnimationFrame oRequestAnimationFrame oCancelAnimationFrame webkitRequestAnimationFrame webkitCancelAnimationFrame".split(" ");
 wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrame_ = function() {
-  for(var a = {frameStart:wtf.trace.events.createInstance("timing.frameStart(uint32 number)"), frameEnd:wtf.trace.events.createInstance("timing.frameEnd(uint32 number, uint32 duration)"), requestAnimationFrame:wtf.trace.events.createInstance("window#requestAnimationFrame(uint32 handle)"), requestAnimationFrameCallback:wtf.trace.events.createScope("window#requestAnimationFrame:callback(uint32 handle)"), cancelAnimationFrame:wtf.trace.events.createInstance("window#cancelAnimationFrame(uint32 handle)")}, 
-  b = wtf.trace.providers.TimingProvider.RAF_NAMES_, c = 0;c < b.length / 2;c += 2) {
+  for(var a = {frameStart:wtf.trace.events.createInstance("wtf.timing#frameStart(uint32 number)"), frameEnd:wtf.trace.events.createInstance("wtf.timing#frameEnd(uint32 number, uint32 duration)"), requestAnimationFrame:wtf.trace.events.createInstance("window#requestAnimationFrame(uint32 handle)"), requestAnimationFrameCallback:wtf.trace.events.createScope("window#requestAnimationFrame:callback(uint32 handle)"), cancelAnimationFrame:wtf.trace.events.createInstance("window#cancelAnimationFrame(uint32 handle)")}, 
+  b = wtf.trace.providers.TimingProvider.RAF_NAMES_, c = 0;c < b.length;c += 2) {
     var d = b[c], e = b[c + 1];
     goog.global[d] && this.injectRequestAnimationFrameFn_(d, e, a)
   }
