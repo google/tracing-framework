@@ -86,6 +86,36 @@ var Extension = function() {
       });
     }
   }, this);
+
+  // This hacky thing lets people open wtf from the omnibox.
+  chrome.omnibox.setDefaultSuggestion({
+    description: '<url><match>%s</match></url> Open trace file'
+  });
+  chrome.omnibox.onInputChanged.addListener((function(text, suggest) {
+    suggest([
+      {
+        content: 'ui',
+        description: 'Open the UI'
+      }
+    ]);
+  }).bind(this));
+  chrome.omnibox.onInputEntered.addListener((function(text) {
+    chrome.tabs.getSelected(null, (function(tab) {
+      if (text == 'ui') {
+        // Open the UI.
+        this.showUi_({
+          targetTab: tab
+        });
+      } else {
+        // A URL? File path? etc?
+        if (text.indexOf('http') == 0) {
+          this.showFileInUi_({
+            targetTab: tab
+          }, text);
+        }
+      }
+    }).bind(this));
+  }).bind(this));
 };
 
 
@@ -279,7 +309,9 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
  */
 Extension.prototype.tabActivated_ = function(activeInfo) {
   chrome.tabs.get(activeInfo.tabId, (function(tab) {
-    this.updatePageState_(tab.id, tab.url);
+    if (tab) {
+      this.updatePageState_(tab.id, tab.url);
+    }
   }).bind(this));
 };
 
@@ -350,6 +382,26 @@ Extension.prototype.convertArraysToUint8Arrays_ = function(sources) {
 
 
 /**
+ * Converts a list of Uint8Arrays to regular arrays.
+ * @param {!Array.<!Uint8Array>} sources Source arrays.
+ * @return {!Array.<!Array.<number>>} Target arrays.
+ * @private
+ */
+Extension.prototype.convertUint8ArraysToArrays_ = function(sources) {
+  var targets = [];
+  for (var n = 0; n < sources.length; n++) {
+    var source = sources[n];
+    var target = new Array(source.length);
+    for (var i = 0; i < source.length; i++) {
+      target[i] = source[i];
+    }
+    targets.push(target);
+  }
+  return targets;
+};
+
+
+/**
  * Handles incoming messages from injector content scripts.
  * @param {!Object} data Message.
  * @param {!Port} port Port the message was received on.
@@ -388,15 +440,26 @@ Extension.prototype.pageMessageReceived_ = function(data, port) {
 
 
 /**
- * Shows a snapshot in a new window.
- * @param {!Tab} sourceTab Source tab.
- * @param {string} pageUrl Page URL to open.
- * @param {string} contentType Data content type.
- * @param {!Array.<!Uint8Array>} contents Data.
+ * @typedef {{
+ *   pageUrl: string|null,
+ *   sourceTab: Tab|undefined,
+ *   targetTab: Tab|undefined
+ * }}
+ */
+Extension.ShowOptions;
+
+
+/**
+ * Shows the empty UI.
+ * @param {Extension.ShowOptions?} options Options.
  * @private
  */
-Extension.prototype.showSnapshot_ = function(
-    sourceTab, pageUrl, contentType, contents) {
+Extension.prototype.showUi_ = function(options, opt_callback, opt_scope) {
+  var pageUrl = (options ? options.pageUrl : null) ||
+      chrome.extension.getURL('app/maindisplay.html');
+  var sourceTab = options ? options.sourceTab : null;
+  var targetTab = options ? options.targetTab : null;
+
   // TODO(benvanik): generalize this into an IPC channel
   var waiter = function(e) {
     // This is a packet from the wtf.ipc.MessageChannel type.
@@ -412,31 +475,35 @@ Extension.prototype.showSnapshot_ = function(
     e.stopPropagation();
     window.removeEventListener('message', waiter, true);
 
-    // NOTE: postMessage doesn't support transferrables here.
-    e.source.postMessage({
-      'wtf_ipc_connect_token': true,
-      'data': {
-        'command': 'snapshot',
-        'content_type': contentType,
-        'contents': contents
-      }
-    }, '*');
+    if (opt_callback) {
+      opt_callback.call(opt_scope, e.source);
+    }
     e.source.focus();
   };
   window.addEventListener('message', waiter, true);
 
-  var existingTabId = this.popupWindows_[sourceTab.id];
+  var existingTabId = sourceTab ? this.popupWindows_[sourceTab.id] : undefined;
   if (existingTabId === undefined) {
     // New tab needed.
-    chrome.tabs.create({
-      windowId: sourceTab.windowId,
-      index: sourceTab.index + 1,
-      url: pageUrl,
-      active: true,
-      openerTabId: sourceTab.id
-    }, (function(newTab) {
-      this.popupWindows_[sourceTab.id] = newTab.id;
-    }).bind(this));
+    if (targetTab) {
+      chrome.tabs.update(targetTab.id, {
+        url: pageUrl,
+        active: true
+      });
+    } else {
+      var openOptions = {
+        url: pageUrl,
+        active: true
+      };
+      if (sourceTab) {
+        openOptions.windowId = sourceTab.windowId;
+        openOptions.index = sourceTab.index + 1;
+        openOptions.openerTabId = sourceTab.id;
+      }
+      chrome.tabs.create(openOptions, (function(newTab) {
+        this.popupWindows_[sourceTab.id] = newTab.id;
+      }).bind(this));
+    }
   } else {
     // Switch to existing tab.
     chrome.tabs.reload(existingTabId);
@@ -450,4 +517,64 @@ Extension.prototype.showSnapshot_ = function(
       active: true
     });
   }
+};
+
+
+/**
+ * Shows a file at the given URL in the UI.
+ * @param {Extension.ShowOptions?} options Options.
+ * @param {string} url URL to open.
+ * @private
+ */
+Extension.prototype.showFileInUi_ = function(options, url) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.responseType = 'arraybuffer';
+  xhr.onload = (function() {
+    if (xhr.status == 200) {
+      var contentType = 'application/x-extension-wtf-trace';
+      var contents = this.convertUint8ArraysToArrays_([
+        new Uint8Array(xhr.response)
+      ]);
+      this.showUi_(options, function(port) {
+        // NOTE: postMessage doesn't support transferrables here.
+        port.postMessage({
+          'wtf_ipc_connect_token': true,
+          'data': {
+            'command': 'snapshot',
+            'content_type': contentType,
+            'contents': contents
+          }
+        }, '*');
+      });
+    }
+  }).bind(this);
+  xhr.send(null);
+};
+
+
+/**
+ * Shows a snapshot in a new window.
+ * @param {!Tab} sourceTab Source tab.
+ * @param {string} pageUrl Page URL to open.
+ * @param {string} contentType Data content type.
+ * @param {!Array.<!Uint8Array>} contents Data.
+ * @private
+ */
+Extension.prototype.showSnapshot_ = function(
+    sourceTab, pageUrl, contentType, contents) {
+  this.showUi_({
+    pageUrl: pageUrl,
+    sourceTab: sourceTab
+  }, function(port) {
+    // NOTE: postMessage doesn't support transferrables here.
+    port.postMessage({
+      'wtf_ipc_connect_token': true,
+      'data': {
+        'command': 'snapshot',
+        'content_type': contentType,
+        'contents': contents
+      }
+    }, '*');
+  });
 };
