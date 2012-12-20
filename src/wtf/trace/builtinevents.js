@@ -126,5 +126,6 @@ wtf.trace.BuiltinEvents = {
    * A simple timestamp event.
    */
   timeStamp: wtf.trace.events.createInstance(
-      'wtf.trace#timeStamp(ascii name)')
+      'wtf.trace#timeStamp(ascii name)',
+      wtf.data.EventFlag.BUILTIN)
 };

@@ -75,6 +75,10 @@ wtf.analysis.TraceListener = function() {
 goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
 
 
+// TODO(benvanik): remove this table/move to JSON parser.
+//     This table prevents older files (with potentially different event
+//     definitions) from working properly, as their differing content is
+//     ignored.
 /**
  * Builtin events.
  * This matches {@see wtf.trace.BuiltinEvents}.
@@ -128,7 +132,8 @@ wtf.analysis.TraceListener.BuiltinEvents_ = [
       'wtf.trace#mark(ascii name)',
       wtf.data.EventFlag.BUILTIN),
   wtf.analysis.EventType.createInstance(
-      'wtf.trace#timeStamp(ascii name)')
+      'wtf.trace#timeStamp(ascii name)',
+      wtf.data.EventFlag.BUILTIN)
 ];
 
 
