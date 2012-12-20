@@ -16,10 +16,15 @@
 
 /**
  * Root control UI.
+ * @param version Version string ('2012.12.12-1').
+ * @param version_commit Version git commit SHA.
  */
 {template .control}
   <div class="{css wtfAppUiHelpDialog}">
     TODO: a prettier dialog<br/>
+    <br/>
+    <a href="https://github.com/google/tracing-framework" target="_blank">Web Tracing Framework</a><br/>
+    Version: {$version} / <a href="https://github.com/google/tracing-framework/tree/{$version_commit}" target="_blank">browse code</a> / <a href="https://github.com/google/tracing-framework/compare/{$version_commit}...master" target="_blank">view latest changes</a><br/>
     <br/>
     In Chrome:<br/>
     &nbsp;&nbsp;Type 'wtf[tab]ui' to open the UI.<br/>

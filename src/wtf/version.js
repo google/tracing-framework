@@ -22,8 +22,19 @@ goog.provide('wtf.version');
  * comparison. If you need a human-readable build number, use {@see #toString}.
  * @return {number} Build number, as an integer.
  */
-wtf.version.getBuild = function() {
-  return 1355907600000; /* set via update-version.sh */
+wtf.version.getValue = function() {
+  // Set via update-version.sh
+  return 1355911200000; // time
+};
+
+
+/**
+ * Gets the git SHA of the commit this build was taken at.
+ * @return {string} A git SHA.
+ */
+wtf.version.getCommit = function() {
+  // Set via update-version.sh
+  return '335746c10e345a028cf6d98137040db6b022f1c2'; // sha
 };
 
 
@@ -33,13 +44,17 @@ wtf.version.getBuild = function() {
  * @return {string} Version string.
  */
 wtf.version.toString = function() {
-  return '2012.12.19-1'; /* set via update-version.sh */
+  // Set via update-version.sh
+  return '2012.12.19-1'; // string
 };
 
 
 goog.exportSymbol(
-    'wtf.version.getBuild',
-    wtf.version.getBuild);
+    'wtf.version.getValue',
+    wtf.version.getValue);
+goog.exportSymbol(
+    'wtf.version.getCommit',
+    wtf.version.getCommit);
 goog.exportSymbol(
     'wtf.version.toString',
     wtf.version.toString);
