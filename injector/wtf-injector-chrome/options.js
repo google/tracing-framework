@@ -339,3 +339,29 @@ Options.prototype.setPageOptions = function(url, options) {
 
   this.save();
 };
+
+
+/**
+ * Resets all options for the given URL.
+ * @param {string} url Canonicalized page URL.
+ */
+Options.prototype.resetPageOptions = function(url) {
+  // Delete options.
+  delete this.pageOptions_[url];
+
+  // Remove from whitelist and blacklist.
+  for (var n = 0; n < this.pageWhitelist_.length; n++) {
+    if (this.pageWhitelist_[n] == url) {
+      this.pageWhitelist_.splice(n, 1);
+      break;
+    }
+  }
+  for (var n = 0; n < this.pageBlacklist_.length; n++) {
+    if (this.pageBlacklist_[n] == url) {
+      this.pageBlacklist_.splice(n, 1);
+      break;
+    }
+  }
+
+  this.save();
+};
