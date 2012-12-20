@@ -2525,7 +2525,7 @@ goog.inherits(wtf.analysis.TraceListener, wtf.events.EventEmitter);
 wtf.analysis.TraceListener.BuiltinEvents_ = [wtf.analysis.EventType.createInstance("wtf.event#define(uint16 wireId, uint16 eventClass, uint32 flags, ascii name, ascii args)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.trace.#discontinuity()", wtf.data.EventFlag.BUILTIN), wtf.analysis.EventType.createInstance("wtf.zone#create(uint16 zoneId, ascii name, ascii type, ascii location)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), 
 wtf.analysis.EventType.createInstance("wtf.zone#delete(uint16 zoneId)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.zone#set(uint16 zoneId)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createScope("wtf.scope#enter(ascii name)", wtf.data.EventFlag.BUILTIN), wtf.analysis.EventType.createScope("wtf.scope#enterTracing()", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME), 
 wtf.analysis.EventType.createInstance("wtf.scope#leave()", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.flow#branch(flowId id, flowId parentId, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.flow#extend(flowId id, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.flow#terminate(flowId id, ascii msg)", wtf.data.EventFlag.BUILTIN | 
-wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.trace#mark(ascii name)", wtf.data.EventFlag.BUILTIN), wtf.analysis.EventType.createInstance("wtf.trace#timeStamp(ascii name)")];
+wtf.data.EventFlag.INTERNAL), wtf.analysis.EventType.createInstance("wtf.trace#mark(ascii name)", wtf.data.EventFlag.BUILTIN), wtf.analysis.EventType.createInstance("wtf.trace#timeStamp(ascii name)", wtf.data.EventFlag.BUILTIN)];
 wtf.analysis.TraceListener.prototype.getCommonTimebase = function() {
   return-1 == this.commonTimebase_ ? 0 : this.commonTimebase_
 };
@@ -5062,13 +5062,17 @@ goog.userAgent.product.CHROME = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.userAgent.product.ASSUME_SAFARI : goog.userAgent.product.detectedSafari_;
 // Input 52
 wtf.version = {};
-wtf.version.getBuild = function() {
-  return 13559076E5
+wtf.version.getValue = function() {
+  return 1355994E6
+};
+wtf.version.getCommit = function() {
+  return"eb54fdc61a7b6c2152bf548fda2dcb4c4b49eb41"
 };
 wtf.version.toString = function() {
-  return"2012.12.19-1"
+  return"2012.12.20-1"
 };
-goog.exportSymbol("wtf.version.getBuild", wtf.version.getBuild);
+goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
+goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
 goog.exportSymbol("wtf.version.toString", wtf.version.toString);
 // Input 53
 wtf.NODE = !0;
@@ -5238,6 +5242,8 @@ wtf.analysis.sources.BinaryTraceSource = function(a, b) {
   this.zoneTable_ = {};
   this.currentZone_ = null;
   this.flowTable_ = {};
+  this.builtinDispatch_ = {};
+  this.setupDispatchTable_();
   this.readStream_.addListener(wtf.io.EventType.READ, this.processBuffer_, this);
   this.readStream_.listen()
 };
@@ -5289,55 +5295,65 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ = function(a) 
   this.initialize(b, c, a, d, e);
   return!0
 };
+wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ = function() {
+  this.builtinDispatch_["wtf.event#define"] = function(a, b, c, d, e) {
+    a = a.defineEventType(wtf.analysis.EventType.parse(e));
+    this.eventTable_[e.wireId] = a
+  };
+  this.builtinDispatch_["wtf.zone#create"] = function(a, b, c, d, e) {
+    a = a.createOrGetZone(e.name, e.type, e.location);
+    this.zoneTable_[e.zoneId] = a;
+    return new wtf.analysis.ZoneEvent(b, c, d, e, a)
+  };
+  this.builtinDispatch_["wtf.zone#delete"] = function(a, b, c, d, e) {
+    return new wtf.analysis.ZoneEvent(b, c, d, e, this.zoneTable_[e.zoneId] || null)
+  };
+  this.builtinDispatch_["wtf.zone#set"] = function(a, b, c, d, e) {
+    this.currentZone_ = this.zoneTable_[e.zoneId] || null
+  };
+  this.builtinDispatch_["wtf.flow#branch"] = function(a, b, c, d, e) {
+    var f = e.parentId, a = e.id, f = new wtf.analysis.Flow(a, f, f ? this.flowTable_[f] : null);
+    this.flowTable_[a] = f;
+    b = new wtf.analysis.FlowEvent(b, c, d, e, f);
+    f.setBranchEvent(b);
+    return b
+  };
+  this.builtinDispatch_["wtf.flow#extend"] = function(a, b, c, d, e) {
+    var f = e.id, a = this.flowTable_[f];
+    a || (a = new wtf.analysis.Flow(f, 0, null), this.flowTable_[f] = a);
+    b = new wtf.analysis.FlowEvent(b, c, d, e, a);
+    a.setExtendEvent(b);
+    return b
+  };
+  this.builtinDispatch_["wtf.flow#terminate"] = function(a, b, c, d, e) {
+    var f = e.id, a = this.flowTable_[f];
+    a || (a = new wtf.analysis.Flow(f, 0, null), this.flowTable_[f] = a);
+    b = new wtf.analysis.FlowEvent(b, c, d, e, a);
+    a.setTerminateEvent(b);
+    return b
+  };
+  this.builtinDispatch_["wtf.scope#enter"] = function(a, b, c, d, e) {
+    var b = new wtf.analysis.Scope, f = a.getEventType(e.name);
+    f || (f = a.defineEventType(new wtf.analysis.EventType(e.name, wtf.data.EventClass.SCOPE, 0, [])));
+    a = new wtf.analysis.ScopeEvent(f, c, d, [], b);
+    b.setEnterEvent(a);
+    return a
+  };
+  this.builtinDispatch_["wtf.trace#timeStamp"] = function(a, b, c, d, e) {
+    (b = a.getEventType(e.name)) || (b = a.defineEventType(new wtf.analysis.EventType(e.name, wtf.data.EventClass.INSTANCE, 0, [])));
+    return new wtf.analysis.Event(b, c, d, [])
+  }
+};
 wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(a, b, c) {
   var b = b + this.getTimeDelay(), d = this.currentZone_, e = this.traceListener;
   e.traceRawEvent(a, d, this.getTimebase(), b, c);
   var f = null;
-  if(a.flags & wtf.data.EventFlag.BUILTIN && a.eventClass != wtf.data.EventClass.SCOPE) {
-    switch(a.name) {
-      case "wtf.event#define":
-        a = e.defineEventType(wtf.analysis.EventType.parse(c));
-        this.eventTable_[c.wireId] = a;
-        break;
-      case "wtf.zone#create":
-        f = e.createOrGetZone(c.name, c.type, c.location);
-        this.zoneTable_[c.zoneId] = f;
-        f = new wtf.analysis.ZoneEvent(a, d, b, c, f);
-        break;
-      case "wtf.zone#delete":
-        f = new wtf.analysis.ZoneEvent(a, d, b, c, this.zoneTable_[c.zoneId] || null);
-        break;
-      case "wtf.zone#set":
-        this.currentZone_ = this.zoneTable_[c.zoneId] || null;
-        break;
-      case "wtf.flow#branch":
-        var g = c.parentId, f = c.id, g = new wtf.analysis.Flow(f, g, g ? this.flowTable_[g] : null);
-        this.flowTable_[f] = g;
-        f = new wtf.analysis.FlowEvent(a, d, b, c, g);
-        g.setBranchEvent(f);
-        break;
-      case "wtf.flow#extend":
-        f = c.id;
-        g = this.flowTable_[f];
-        g || (g = new wtf.analysis.Flow(f, 0, null), this.flowTable_[f] = g);
-        f = new wtf.analysis.FlowEvent(a, d, b, c, g);
-        g.setExtendEvent(f);
-        break;
-      case "wtf.flow#terminate":
-        f = c.id;
-        g = this.flowTable_[f];
-        g || (g = new wtf.analysis.Flow(f, 0, null), this.flowTable_[f] = g);
-        f = new wtf.analysis.FlowEvent(a, d, b, c, g);
-        g.setTerminateEvent(f);
-        break;
-      default:
-        f = new wtf.analysis.Event(a, d, b, c)
-    }
+  if(a.flags & wtf.data.EventFlag.BUILTIN) {
+    f = (f = this.builtinDispatch_[a.name]) ? f.call(this, e, a, d, b, c) : new wtf.analysis.Event(a, d, b, c)
   }else {
     switch(a.eventClass) {
       case wtf.data.EventClass.SCOPE:
-        g = new wtf.analysis.Scope;
-        f = new wtf.analysis.ScopeEvent(a, d, b, c, g);
+        var g = new wtf.analysis.Scope, f = new wtf.analysis.ScopeEvent(a, d, b, c, g);
         g.setEnterEvent(f);
         break;
       default:
@@ -5404,14 +5420,17 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(a) {
 };
 wtf.analysis.sources.JsonTraceSource.prototype.parseHeader_ = function(a) {
   var b = this.traceListener, a = a || {};
-  (a.format_version || 1) != wtf.data.formats.JsonTrace.VERSION && b.sourceError("File version not supported or too old", "Sorry, the parser for this file version is not available :(");
+  if((a.format_version || 1) != wtf.data.formats.JsonTrace.VERSION) {
+    return b.sourceError("File version not supported or too old", "Sorry, the parser for this file version is not available :("), !1
+  }
   var c = 0;
   if(goog.isDef(a.high_resolution_times) ? a.high_resolution_times : 1) {
     c |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES
   }
   var d = a.timebase || 0, a = a.metadata || {}, e = new wtf.data.ScriptContextInfo, f = b.computeTimeDelay(d);
   this.initialize(e, c, a, d, f);
-  b.sourceAdded(this.getTimebase(), e)
+  b.sourceAdded(this.getTimebase(), e);
+  return!0
 };
 wtf.analysis.sources.JsonTraceSource.prototype.parseEventType_ = function(a) {
   var b = a.signature;
@@ -5835,6 +5854,20 @@ wtf.analysis.db.EventList.prototype.findEnclosingScope = function(a) {
   }
   return null
 };
+wtf.analysis.db.EventList.prototype.findInstances = function(a, b, c) {
+  return this.find(a, b, c ? function(a) {
+    return a.scope == c && a.eventType.eventClass == wtf.data.EventClass.INSTANCE && !(a.eventType.flags & wtf.data.EventFlag.INTERNAL)
+  } : function(a) {
+    return a.eventType.eventClass == wtf.data.EventClass.INSTANCE && !(a.eventType.flags & wtf.data.EventFlag.INTERNAL)
+  })
+};
+wtf.analysis.db.EventList.prototype.find = function(a, b, c, d) {
+  var e = [];
+  this.forEach(a, b, function(a) {
+    c.call(d, a) && e.push(a)
+  });
+  return e
+};
 wtf.analysis.db.EventList.prototype.forEach = function(a, b, c, d) {
   goog.asserts.assert(!this.dirtyChunks_.length);
   var e = this.chunks_, f = e.length;
@@ -6074,7 +6107,7 @@ wtf.analysis.db.SummaryIndexNode_.prototype.walkShallowRange = function(a, b, c,
 wtf.analysis.db.ZoneIndex = function(a, b) {
   wtf.analysis.db.EventList.call(this);
   this.zone_ = b;
-  this.rootUserTime_ = this.rootTotalTime_ = 0;
+  this.maxScopeDepth_ = this.rootUserTime_ = this.rootTotalTime_ = 0;
   this.eventTypes_ = {scopeLeave:a.getEventType("wtf.scope#leave")};
   this.currentScope_ = null;
   this.lastAddEventTime_ = 0;
@@ -6091,6 +6124,9 @@ wtf.analysis.db.ZoneIndex.prototype.getRootTotalTime = function() {
 wtf.analysis.db.ZoneIndex.prototype.getRootUserTime = function() {
   return this.rootUserTime_
 };
+wtf.analysis.db.ZoneIndex.prototype.getMaximumScopeDepth = function() {
+  return this.maxScopeDepth_
+};
 wtf.analysis.db.ZoneIndex.prototype.beginInserting = function() {
   wtf.analysis.db.EventList.prototype.beginInserting.call(this);
   this.currentScope_ = null;
@@ -6103,7 +6139,8 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(a) {
     }else {
       this.lastAddEventTime_ = a.time;
       var b = a.eventType;
-      b.eventClass == wtf.data.EventClass.SCOPE ? (this.currentScope_ && this.currentScope_.addChild(a.scope), this.currentScope_ = a.scope, b.flags & wtf.data.EventFlag.SYSTEM_TIME && this.pendingSystemScopes_.push(a.scope)) : b == this.eventTypes_.scopeLeave ? (b = this.currentScope_, a.setScope(b), b && (b.setLeaveEvent(a), this.currentScope_ = b.getParent())) : b.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA ? this.currentScope_ && this.currentScope_.addDataEvent(a) : this.currentScope_ && a.setScope(this.currentScope_)
+      b.eventClass == wtf.data.EventClass.SCOPE ? (this.currentScope_ && (this.currentScope_.addChild(a.scope), a.scope.getDepth() > this.maxScopeDepth_ && (this.maxScopeDepth_ = a.scope.getDepth())), this.currentScope_ = a.scope, b.flags & wtf.data.EventFlag.SYSTEM_TIME && this.pendingSystemScopes_.push(a.scope)) : b == this.eventTypes_.scopeLeave ? (b = this.currentScope_, a.setScope(b), b && (b.setLeaveEvent(a), this.currentScope_ = b.getParent())) : b.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA ? 
+      this.currentScope_ && this.currentScope_.addDataEvent(a) : this.currentScope_ && a.setScope(this.currentScope_)
     }
     wtf.analysis.db.EventList.prototype.insertEvent.call(this, a)
   }
@@ -6111,7 +6148,15 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(a) {
 wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   for(var a = this.currentScope_ = null, b = 0;b < this.pendingOutOfOrderEvents_.length;b++) {
     var c = this.pendingOutOfOrderEvents_[b], d = c.eventType;
-    d.eventClass == wtf.data.EventClass.SCOPE ? ((a = this.findEnclosingScope(c.time)) && a.addChild(c.scope), a = c.scope, d.flags & wtf.data.EventFlag.SYSTEM_TIME && this.pendingSystemScopes_.push(c.scope)) : d == this.eventTypes_.scopeLeave ? (c.setScope(a), a && (a.setLeaveEvent(c), a = null)) : d.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA ? a && a.addDataEvent(c) : c.setScope(a)
+    if(d.eventClass == wtf.data.EventClass.SCOPE) {
+      if(a = this.findEnclosingScope(c.time)) {
+        a.addChild(c.scope), c.scope.getDepth() > this.maxScopeDepth_ && (this.maxScopeDepth_ = c.scope.getDepth())
+      }
+      a = c.scope;
+      d.flags & wtf.data.EventFlag.SYSTEM_TIME && this.pendingSystemScopes_.push(c.scope)
+    }else {
+      d == this.eventTypes_.scopeLeave ? (c.setScope(a), a && (a.setLeaveEvent(c), a = null)) : d.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA ? a && a.addDataEvent(c) : c.setScope(a)
+    }
   }
   for(b = this.pendingOutOfOrderEvents_.length = 0;b < this.pendingSystemScopes_.length;b++) {
     this.pendingSystemScopes_[b].adjustSystemTime()
@@ -9817,7 +9862,7 @@ wtf.trace.events.createScope = function(a, b) {
 wtf.trace.BuiltinEvents = {defineEvent:wtf.trace.events.createInstance("wtf.event#define(uint16 wireId, uint16 eventClass, uint32 flags, ascii name, ascii args)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), discontinuity:wtf.trace.events.createInstance("wtf.trace#discontinuity()", wtf.data.EventFlag.BUILTIN), createZone:wtf.trace.events.createInstance("wtf.zone#create(uint16 zoneId, ascii name, ascii type, ascii location)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), 
 deleteZone:wtf.trace.events.createInstance("wtf.zone#delete(uint16 zoneId)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), setZone:wtf.trace.events.createInstance("wtf.zone#set(uint16 zoneId)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), enterScope:wtf.trace.events.createScope("wtf.scope#enter(ascii name)", wtf.data.EventFlag.BUILTIN), enterTracingScope:wtf.trace.events.createScope("wtf.scope#enterTracing()", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.SYSTEM_TIME), 
 leaveScope:wtf.trace.events.createInstance("wtf.scope#leave()", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), appendScopeData:wtf.trace.events.createInstance("wtf.scope#appendData(ascii name, utf8 json)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA), branchFlow:wtf.trace.events.createInstance("wtf.flow#branch(flowId id, flowId parentId, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), extendFlow:wtf.trace.events.createInstance("wtf.flow#extend(flowId id, ascii msg)", 
-wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), terminateFlow:wtf.trace.events.createInstance("wtf.flow#terminate(flowId id, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), mark:wtf.trace.events.createInstance("wtf.trace#mark(ascii name)", wtf.data.EventFlag.BUILTIN), timeStamp:wtf.trace.events.createInstance("wtf.trace#timeStamp(ascii name)")};
+wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), terminateFlow:wtf.trace.events.createInstance("wtf.flow#terminate(flowId id, ascii msg)", wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL), mark:wtf.trace.events.createInstance("wtf.trace#mark(ascii name)", wtf.data.EventFlag.BUILTIN), timeStamp:wtf.trace.events.createInstance("wtf.trace#timeStamp(ascii name)", wtf.data.EventFlag.BUILTIN)};
 // Input 131
 wtf.trace.Flow = function() {
   this.flowId_ = wtf.trace.Flow.invalidFlowId_
@@ -9916,7 +9961,7 @@ wtf.trace.Session.prototype.startInternal = function() {
 };
 wtf.trace.Session.prototype.writeTraceHeader = function(a) {
   a.writeUint32(3735928559);
-  a.writeUint32(wtf.version.getBuild());
+  a.writeUint32(wtf.version.getValue());
   a.writeUint32(wtf.data.formats.BinaryTrace.VERSION);
   if(!this.traceManager_.detectContextInfo().write(a)) {
     return!1
@@ -10886,12 +10931,12 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents = fu
       for(d = 0;d < c.length;d++) {
         e = c[d], Object.defineProperty(this.classPrototype_, e.name, {configurable:!1, enumerable:!1, get:e.getter, set:e.setter})
       }
-      goog.global[this.name_] = function() {
+      goog.string.startsWith(this.name_, "HTML") || (goog.global[this.name_] = function() {
         for(var a = new b, d = 0;d < c.length;d++) {
           delete a[c[d].name]
         }
         return a
-      }
+      })
     }else {
       wtf.trace.providers.DomProvider.support_.redefineEvent && (goog.global[this.name_] = function() {
         for(var a = new b, d = 0;d < c.length;d++) {
@@ -10971,7 +11016,7 @@ wtf.ipc.MessageChannel = function(a, b) {
   wtf.ipc.Channel.call(this);
   this.recvPort_ = a;
   this.sendPort_ = b;
-  this.hasTransferablePostMessage_ = void 0;
+  this.hasTransferablePostMessage_ = !1;
   this.boundHandleMessage_ = wtf.trace.util.ignoreListener(goog.bind(this.handleMessage_, this));
   this.recvPort_.addEventListener(goog.events.EventType.MESSAGE, this.boundHandleMessage_, !0)
 };
