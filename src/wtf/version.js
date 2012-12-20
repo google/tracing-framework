@@ -34,7 +34,7 @@ wtf.version.getValue = function() {
  */
 wtf.version.getCommit = function() {
   // Set via update-version.sh
-  return 'c58f459e867cb1d11dd76a5a1dbda2fa3bfc965a'; // sha
+  return 'e53d9c233a9449bb2088e00366b517c97b97773e'; // sha
 };
 
 

@@ -47,7 +47,7 @@ echo "Updating files..."
 
 echo "-> package.json"
 # __"version": "2012.12.17-1",
-sed -i .bak \
+sed -i.bak \
     "s/^\ \ \"version\": \".*\",$/\ \ \"version\": \""$ver_string"\",/" \
     package.json
 rm package.json.bak
@@ -55,22 +55,22 @@ rm package.json.bak
 echo "-> injector/wtf-injector-chrome/manifest.json"
 # __"version": "2012.12.17.1",
 manifest_string="$ver_major.$ver_minor.$ver_patch.$ver_tag"
-sed -i .bak \
+sed -i.bak \
     "s/^\ \ \"version\": \".*\",$/\ \ \"version\": \"$manifest_string\",/" \
     injector/wtf-injector-chrome/manifest.json
 rm injector/wtf-injector-chrome/manifest.json.bak
 
 echo "-> src/wtf/version.js"
 # __return 1355734800000; // time
-sed -i .bak \
+sed -i.bak \
     "s/return\ [0-9][0-9]*;\ \/\/ time/return $ver_time; \/\/ time/" \
     src/wtf/version.js
 # __return '2012.12.12-2'; // string
-sed -i .bak \
+sed -i.bak \
     "s/return\ '.*';\ \/\/\ string/return \'$ver_string\';\ \/\/\ string/" \
     src/wtf/version.js
 # __return '5aab3e2c4a6ebbdc7bef94d7daac5fa0452f4556'; // sha
-sed -i .bak \
+sed -i.bak \
     "s/return\ '.*';\ \/\/\ sha/return \'$ver_commit\'; \/\/ sha/" \
     src/wtf/version.js
 rm src/wtf/version.js.bak
@@ -84,6 +84,7 @@ echo ""
 echo "Committing changes..."
 
 git commit -o -m "Updating version to $ver_string." \
+    --dry-run \
     package.json \
     injector/wtf-injector-chrome/manifest.json \
     src/wtf/version.js
