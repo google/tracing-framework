@@ -15,6 +15,7 @@ goog.provide('wtf.trace.providers.DomProvider');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.string');
 goog.require('goog.userAgent.product');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
@@ -502,15 +503,17 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
       });
     }
 
-    // Hook constructor.
-    goog.global[this.name_] = function() {
-      var result = new originalCtor();
-      // Delete the original keys (defineProperty does not allow redefinition).
-      for (var n = 0; n < eventInfos.length; n++) {
-        delete result[eventInfos[n].name];
-      }
-      return result;
-    };
+    // Hook constructor - non HTML only.
+    if (!goog.string.startsWith(this.name_, 'HTML')) {
+      goog.global[this.name_] = function() {
+        var result = new originalCtor();
+        // Delete the original keys (defineProperty does not allow redefinition).
+        for (var n = 0; n < eventInfos.length; n++) {
+          delete result[eventInfos[n].name];
+        }
+        return result;
+      };
+    }
   } else if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
     // Hook constructor.
     goog.global[this.name_] = function() {
