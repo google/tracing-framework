@@ -65,4 +65,12 @@ wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ =
       scope.leave();
     }
   });
+
+  // console.timeStamp
+  var originalTimeStamp = console['timeStamp'];
+  if (originalTimeStamp) {
+    this.injectFunction(console, 'timeStamp', function timeStamp(name) {
+      wtf.trace.timeStamp(name);
+    });
+  }
 };
