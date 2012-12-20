@@ -41,6 +41,8 @@
         // Enter scope
         var scope = wtf.trace.enterScope('onclick');
 
+        wtf.trace.appendScopeData('hello', 'world');
+
         // Start flow...
         var flow = wtf.trace.branchFlow();
         window.setTimeout(function() {
