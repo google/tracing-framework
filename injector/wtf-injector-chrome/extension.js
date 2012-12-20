@@ -37,8 +37,6 @@ var Extension = function() {
       this.tabActivated_.bind(this));
   chrome.tabs.onUpdated.addListener(
       this.tabUpdated_.bind(this));
-  chrome.pageAction.onClicked.addListener(
-      this.pageActionClicked_.bind(this));
 
   // Handle tab closes.
   chrome.tabs.onRemoved.addListener((function(tabId) {
@@ -52,16 +50,38 @@ var Extension = function() {
 
   // Listen for commands from content scripts.
   chrome.extension.onConnect.addListener(function(port) {
+    var options = this.getOptions();
     if (port.name == 'injector') {
       // Setup the extended info provider for the page.
       var tab = port.sender.tab;
-      var options = this.getOptions();
       var pageUrl = URI.canonicalize(tab.url);
       var pageOptions = options.getPageOptions(pageUrl);
       var extendedInfo = new ExtendedInfo(tab.id, port, pageOptions);
 
       // Listen for messages from the page.
       port.onMessage.addListener(this.pageMessageReceived_.bind(this));
+    } else if (port.name == 'popup') {
+      // Get info about the selected tab and send back.
+      // Note: port.sender is the popup tab, not the current tab.
+      chrome.tabs.getSelected(null, (function(tab) {
+        var pageUrl = URI.canonicalize(tab.url);
+        if (!pageUrl.length) {
+          return;
+        }
+        var status = options.getPageStatus(pageUrl);
+        port.postMessage({
+          'command': 'info',
+          'info': {
+            'url': pageUrl,
+            'status': status
+          }
+        });
+
+        // Listen for messages from the popup.
+        port.onMessage.addListener((function(data, port) {
+          this.popupMessageReceived_(tab, data, port);
+        }).bind(this));
+      }).bind(this));
     }
   }.bind(this));
 
@@ -101,7 +121,8 @@ var Extension = function() {
   }).bind(this));
   chrome.omnibox.onInputEntered.addListener((function(text) {
     chrome.tabs.getSelected(null, (function(tab) {
-      if (text == 'ui') {
+      text = text.trim();
+      if (text == 'ui' || text.length == 0) {
         // Open the UI.
         this.showUi_({
           targetTab: tab
@@ -268,19 +289,16 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
 
   if (options.showPageAction) {
     // Determine UI title/icon.
-    var title;
+    var title = 'Toggle Web Tracing Framework on this page';
     var icon;
     switch (status) {
       case PageStatus.NONE:
-        title = 'Enable Web Tracing Framework on this page';
         icon = 'pageAction';
         break;
       case PageStatus.BLACKLISTED:
-        title = 'Enable Web Tracing Framework on this page';
         icon = 'pageActionDisabled';
         break;
       case PageStatus.WHITELISTED:
-        title = 'Disable Web Tracing Framework on this page';
         icon = 'pageActionEnabled';
         break;
     }
@@ -293,6 +311,10 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
     chrome.pageAction.setIcon({
       tabId: tabId,
       path: '/assets/icons/' + icon + '19.png'
+    });
+    chrome.pageAction.setPopup({
+      tabId: tabId,
+      popup: 'popup.html'
     });
     chrome.pageAction.show(tabId);
   } else {
@@ -329,30 +351,43 @@ Extension.prototype.tabUpdated_ = function(tabId, changeInfo, tab) {
 
 
 /**
- * Handles clicks on the page action icon.
- * @param {!Object} tab Tab clicked on.
+ * Handles incoming messages from page action popups.
+ * @param {!Tab} tab Current tab.
+ * @param {!Object} data Message.
+ * @param {!Port} port Port the message was received on. Popup.
  * @private
  */
-Extension.prototype.pageActionClicked_ = function(tab) {
+Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
   var options = this.getOptions();
-
-  // Canonicalize URL. This makes matching easier.
   var pageUrl = URI.canonicalize(tab.url);
 
-  // Perform toggling.
-  var status = options.getPageStatus(pageUrl);
-  switch (status) {
-    case PageStatus.NONE:
-    case PageStatus.BLACKLISTED:
-      options.whitelistPage(pageUrl);
+  switch (data.command) {
+    case 'toggle':
+      // Perform toggling.
+      var status = options.getPageStatus(pageUrl);
+      switch (status) {
+        case PageStatus.NONE:
+        case PageStatus.BLACKLISTED:
+          options.whitelistPage(pageUrl);
+          break;
+        case PageStatus.WHITELISTED:
+          options.blacklistPage(pageUrl);
+          break;
+      }
+      // Force update the page action ASAP.
+      this.updatePageState_(tab.id, tab.url);
       break;
-    case PageStatus.WHITELISTED:
-      options.blacklistPage(pageUrl);
+    case 'reset_settings':
+      // Reset.
+      options.resetPageOptions(pageUrl);
+      // Force update the page action ASAP.
+      this.updatePageState_(tab.id, tab.url);
+      break;
+    case 'show_ui':
+      this.showUi_({
+      });
       break;
   }
-
-  // Force update the page action ASAP.
-  this.updatePageState_(tab.id, tab.url);
 
   // Reload (and inject).
   chrome.tabs.reload(tab.tabId, {
@@ -499,10 +534,12 @@ Extension.prototype.showUi_ = function(options, opt_callback, opt_scope) {
         openOptions.windowId = sourceTab.windowId;
         openOptions.index = sourceTab.index + 1;
         openOptions.openerTabId = sourceTab.id;
+        chrome.tabs.create(openOptions, (function(newTab) {
+          this.popupWindows_[sourceTab.id] = newTab.id;
+        }).bind(this));
+      } else {
+        chrome.tabs.create(openOptions);
       }
-      chrome.tabs.create(openOptions, (function(newTab) {
-        this.popupWindows_[sourceTab.id] = newTab.id;
-      }).bind(this));
     }
   } else {
     // Switch to existing tab.
