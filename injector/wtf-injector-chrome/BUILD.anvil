@@ -32,6 +32,8 @@ file_set(
         'extendedinfo.js',
         'extension.js',
         'options.js',
+        'popup.html',
+        'popup.js',
         'uri.js',
         'wtf-injector.js',
         ] + glob('assets/**/*.png'),

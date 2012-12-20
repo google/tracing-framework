@@ -42,7 +42,7 @@ goog.inherits(wtf.app.ui.HelpDialog, wtf.ui.Dialog);
 wtf.app.ui.HelpDialog.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.helpdialog.control, {
-        'version': wtf.version.toString(),
-        'version_commit': wtf.version.getCommit()
+        version: wtf.version.toString(),
+        version_commit: wtf.version.getCommit()
       }, undefined, dom));
 };
