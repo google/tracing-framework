@@ -13,6 +13,16 @@ if [ ! -d ".git" ]; then
   exit 1
 fi
 
+sed --version 2>&1 | grep GNU &> /dev/null
+is_bsd=$?
+
+# BSD sed needs ''
+if [ $is_bsd -eq 1 ]; then
+  SED=sed -i ''
+else
+  SED='sed -i'
+fi
+
 # =============================================================================
 # Compute build information
 # =============================================================================
@@ -22,12 +32,18 @@ if [ -z $GIVEN_TAG ]; then
   GIVEN_TAG="1"
 fi
 
+ver_commit=`git rev-parse HEAD`
+
 ver_major=`date +%Y`
 ver_minor=`date +%m`
 ver_patch=`date +%d`
 ver_tag=$GIVEN_TAG
 ver_string="$ver_major.$ver_minor.$ver_patch-$ver_tag"
-ver_time=`date -j -f "%Y.%m.%d-%H.%M.%S" "$ver_string.0.0" "+%s000"`
+if [ $is_bsd -eq 1 ]; then
+  ver_time=`date -j -f "%Y.%m.%d-%H.%M.%S" "$ver_string.0.0" "+%s000"`
+else
+  ver_time=`date --date="$ver_major-$ver_minor-$ver_patch $ver_tag:0:0" +%s000`
+fi
 echo "Build version: $ver_string"
 
 
@@ -38,25 +54,40 @@ echo "Updating files..."
 
 echo "-> package.json"
 # __"version": "2012.12.17-1",
-sed -i '' \
+$SED \
     "s/^\ \ \"version\": \".*\",$/\ \ \"version\": \""$ver_string"\",/" \
     package.json
 
 echo "-> injector/wtf-injector-chrome/manifest.json"
 # __"version": "2012.12.17.1",
 manifest_string="$ver_major.$ver_minor.$ver_patch.$ver_tag"
-sed -i '' \
+$SED \
     "s/^\ \ \"version\": \".*\",$/\ \ \"version\": \"$manifest_string\",/" \
     injector/wtf-injector-chrome/manifest.json
 
 echo "-> src/wtf/version.js"
-# __return 1355734800000; /* set via update-version.sh */
-sed -i '' \
-    "s/^\ \ return\ [0-9][0-9]*;\ \/\* set /  return $ver_time; \/* set /" \
+# __return 1355734800000; // time
+$SED \
+    "s/return\ [0-9][0-9]*;\ \/\/ time/return $ver_time; \/\/ time/" \
     src/wtf/version.js
-# __return '2012.12.12-2'; /* set via update-version.sh */
-sed -i '' \
-    "s/^\ \ return\ \'.*\';\ \/\* set /  return \'$ver_string\'; \/* set /" \
+# __return '2012.12.12-2'; // string
+$SED \
+    "s/return\ '.*';\ \/\/\ string/return \'$ver_string\';\ \/\/\ string/" \
+    src/wtf/version.js
+# __return '5aab3e2c4a6ebbdc7bef94d7daac5fa0452f4556'; // sha
+$SED \
+    "s/return\ '.*';\ \/\/\ sha/return \'$ver_commit\'; \/\/ sha/" \
     src/wtf/version.js
 
 echo ""
+
+
+# =============================================================================
+# Stage and commit
+# =============================================================================
+echo "Committing changes..."
+
+git commit -o -m "Updating version to $ver_string." \
+    package.json \
+    injector/wtf-injector-chrome/manifest.json \
+    src/wtf/version.js

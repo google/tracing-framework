@@ -180,7 +180,7 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
   buffer.writeUint32(0xDEADBEEF);
 
   // Write version information.
-  buffer.writeUint32(wtf.version.getBuild());
+  buffer.writeUint32(wtf.version.getValue());
   buffer.writeUint32(wtf.data.formats.BinaryTrace.VERSION);
 
   // Write context information.

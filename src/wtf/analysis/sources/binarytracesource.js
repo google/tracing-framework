@@ -192,7 +192,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
   }
 
   // Read version information to ensure we support the format.
-  // wtf.version.getBuild()
+  // wtf.version.getValue()
   // We don't actually need these to match.
   var wtfVersion = buffer.readUint32();
   var formatVersion = buffer.readUint32();
