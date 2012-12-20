@@ -45,6 +45,9 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
    */
   this.sendPort_ = sendPort;
 
+  // TODO(benvanik): set to undefined to enable checking - right now Chrome
+  //     does not support transferrable types to popup windows and this
+  //     is just an extraneous exception.
   /**
    * Whether the send port supports transferrable objects.
    * This check is done on the first post as there's no way to detect it
@@ -52,7 +55,7 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
    * @type {boolean|undefined}
    * @private
    */
-  this.hasTransferablePostMessage_ = undefined;
+  this.hasTransferablePostMessage_ = false;
 
   /**
    * Bound/ignored version of {@see handleMessage_}.

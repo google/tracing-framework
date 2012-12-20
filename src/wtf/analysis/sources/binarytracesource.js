@@ -100,6 +100,17 @@ wtf.analysis.sources.BinaryTraceSource = function(traceListener, readStream) {
    */
   this.flowTable_ = {};
 
+  /**
+   * A fast dispatch table for BUILTIN events, keyed on event name.
+   * Each function handles an event of the given type.
+   * @type {!Object.<function(!wtf.analysis.TraceListener,
+   *     !wtf.analysis.EventType, wtf.analysis.Zone, number, Object
+   *     ):(wtf.analysis.Event|undefined)>}
+   * @private
+   */
+  this.builtinDispatch_ = {};
+  this.setupDispatchTable_();
+
   // Start listening for read stream events.
   this.readStream_.addListener(
       wtf.io.EventType.READ, this.processBuffer_, this);
@@ -238,6 +249,104 @@ wtf.analysis.sources.BinaryTraceSource.prototype.readTraceHeader_ =
 
 
 /**
+ * Sets up an event dispatch table for the builtin event types.
+ * @private
+ */
+wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
+    function() {
+  this.builtinDispatch_['wtf.event#define'] = function(
+      listener, eventType, zone, time, args) {
+    var newEventType = listener.defineEventType(
+        wtf.analysis.EventType.parse(args));
+    this.eventTable_[args['wireId']] = newEventType;
+  };
+
+  this.builtinDispatch_['wtf.zone#create'] = function(
+      listener, eventType, zone, time, args) {
+    var newZone = listener.createOrGetZone(
+        args['name'], args['type'], args['location']);
+    this.zoneTable_[args['zoneId']] = newZone;
+    return new wtf.analysis.ZoneEvent(
+        eventType, zone, time, args, newZone);
+  };
+  this.builtinDispatch_['wtf.zone#delete'] = function(
+      listener, eventType, zone, time, args) {
+    var deadZone = this.zoneTable_[args['zoneId']] || null;
+    return new wtf.analysis.ZoneEvent(
+        eventType, zone, time, args, deadZone);
+  };
+  this.builtinDispatch_['wtf.zone#set'] = function(
+      listener, eventType, zone, time, args) {
+    this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
+  };
+
+  this.builtinDispatch_['wtf.flow#branch'] = function(
+      listener, eventType, zone, time, args) {
+    var parentFlowId = args['parentId'];
+    var parentFlow = parentFlowId ? this.flowTable_[parentFlowId] : null;
+    var flowId = args['id'];
+    var flow = new wtf.analysis.Flow(flowId, parentFlowId, parentFlow);
+    this.flowTable_[flowId] = flow;
+    var e = new wtf.analysis.FlowEvent(
+        eventType, zone, time, args, flow);
+    flow.setBranchEvent(e);
+    return e;
+  };
+  this.builtinDispatch_['wtf.flow#extend'] = function(
+      listener, eventType, zone, time, args) {
+    var flowId = args['id'];
+    var flow = this.flowTable_[flowId];
+    if (!flow) {
+      flow = new wtf.analysis.Flow(flowId, 0, null);
+      this.flowTable_[flowId] = flow;
+    }
+    var e = new wtf.analysis.FlowEvent(
+        eventType, zone, time, args, flow);
+    flow.setExtendEvent(e);
+    return e;
+  };
+  this.builtinDispatch_['wtf.flow#terminate'] = function(
+      listener, eventType, zone, time, args) {
+    var flowId = args['id'];
+    var flow = this.flowTable_[flowId];
+    if (!flow) {
+      flow = new wtf.analysis.Flow(flowId, 0, null);
+      this.flowTable_[flowId] = flow;
+    }
+    var e = new wtf.analysis.FlowEvent(
+        eventType, zone, time, args, flow);
+    flow.setTerminateEvent(e);
+    return e;
+  };
+
+  this.builtinDispatch_['wtf.scope#enter'] = function(
+      listener, eventType, zone, time, args) {
+    // Create event types on demand.
+    var newScope = new wtf.analysis.Scope();
+    var jitType = listener.getEventType(args['name']);
+    if (!jitType) {
+      jitType = listener.defineEventType(new wtf.analysis.EventType(
+          args['name'], wtf.data.EventClass.SCOPE, 0, []));
+    }
+    var e = new wtf.analysis.ScopeEvent(jitType, zone, time, [], newScope);
+    newScope.setEnterEvent(e);
+    return e;
+  };
+
+  this.builtinDispatch_['wtf.trace#timeStamp'] = function(
+      listener, eventType, zone, time, args) {
+    // Create event types on demand.
+    var jitType = listener.getEventType(args['name']);
+    if (!jitType) {
+      jitType = listener.defineEventType(new wtf.analysis.EventType(
+          args['name'], wtf.data.EventClass.INSTANCE, 0, []));
+    }
+    return new wtf.analysis.Event(jitType, zone, time, []);
+  };
+};
+
+
+/**
  * Dispatches an event.
  * The event is assumed to have passed any filtering.
  * @param {!wtf.analysis.EventType} eventType Event type.
@@ -260,66 +369,12 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   // TODO(benvanik): share more of this in TraceSource
   // TODO(benvanik): something much more efficient for builtins
   var e = null;
-  if (eventType.flags & wtf.data.EventFlag.BUILTIN &&
-      eventType.eventClass != wtf.data.EventClass.SCOPE) {
-    switch (eventType.name) {
-      case 'wtf.event#define':
-        var newEventType = listener.defineEventType(
-            wtf.analysis.EventType.parse(args));
-        this.eventTable_[args['wireId']] = newEventType;
-        break;
-
-      case 'wtf.zone#create':
-        var newZone = listener.createOrGetZone(
-            args['name'], args['type'], args['location']);
-        this.zoneTable_[args['zoneId']] = newZone;
-        e = new wtf.analysis.ZoneEvent(
-            eventType, zone, time, args, newZone);
-        break;
-      case 'wtf.zone#delete':
-        var deadZone = this.zoneTable_[args['zoneId']] || null;
-        e = new wtf.analysis.ZoneEvent(
-            eventType, zone, time, args, deadZone);
-        break;
-      case 'wtf.zone#set':
-        this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
-        break;
-
-      case 'wtf.flow#branch':
-        var parentFlowId = args['parentId'];
-        var parentFlow = parentFlowId ? this.flowTable_[parentFlowId] : null;
-        var flowId = args['id'];
-        var flow = new wtf.analysis.Flow(flowId, parentFlowId, parentFlow);
-        this.flowTable_[flowId] = flow;
-        e = new wtf.analysis.FlowEvent(
-            eventType, zone, time, args, flow);
-        flow.setBranchEvent(e);
-        break;
-      case 'wtf.flow#extend':
-        var flowId = args['id'];
-        var flow = this.flowTable_[flowId];
-        if (!flow) {
-          flow = new wtf.analysis.Flow(flowId, 0, null);
-          this.flowTable_[flowId] = flow;
-        }
-        e = new wtf.analysis.FlowEvent(
-            eventType, zone, time, args, flow);
-        flow.setExtendEvent(e);
-        break;
-      case 'wtf.flow#terminate':
-        var flowId = args['id'];
-        var flow = this.flowTable_[flowId];
-        if (!flow) {
-          flow = new wtf.analysis.Flow(flowId, 0, null);
-          this.flowTable_[flowId] = flow;
-        }
-        e = new wtf.analysis.FlowEvent(
-            eventType, zone, time, args, flow);
-        flow.setTerminateEvent(e);
-        break;
-      default:
-        e = new wtf.analysis.Event(eventType, zone, time, args);
-        break;
+  if (eventType.flags & wtf.data.EventFlag.BUILTIN) {
+    var dispatchFn = this.builtinDispatch_[eventType.name];
+    if (dispatchFn) {
+      e = dispatchFn.call(this, listener, eventType, zone, time, args);
+    } else {
+      e = new wtf.analysis.Event(eventType, zone, time, args);
     }
   } else {
     switch (eventType.eventClass) {
