@@ -44,10 +44,12 @@
         wtf.trace.appendScopeData('hello', 'world');
 
         // Start flow...
-        var flow = wtf.trace.branchFlow();
+        var flow = wtf.trace.branchFlow('click');
+        wtf.trace.extendFlow(flow);
         window.setTimeout(function() {
           // Enter scope, resume flow
-          var scope = wtf.trace.enterScope('setTimeout callback', flow);
+          var scope = wtf.trace.enterScope('setTimeout callback');
+          wtf.trace.extendFlow(flow, 'timeout');
 
           wtf.trace.timeStamp('hello1');
           wtf.trace.timeStamp('hello2');
@@ -60,6 +62,7 @@
 
           console.log('hi');
 
+          wtf.trace.terminateFlow(flow);
           wtf.trace.leaveScope(scope);
         }, 0);
 

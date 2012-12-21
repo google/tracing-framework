@@ -285,7 +285,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     var parentFlowId = args['parentId'];
     var parentFlow = parentFlowId ? this.flowTable_[parentFlowId] : null;
     var flowId = args['id'];
-    var flow = new wtf.analysis.Flow(flowId, parentFlowId, parentFlow);
+    var flow = new wtf.analysis.Flow(flowId, parentFlow);
     this.flowTable_[flowId] = flow;
     var e = new wtf.analysis.FlowEvent(
         eventType, zone, time, args, flow);
@@ -297,12 +297,12 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     var flowId = args['id'];
     var flow = this.flowTable_[flowId];
     if (!flow) {
-      flow = new wtf.analysis.Flow(flowId, 0, null);
-      this.flowTable_[flowId] = flow;
+      // Ignore flows where there branch is missing.
+      return null;
     }
     var e = new wtf.analysis.FlowEvent(
         eventType, zone, time, args, flow);
-    flow.setExtendEvent(e);
+    flow.addExtendEvent(e);
     return e;
   };
   this.builtinDispatch_['wtf.flow#terminate'] = function(
@@ -310,8 +310,8 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     var flowId = args['id'];
     var flow = this.flowTable_[flowId];
     if (!flow) {
-      flow = new wtf.analysis.Flow(flowId, 0, null);
-      this.flowTable_[flowId] = flow;
+      // Ignore flows where there branch is missing.
+      return null;
     }
     var e = new wtf.analysis.FlowEvent(
         eventType, zone, time, args, flow);

@@ -28,8 +28,6 @@ goog.require('wtf.trace.BuiltinEvents');
 wtf.trace.Scope = function() {
   /**
    * The flow this scope is tracking, if any.
-   * Scopes can be given flows. When a scope is left the flow will be
-   * terminated.
    * @type {wtf.trace.Flow}
    * @private
    */
@@ -85,11 +83,10 @@ wtf.trace.Scope.pool_ = {
  * This method should only be used by internally generated code. It assumes that
  * there is generated code around it that is properly recording events.
  *
- * @param {wtf.trace.Flow} flow Optional flow to terminate on scope leave.
  * @param {number} time Time for the enter.
  * @return {!wtf.trace.Scope} An initialized scope.
  */
-wtf.trace.Scope.enterTyped = function(flow, time) {
+wtf.trace.Scope.enterTyped = function(time) {
   // Pop a scope from the pool or allocate a new one.
   var pool = wtf.trace.Scope.pool_;
   var scope;
@@ -103,12 +100,6 @@ wtf.trace.Scope.enterTyped = function(flow, time) {
   // unbalanced scopes.
   scope.stackDepth_ = ++pool.currentDepth;
   pool.stack[scope.stackDepth_] = scope;
-
-  // Extend flow, if present.
-  scope.flow_ = flow;
-  if (flow) {
-    flow.extend(undefined, time);
-  }
 
   return scope;
 };
@@ -156,3 +147,33 @@ wtf.trace.Scope.leave = function(scope, opt_result, opt_time) {
 };
 
 
+/**
+ * Gets the flow set on any ancestor scope, if any.
+ * If there are no active scopes (in the root) this always returns null.
+ * @return {wtf.trace.Flow} Flow.
+ */
+wtf.trace.Scope.getCurrentFlow = function() {
+  var pool = wtf.trace.Scope.pool_;
+  var depth = pool.currentDepth;
+  while (depth > 0) {
+    var scope = pool.stack[depth--];
+    if (scope && scope.flow_) {
+      return scope.flow_;
+    }
+  }
+  return null;
+};
+
+
+/**
+ * Sets the flow on the deepest current scope, if any.
+ * If there are no active scopes (in the root) this is ignored.
+ * @param {wtf.trace.Flow} value New flow value.
+ */
+wtf.trace.Scope.setCurrentFlow = function(value) {
+  var pool = wtf.trace.Scope.pool_;
+  var scope = pool.stack[pool.currentDepth];
+  if (scope) {
+    scope.flow_ = value;
+  }
+};

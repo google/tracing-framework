@@ -96,15 +96,18 @@ var Extension = function() {
   // Rescan all open tabs to reload any that are whitelisted.
   this.options_.load(function() {
     var whitelist = this.options_.getWhitelistedPages();
+    var whitelistMap = {};
     for (var n = 0; n < whitelist.length; n++) {
-      chrome.tabs.query({
-        'url': whitelist[n]
-      }, function(tabs) {
-        for (var n = 0; n < tabs.length; n++) {
+      whitelistMap[whitelist[n]] = true;
+    }
+    chrome.tabs.query({}, function(tabs) {
+      for (var n = 0; n < tabs.length; n++) {
+        var pageUrl = URI.canonicalize(tabs[n].url);
+        if (whitelistMap[pageUrl]) {
           chrome.tabs.reload(tabs[n].id, {});
         }
-      });
-    }
+      }
+    });
   }, this);
 
   // This hacky thing lets people open wtf from the omnibox.

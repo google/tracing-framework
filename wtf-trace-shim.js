@@ -235,8 +235,6 @@ wtfapi.trace.popZone = wtfapi.PRESENT ?
 /**
  * Enters a scope.
  * @param {string} name Scope name.
- * @param {wtfapi.trace.Flow=} opt_flow A flow to terminate on scope leave, if
- *     any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {wtfapi.trace.Scope} An initialized scope object.
  */
@@ -248,8 +246,6 @@ wtfapi.trace.enterScope = wtfapi.PRESENT ?
  * Enters a tracing implementation overhead scope.
  * This should only be used by the tracing framework and extension to indicate
  * time used by non-user tasks.
- * @param {wtfapi.trace.Flow=} opt_flow A flow to terminate on scope leave, if
- *     any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {wtfapi.trace.Scope} An initialized scope object.
  */
@@ -288,8 +284,9 @@ wtfapi.trace.appendScopeData = wtfapi.PRESENT ?
 
 /**
  * Branches the flow.
- * If no parent flow is given then the current global flow is used.
- * @param {string=} opt_msg Optional message string.
+ * If no parent flow is given then the current scope flow is used.
+ * @param {string} name Flow name.
+ * @param {*=} opt_value Optional data value.
  * @param {wtfapi.trace.Flow=} opt_parentFlow Parent flow, if any.
  * @param {number=} opt_time Time for the branch; omit to use the current time.
  * @return {!wtfapi.trace.Flow} An initialized flow object.
@@ -299,8 +296,29 @@ wtfapi.trace.branchFlow = wtfapi.PRESENT ?
 
 
 /**
- * Clears the current global flow.
- * This should be called at the end of any runtime callback.
+ * Extends the flow into the current scope.
+ * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {string} name Flow stage name.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the extend; omit to use the current time.
+ */
+wtf.trace.extendFlow = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['extendFlow'] : goog.nullFunction;
+
+
+/**
+ * Terminates a flow.
+ * @param {wtf.trace.Flow} flow Flow to terminate.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the terminate; omit to use the current
+ *     time.
+ */
+wtf.trace.terminateFlow = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['terminateFlow'] : goog.nullFunction;
+
+
+/**
+ * Clears the current scope flow.
  */
 wtfapi.trace.clearFlow = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['clearFlow'] : goog.nullFunction;

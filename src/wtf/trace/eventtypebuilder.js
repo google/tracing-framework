@@ -81,12 +81,6 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   }
 
   // Additional optional arguments.
-  switch (eventType.eventClass) {
-    case wtf.data.EventClass.SCOPE:
-      // Custom typed scope - take flow to pass down to enterTypedScope.
-      this.addArgument('opt_flow');
-      break;
-  }
   this.addArgument('opt_time');
   this.addArgument('opt_buffer');
 
@@ -156,7 +150,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   // Enter scope/flow/etc.
   if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
     this.append(
-        'return session.enterTypedScope(opt_flow, time);');
+        'return session.enterTypedScope(time);');
   }
 
   // Save off the final function.
