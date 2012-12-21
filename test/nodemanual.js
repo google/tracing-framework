@@ -4,4 +4,4 @@ wtf.trace.node.start();
 var scope = wtf.trace.enterScope('hello');
 for (var n = 0; n < 100000000; n++) {
 }
-scope.leave();
+wtf.trace.leaveScope(scope);

@@ -9,7 +9,7 @@
     > var wtf = require('tracing-framework');
     > wtf.trace.node.start();
     > var scope = wtf.trace.enterScope('hello!');
-    > scope.leave();
+    > wtf.trace.leaveScope(scope);
     > process.exit()
     $ wtf-dump node-[time].wtf-trace
 

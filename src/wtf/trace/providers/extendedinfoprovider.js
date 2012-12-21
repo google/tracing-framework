@@ -17,6 +17,7 @@ goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
 
@@ -100,5 +101,5 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.traceGc_ = function(data) {
   var usedHeapSize = data['usedHeapSize'];
   var usedHeapSizeDelta = data['usedHeapSizeDelta'];
   var scope = this.events_.gc(usedHeapSize, usedHeapSizeDelta, null, startTime);
-  scope.leave(undefined, endTime);
+  wtf.trace.leaveScope(scope, undefined, endTime);
 };

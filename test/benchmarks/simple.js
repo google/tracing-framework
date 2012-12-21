@@ -15,5 +15,5 @@
 benchmark.register('simple', function() {
   var scope = wtf.trace.enterScope();
   //
-  scope.leave();
+  wtf.trace.leaveScope(scope);
 });

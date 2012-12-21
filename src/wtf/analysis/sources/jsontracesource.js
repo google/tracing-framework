@@ -75,6 +75,71 @@ wtf.analysis.sources.JsonTraceSource = function(traceListener, sourceData) {
 goog.inherits(wtf.analysis.sources.JsonTraceSource, wtf.analysis.TraceSource);
 
 
+/**
+ * Lookup table for all defined {@see wtf.analysis.EventType}s by event name.
+ * This is used by the JSON source to add events on-demand when they are
+ * used without being defined.
+ * *
+ * It's best not to always add these events, or not to use them if the
+ * source defines their own, as it allows for forwards compatibility.
+ *
+ * This matches {@see wtf.trace.BuiltinEvents} (sort of).
+ * This list does not need to be exhaustive - it's only here to enable trace
+ * sources that want to omit defining built in events to function.
+ *
+ * @type {!Object.<!wtf.analysis.EventType>}
+ * @private
+ */
+wtf.analysis.sources.JsonTraceSource.BuiltinEvents_ = {
+  'wtf.event#define': wtf.analysis.EventType.createInstance(
+      'wtf.event#define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
+          'ascii name, ascii args)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+
+  'wtf.trace.#discontinuity': wtf.analysis.EventType.createInstance(
+      'wtf.trace.#discontinuity()',
+      wtf.data.EventFlag.BUILTIN),
+
+  'wtf.zone#create': wtf.analysis.EventType.createInstance(
+      'wtf.zone#create(uint16 zoneId, ascii name, ascii type, ascii location)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+  'wtf.zone#delete': wtf.analysis.EventType.createInstance(
+      'wtf.zone#delete(uint16 zoneId)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+  'wtf.zone#set': wtf.analysis.EventType.createInstance(
+      'wtf.zone#set(uint16 zoneId)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+
+  'wtf.scope#enter': wtf.analysis.EventType.createScope(
+      'wtf.scope#enter(ascii name)',
+      wtf.data.EventFlag.BUILTIN),
+  'wtf.scope#enterTracing': wtf.analysis.EventType.createScope(
+      'wtf.scope#enterTracing()',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
+      wtf.data.EventFlag.SYSTEM_TIME),
+  'wtf.scope#leave': wtf.analysis.EventType.createInstance(
+      'wtf.scope#leave()',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+
+  'wtf.flow#branch': wtf.analysis.EventType.createInstance(
+      'wtf.flow#branch(flowId id, flowId parentId, ascii name)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+  'wtf.flow#extend': wtf.analysis.EventType.createInstance(
+      'wtf.flow#extend(flowId id, ascii name)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+  'wtf.flow#terminate': wtf.analysis.EventType.createInstance(
+      'wtf.flow#terminate(flowId id)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
+
+  'wtf.trace#mark': wtf.analysis.EventType.createInstance(
+      'wtf.trace#mark(ascii name)',
+      wtf.data.EventFlag.BUILTIN),
+  'wtf.trace#timeStamp': wtf.analysis.EventType.createInstance(
+      'wtf.trace#timeStamp(ascii name)',
+      wtf.data.EventFlag.BUILTIN)
+};
+
+
 // TODO(benvanik): error handling/reporting
 /**
  * Parses a JSON string, performing fixup if needed.
@@ -118,6 +183,10 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseJson_ = function(source) {
 wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
   var listener = this.traceListener;
 
+  // Always define wtf.scope.#leave
+  var builtinEvents = wtf.analysis.sources.JsonTraceSource.BuiltinEvents_;
+  listener.defineEventType(builtinEvents['wtf.scope#leave']);
+
   /**
    * Map of event types by event ID.
    * @type {!Array.<wtf.analysis.EventType>}
@@ -144,11 +213,17 @@ wtf.analysis.sources.JsonTraceSource.prototype.parseEvents_ = function(source) {
       var argList = entry['args'] || null;
       var eventType = eventTable[eventRef] || listener.getEventType(eventRef);
       if (!eventType) {
-        listener.sourceError(
-            'Undefined event type',
-            'The file tried to reference an event it didn\'t define. Perhaps ' +
-            'it\'s corrupted?');
-        return false;
+        // Try to look up a builtin.
+        eventType = builtinEvents[eventRef];
+        if (eventType) {
+          listener.defineEventType(eventType);
+        } else {
+          listener.sourceError(
+              'Undefined event type',
+              'The file tried to reference an event it didn\'t define. Perhaps ' +
+              'it\'s corrupted?');
+          return false;
+        }
       }
       this.dispatchEvent_(eventType, time, argList);
     } else {

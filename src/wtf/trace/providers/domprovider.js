@@ -17,6 +17,7 @@ goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('goog.userAgent.product');
+goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
 
@@ -381,9 +382,7 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.injectEventTarget_ =
               return listener.apply(this, arguments);
             }
           } finally {
-            if (scope) {
-              scope.leave();
-            }
+            wtf.trace.leaveScope(scope);
           }
         };
         listener['__wrapped__'] = wrappedEventListener;

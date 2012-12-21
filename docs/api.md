@@ -21,7 +21,7 @@ Emitting a scope event:
     // Enter/leave the scope:
     var scope = myScopeEvent('hello world');
     // ...
-    return scope.leave(someResult);
+    return wtf.trace.leaveScope(scope, someResult);
 
 Automatic instrumentation of a function:
 
@@ -53,7 +53,7 @@ automatically created or is added conditionally, consider using an append event.
     // Call the method inside of scopes:
     var scope = ...enter scope...();
     appendMyData(123, 456);
-    scope.leave();
+    wtf.trace.leaveScope(scope);
 
 If (and only if!) you're doing some debugging and need a bunch of data in your
 scopes you can use the super slow `wtf.trace.appendScopeData` method:
@@ -64,14 +64,14 @@ scopes you can use the super slow `wtf.trace.appendScopeData` method:
       'complex': ['objects'],
       'prop': 123.456
     });
-    scope.leave();
+    wtf.trace.leaveScope(scope);
 
 If you need to do any expensive work that you don't want to show up as user
 time, use the built-in helper scope:
 
     var traceScope = wtf.trace.enterTracingScope();
     // Expensive work...
-    traceScope.leave();
+    wtf.trace.leaveScope(traceScope);
 
 To prevent DOM event listeners from appearing in the trace, wrap them with
 `wtf.trace.ignoreListener` before attaching them:

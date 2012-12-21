@@ -54,7 +54,7 @@ wtf.analysis.db.EventDataTable = function(db, opt_filter) {
    * @private
    */
   this.eventTypes_ = {
-    scopeLeave: traceListener.getEventType('wtf.scope#leave')
+    scopeLeave: null
   };
 
   /**
@@ -114,6 +114,11 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
     evaluator = opt_filter.getEvaluator();
   } else {
     evaluator = opt_filter || null;
+  }
+
+  if (!this.eventTypes_.scopeLeave) {
+    this.eventTypes_.scopeLeave =
+        this.db_.getTraceListener().getEventType('wtf.scope#leave');
   }
 
   // TODO(benvanik): cache? etc?

@@ -21,13 +21,10 @@ goog.provide('wtf.analysis.Flow');
  * Flows are passed to listeners to enable better tracking.
  *
  * @param {number} flowId Flow ID.
- * @param {number} parentFlowId Parent flow ID.
- * @param {wtf.analysis.Flow} parentFlow Parent flow, if any. Note that this
- *     may not be valid even if a parent flow ID is given, if the flow happens
- *     to not be in the cache.
+ * @param {wtf.analysis.Flow} parentFlow Parent flow, if any.
  * @constructor
  */
-wtf.analysis.Flow = function(flowId, parentFlowId, parentFlow) {
+wtf.analysis.Flow = function(flowId, parentFlow) {
   /**
    * Session-unique flow ID.
    * Used to track the flow in the stream.
@@ -37,15 +34,7 @@ wtf.analysis.Flow = function(flowId, parentFlowId, parentFlow) {
   this.flowId_ = flowId;
 
   /**
-   * Parent flow ID.
-   * @type {number}
-   * @private
-   */
-  this.parentFlowId_ = parentFlowId;
-
-  /**
-   * Parent flow, if any. Note that this may not be valid even if a parent
-   * flow ID is given, if the flow happens to not be in the cache.
+   * Parent flow, if any.
    * @type {wtf.analysis.Flow}
    * @private
    */
@@ -59,11 +48,11 @@ wtf.analysis.Flow = function(flowId, parentFlowId, parentFlow) {
   this.branchEvent_ = null;
 
   /**
-   * Extend event for the flow.
-   * @type {wtf.analysis.FlowEvent}
+   * Extend events for the flow.
+   * @type {!Array.<!wtf.analysis.FlowEvent>}
    * @private
    */
-  this.extendEvent_ = null;
+  this.extendEvents_ = [];
 
   /**
    * Terminate event for the flow.
@@ -85,20 +74,7 @@ wtf.analysis.Flow.prototype.getId = function() {
 
 
 /**
- * Gets a value indicating whether the flow has a parent.
- * This may be true if even {@see #getParent} returns null, as the parent may
- * not have been seen in the stream.
- * @return {boolean} True if the flow has/had a parent.
- */
-wtf.analysis.Flow.prototype.hasParent = function() {
-  return !!this.parentFlowId_;
-};
-
-
-/**
  * Gets the parent flow of this flow instance.
- * This may be null even if {@see #hasParent} is true, as the flow may not have
- * been present in the stream.
  * @return {wtf.analysis.Flow} Parent flow, if any.
  */
 wtf.analysis.Flow.prototype.getParent = function() {
@@ -125,20 +101,21 @@ wtf.analysis.Flow.prototype.setBranchEvent = function(e) {
 
 
 /**
- * Gets the extend event for the flow.
- * @return {wtf.analysis.FlowEvent} Extend event, if any.
+ * Gets the extend events for the flow.
+ * @return {!Array.<!wtf.analysis.FlowEvent>} Extend events, if any. Do not
+ *     modify.
  */
-wtf.analysis.Flow.prototype.getExtendEvent = function() {
-  return this.extendEvent_;
+wtf.analysis.Flow.prototype.getExtendEvents = function() {
+  return this.extendEvents_;
 };
 
 
 /**
- * Sets the extend event for the flow.
+ * Adds an extend event for the flow.
  * @param {!wtf.analysis.FlowEvent} e Event.
  */
-wtf.analysis.Flow.prototype.setExtendEvent = function(e) {
-  this.extendEvent_ = e;
+wtf.analysis.Flow.prototype.addExtendEvent = function(e) {
+  this.extendEvents_.push(e);
 };
 
 
@@ -167,17 +144,14 @@ goog.exportProperty(
     wtf.analysis.Flow.prototype, 'getId',
     wtf.analysis.Flow.prototype.getId);
 goog.exportProperty(
-    wtf.analysis.Flow.prototype, 'hasParent',
-    wtf.analysis.Flow.prototype.hasParent);
-goog.exportProperty(
     wtf.analysis.Flow.prototype, 'getParent',
     wtf.analysis.Flow.prototype.getParent);
 goog.exportProperty(
     wtf.analysis.Flow.prototype, 'getBranchEvent',
     wtf.analysis.Flow.prototype.getBranchEvent);
 goog.exportProperty(
-    wtf.analysis.Flow.prototype, 'getExtendEvent',
-    wtf.analysis.Flow.prototype.getExtendEvent);
+    wtf.analysis.Flow.prototype, 'getExtendEvents',
+    wtf.analysis.Flow.prototype.getExtendEvents);
 goog.exportProperty(
     wtf.analysis.Flow.prototype, 'getTerminateEvent',
     wtf.analysis.Flow.prototype.getTerminateEvent);

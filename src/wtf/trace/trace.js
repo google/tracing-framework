@@ -28,6 +28,7 @@ goog.require('wtf.io.WriteStream');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.NullSession');
+goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
@@ -350,7 +351,6 @@ wtf.trace.popZone = function() {
 /**
  * Enters a scope.
  * @param {string} name Scope name.
- * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
@@ -361,7 +361,6 @@ wtf.trace.enterScope = wtf.trace.BuiltinEvents.enterScope;
  * Enters a tracing implementation overhead scope.
  * This should only be used by the tracing framework and extension to indicate
  * time used by non-user tasks.
- * @param {wtf.trace.Flow=} opt_flow A flow to terminate on scope leave, if any.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtf.trace.Scope} An initialized scope object.
  */
@@ -376,12 +375,7 @@ wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
  * @return {T|undefined} The value of the {@code opt_result} parameter.
  * @template T
  */
-wtf.trace.leaveScope = function(scope, opt_result, opt_time) {
-  if (scope) {
-    scope.leave(opt_result, opt_time);
-  }
-  return opt_result;
-};
+wtf.trace.leaveScope = wtf.trace.Scope.leave;
 
 
 /**
@@ -419,8 +413,9 @@ wtf.trace.appendScopeData = function(name, value, opt_time) {
 
 /**
  * Branches the flow.
- * If no parent flow is given then the current global flow is used.
- * @param {string=} opt_msg Optional message string.
+ * If no parent flow is given then the current scope flow is used.
+ * @param {string} name Flow name.
+ * @param {*=} opt_value Optional data value.
  * @param {wtf.trace.Flow=} opt_parentFlow Parent flow, if any.
  * @param {number=} opt_time Time for the branch; omit to use the current time.
  * @return {!wtf.trace.Flow} An initialized flow object.
@@ -429,10 +424,29 @@ wtf.trace.branchFlow = wtf.trace.Flow.branch;
 
 
 /**
- * Clears the current global flow.
- * This should be called at the end of any runtime callback.
+ * Extends the flow into the current scope.
+ * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {string} name Flow stage name.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the extend; omit to use the current time.
  */
-wtf.trace.clearFlow = wtf.trace.Flow.clearCurrent;
+wtf.trace.extendFlow = wtf.trace.Flow.extend;
+
+
+/**
+ * Terminates a flow.
+ * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the terminate; omit to use the current
+ *     time.
+ */
+wtf.trace.terminateFlow = wtf.trace.Flow.terminate;
+
+
+/**
+ * Clears the current scope flow.
+ */
+wtf.trace.clearFlow = wtf.trace.Flow.clear;
 
 
 /**

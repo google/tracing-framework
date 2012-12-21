@@ -338,8 +338,8 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
    * @private
    */
   this.eventTypes_ = {
-    zoneCreate: this.getEventType('wtf.zone#create'),
-    scopeLeave: this.getEventType('wtf.scope#leave')
+    zoneCreate: null,
+    scopeLeave: null
   };
 };
 goog.inherits(wtf.analysis.db.EventDatabase.Listener_,
@@ -433,6 +433,13 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
     this.dirtyTimeEnd_ = e.time;
   }
   this.insertedEventCount_++;
+
+  if (!this.eventTypes_.scopeLeave) {
+    this.eventTypes_.scopeLeave = this.getEventType('wtf.scope#leave');
+  }
+  if (!this.eventTypes_.zoneCreate) {
+    this.eventTypes_.zoneCreate = this.getEventType('wtf.zone#create');
+  }
 
   if (!(e.eventType.flags & wtf.data.EventFlag.INTERNAL ||
       e.eventType == this.eventTypes_.scopeLeave)) {

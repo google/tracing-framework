@@ -101,7 +101,7 @@ function instrumentContext(raw) {
     return function attachShader(program, shader) {
       var scope = eventType(getHandle(program), getHandle(shader));
       fn.call(this, program, shader);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('bindAttribLocation(uint32 program, uint32 index, utf8 name)', function(fn, eventType) {
@@ -109,7 +109,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program), index, name);
       fn.call(this, program, index, name);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('bindBuffer(uint32 target, uint32 buffer)', function(fn, eventType) {
@@ -117,7 +117,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(target, getHandle(buffer));
       fn.call(this, target, buffer);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('bindFramebuffer(uint32 target, uint32 framebuffer)', function(fn, eventType) {
@@ -125,7 +125,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(target, getHandle(framebuffer));
       fn.call(this, target, framebuffer);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('bindRenderbuffer(uint32 target, uint32 renderbuffer)', function(fn, eventType) {
@@ -133,7 +133,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(target, getHandle(renderbuffer));
       fn.call(this, target, renderbuffer);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('bindTexture(uint32 target, uint32 texture)', function(fn, eventType) {
@@ -141,7 +141,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(target, getHandle(texture));
       fn.call(this, target, texture);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('blendColor(float red, float green, float blue, float alpha)');
@@ -155,7 +155,7 @@ function instrumentContext(raw) {
       if (typeof data == 'number') {
         var scope = eventType(target, data, usage, []);
         fn.call(this, target, data, usage);
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       } else {
         if (data instanceof ArrayBuffer) {
           data = new Uint8Array(data);
@@ -165,7 +165,7 @@ function instrumentContext(raw) {
         var wrapper = new Uint8Array(data.buffer);
         var scope = eventType(target, data.length, usage, data);
         fn.call(this, target, data, usage);
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       }
     };
   });
@@ -179,7 +179,7 @@ function instrumentContext(raw) {
       }
       var scope = eventType(target, offset, data);
       fn.call(this, target, offset, data);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('checkFramebufferStatus(uint32 target)');
@@ -193,7 +193,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(shader));
       fn.call(this, shader);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   /**/instrumentMethod('compressedTexImage2D');
@@ -208,9 +208,9 @@ function instrumentContext(raw) {
         setCurrentContext(this);
         var id = nextObjectId++;
         if (opt_arg) {
-          eventType(arg, id).leave();
+          wtf.trace.leaveScope(eventType(arg, id));
         } else {
-          eventType(id).leave();
+          wtf.trace.leaveScope(eventType(id));
         }
         var obj = fn.call(this, opt_arg ? arg : undefined);
         if (obj) {
@@ -234,7 +234,7 @@ function instrumentContext(raw) {
         setCurrentContext(this);
         var scope = eventType(getHandle(value));
         fn.call(this, value);
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       };
     });
   };
@@ -252,7 +252,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program), getHandle(shader));
       fn.call(this, program, shader);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('disable(uint32 cap)');
@@ -268,7 +268,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(target, attachment, renderbuffertarget, getHandle(renderbuffer));
       fn.call(this, target, attachment, renderbuffertarget, renderbuffer);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('framebufferTexture2D(uint32 target, uint32 attachment, uint32 textarget, uint32 texture, int32 level)', function(fn, eventType) {
@@ -276,7 +276,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(target, attachment, textarget, getHandle(texture), level);
       fn.call(this, target, attachment, textarget, texture, level);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('frontFace(uint32 mode)');
@@ -285,21 +285,21 @@ function instrumentContext(raw) {
     return function getActiveAttrib(program, index) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program), index);
-      return scope.leave(fn.call(this, program, index));
+      return wtf.trace.leaveScope(scope, fn.call(this, program, index));
     };
   });
   instrumentMethod('getActiveUniform(uint32 program, uint32 index)', function(fn, eventType) {
     return function getActiveUniform(program, index) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program), index);
-      return scope.leave(fn.call(this, program, index));
+      return wtf.trace.leaveScope(scope, fn.call(this, program, index));
     };
   });
   instrumentMethod('getAttachedShaders(uint32 program)', function(fn, eventType) {
     return function getAttachedShaders(program) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program));
-      return scope.leave(fn.call(this, program));
+      return wtf.trace.leaveScope(scope, fn.call(this, program));
     };
   });
   instrumentMethod('getAttribLocation(uint32 program, utf8 name)', function(fn, eventType) {
@@ -307,7 +307,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       // TODO(benvanik): record result and build mapping table
       var scope = eventType(getHandle(program), name);
-      return scope.leave(fn.call(this, program, name));
+      return wtf.trace.leaveScope(scope, fn.call(this, program, name));
     };
   });
   instrumentMethod('getBufferParameter(uint32 target, uint32 pname)');
@@ -318,14 +318,14 @@ function instrumentContext(raw) {
     return function getProgramParameter(program, pname) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program), pname);
-      return scope.leave(fn.call(this, program, pname));
+      return wtf.trace.leaveScope(scope, fn.call(this, program, pname));
     };
   });
   instrumentMethod('getProgramInfoLog(uint32 program)', function(fn, eventType) {
     return function getProgramInfoLog(program) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program));
-      return scope.leave(fn.call(this, program));
+      return wtf.trace.leaveScope(scope, fn.call(this, program));
     };
   });
   instrumentMethod('getRenderbufferParameter(uint32 target, uint32 pname)');
@@ -333,7 +333,7 @@ function instrumentContext(raw) {
     return function getShaderParameter(shader, pname) {
       setCurrentContext(this);
       var scope = eventType(getHandle(shader), pname);
-      return scope.leave(fn.call(this, shader, pname));
+      return wtf.trace.leaveScope(scope, fn.call(this, shader, pname));
     };
   });
   instrumentMethod('getShaderPrecisionFormat(uint32 shadertype, uint32 precisiontype)');
@@ -341,14 +341,14 @@ function instrumentContext(raw) {
     return function getShaderInfoLog(shader) {
       setCurrentContext(this);
       var scope = eventType(getHandle(shader));
-      return scope.leave(fn.call(this, shader));
+      return wtf.trace.leaveScope(scope, fn.call(this, shader));
     };
   });
   instrumentMethod('getShaderSource(uint32 shader)', function(fn, eventType) {
     return function getShaderSource(shader) {
       setCurrentContext(this);
       var scope = eventType(getHandle(shader));
-      return scope.leave(fn.call(this, shader));
+      return wtf.trace.leaveScope(scope, fn.call(this, shader));
     };
   });
   instrumentMethod('getTexParameter(uint32 target, uint32 pname)');
@@ -364,7 +364,7 @@ function instrumentContext(raw) {
       if (obj) {
         setHandle(obj, id);
       }
-      return scope.leave(obj);
+      return wtf.trace.leaveScope(scope, obj);
     };
   });
   instrumentMethod('getVertexAttrib(uint32 index, uint32 pname)');
@@ -382,7 +382,7 @@ function instrumentContext(raw) {
         } else {
           scope = eventType(0);
         }
-        return scope.leave(fn.call(this, value));
+        return wtf.trace.leaveScope(scope, fn.call(this, value));
       };
     });
   };
@@ -398,7 +398,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program));
       fn.call(this, program);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('pixelStorei(uint32 pname, int32 param)');
@@ -412,7 +412,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(shader), source);
       fn.call(this, shader, source);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('stencilFunc(uint32 func, int32 ref, uint32 mask)');
@@ -554,7 +554,7 @@ function instrumentContext(raw) {
         // DOM element variant.
         var traceScope = wtf.trace.enterTracingScope();
         var imageData = extractImageData(arguments[5], internalformat);
-        traceScope.leave();
+        wtf.trace.leaveScope(traceScope);
         scope = eventType(
             target,
             level,
@@ -569,7 +569,7 @@ function instrumentContext(raw) {
       try {
         fn.apply(this, arguments);
       } finally {
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       }
     };
   });
@@ -590,7 +590,7 @@ function instrumentContext(raw) {
         // DOM element variant.
         var traceScope = wtf.trace.enterTracingScope();
         var imageData = extractImageData(arguments[6], arguments[4]);
-        traceScope.leave();
+        wtf.trace.leaveScope(traceScope);
         scope = eventType(
             target,
             level,
@@ -604,7 +604,7 @@ function instrumentContext(raw) {
       try {
         fn.apply(this, arguments);
       } finally {
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       }
     };
   });
@@ -622,7 +622,7 @@ function instrumentContext(raw) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x);
             fn.call(this, location, x);
-            scope.leave();
+            wtf.trace.leaveScope(scope);
           };
         });
         break;
@@ -632,7 +632,7 @@ function instrumentContext(raw) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x, y);
             fn.call(this, location, x, y);
-            scope.leave();
+            wtf.trace.leaveScope(scope);
           };
         });
         break;
@@ -642,7 +642,7 @@ function instrumentContext(raw) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x, y, z);
             fn.call(this, location, x, y, z);
-            scope.leave();
+            wtf.trace.leaveScope(scope);
           };
         });
         break;
@@ -652,7 +652,7 @@ function instrumentContext(raw) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x, y, z, w);
             fn.call(this, location, x, y, z, w);
-            scope.leave();
+            wtf.trace.leaveScope(scope);
           };
         });
         break;
@@ -665,7 +665,7 @@ function instrumentContext(raw) {
         setCurrentContext(this);
         var scope = eventType(getHandle(location), v);
         fn.call(this, location, v);
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       };
     });
   };
@@ -676,7 +676,7 @@ function instrumentContext(raw) {
         setCurrentContext(this);
         var scope = eventType(getHandle(location), transpose, v);
         fn.call(this, location, transpose, v);
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       };
     });
   };
@@ -704,7 +704,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program));
       fn.call(this, program);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('validateProgram(uint32 program)', function(fn, eventType) {
@@ -712,7 +712,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(getHandle(program));
       fn.call(this, program);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('vertexAttrib1f(uint8 indx, float x)');
@@ -721,7 +721,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(values[0]);
       fn.call(this, indx, values);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('vertexAttrib2f(uint8 indx, float x, float y)');
@@ -730,7 +730,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(values[0], values[1]);
       fn.call(this, indx, values);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('vertexAttrib3f(uint8 indx, float x, float y, float z)');
@@ -739,7 +739,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(values[0], values[1], values[2]);
       fn.call(this, indx, values);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('vertexAttrib4f(uint8 indx, float x, float y, float z, float w)');
@@ -748,7 +748,7 @@ function instrumentContext(raw) {
       setCurrentContext(this);
       var scope = eventType(values[0], values[1], values[2], values[3]);
       fn.call(this, indx, values);
-      scope.leave();
+      wtf.trace.leaveScope(scope);
     };
   });
   instrumentMethod('vertexAttribPointer(uint8 indx, int32 size, uint32 type, uint8 normalized, int32 stride, uint32 offset)');
@@ -784,7 +784,7 @@ HTMLCanvasElement.prototype.getContext = function getContext(name, opt_attrs) {
         nextContextId,
         JSON.stringify(opt_attrs || {}));
   }
-  return scope.leave(context);
+  return wtf.trace.leaveScope(scope, context);
 };
 
 
