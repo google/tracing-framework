@@ -40,6 +40,9 @@ wtf.trace.providers.ExtendedInfoProvider = function() {
   this.events_ = {
     gc: wtf.trace.events.createScope(
         'javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
+        wtf.data.EventFlag.SYSTEM_TIME),
+    evalScript: wtf.trace.events.createScope(
+        'javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
         wtf.data.EventFlag.SYSTEM_TIME)
   };
 
@@ -82,6 +85,10 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.extensionMessage_ =
         switch (eventData['type']) {
           case 'GCEvent':
             this.traceGc_(eventData);
+            break;
+          case 'EvaluateScript':
+            this.traceScript_(eventData);
+            break;
         }
       }
       break;
@@ -103,3 +110,22 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.traceGc_ = function(data) {
   var scope = this.events_.gc(usedHeapSize, usedHeapSizeDelta, startTime);
   wtf.trace.leaveScope(scope, undefined, endTime);
 };
+
+
+/**
+ * Traces a script eval event.
+ * @param {!Object} data Script eval event data.
+ * @private
+ */
+wtf.trace.providers.ExtendedInfoProvider.prototype.traceScript_ =
+    function(data) {
+  var timebase = wtf.timebase();
+  var startTime = data['startTime'] - timebase;
+  var endTime = data['endTime'] - timebase;
+  var usedHeapSize = data['usedHeapSize'];
+  var usedHeapSizeDelta = data['usedHeapSizeDelta'];
+  var scope =
+      this.events_.evalScript(usedHeapSize, usedHeapSizeDelta, startTime);
+  wtf.trace.leaveScope(scope, undefined, endTime);
+};
+
