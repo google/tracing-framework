@@ -15,6 +15,7 @@ goog.provide('wtf.data.Variable');
 goog.provide('wtf.data.VariableFlag');
 
 goog.require('goog.asserts');
+goog.require('goog.string');
 
 
 /**
@@ -27,30 +28,28 @@ wtf.data.VariableFlag = {
 
 
 /**
- * Abstract base variable type.
- * Along with its subclasses describes information about a variable that is used
- * to generate source for event data reads/writes.
+ * Variable.
  *
- * @param {string} signatureName Variable type name used in signatures.
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
+ * @param {string} name Variable type name used in signatures.
+ * @param {string} typeName A machine-friendly name used to uniquely identify
+ *     the variable. It should be a valid Javascript literal (no spaces/etc).
  * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
  * @constructor
  */
-wtf.data.Variable = function(signatureName, name, opt_flags) {
+wtf.data.Variable = function(name, typeName, opt_flags) {
   /**
    * Variable type name used in signatures.
    * Ex: 'uint8'.
    * @type {string}
    */
-  this.signatureName = signatureName;
+  this.name = name;
 
   /**
    * Machine-friendly name used to uniquely identify the variable. It should be
    * a valid Javascript literal (no spaces/etc).
    * @type {string}
    */
-  this.name = name;
+  this.typeName = typeName;
 
   /**
    * Bitmask of {@see wtf.data.VariableFlag} values describing the behavior of
@@ -58,754 +57,66 @@ wtf.data.Variable = function(signatureName, name, opt_flags) {
    * @type {number}
    */
   this.flags = opt_flags || 0;
-
-  /**
-   * Whether the variable is fixed size.
-   * Fixed size variables are significantly faster than variable-sized ones.
-   * @type {boolean}
-   */
-  this.isFixedSize = true;
 };
 
 
 /**
- * Gets the size of the variable.
- * This is only valid for fixed-size variables. Variable-sized ones can only be
- * computed at runtime.
- * @return {number} Size, in bytes, of the variable.
+ * A simple mapping of various type names to the standardized types.
+ * @const
+ * @type {!Object.<string>}
+ * @private
  */
-wtf.data.Variable.prototype.getSize = goog.abstractMethod;
-
-
-/**
- * Gets a source code statement for calculating the variables size.
- * This is only valid for variable-size variables.
- * @param {string} name Local variable name.
- * @return {string} Source statement.
- */
-wtf.data.Variable.prototype.getSizeCalculationSource = goog.abstractMethod;
-
-
-/**
- * Reads the variable from a buffer.
- * @param {!wtf.io.Buffer} buffer Data buffer.
- * @return {*} Data value.
- */
-wtf.data.Variable.prototype.read = goog.abstractMethod;
-
-
-/**
- * Gets a source code statement for reading the variable.
- * @param {!Object.<string>} bufferNameMap {@see wtf.io.Buffer} name map.
- * @param {string} name Local variable name.
- * @return {string} Source statement.
- */
-wtf.data.Variable.prototype.getReadSource = goog.abstractMethod;
-
-
-/**
- * Gets a source code statement for writing the variable.
- * @param {!Object.<string>} bufferNameMap {@see wtf.io.Buffer} name map.
- * @param {string} name Local variable name.
- * @return {string} Source statement.
- */
-wtf.data.Variable.prototype.getWriteSource = goog.abstractMethod;
-
-
-
-/**
- * Int8 variable.
- * Represented as 1 binary byte.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Int8 = function(name, opt_flags) {
-  goog.base(this, 'int8', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Int8, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int8.prototype.getSize = function() {
-  return 1;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int8.prototype.read = function(buffer) {
-  return buffer.readInt8();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int8.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readInt8 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int8.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeInt8 + '(' + name + ')';
-};
-
-
-
-/**
- * Int16 variable.
- * Represented as 2 binary bytes.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Int16 = function(name, opt_flags) {
-  goog.base(this, 'int16', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Int16, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int16.prototype.getSize = function() {
-  return 2;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int16.prototype.read = function(buffer) {
-  return buffer.readInt16();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int16.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readInt16 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int16.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeInt16 + '(' + name + ')';
-};
-
-
-
-/**
- * Int32 variable.
- * Represented as 4 binary bytes.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Int32 = function(name, opt_flags) {
-  goog.base(this, 'int32', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Int32, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int32.prototype.getSize = function() {
-  return 4;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int32.prototype.read = function(buffer) {
-  return buffer.readInt32();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int32.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readInt32 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Int32.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeInt32 + '(' + name + ' >>> 0)';
-};
-
-
-
-/**
- * Uint8 variable.
- * Represented as 1 binary byte.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Uint8 = function(name, opt_flags) {
-  goog.base(this, 'uint8', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Uint8, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint8.prototype.getSize = function() {
-  return 1;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint8.prototype.read = function(buffer) {
-  return buffer.readUint8();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint8.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readUint8 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint8.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeUint8 + '(' + name + ')';
-};
-
-
-
-/**
- * Uint16 variable.
- * Represented as 2 binary bytes.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Uint16 = function(name, opt_flags) {
-  goog.base(this, 'uint16', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Uint16, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint16.prototype.getSize = function() {
-  return 2;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint16.prototype.read = function(buffer) {
-  return buffer.readUint16();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint16.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readUint16 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint16.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeUint16 + '(' + name + ')';
-};
-
-
-
-/**
- * Uint32 variable.
- * Represented as 4 binary bytes.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Uint32 = function(name, opt_flags) {
-  goog.base(this, 'uint32', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Uint32, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint32.prototype.getSize = function() {
-  return 4;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint32.prototype.read = function(buffer) {
-  return buffer.readUint32();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint32.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readUint32 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Uint32.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeUint32 + '(' + name + ' >>> 0)';
-};
-
-
-
-/**
- * Float32 variable.
- * Represented as 4 binary bytes.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Float32 = function(name, opt_flags) {
-  goog.base(this, 'float', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.Float32, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Float32.prototype.getSize = function() {
-  return 4;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Float32.prototype.read = function(buffer) {
-  return buffer.readUint32();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Float32.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return name + ' = buffer.' + bufferNameMap.readFloat32 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Float32.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): inline
-  return 'buffer.' + bufferNameMap.writeFloat32 + '(' + name + ')';
-};
-
-
-
-/**
- * ASCII string variable.
- * Represented as a length-prefixed ASCII string.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.AsciiString = function(name, opt_flags) {
-  goog.base(this, 'ascii', name, opt_flags);
-  this.isFixedSize = false;
-};
-goog.inherits(wtf.data.Variable.AsciiString, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.AsciiString.prototype.getSizeCalculationSource =
-    function(name) {
-  // Note: this requires knowledge of the wire format of strings, however the
-  // performance gain by avoiding the call is worth it.
-  return name + ' ? (2 + ' + name + '.length) : 2';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.AsciiString.prototype.read = function(buffer) {
-  return buffer.readAsciiString();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.AsciiString.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  return name + ' = buffer.' + bufferNameMap.readAsciiString + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.AsciiString.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  var writeUint16Fn = bufferNameMap.writeUint16;
-  var writeStringFn = bufferNameMap.writeAsciiString;
-  return name + ' ? buffer.' + writeStringFn + '(' + name + ') : ' +
-      'buffer.' + writeUint16Fn + '(0)';
-};
-
-
-
-/**
- * UTF8 string variable.
- * Represented as a length-prefixed UTF8 string.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Utf8String = function(name, opt_flags) {
-  goog.base(this, 'utf8', name, opt_flags);
-  this.isFixedSize = false;
-};
-goog.inherits(wtf.data.Variable.Utf8String, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Utf8String.prototype.getSizeCalculationSource =
-    function(name) {
-  // Note: this requires knowledge of the wire format of strings, however the
-  // performance gain by avoiding the call is worth it.
-  return name + ' ? (2 + 2 + ' + name + '.length * 3) : 2';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Utf8String.prototype.read = function(buffer) {
-  return buffer.readUtf8String();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Utf8String.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  return name + ' = buffer.' + bufferNameMap.readUtf8String + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Utf8String.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  var writeUint16Fn = bufferNameMap.writeUint16;
-  var writeStringFn = bufferNameMap.writeUtf8String;
-  return name + ' ? buffer.' + writeStringFn + '(' + name + ') : ' +
-      'buffer.' + writeUint16Fn + '(0)';
-};
-
-
-
-/**
- * Flow ID variable.
- * Implementation-specific value for now.
- *
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.FlowID = function(name, opt_flags) {
-  goog.base(this, 'flowId', name, opt_flags);
-  this.isFixedSize = true;
-};
-goog.inherits(wtf.data.Variable.FlowID, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.FlowID.prototype.getSize = function() {
-  return 4;
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.FlowID.prototype.read = function(buffer) {
-  return buffer.readUint32();
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.FlowID.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  return name + ' = buffer.' + bufferNameMap.readUint32 + '()';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.FlowID.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  return 'buffer.' + bufferNameMap.writeUint32 + '(' + name + ')';
-};
-
-
-
-// TODO(benvanik): support fixed-length arrays (remove length overhead).
-// TODO(benvanik): support varint lengths (may be more expensive than fixed).
-/**
- * Variable sequence wrapper.
- * Serializes the size and the values of the given type.
- *
- * @param {!wtf.data.Variable} elementType Element type.
- * @param {string} name A machine-friendly name used to uniquely identify the
- *     variable. It should be a valid Javascript literal (no spaces/etc).
- * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
- * @constructor
- * @extends {wtf.data.Variable}
- */
-wtf.data.Variable.Sequence = function(elementType, name, opt_flags) {
-  goog.base(this, elementType.signatureName + '[]', name, opt_flags);
-  this.isFixedSize = false;
-
-  /**
-   * Array element type.
-   * @type {!wtf.data.Variable}
-   */
-  this.elementType = elementType;
-};
-goog.inherits(wtf.data.Variable.Sequence, wtf.data.Variable);
-
-
-/**
- * @override
- */
-wtf.data.Variable.Sequence.prototype.getSizeCalculationSource = function(name) {
-  // TODO(benvanik): doing child size calculation is expensive, fix?
-  goog.asserts.assert(this.elementType.isFixedSize);
-  var size = this.elementType.getSize();
-  return name + ' ? (4 + ' + name + '.length * (' + size + ')) : 4';
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Sequence.prototype.read = function(buffer) {
-  var length = buffer.readUint32();
-  if (length) {
-    var result = new Array(length);
-    var elementType = this.elementType;
-    for (var n = 0; n < length; n++) {
-      result[n] = elementType.read(buffer);
-    }
-    return result;
-  } else {
-    return [];
-  }
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Sequence.prototype.getReadSource = function(
-    bufferNameMap, name) {
-  // TODO(benvanik): fast-path for common types (uint8/float32/etc).
-  return [
-    'var __length = buffer.' + bufferNameMap.readUint32 + '()',
-    'var __value = new Array(__length);',
-    'for (var n = 0; n < __length; n++) {',
-    this.elementType.getReadSource(bufferNameMap, '__value[n]'),
-    '}',
-    name + ' = __value;'
-  ].join('\n');
-};
-
-
-/**
- * @override
- */
-wtf.data.Variable.Sequence.prototype.getWriteSource = function(
-    bufferNameMap, name) {
-  return [
-    'var __value = ' + name + ';',
-    'if (__value && __value.length) {',
-    '  buffer.' + bufferNameMap.writeUint32 + '(__value.length);',
-    '  for (var n = 0; n < __value.length; n++) {',
-    this.elementType.getWriteSource(bufferNameMap, '__value[n]'),
-    '  }',
-    '} else {',
-    '  buffer.' + bufferNameMap.writeUint32 + '(0);',
-    '}'
-  ].join('\n');
+wtf.data.Variable.TYPE_MAP_ = {
+  'int8': 'int8',
+  'byte': 'int8',
+  'uint8': 'uint8',
+  'octet': 'uint8',
+  'int16': 'int16',
+  'short': 'int16',
+  'uint16': 'uint16',
+  'unsigned short': 'uint16',
+  'int32': 'int32',
+  'long': 'int32',
+  'uint32': 'uint32',
+  'unsigned long': 'uint32',
+  'flowId': 'uint32',
+  'float32': 'float32',
+  'float': 'float32',
+  'ascii': 'ascii',
+  'utf8': 'utf8',
+  'DOMString': 'utf8',
+  'any': 'any'
 };
 
 
 /**
  * Creates a variable by type name.
- * @param {string} type Type name.
  * @param {string} name Variable name.
+ * @param {string} type Type name.
  * @return {wtf.data.Variable} Variable type, if found.
  */
-wtf.data.Variable.create = function(type, name) {
-  // Handle array types.
-  var elementTypeName = null;
-  if (type.indexOf('[]') != -1) {
+wtf.data.Variable.create = function(name, type) {
+  var isArray = false;
+  if (goog.string.endsWith(type, '[]')) {
     // type[] syntax.
-    elementTypeName = type.substr(0, type.length - 2);
-  } else if (type.indexOf('sequence<') == 0) {
+    isArray = true;
+    type = type.replace('[]', '');
+  }
+  if (goog.string.startsWith(type, 'sequence<')) {
     // sequence<type> syntax.
-    elementTypeName = type.substr(9, type.length - 10);
-  }
-  if (elementTypeName) {
-    var elementType = wtf.data.Variable.create(elementTypeName, name);
-    if (!elementType) {
-      return null;
-    }
-    return new wtf.data.Variable.Sequence(elementType, name);
+    isArray = true;
+    type = type.substr(9, type.length - 10);
   }
 
-  switch (type) {
-    case 'int8':
-    case 'byte':
-      return new wtf.data.Variable.Int8(name);
-    case 'int16':
-    case 'short':
-      return new wtf.data.Variable.Int16(name);
-    case 'int32':
-    case 'long':
-      return new wtf.data.Variable.Int32(name);
-    case 'uint8':
-    case 'octet':
-      return new wtf.data.Variable.Uint8(name);
-    case 'uint16':
-    case 'unsigned short':
-      return new wtf.data.Variable.Uint16(name);
-    case 'uint32':
-    case 'unsigned long':
-      return new wtf.data.Variable.Uint32(name);
-    case 'float32':
-    case 'float':
-      return new wtf.data.Variable.Float32(name);
-    case 'ascii':
-      return new wtf.data.Variable.AsciiString(name);
-    case 'utf8':
-    case 'DOMString':
-      return new wtf.data.Variable.Utf8String(name);
-    case 'flowId':
-      return new wtf.data.Variable.FlowID(name);
+  type = wtf.data.Variable.TYPE_MAP_[type];
+  if (!type) {
+    return null;
+  }
+  if (isArray) {
+    type += '[]';
   }
 
-  return null;
+  return new wtf.data.Variable(name, type, 0);
 };
 
 
@@ -846,7 +157,7 @@ wtf.data.Variable.parseSignatureArguments = function(argsString) {
       argName = argName.substr(0, argAt);
     }
 
-    var variable = wtf.data.Variable.create(argType, argName);
+    var variable = wtf.data.Variable.create(argName, argType);
     goog.asserts.assert(variable);
     if (variable) {
       // Add to map.
