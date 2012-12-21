@@ -118,7 +118,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
       }
       var scope = customEvent();
       var result = value.apply(this, arguments);
-      return scope.leave(result);
+      return wtf.trace.leaveScope(scope, result);
     };
   } else {
     // Custom arguments.
@@ -132,7 +132,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
       }
       var scope = customEvent.apply(customEvent, eventArgs);
       var result = value.apply(this, arguments);
-      return scope.leave(result);
+      return wtf.trace.leaveScope(scope, result);
     };
   }
 

@@ -76,7 +76,7 @@ wtf.trace.providers.TimingProvider.prototype.injectTimeouts_ = function() {
               }
             }
           } finally {
-            scope.leave();
+            wtf.trace.leaveScope(scope);
           }
         }, delay);
         timeoutIdRef[0] = timeoutId;
@@ -137,8 +137,8 @@ wtf.trace.providers.TimingProvider.prototype.injectTimeouts_ = function() {
           } finally {
             // Reset flow so that it shows as bouncing from this function.
             // This builds a nice chain with parenting.
+            wtf.trace.leaveScope(scope);
             flowRef[0] = wtf.trace.branchFlow();
-            scope.leave();
           }
         }, delay);
         intervalIdRef[0] = intervalId;
@@ -207,7 +207,7 @@ wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
               }
             }
           } finally {
-            scope.leave();
+            wtf.trace.leaveScope(scope);
           }
         });
         immediateIdRef[0] = immediateId;
@@ -334,7 +334,7 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
           frameRafs.length = 0;
         }
 
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       }
     });
     handleRef[0] = handle;

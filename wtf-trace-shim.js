@@ -266,7 +266,10 @@ wtfapi.trace.enterTracingScope = wtfapi.PRESENT ?
  * @template T
  */
 wtfapi.trace.leaveScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['leaveScope'] : goog.identityFunction;
+    goog.global['wtf']['trace']['leaveScope'] :
+    function(scope, opt_result, opt_time) {
+      return opt_result;
+    };
 
 
 /**
@@ -379,7 +382,7 @@ wtfapi.trace.ignoreDomTree = wtfapi.PRESENT ?
  * @return {Function} The instrumented input value.
  */
 wtfapi.trace.instrument = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['instrument'] : goog.nullFunction;
+    goog.global['wtf']['trace']['instrument'] : goog.identityFunction;
 
 
 /**
@@ -407,7 +410,7 @@ wtfapi.trace.instrument = wtfapi.PRESENT ?
  * @return {Function} The instrumented input value.
  */
 wtfapi.trace.instrumentType = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['instrumentType'] : goog.nullFunction;
+    goog.global['wtf']['trace']['instrumentType'] : goog.identityFunction;
 
 
 /**

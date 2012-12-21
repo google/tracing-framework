@@ -28,6 +28,7 @@ goog.require('wtf.io.WriteStream');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.NullSession');
+goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
@@ -376,12 +377,7 @@ wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
  * @return {T|undefined} The value of the {@code opt_result} parameter.
  * @template T
  */
-wtf.trace.leaveScope = function(scope, opt_result, opt_time) {
-  if (scope) {
-    scope.leave(opt_result, opt_time);
-  }
-  return opt_result;
-};
+wtf.trace.leaveScope = wtf.trace.Scope.leave;
 
 
 /**

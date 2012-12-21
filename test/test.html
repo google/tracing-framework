@@ -54,10 +54,10 @@
 
           console.log('hi');
 
-          scope.leave();
+          wtf.trace.leaveScope(scope);
         }, 0);
 
-        scope.leave();
+        wtf.trace.leaveScope(scope);
       };
 
       function unscopedMethod(x) {
@@ -76,7 +76,7 @@
       function scopedMethod(x) {
         var scope = wtf.trace.enterScope();
         x++;
-        return scope.leave(x);
+        return wtf.trace.leaveScope(scope, x);
       };
 
       function doLotsOfScopes(count) {

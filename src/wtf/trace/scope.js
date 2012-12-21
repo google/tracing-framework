@@ -116,47 +116,43 @@ wtf.trace.Scope.enterTyped = function(flow, time) {
 
 /**
  * Leaves a scope.
- * The scope will be exited. If a flow was attached to the scope it will
- * be terminated.
+ * The scope will be exited.
  *
- * @param {*=} opt_result A value to return directly.
+ * @param {wtf.trace.Scope} scope Scope to leave.
+ * @param {T=} opt_result A value to return directly.
  * @param {number=} opt_time Time for the leave; omit to use the current time.
- * @return {?} The value passed as {@code opt_result}.
- * @this {wtf.trace.Scope}
+ * @return {T|undefined} The value passed as {@code opt_result}.
+ * @template T
  */
-wtf.trace.Scope.prototype.leave = function(opt_result, opt_time) {
+wtf.trace.Scope.leave = function(scope, opt_result, opt_time) {
+  if (!scope) {
+    return opt_result;
+  }
+
   // Time immediately after the scope - don't track our stuff.
   var time = opt_time || wtf.now();
 
   // Unwind stack, if needed.
   var pool = wtf.trace.Scope.pool_;
-  while (pool.currentDepth > this.stackDepth_) {
+  while (pool.currentDepth > scope.stackDepth_) {
     // TODO(benvanik): mark as bad? emit discontinuity?
     var openScope = pool.stack[pool.currentDepth];
-    openScope.leave(undefined, time);
+    wtf.trace.Scope.leave(openScope, undefined, time);
   }
   pool.currentDepth--;
-  pool.stack[this.stackDepth_] = null;
-
-  // Terminate a flow, if one is attached.
-  if (this.flow_) {
-    this.flow_.terminate(undefined, time);
-    this.flow_ = null;
-  }
+  pool.stack[scope.stackDepth_] = null;
 
   // Append event.
   wtf.trace.BuiltinEvents.leaveScope(time);
 
   // Return the scope to the pool.
   // Note that we have no thresholding here and will grow forever.
-  pool.unusedScopes[pool.unusedIndex++] = this;
+  pool.unusedScopes[pool.unusedIndex++] = scope;
+
+  // Clear anything for the enter.
+  scope.flow_ = null;
 
   return opt_result;
 };
 
 
-// Always export names used in generated code.
-goog.exportProperty(
-    wtf.trace.Scope.prototype,
-    'leave',
-    wtf.trace.Scope.prototype.leave);
