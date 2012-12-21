@@ -104,7 +104,9 @@ var Extension = function() {
       for (var n = 0; n < tabs.length; n++) {
         var pageUrl = URI.canonicalize(tabs[n].url);
         if (whitelistMap[pageUrl]) {
-          chrome.tabs.reload(tabs[n].id, {});
+          chrome.tabs.reload(tabs[n].id, {
+            bypassCache: true
+          });
         }
       }
     });

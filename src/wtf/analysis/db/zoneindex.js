@@ -32,6 +32,13 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
   goog.base(this);
 
   /**
+   * Trace listener.
+   * @type {!wtf.analysis.TraceListener}
+   * @private
+   */
+  this.traceListener_ = traceListener;
+
+  /**
    * Zone this index is matching.
    * @type {!wtf.analysis.Zone}
    * @private
@@ -67,7 +74,7 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    * @private
    */
   this.eventTypes_ = {
-    scopeLeave: traceListener.getEventType('wtf.scope#leave')
+    scopeLeave: null
   };
 
   /**
@@ -160,6 +167,11 @@ wtf.analysis.db.ZoneIndex.prototype.beginInserting = function() {
  */
 wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
   if (e.zone == this.zone_) {
+    if (!this.eventTypes_.scopeLeave) {
+      this.eventTypes_.scopeLeave =
+          this.traceListener_.getEventType('wtf.scope#leave');
+    }
+
     // Here be dragons...
     // This attempts to insert scopes fast (by looking at the current scope)
     // while also supported out-of-order adds to existing scopes by queuing them
@@ -217,6 +229,11 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
  */
 wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   this.currentScope_ = null;
+
+  if (!this.eventTypes_.scopeLeave) {
+    this.eventTypes_.scopeLeave =
+        this.traceListener_.getEventType('wtf.scope#leave');
+  }
 
   // Process out-of-order events.
   // TODO(benvanik): a more generalized solution that handles reverse lists.
