@@ -350,9 +350,13 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     var jitType = listener.getEventType(args['name']);
     if (!jitType) {
       jitType = listener.defineEventType(new wtf.analysis.EventType(
-          args['name'], wtf.data.EventClass.INSTANCE, 0, []));
+          args['name'], wtf.data.EventClass.INSTANCE, 0, [
+            wtf.data.Variable.create('value', 'any')
+          ]));
     }
-    return new wtf.analysis.Event(jitType, zone, time, []);
+    return new wtf.analysis.Event(jitType, zone, time, {
+      'value': args['value']
+    });
   };
 };
 
