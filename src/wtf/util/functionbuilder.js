@@ -150,18 +150,19 @@ wtf.util.FunctionBuilder.prototype.end = function(name) {
   var combinedSource = this.currentSource_.join('\n');
 
   // Build closure wrapper.
+  var sourceUrl = name.replace(/#/g, '/');
   var creator = new Function(this.currentScopeVariableNames_, [
     '"use strict";',
     'return function(' + this.currentArgs_.join(', ') + ') {',
     combinedSource,
-    '};'
+    '};',
+    '//@ sourceURL=x://wtf/' + sourceUrl
   ].join('\n'));
+  creator['displayName'] = name;
 
   // Build function.
   var fn = creator.apply(null, this.currentScopeVariableValues_);
-  if (goog.DEBUG) {
-    fn['displayName'] = name;
-  }
+  fn['displayName'] = name;
 
   // Reset state.
   this.currentScopeVariableNames_.length = 0;

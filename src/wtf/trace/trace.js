@@ -16,7 +16,6 @@
 goog.provide('wtf.trace');
 
 goog.require('goog.asserts');
-goog.require('goog.json');
 goog.require('goog.string');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.io.CustomWriteStream');
@@ -388,27 +387,7 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
  * @param {*} value Value. Will be JSON stringified.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  */
-wtf.trace.appendScopeData = function(name, value, opt_time) {
-  // TODO(benvanik): make this even faster.
-  var json = null;
-  if (typeof value == 'number') {
-    json = '' + value;
-  } else if (typeof value == 'boolean') {
-    json = '' + value;
-  } else if (!value) {
-    json = null;
-  } else if (typeof value == 'string') {
-    json = '"' + value + '"';
-  } else {
-    // JSON is faster and generates less garbage.
-    if (goog.global.JSON) {
-      json = goog.global.JSON.stringify(value);
-    } else {
-      json = goog.json.serialize(value);
-    }
-  }
-  wtf.trace.BuiltinEvents.appendScopeData(name, json, opt_time);
-};
+wtf.trace.appendScopeData = wtf.trace.BuiltinEvents.appendScopeData;
 
 
 /**
