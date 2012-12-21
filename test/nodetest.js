@@ -16,7 +16,7 @@ function doLotsOfControls(count) {
 function scopedMethod(x) {
   var scope = wtf.trace.enterScope();
   x++;
-  return scope.leave(x);
+  return wtf.trace.leaveScope(scope, x);
 };
 
 function doLotsOfScopes(count) {

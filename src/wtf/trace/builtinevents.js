@@ -98,21 +98,21 @@ wtf.trace.BuiltinEvents = {
    * Branches execution flow.
    */
   branchFlow: wtf.trace.events.createInstance(
-      'wtf.flow#branch(flowId id, flowId parentId, ascii msg)',
+      'wtf.flow#branch(flowId id, flowId parentId, ascii name)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Continues execution flow.
    */
   extendFlow: wtf.trace.events.createInstance(
-      'wtf.flow#extend(flowId id, ascii msg)',
+      'wtf.flow#extend(flowId id, ascii name)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Terminates execution flow.
    */
   terminateFlow: wtf.trace.events.createInstance(
-      'wtf.flow#terminate(flowId id, ascii msg)',
+      'wtf.flow#terminate(flowId id)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**

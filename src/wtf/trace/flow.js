@@ -14,17 +14,27 @@
 goog.provide('wtf.trace.Flow');
 
 goog.require('wtf.trace.BuiltinEvents');
+goog.require('wtf.trace.Scope');
 
 
 
 /**
  * Flow tracking utility.
  * A stateful object that is used to help tracking async flows through time.
- * Flow instances are pooled and should not be created manually.
  *
+ * @param {number=} opt_flowId Flow ID. If omitted, a new flow ID will be
+ *     generated.
  * @constructor
  */
-wtf.trace.Flow = function() {
+wtf.trace.Flow = function(opt_flowId) {
+  /**
+   * Whether the flow has been terminated.
+   * Once terminated, no new extend/terminate events will be written.
+   * @type {boolean}
+   * @private
+   */
+  this.terminated_ = false;
+
   // TODO(benvanik): globally unique flow ID? uuid?
   /**
    * Session-unique flow ID.
@@ -32,27 +42,7 @@ wtf.trace.Flow = function() {
    * @type {number}
    * @private
    */
-  this.flowId_ = wtf.trace.Flow.invalidFlowId_;
-};
-
-
-/**
- * Pool of flow.
- * This is managed by the branch/terminate functions and is designed to be
- * fast, not pretty.
- * @type {!Object}
- * @private
- */
-wtf.trace.Flow.pool_ = {
-  /**
-   * @type {!Array.<!wtf.trace.Flow>}
-   */
-  unusedFlows: [],
-
-  /**
-   * @type {number}
-   */
-  unusedIndex: 0
+  this.flowId_ = !opt_flowId ? wtf.trace.Flow.generateId_() : opt_flowId;
 };
 
 
@@ -60,9 +50,9 @@ wtf.trace.Flow.pool_ = {
  * Invalid flow ID (all zeros).
  * Used to indicate no parent flow/etc.
  * @type {number}
- * @private
+ * @const
  */
-wtf.trace.Flow.invalidFlowId_ = 0;
+wtf.trace.Flow.INVALID_ID = 0;
 
 
 /**
@@ -83,29 +73,12 @@ wtf.trace.Flow.generateId_ = function() {
 
 
 /**
- * Current global flow, if any.
- * The global flow is used to track the last used flow. When new flows are
- * branched without an explicit parent flow the global flow is used. This
- * enables flows to be setup at an application level and then used as a parent
- * deep within instrumented APIs without needing to add parameters to every
- * call.
- *
- * There is great potential for bad data here in the case of this not getting
- * reset. In order for it to work correctly all runtime callbacks must either
- * set a flow or clear it when completed to ensure no leakage.
- *
- * @type {wtf.trace.Flow}
- * @private
+ * Gets the ID of the flow.
+ * This can be sent to servers/other threads/etc to track across processes.
+ * @return {number} Flow ID.
  */
-wtf.trace.Flow.current_ = null;
-
-
-/**
- * Clears the current global flow.
- * This should be called at the end of any runtime callback.
- */
-wtf.trace.Flow.clearCurrent = function() {
-  wtf.trace.Flow.current_ = null;
+wtf.trace.Flow.prototype.getId = function() {
+  return this.flowId_;
 };
 
 
@@ -114,34 +87,76 @@ wtf.trace.Flow.clearCurrent = function() {
  * This will initialize a flow object and append a branch event.
  * Prefer using the {@see wtf.trace#branchFlow} utility method over this.
  *
- * @param {string=} opt_msg Optional message string.
+ * @param {string} name Flow name.
+ * @param {*=} opt_value Optional data value.
  * @param {wtf.trace.Flow=} opt_parentFlow Parent flow, if any.
  * @param {number=} opt_time Time for the branch; omit to use the current time.
  * @return {!wtf.trace.Flow} An initialized flow object.
  */
-wtf.trace.Flow.branch = function(opt_msg, opt_parentFlow, opt_time) {
-  // Pop a flow from the pool or allocate a new one.
-  var pool = wtf.trace.Flow.pool_;
-  var flow;
-  if (pool.unusedIndex) {
-    flow = pool.unusedFlows[--pool.unusedIndex];
-  } else {
-    flow = new wtf.trace.Flow();
+wtf.trace.Flow.branch = function(name, opt_value, opt_parentFlow, opt_time) {
+  // Infer parent flow, if needed.
+  var parentFlowId = wtf.trace.Flow.INVALID_ID;
+  var parentFlow = opt_parentFlow || wtf.trace.Scope.getCurrentFlow();
+  if (parentFlow && !parentFlow.terminated_) {
+    parentFlowId = parentFlow.flowId_;
   }
 
-  // Generate a new semi-unique flow ID.
-  flow.flowId_ = wtf.trace.Flow.generateId_();
-
-  // Infer parent flow global, if needed.
-  var parentFlow = opt_parentFlow || wtf.trace.Flow.current_;
-  var parentFlowId =
-      parentFlow ? parentFlow.flowId_ : wtf.trace.Flow.invalidFlowId_;
+  // Create flow.
+  var flow = new wtf.trace.Flow();
 
   // Append event.
+  // TODO(benvanik): use opt_value
   wtf.trace.BuiltinEvents.branchFlow(
-      flow.flowId_, parentFlowId, opt_msg, opt_time);
+      flow.flowId_, parentFlowId, name, opt_time);
 
   return flow;
+};
+
+
+/**
+ * Extends the flow.
+ * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {string} name Flow stage name.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the event, or 0 to use the current time.
+ */
+wtf.trace.Flow.extend = function(flow, name, opt_value, opt_time) {
+  if (!flow || flow.terminated_) {
+    return;
+  }
+
+  // Set the current scope flow.
+  wtf.trace.Scope.setCurrentFlow(flow);
+
+  // Append event.
+  // TODO(benvanik): use opt_value
+  wtf.trace.BuiltinEvents.extendFlow(flow.flowId_, name, opt_time);
+};
+
+
+/**
+ * Teriminates the flow.
+ * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the event, or 0 to use the current time.
+ */
+wtf.trace.Flow.terminate = function(flow, opt_value, opt_time) {
+  if (!flow || flow.terminated_) {
+    return;
+  }
+  flow.terminated_ = true;
+
+  // Append event.
+  // TODO(benvanik): use opt_value
+  wtf.trace.BuiltinEvents.terminateFlow(flow.flowId_, opt_time);
+};
+
+
+/**
+ * Clears the current scope flow.
+ */
+wtf.trace.Flow.clear = function() {
+  wtf.trace.Scope.setCurrentFlow(null);
 };
 
 
@@ -154,64 +169,8 @@ wtf.trace.Flow.branch = function(opt_msg, opt_parentFlow, opt_time) {
  * @return {!wtf.trace.Flow} An initialized flow object.
  */
 wtf.trace.Flow.span = function(flowId) {
-  // Pop a flow from the pool or allocate a new one.
-  var pool = wtf.trace.Flow.pool_;
-  var flow;
-  if (pool.unusedIndex) {
-    flow = pool.unusedFlows[--pool.unusedIndex];
-  } else {
-    flow = new wtf.trace.Flow();
-  }
-
-  // Stash flow ID.
-  flow.flowId_ = flowId;
-
+  var flow = new wtf.trace.Flow(flowId);
   return flow;
-};
-
-
-/**
- * Gets the ID of the flow.
- * This can be sent to servers/other threads/etc to track across processes.
- * @return {number} Flow ID.
- */
-wtf.trace.Flow.prototype.getId = function() {
-  return this.flowId_;
-};
-
-
-/**
- * Extends the flow.
- * @param {string=} opt_msg Optional message string.
- * @param {number=} opt_time Time for the event, or 0 to use the current time.
- * @this {wtf.trace.Flow}
- */
-wtf.trace.Flow.prototype.extend = function(opt_msg, opt_time) {
-  // Reset current local flow.
-  wtf.trace.Flow.current_ = this;
-
-  // Append event.
-  wtf.trace.BuiltinEvents.extendFlow(this.flowId_, opt_msg, opt_time);
-};
-
-
-/**
- * Teriminates the flow.
- * @param {string=} opt_msg Optional message string.
- * @param {number=} opt_time Time for the event, or 0 to use the current time.
- * @this {wtf.trace.Flow}
- */
-wtf.trace.Flow.prototype.terminate = function(opt_msg, opt_time) {
-  // Reset current local flow.
-  wtf.trace.Flow.current_ = null;
-
-  // Append event.
-  wtf.trace.BuiltinEvents.terminateFlow(this.flowId_, opt_msg, opt_time);
-
-  // Return the scope to the pool.
-  // Note that we have no thresholding here and will grow forever.
-  var pool = wtf.trace.Flow.pool_;
-  pool.unusedFlows[pool.unusedIndex++] = this;
 };
 
 
@@ -219,11 +178,3 @@ goog.exportProperty(
     wtf.trace.Flow.prototype,
     'getId',
     wtf.trace.Flow.prototype.getId);
-goog.exportProperty(
-    wtf.trace.Flow.prototype,
-    'extend',
-    wtf.trace.Flow.prototype.extend);
-goog.exportProperty(
-    wtf.trace.Flow.prototype,
-    'terminate',
-    wtf.trace.Flow.prototype.terminate);

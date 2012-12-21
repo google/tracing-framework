@@ -55,13 +55,13 @@ function runTool(platform, args) {
     },
 
     'wtf.flow#branch': function(e) {
-      util.logEvent(e, e.flow.getId(), e.args);
+      util.logEvent(e, e.value.getId(), e.args);
     },
     'wtf.flow#extend': function(e) {
-      util.logEvent(e, e.flow.getId(), e.args);
+      util.logEvent(e, e.value.getId(), e.args);
     },
     'wtf.flow#terminate': function(e) {
-      util.logEvent(e, e.flow.getId(), e.args);
+      util.logEvent(e, e.value.getId(), e.args);
     },
 
     'wtf.trace#mark': function(e) {
