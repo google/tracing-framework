@@ -122,20 +122,20 @@ wtf.analysis.sources.JsonTraceSource.BuiltinEvents_ = {
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   'wtf.flow#branch': wtf.analysis.EventType.createInstance(
-      'wtf.flow#branch(flowId id, flowId parentId, ascii name)',
+      'wtf.flow#branch(flowId id, flowId parentId, ascii name, any value)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   'wtf.flow#extend': wtf.analysis.EventType.createInstance(
-      'wtf.flow#extend(flowId id, ascii name)',
+      'wtf.flow#extend(flowId id, ascii name, any value)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   'wtf.flow#terminate': wtf.analysis.EventType.createInstance(
-      'wtf.flow#terminate(flowId id)',
+      'wtf.flow#terminate(flowId id, any value)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   'wtf.trace#mark': wtf.analysis.EventType.createInstance(
-      'wtf.trace#mark(ascii name)',
+      'wtf.trace#mark(ascii name, any value)',
       wtf.data.EventFlag.BUILTIN),
   'wtf.trace#timeStamp': wtf.analysis.EventType.createInstance(
-      'wtf.trace#timeStamp(ascii name)',
+      'wtf.trace#timeStamp(ascii name, any value)',
       wtf.data.EventFlag.BUILTIN)
 };
 

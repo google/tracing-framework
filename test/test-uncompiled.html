@@ -54,8 +54,8 @@
           var scope = wtf.trace.enterScope('setTimeout callback');
           wtf.trace.extendFlow(flow, 'timeout');
 
-          wtf.trace.timeStamp('hello1');
-          wtf.trace.timeStamp('hello2');
+          wtf.trace.timeStamp('hello1', 'a');
+          wtf.trace.timeStamp('hello2', 'b');
 
           var scope2 = wtf.trace.enterScope('xx');
           var t = wtf.now();
