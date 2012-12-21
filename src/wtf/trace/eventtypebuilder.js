@@ -45,24 +45,6 @@ wtf.trace.EventTypeBuilder = function() {
    * @private
    */
   this.bufferNames_ = wtf.io.Buffer.getNameMap();
-
-  /**
-   * Dummy scope object.
-   * Has the same exported methods as a real {@see wtf.trace.Scope}.
-   * @type {!Object}
-   * @private
-   */
-  this.dummyScope_ = {
-    /**
-     * Leave mock.
-     * @param {T=} opt_result Optional result to chain.
-     * @return {T|undefined} The value of the {@code opt_result} parameter.
-     * @template T
-     */
-    'leave': function(opt_result) {
-      return opt_result;
-    }
-  };
 };
 goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
 
@@ -79,7 +61,6 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   // Begin building the function with default args.
   this.begin();
   this.addScopeVariable('sessionPtr', sessionPtr);
-  this.addScopeVariable('dummyScope', this.dummyScope_);
   this.addScopeVariable('eventType', eventType);
   this.addScopeVariable('now', wtf.now);
 
@@ -100,24 +81,13 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   }
 
   // Additional optional arguments.
-  switch (eventType.eventClass) {
-    case wtf.data.EventClass.SCOPE:
-      // Custom typed scope - take flow to pass down to enterTypedScope.
-      this.addArgument('opt_flow');
-      break;
-  }
   this.addArgument('opt_time');
   this.addArgument('opt_buffer');
 
   this.append(
       'var session = sessionPtr[0];');
-  if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
-    this.append(
-        'if (!session) { return dummyScope; }');
-  } else {
-    this.append(
-        'if (!session) { return; }');
-  }
+  this.append(
+      'if (!session) { return undefined; }');
 
   this.append(
       'var time = opt_time || now();');
@@ -147,13 +117,8 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   }
 
   // Early out if the buffer couldn't be acquired.
-  if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
-    this.append(
-        'if (!buffer) { return dummyScope; }');
-  } else {
-    this.append(
-        'if (!buffer) { return; }');
-  }
+  this.append(
+      'if (!buffer) { return undefined; }');
 
   // Write event header.
   // This is manually inlined because it's so common and we don't get any
@@ -185,7 +150,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   // Enter scope/flow/etc.
   if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
     this.append(
-        'return session.enterTypedScope(opt_flow, time);');
+        'return session.enterTypedScope(time);');
   }
 
   // Save off the final function.

@@ -61,8 +61,14 @@ wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ =
   var originalTimeEnd = console['timeEnd'];
   this.injectFunction(console, 'timeEnd', function timeEnd(timerName) {
     var scope = scopeMap[timerName];
-    if (scope) {
-      scope.leave();
-    }
+    wtf.trace.leaveScope(scope);
   });
+
+  // console.timeStamp
+  var originalTimeStamp = console['timeStamp'];
+  if (originalTimeStamp) {
+    this.injectFunction(console, 'timeStamp', function timeStamp(name) {
+      wtf.trace.timeStamp(name);
+    });
+  }
 };
