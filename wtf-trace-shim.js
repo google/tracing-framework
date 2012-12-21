@@ -327,7 +327,7 @@ wtfapi.trace.clearFlow = wtfapi.PRESENT ?
 /**
  * Spans the flow across processes.
  * Flows must have been branched before this can be used.
- * @param {!wtfapi.io.ByteArray} flowId Flow ID.
+ * @param {number} flowId Flow ID.
  * @return {!wtfapi.trace.Flow} An initialized flow object.
  */
 wtfapi.trace.spanFlow = wtfapi.PRESENT ?
