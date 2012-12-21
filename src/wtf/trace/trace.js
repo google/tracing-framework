@@ -442,6 +442,7 @@ wtf.trace.spanFlow = wtf.trace.Flow.span;
  * This is used by the UI to construct a simple navigation structure.
  * It's best to use custom events that make filtering easier, if possible.
  * @param {string} name Marker name.
+ * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the mark; omit to use the current time.
  */
 wtf.trace.mark = wtf.trace.BuiltinEvents.mark;
@@ -453,6 +454,7 @@ wtf.trace.mark = wtf.trace.BuiltinEvents.mark;
  * simple arg-less instance events in the timeline.
  * Prefer using custom events for faster, more flexible events.
  * @param {string} name Time stamp name.
+ * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the stamp; omit to use the current time.
  */
 wtf.trace.timeStamp = wtf.trace.BuiltinEvents.timeStamp;
