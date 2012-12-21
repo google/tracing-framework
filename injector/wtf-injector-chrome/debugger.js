@@ -170,6 +170,15 @@ Debugger.prototype.processTimelineRecord_ = function(record) {
       'usedHeapSizeDelta': record.data.usedHeapSizeDelta
     };
     this.queueData_(data);
+  } else if (record.type == 'EvaluateScript') {
+    var data = {
+      'type': 'EvaluateScript',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'usedHeapSize': record.usedHeapSize,
+      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
+    };
+    this.queueData_(data);
   }
 
   // Recursively check children.
