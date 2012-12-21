@@ -123,7 +123,7 @@ wtf.trace.EventType.prototype.getArgString = function() {
   var parts = [];
   for (var n = 0; n < this.args.length; n++) {
     var arg = this.args[n];
-    parts.push(arg.signatureName + ' ' + arg.name);
+    parts.push(arg.typeName + ' ' + arg.name);
   }
   return parts.join(', ');
 };

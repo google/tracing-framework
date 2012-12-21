@@ -34,6 +34,7 @@
   <div style="height: 2000px"></div>
   <script>
     window.onload = function() {
+      var arrayEvent = wtf.trace.events.createInstance('arrayEvent(uint8[] v)');
       var someLink = document.getElementById('someLink');
       someLink.addEventListener('click', function(e) {
         e.preventDefault();
@@ -42,6 +43,8 @@
         var scope = wtf.trace.enterScope('onclick');
 
         wtf.trace.appendScopeData('hello', 'world');
+
+        arrayEvent(new Uint8Array([1, 2, 3]));
 
         // Start flow...
         var flow = wtf.trace.branchFlow('click');

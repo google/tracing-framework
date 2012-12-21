@@ -100,6 +100,6 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.traceGc_ = function(data) {
   var endTime = data['endTime'] - timebase;
   var usedHeapSize = data['usedHeapSize'];
   var usedHeapSizeDelta = data['usedHeapSizeDelta'];
-  var scope = this.events_.gc(usedHeapSize, usedHeapSizeDelta, null, startTime);
+  var scope = this.events_.gc(usedHeapSize, usedHeapSizeDelta, startTime);
   wtf.trace.leaveScope(scope, undefined, endTime);
 };

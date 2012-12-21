@@ -506,7 +506,8 @@ wtf.trace.providers.DomProvider.InstrumentedType.prototype.hookObjectEvents =
     if (!goog.string.startsWith(this.name_, 'HTML')) {
       goog.global[this.name_] = function() {
         var result = new originalCtor();
-        // Delete the original keys (defineProperty does not allow redefinition).
+        // Delete the original keys (defineProperty does not allow
+        // redefinition).
         for (var n = 0; n < eventInfos.length; n++) {
           delete result[eventInfos[n].name];
         }

@@ -670,6 +670,21 @@ wtf.app.ui.tracks.ZonePainter.prototype.addArgumentLines_ = function(
     var argValue = data[argName];
     if (goog.isArray(argValue)) {
       argValue = '[' + argValue + ']';
+    } else if (argValue.buffer && argValue.buffer instanceof ArrayBuffer) {
+      // TODO(benvanik): better display of big data blobs.
+      var argString = '[';
+      var maxCount = 16;
+      for (var n = 0; n < Math.min(argValue.length, maxCount); n++) {
+        if (n) {
+          argString += ',';
+        }
+        argString += argValue[n];
+      }
+      if (argValue.length > maxCount) {
+        argString += ' ...';
+      }
+      argString += ']';
+      argValue = argString;
     } else if (goog.isObject(argValue)) {
       argValue = goog.global.JSON.stringify(argValue);
     }

@@ -175,7 +175,7 @@ wtf.analysis.Scope.prototype.getData = function() {
       var e = this.dataEvents_[n];
       if (e.eventType.flags & wtf.data.EventFlag.INTERNAL) {
         // name-value pair from the builtin appending functions.
-        data[e.args['name']] = goog.global.JSON.parse(e.args['json']);
+        data[e.args['name']] = e.args['value'];
       } else {
         // Custom appender, use args.
         for (var m = 0; m < e.eventType.args.length; m++) {

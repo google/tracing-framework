@@ -90,7 +90,7 @@ wtf.trace.BuiltinEvents = {
    * Appends data to the current scope.
    */
   appendScopeData: wtf.trace.events.createInstance(
-      'wtf.scope#appendData(ascii name, utf8 json)',
+      'wtf.scope#appendData(ascii name, any value)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
       wtf.data.EventFlag.APPEND_SCOPE_DATA),
 
