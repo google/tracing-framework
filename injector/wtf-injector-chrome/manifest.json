@@ -22,6 +22,8 @@
   ],
   "requirements": {
   },
+  // This enables eval/new Function.
+  //"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "page_action": {
     "workaround": "https://code.google.com/p/chromium/issues/detail?id=86449"
   },

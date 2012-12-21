@@ -424,7 +424,8 @@ wtf.analysis.EventTypeBuilder.READ_UTF8_ = {
  */
 wtf.analysis.EventTypeBuilder.READ_ANY_ = {
   read: function(buffer) {
-    return buffer.readInt8();
+    var string = buffer.readUtf8String();
+    return goog.global.JSON.parse(string);
   },
   readSource: function(a, bufferNames) {
     return [
