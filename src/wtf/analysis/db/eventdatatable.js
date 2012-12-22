@@ -300,6 +300,9 @@ goog.exportProperty(
     wtf.analysis.db.EventDataTable.prototype, 'getEventTypeEntry',
     wtf.analysis.db.EventDataTable.prototype.getEventTypeEntry);
 goog.exportProperty(
+    wtf.analysis.db.EventDataTable.prototype, 'getEntriesByClass',
+    wtf.analysis.db.EventDataTable.prototype.getEntriesByClass);
+goog.exportProperty(
     wtf.analysis.db.EventDataTable.prototype, 'forEach',
     wtf.analysis.db.EventDataTable.prototype.forEach);
 goog.exportSymbol(

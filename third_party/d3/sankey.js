@@ -39,6 +39,7 @@ d3.sankey = function() {
   sankey.layout = function(iterations) {
     computeNodeLinks();
     computeNodeValues();
+    markCycles();
     computeNodeBreadths();
     computeNodeDepths(iterations);
     computeLinkDepths();
@@ -118,7 +119,9 @@ d3.sankey = function() {
         node.x = x;
         node.dx = nodeWidth;
         node.sourceLinks.forEach(function(link) {
-          nextNodes.push(link.target);
+          if (!link.causesCycle) {
+            nextNodes.push(link.target);
+          }
         });
       });
       remainingNodes = nextNodes;
@@ -287,6 +290,67 @@ d3.sankey = function() {
   function value(link) {
     return link.value;
   }
+
+
+
+
+  // Comes from https://github.com/cfergus/d3-plugins
+  /* Cycle Related computations */
+  function markCycles() {
+    for (var n = 0; n < nodes.length; n++) {
+      if (!nodes[n].sourceLinks.length && !nodes[n].targetLinks.length) {
+        nodes.splice(n, 1);
+        n--;
+      }
+    }
+
+    var addedLinks = [];
+    links.forEach(function(link) {
+      if (createsCycle(link.source, link.target, addedLinks)) {
+        link.causesCycle = true;
+      } else {
+        addedLinks.push(link);
+      }
+    });
+  };
+  function createsCycle(source, target, graph) {
+    if (!graph.length) {
+      return false;
+    }
+
+    var nextLinks = findLinksOutward(target, graph);
+    if (!nextLinks.length) {
+      // Leaf node.
+      return false;
+    }
+
+    for (var i = 0; i < nextLinks.length; i++) {
+      var nextLink = nextLinks[i];
+      if (nextLink.target == source) {
+        return true;
+      }
+      if (createsCycle(source, nextLink.target, graph)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  /* Given a node, find all links for which this is a source
+     in the current 'known' graph  */
+  function findLinksOutward( node, graph ) {
+    var children = [];
+
+    for( var i = 0; i < graph.length; i++ ) {
+      if( node == graph[i].source ) {
+        children.push( graph[i] );
+      }
+    }
+
+    return children;
+  }
+
+
 
   return sankey;
 };

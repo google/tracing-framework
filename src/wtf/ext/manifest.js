@@ -69,7 +69,6 @@ wtf.ext.Manifest = function(url, json) {
   if (jsonApp) {
     this.app_ = {
       scripts: jsonApp['scripts'] || [],
-      stylesheets: jsonApp['stylesheets'] || [],
       triggers: []
     };
     var jsonTriggers = jsonApp['triggers'];
@@ -97,7 +96,6 @@ wtf.ext.Manifest.TracingInfo;
 /**
  * @typedef {{
  *   scripts: !Array.<string>,
- *   stylesheets: !Array.<string>,
  *   triggers: !Array.<{type: string, name: string}>
  * }}
  */
