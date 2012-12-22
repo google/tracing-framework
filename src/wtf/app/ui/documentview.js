@@ -19,6 +19,7 @@ goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.EmptyTabPanel');
+goog.require('wtf.app.ui.ExtensionManager');
 goog.require('wtf.app.ui.Selection');
 goog.require('wtf.app.ui.Statusbar');
 goog.require('wtf.app.ui.Tabbar');
@@ -115,6 +116,14 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       goog.getCssName('wtfAppUiDocumentViewStatusbar')));
   this.registerDisposable(this.statusbar_);
 
+  /**
+   * Extension manager.
+   * @type {!wtf.app.ui.ExtensionManager}
+   * @private
+   */
+  this.extensionManager_ = new wtf.app.ui.ExtensionManager(this);
+  this.registerDisposable(this.extensionManager_);
+
   // Relayout as required.
   var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
   this.getHandler().listen(vsm, goog.events.EventType.RESIZE, function() {
@@ -127,10 +136,6 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   this.tabbar_.addPanel(new wtf.app.ui.tracks.TracksPanel(this));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
       this, 'console', 'Console'));
-  this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
-      this, 'something', 'Something'));
-  this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
-      this, 'mumble', 'Mumble'));
 
   var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
@@ -207,6 +212,15 @@ wtf.app.ui.DocumentView.prototype.getLocalView = function() {
  */
 wtf.app.ui.DocumentView.prototype.getSelection = function() {
   return this.selection_;
+};
+
+
+/**
+ * Gets the tab bar.
+ * @return {!wtf.app.ui.Tabbar} Tab bar.
+ */
+wtf.app.ui.DocumentView.prototype.getTabbar = function() {
+  return this.tabbar_;
 };
 
 

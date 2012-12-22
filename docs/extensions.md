@@ -25,12 +25,8 @@ between tracing and apps.
       },
       "app": { // only include if needed
         "scripts": [
-          // Scripts that are inserted into the iframe, in order
+          // Scripts that are inserted into a hidden iframe, in order
           "some/file.js"
-        ],
-        "stylesheets": [
-          // Stylesheets inserted into the iframe, in order
-          "some/file.css"
         ],
         "triggers": [
           {
@@ -130,4 +126,47 @@ on it.
 
 ## App Extensions
 
-TODO(benvanik): implement and describe app extensions
+Application extensions run inside a hidden iframe sandbox inside of the
+application. Each extension gets loaded when a document is opened and destroyed
+when it is closed.
+
+Extensions have access to the `wtf.analysis` namespace on the global object as
+well as a few helper libraries, such as [d3](http://d3js.org/). Any other
+scripts can be inserted via the manifest.
+
+### documentView
+
+A global object `documentView` is available that contains APIs related to the
+currently loaded document.
+
+    // The wtf.analysis.db.EventDatabase instance of the document view.
+    documentView.db;
+
+### Panels
+
+Extensions can add any number of panels to the tab bar in the UI. Panels
+have their own iframes and can contain any content, such as custom scripts
+or stylesheets.
+
+    documentView.createTabPanel('mypanel', 'My Panel', {
+      // Stylesheets to add to the iframe, if any.
+      stylesheets: ['some.css'],
+      // Scripts to add to the document, if any.
+      scripts: ['some.js']
+    }, function(document) {
+      // Called back when the tab is created. 'document' is the iframe document.
+
+      // Setup a UI (or use a script).
+      var el = document.createElement('div');
+      document.body.appendChild(el);
+
+      // Optionally return some handlers for some events.
+      return {
+        onLayout: function(width, height) {
+          // Called if the tab is resized with the new width/height.
+        },
+        onVisbilityChange: function(visible) {
+          // Called when the tab is shown/hidden.
+        }
+      };
+    });
