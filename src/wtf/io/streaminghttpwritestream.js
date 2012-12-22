@@ -107,6 +107,7 @@ wtf.io.StreamingHttpWriteStream.prototype.write = function(
     async = false;
     data = wtf.io.sliceByteArray(buffer.data, 0, buffer.offset);
   }
+  goog.asserts.assert(data);
 
   var mimeType = 'application/octet-stream';
 
@@ -118,6 +119,7 @@ wtf.io.StreamingHttpWriteStream.prototype.write = function(
   } else {
     // Async - only release buffer when done.
     goog.result.wait(this.createWaiter_, function() {
+      goog.asserts.assert(data);
       var result = this.postData(this.baseUrl_ + '/append', mimeType, data);
       goog.result.wait(result, function() {
         returnBufferCallback.call(opt_selfObj, buffer);
