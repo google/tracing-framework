@@ -13,6 +13,7 @@
 
 goog.provide('wtf.io.StreamingHttpWriteStream');
 
+goog.require('goog.asserts');
 goog.require('goog.labs.net.xhr');
 goog.require('goog.result');
 goog.require('goog.result.Result');

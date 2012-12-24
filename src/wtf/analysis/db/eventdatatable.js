@@ -66,7 +66,8 @@ wtf.analysis.db.EventDataTable = function(db, opt_filter) {
 
   /**
    * All event data entries as objects keyed by event type name.
-   * @type {!Object.<!Object.<wtf.data.EventClass>>}
+   * @type {!Object.<wtf.data.EventClass,
+   *     !Object.<!wtf.analysis.db.EventDataEntry>>}
    * @private
    */
   this.entriesByClass_ = {};

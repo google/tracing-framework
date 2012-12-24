@@ -1,0 +1,565 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.k {
+  font-family: "Arial", "Helvetica", sans-serif;
+  color: #222222;
+  font-size: 13px;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+
+  h1, h2, h3, h4, h5 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: normal;
+    color: #222222;
+  }
+  p {
+    margin: 0 0 1em;
+    font-size: 13px;
+    line-height: 18px;
+  }
+  li {
+    line-height: 17px;
+  }
+  a {
+    text-decoration: none;
+    color: #15c;
+    cursor: pointer;
+  }
+  a:visited {
+    color: #61c;
+  }
+  a:active {
+    color: #d14836;
+  }
+  a.secondary {
+    text-decoration: none;
+    color: #2D9AE3;
+  }
+  iframe {
+    border: 0px;
+  }
+  strong, b {
+    color: #000;
+    font-weight: bold;
+  }
+  em {
+    font-style: italic;
+  }
+
+  .kTitle {
+    color: #1155CC;
+    font-weight: normal;
+  }
+
+  .kGreyText {
+    color: #777777;
+  }
+  .kSecondaryText {
+    font-size: 11px;
+    color: #777777;
+  }
+  .kSourceText {
+    color: #009933;
+  }
+
+  .kBodyLink {
+    color: #1155CC;
+  }
+  .kVisitedLink {
+    color: #6611CC;
+  }
+  .kRedLink {
+    color: #DD4B39;
+  }
+
+  .kAppBar {
+    padding: 10px 0;
+    border-bottom: 1px solid #EBEBEB;
+    height: 29px;
+    background: white;
+  }
+  .kAppBarName {
+    font-size: 20px;
+    line-height: 29px;
+    color: #DD4B39;
+    width: 160px;
+    height: 29px;
+    margin: 0 44px 0 16px;
+    float: left;
+    white-space: nowrap;
+  }
+
+  .kButtonBar {
+    height: 29px;
+    line-height: 29px;
+  }
+  .kButtonBar.kRight {
+    float: right;
+    margin-right: 6px;
+  }
+  .kButtonBarVertical {
+    padding-left: 2px;
+    padding-top: 2px;
+  }
+  .kButton {
+    display: inline-block;
+    min-width: 54px;
+    /* @alternate */ border: 1px solid #DCDCDC;
+    /* @alternate */ border: 1px solid rgba(0,0,0,0.1);
+    text-align: center;
+    color: #444;
+    font-size: 11px;
+    font-weight: bold;
+    height: 27px;
+    padding: 0 8px;
+    line-height: 27px;
+    cursor: default;
+    .transition(all, 0.218s);
+    .borderRadius(2px);
+    .backgroundGradient(#f5f5f5, #f1f1f1);
+    .noSelect();
+  }
+  .kButton:hover {
+    border: 1px solid #C6C6C6;
+    color: #222;
+    .transition(all, 0s);
+    .backgroundGradient(#f8f8f8, #f1f1f1);
+    .boxShadow(0px, 1px, 1px, rgba(0,0,0,0.1));
+  }
+  .kButton:active {
+    .backgroundGradient(#f6f6f6, #f1f1f1);
+    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+  }
+  .kButton:visited {
+    color: #666;
+  }
+  .kButton.kSelected {
+    .backgroundGradient(#eeeeee, #e0e0e0);
+    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+    border: 1px solid #CCC;
+    color: #333;
+  }
+  .kButtonAction {
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+    color: #FFF;
+    text-transform: uppercase;
+    letter-spacing:1;
+    .backgroundGradient(#dd4b39, #d14836);
+  }
+  .kButtonAction:hover {
+    border-color: #b0281a;
+    border-bottom-color: #AF301F;
+    color: #FFF;
+    .backgroundGradient(#dd4b39, #c53727);
+  }
+  .kButtonAction:active {
+    border-color: #992A1B;
+    .backgroundGradient(#dd4b39, #b0281a);
+  }
+  .kButton.kDisabled, .kButton.kDisabled:hover, .kButton.kDisabled:active {
+    background: none;
+    color: #b8b8b8;
+    /* @alternate */ border: 1px solid #f3f3f3;
+    /* @alternate */ border: 1px solid rgba(0,0,0,0.05);
+    cursor: default;
+    pointer-events: none;
+  }
+  .kButtonAction.kDisabled, .kButtonAction.kDisabled:hover, .kButtonAction.kDisabled:active {
+    border: 1px solid #505050;
+    background-color: #666;
+    color: #FFF;
+    opacity: 0.5;
+  }
+  .kButtonAction.kDisabled, .kButtonAction.kDisabled:hover, .kButtonAction.kDisabled:active {
+    border-color: #b0281a;
+    background-color: #d14836;
+  }
+  .kButton input[type=checkbox] {
+    position: relative;
+    top: 3px;
+  }
+  .kButton img {
+    display: inline-block;
+    margin-top: -1px;
+    opacity: 0.55;
+    width: 21px;
+    height: 21px;
+    vertical-align: middle;
+  }
+  .kButton.kSelected img {
+    opacity: 0.9;
+  }
+  .kButton:hover img {
+    opacity: 0.72;
+  }
+  .kButton:active img {
+    opacity: 1.0;
+  }
+  .kDisabled img {
+    opacity: 0.2;
+  }
+  .kButtonAction:hover {
+    opacity: 1;
+  }
+  .kButtonAction img, .kButtonAction img:active, .kButtonAction img:hover,
+  .kButtonAction:hover img, .kButtonAction:active img {
+    opacity: 1;
+  }
+  .kButtonBar .kButton,
+  .kButtonBar .kComboButton,
+  .kButtonBar .kExpandButton {
+    float: left;
+    margin: 0;
+    margin-left: 6px;
+    position: relative;
+    z-index: 1;
+  }
+  .kButtonBar .kButton:hover {
+    z-index: 2;
+  }
+  .kButtonBar .kButton:first-child,
+  .kButtonBar .kComboButton:first-child,
+  .kButtonBar .kExpandButton:first-child {
+    margin-left: 0;
+  }
+  .kButtonBarSmall .kButton {
+    min-width: 33px;
+  }
+  .kButtonBarVertical .kButton {
+    left: 0;
+    margin-left: 0px;
+    margin-bottom: 2px;
+  }
+
+  .kMenuButton .kButtonDisclosure {
+    float: right;
+    margin-top: 10px;
+    margin-left: 5px;
+    opacity: 0.8;
+  }
+  .kMenuButton img + .kButtonLabel {
+    margin-left: 5px;
+  }
+  .kMenuButton img {
+    display: inline-block;
+  }
+  .kMenuButton:hover .kButtonDisclosure {
+    border-left-color: #999;
+    opacity: 1;
+  }
+  .kMenuButton span.kButtonLabel {
+    display: inline-block;
+  }
+  .kComboButton .kMenuButton:first-child {
+    .borderRadiusTRBL(2px, 0, 0, 2px);
+  }
+  .kComboButton .kMenuTrigger {
+    margin-left: -1px;
+    border-left-color: transparent;
+    padding: 0 7px 0 2px;
+    width: auto;
+    min-width: 0;
+    .borderRadiusTRBL(0, 2px, 2px, 0);
+    z-index: 0;
+  }
+  .kComboButton .kMenuTrigger:hover {
+    border-left-color: #c6c6c6;
+  }
+
+  .kButton.kButtonLeft {
+    border-right-color: transparent;
+    margin-right: 0;
+    .borderRadiusTRBL(2px, 0, 0, 2px);
+  }
+  .kButton.kButtonLeft:hover {
+    border-right: 1px solid #c6c6c6;
+  }
+  .kButton.kButtonMid {
+    margin-left:0;
+    margin-right:0;
+    .borderRadius(0);
+  }
+  .kButton.kButtonMid + .kButton.kButtonMid,
+  .kButton.kButtonLeft + .kButton.kButtonMid {
+    margin-left: -1px;
+  }
+  .kButton.kButtonRight {
+    margin-left: -1px;
+    .borderRadiusTRBL(0, 2px, 2px, 0);
+  }
+  .kButton.kButtonRight:hover {
+    border-left: 1px solid #c6c6c6;
+  }
+
+  .kButtonDisclosure {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: url('../icons/arrow_dropdown.svg') center no-repeat;
+    .transition(all, 0.218s);
+  }
+  .kDisabled .kButtonDisclosure {
+    opacity: 0.2;
+  }
+
+
+  .kScrollShadowTop {
+    position:absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 8px;
+    opacity: 0.3;
+    background: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,.2)), to(rgba(0,0,0,0)));
+    -webkit-mask-box-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, rgba(0,0,0,0.1)), color-stop(0.5, rgba(0,0,0,.8)), color-stop(1.0, rgba(0,0,0,0.1)));
+    pointer-events: none;
+  }
+  .kScrollShadowBottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 8px;
+    opacity: 0.3;
+    background: -webkit-gradient(linear, left bottom, left top, from(rgba(0,0,0,.2)), to(rgba(0,0,0,0)));
+    -webkit-mask-box-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, rgba(0,0,0,0.1)), color-stop(0.5, rgba(0,0,0,.8)), color-stop(1.0, rgba(0,0,0,0.1)));
+    pointer-events: none;
+  }
+
+
+  .kTabControl {
+
+  }
+  .kTabHeader {
+    border-bottom: 1px solid #CCC;
+  }
+  .kTabHeaderTabs {
+    margin: 0;
+    float: left;
+    margin-left: 6px;
+  }
+  @kTabHeaderHeight: 30px;
+  .kTab {
+    display: inline-block;
+    min-width: 54px;
+    text-align: center;
+    color: #666;
+    font-size: 11px;
+    font-weight: bold;
+    height: 27px;
+    padding: 0 8px;
+    line-height: 27px;
+    cursor: default;
+    border: 1px solid transparent;
+    /* @alternate */ -webkit-border-top-left-radius: 2px;
+    /* @alternate */ -moz-border-radius-topleft: 2px;
+    /* @alternate */ border-top-left-radius: 2px;
+    /* @alternate */ -webkit-border-top-right-radius: 2px;
+    /* @alternate */ -moz-border-radius-topright: 2px;
+    /* @alternate */ border-top-right-radius: 2px;
+    .transition(all, 0.100s);
+    .noSelect();
+  }
+  .kTab:hover {
+    color: #222;
+  }
+  .kTabSelected {
+    color: #202020;
+    border: 1px solid #CCC;
+    border-bottom: 1px solid white;
+  }
+  .kTabSelected {
+
+  }
+  .kTabHeaderButtons {
+    float: right;
+  }
+  .kTabContents {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: @kTabHeaderHeight;
+    bottom: 0;
+  }
+
+
+  ::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+  }
+  ::-webkit-scrollbar-button {
+    height: 0px;
+    width: 0px;
+  }
+  ::-webkit-scrollbar-button:start:decrement,
+  ::-webkit-scrollbar-button:end:increment {
+    display: block;
+  }
+
+  ::-webkit-scrollbar-button:vertical:start:increment,
+  ::-webkit-scrollbar-button:vertical:end:decrement {
+    display: none;
+  }
+  ::-webkit-scrollbar-track:vertical {
+    border-right: 0px solid transparent;
+    border-left: 5px solid transparent;
+    background-clip:padding-box;
+    background-color: white;
+  }
+  ::-webkit-scrollbar-track:horizontal {
+    border-bottom: 0px solid transparent;
+    border-top: 5px solid transparent;
+    background-clip:padding-box;
+    background-color: white;
+
+  }
+  ::-webkit-scrollbar-thumb {
+    min-height: 28px;
+    padding-top:100px;
+    background-clip:padding-box;
+    background-color: rgba(0,0,0,0.2);
+    -webkit-box-shadow: inset 1px 1px 0px rgba(0,0,0,0.10),
+                        inset 0px -1px 0px rgba(0,0,0,0.07);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0,0,0,0.4);
+    -webkit-box-shadow: inset 1px 1px 1px rgba(0,0,0,0.25);
+  }
+  ::-webkit-scrollbar-thumb:active {
+    -webkit-box-shadow: inset 1px 1px 3px rgba(0,0,0,0.35);
+    background-color: rgba(0,0,0,0.5);
+  }
+  ::-webkit-scrollbar-thumb:vertical {
+    border-top: 0px solid transparent;
+    border-bottom: 0px solid transparent;
+    border-right: 0px solid transparent;
+    border-left: 5px solid transparent;
+  }
+  ::-webkit-scrollbar-thumb:horizontal {
+    border-top: 5px solid transparent;
+    border-bottom: 0px solid transparent;
+    border-right: 0px solid transparent;
+    border-left: 0px solid transparent;
+  }
+  ::-webkit-scrollbar-track:hover {
+    background-color:rgba(0,0,0,0.05);
+    -webkit-box-shadow: inset 1px 0px 0px rgba(0,0,0,0.10);
+  }
+  ::-webkit-scrollbar-track:active {
+    background-color:rgba(0,0,0,0.05);
+    -webkit-box-shadow: inset 1px 0px 0px rgba(0,0,0,0.14),
+                        inset -1px -1px 0px rgba(0,0,0,0.07);
+  }
+  .kSrollBarInner::-webkit-scrollbar-track:vertical {
+    border-left: 6px solid transparent;
+    border-right: 1px solid transparent;
+  }
+  .kScrollBarInner::-webkit-scrollbar-track:horizontal {
+    border-top: 6px solid transparent;
+    border-bottom: 1px solid transparent;
+  }
+
+  .kScrollBarInner::-webkit-scrollbar-thumb:vertical {
+    border-left: 6px solid transparent;
+    border-right: 1px solid transparent;
+    border-top: 0px solid transparent;
+    border-bottom: 0px solid transparent;
+  }
+  .kScrollBarInner::-webkit-scrollbar-thumb:horizontal {
+    border-left: 0px solid transparent;
+    border-right: 0px solid transparent;
+    border-top: 6px solid transparent;
+    border-bottom: 1px solid transparent;
+  }
+
+
+  .kTextField {
+    height: 29px;
+    background-color: #FFF;
+    line-height: 27px;
+    padding-left: 8px;
+    color: #333;
+    border: 1px solid #d9d9d9;
+    border-top: 1px solid #c0c0c0;
+    display: inline-block;
+    vertical-align: top;
+    .boxSizing(border-box);
+    .borderRadius(1px);
+    margin: 0;
+    padding: 0;
+    .allowSelect();
+  }
+  .kTextField:hover {
+    border: 1px solid #b9b9b9;
+    border-top: 1px solid #a0a0a0;
+    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+  }
+  .kTextField:focus {
+    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.3));
+    outline: none;
+    border: 1px solid #4d90fe;
+  }
+  .kTextFieldError {
+    border: 1px solid #DD4B39 !important;
+  }
+
+  .kSearchField {
+    font-size: 15px;
+    color: #000;
+  }
+
+
+  .kDialog {
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-style: normal;
+    color: black;
+    background-color: white;
+    border: 1px solid rgba(0,0,0,0.2);
+    .boxShadow(0, 4px, 16px, rgba(0,0,0,0.2));
+    cursor: default;
+  }
+  .kDialogHeader {
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ccc;
+    height: 71px;
+  }
+  .kDialogHeader h1 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: normal;
+    color: #222;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    padding-top: 26px;
+    padding-left: 42px;
+    cursor: default;
+  }
+  .kDialogHeaderButtons {
+    float: right;
+    padding-right: 26px;
+    padding-top: 22px;
+    margin: 0;
+  }
+  .kDialogContent {
+    margin: 10px;
+  }
+  .kDialogFooter {
+    position: absolute;
+    bottom: 0;
+    margin: 10px;
+  }
+}

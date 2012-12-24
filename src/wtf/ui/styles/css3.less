@@ -1,0 +1,71 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.noSelect() {
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+}
+.allowSelect() {
+  -moz-user-select: auto !important;
+  -ms-user-select: auto !important;
+  -webkit-user-select: auto !important;
+}
+
+.backgroundGradient(@topColor, @bottomColor) {
+  background-color: @topColor;
+  background-image: -webkit-linear-gradient(top,@topColor,@bottomColor);
+  background-image: -moz-linear-gradient(top,@topColor,@bottomColor);
+  background-image: -ms-linear-gradient(top,@topColor,@bottomColor);
+  background-image: -o-linear-gradient(top,@topColor,@bottomColor);
+  background-image: linear-gradient(top,@topColor,@bottomColor);
+  // IE8+:
+  -ms-filter: %("progid:DXImageTransform.Microsoft.gradient(startColorstr=%d, endColorstr=%d)", @topColor, @bottomColor);
+  // IE10:
+  background-image: -ms-linear-gradient(top,@topColor, @bottomColor);
+}
+
+.boxSizing(@sizing: border-box) {
+  -webkit-box-sizing: @sizing;
+  box-sizing: @sizing;
+}
+
+.boxShadow(@hShadow, @vShadow, @blurRadius, @color) {
+  -webkit-box-shadow: @hShadow @vShadow @blurRadius @color;
+  -moz-box-shadow: @hShadow @vShadow @blurRadius @color;
+  box-shadow: @hShadow @vShadow @blurRadius @color;
+}
+
+.insetBoxShadow(@hShadow, @vShadow, @blurRadius, @color) {
+  -webkit-box-shadow: inset @hShadow @vShadow @blurRadius @color;
+  -moz-box-shadow: inset @hShadow @vShadow @blurRadius @color;
+  box-shadow: inset @hShadow @vShadow @blurRadius @color;
+}
+
+.borderRadius(@radius) {
+  -webkit-border-radius: @radius;
+  -moz-border-radius: @radius;
+  border-radius: @radius;
+}
+
+.borderRadiusTRBL(@topRadius, @rightRadius, @bottomRadius, @leftRadius) {
+  -webkit-border-radius: @topRadius @rightRadius @bottomRadius @leftRadius;
+  -moz-border-radius: @topRadius @rightRadius @bottomRadius @leftRadius;
+  border-radius: @topRadius @rightRadius @bottomRadius @leftRadius;
+}
+
+.transition(@property, @time: 0.218s, @function: ease) {
+  -webkit-transition: @property @time @function;
+  -moz-transition: @property @time @function;
+  -ms-transition: @property @time @function;
+  -o-transition: @property @time @function;
+  transition: @property @time @function;
+}

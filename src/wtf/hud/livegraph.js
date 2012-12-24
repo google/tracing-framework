@@ -71,7 +71,7 @@ wtf.hud.LiveGraph.prototype.setupPainter_ = function() {
   }
 
   var canvas = /** @type {!HTMLCanvasElement} */ (this.getRootElement());
-  goog.dom.classes.add(canvas, 'wtfHudGraphCanvas');
+  goog.dom.classes.add(canvas, goog.getCssName('hudGraphCanvas'));
   canvas.width = 1;
   canvas.height = 1;
 

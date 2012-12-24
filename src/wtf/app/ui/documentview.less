@@ -11,12 +11,12 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_DOCUMENTVIEW_TOOLBAR_HEIGHT     41px;
-@def WTF_APP_UI_DOCUMENTVIEW_STATUSBAR_HEIGHT   29px;
+@wtfAppUiDocumentViewToolbarHeight: 41px;
+@wtfAppUiDocumentViewStatusbarHeight: 29px;
 
 /* Document view root. */
 .wtfAppUiDocumentView {
-  @mixin fitParent();
+  .fitParent();
   overflow: hidden;
 
   background: white;
@@ -30,8 +30,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: WTF_APP_UI_DOCUMENTVIEW_TOOLBAR_HEIGHT;
-  bottom: WTF_APP_UI_DOCUMENTVIEW_STATUSBAR_HEIGHT;
+  top: @wtfAppUiDocumentViewToolbarHeight;
+  bottom: @wtfAppUiDocumentViewStatusbarHeight;
   overflow: hidden;
 }
 
@@ -40,6 +40,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: WTF_APP_UI_DOCUMENTVIEW_STATUSBAR_HEIGHT;
+  height: @wtfAppUiDocumentViewStatusbarHeight;
   overflow: hidden;
 }

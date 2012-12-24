@@ -32,6 +32,7 @@ goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace');
 goog.require('wtf.ui.ResizableControl');
+goog.require('wtf.ui.icons');
 goog.require('wtf.util.Options');
 
 
@@ -49,20 +50,18 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   var dom = goog.dom.getDomHelper(opt_parentElement);
   var parentElement = /** @type {!Element} */ (
       opt_parentElement || dom.getDocument().body);
+  // Wrap in #wtf for stylesheets.
+  var wtfEl = dom.createElement(goog.dom.TagName.DIV);
+  goog.dom.classes.add(wtfEl, goog.getCssName('wtfReset'));
+  parentElement.appendChild(wtfEl);
+  parentElement = wtfEl;
+
   goog.base(
       this,
       wtf.ui.ResizableControl.Orientation.VERTICAL,
-      'wtfHudSplitter',
+      goog.getCssName('hudSplitter'),
       parentElement,
       dom);
-
-  // Add stylesheet to page.
-  // Note that we don't use GSS so that we can avoid another file dependency
-  // and renaming issues.
-  var styleEl = /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.hud.overlay.style, undefined, undefined, dom));
-  this.addRelatedElement(styleEl);
-  dom.appendChild(this.getParentElement(), styleEl);
 
   /**
    * DOM channel, if supported.
@@ -110,7 +109,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
    * @private
    */
   this.liveGraph_ = new wtf.hud.LiveGraph(
-      session, options, this.getChildElement('wtfHudGraph'));
+      session, options, this.getChildElement(goog.getCssName('hudGraph')));
   this.registerDisposable(this.liveGraph_);
 
   var keyboard = wtf.events.getWindowKeyboard(dom);
@@ -129,16 +128,24 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
 
   // Add buttons.
   this.addButton_(
-      true, 'wtfHudButtonClear', 'Clear current data', 'shift+esc',
+      true,
+      '/assets/icons/clear.svg',
+      'Clear current data', 'shift+esc',
       this.clearSnapshotClicked_, this);
   this.addButton_(
-      true, 'wtfHudButtonSend', 'Send to UI', 'f9',
+      true,
+      '/assets/icons/popout_white.svg',
+      'Send to UI', 'f9',
       this.sendSnapshotClicked_, this);
   this.addButton_(
-      true, 'wtfHudButtonSave', 'Save Snapshot', 'f10',
+      true,
+      '/assets/icons/save.svg',
+      'Save Snapshot', 'f10',
       this.saveSnapshotClicked_, this);
   this.addButton_(
-      true, 'wtfHudButtonSettings', 'Settings', null,
+      true,
+      '/assets/icons/settings.svg',
+      'Settings', null,
       this.settingsClicked_, this);
 
   // Listen for options changes and reload.
@@ -410,37 +417,21 @@ wtf.hud.Overlay.prototype.addButton_ = function(
   // Create button.
   var dom = this.getDom();
   var el = dom.createElement(goog.dom.TagName.A);
-  goog.dom.classes.add(el, 'wtfHudButton');
+  goog.dom.classes.add(el, goog.getCssName('hudButton'));
   el['title'] = fullTitle;
-  var img = dom.createElement(goog.dom.TagName.IMG);
-  img['alt'] = title;
-  img['src'] = '';
+  var img = /** @type {!HTMLImageElement} */ (
+      dom.createElement(goog.dom.TagName.IMG));
+  wtf.ui.icons.makeIcon(img, icon);
   dom.appendChild(el, img);
 
   // Add to DOM.
-  var buttonBar = this.getChildElement('wtfHudButtons');
+  var buttonBar = this.getChildElement(goog.getCssName('hudButtons'));
   if (isSystem) {
     dom.appendChild(buttonBar, el);
   } else {
     dom.insertChildAt(buttonBar, el, 0);
   }
   this.buttonCount_++;
-
-  // Set icon.
-  if (goog.string.startsWith(icon, 'data:')) {
-    img['src'] = icon;
-  } else {
-    // Most browsers don't like setting content via CSS, so instead read it out.
-    // This is nasty and requires the img be in the document already, but
-    // whatever.
-    goog.dom.classes.add(el, icon);
-    var contentUrl = goog.style.getComputedStyle(img, 'content');
-    contentUrl = contentUrl.substr(5, contentUrl.length - 7);
-    contentUrl = contentUrl.replace(/%20/g, ' ');
-    contentUrl = contentUrl.replace(/\\/g, '');
-    img['src'] = contentUrl;
-    goog.dom.classes.remove(el, icon);
-  }
 
   // Keyboard shortcut handler.
   if (shortcut) {
