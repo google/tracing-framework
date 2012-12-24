@@ -41,3 +41,5 @@ for m in ${SUBMODULES[@]}
 do
   git add third_party/$m
 done
+
+echo ""
