@@ -27,6 +27,12 @@ file_set(
         ':shared_js_srcs',
         ])
 
+file_set(
+    name='third_party_js',
+    srcs=[
+        '../third_party/d3:min',
+        ])
+
 
 # ------------------------------------------------------------------------------
 # Modes
@@ -43,6 +49,7 @@ file_set(
         'maindisplay-debug.html',
         'scripts/debug-prefix.js',
         'scripts/debug-postfix-maindisplay.js',
+        ':third_party_js',
         ])
 
 file_set(
@@ -51,6 +58,7 @@ file_set(
         '..:wtf_ui_js_uncompiled',
         '..:wtf_ui_styles_debug',
         'maindisplay-debug.html',
+        ':third_party_js',
         ])
 
 file_set(
@@ -60,6 +68,7 @@ file_set(
         '..:wtf_ui_styles_release',
         'maindisplay.html',
         'scripts/release-maindisplay.js',
+        ':third_party_js',
         ],
     src_exclude_filter='*-deps.js')
 
@@ -103,6 +112,8 @@ file_set(
         'maindisplay.html',
         'scripts/release-background.js',
         'scripts/release-maindisplay.js',
+
+        ':third_party_js',
 
         # This is bad - should prefix this.
         '..:wtf_ui_styles_release',

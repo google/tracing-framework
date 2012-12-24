@@ -47,6 +47,9 @@ wtf.app.ui.show = function(opt_options) {
   // TODO(benvanik): switch to chrome platform when possible?
   var platform = new wtf.pal.BrowserPlatform();
 
+  // TODO(benvanik): options value for this/fancy ui/etc.
+  //wtf.ext.registerExtension('../extensions/diagrams/diagrams.json');
+
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(function() {
     wtf.app.ui.showWhenDomLoaded_(platform, options);
