@@ -283,7 +283,7 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
       return;
     }
     result = goog.string.toNumber(result);
-    if (result === NaN) {
+    if (isNaN(result)) {
       return;
     }
 
