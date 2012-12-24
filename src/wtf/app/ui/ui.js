@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui');
 
+goog.require('goog.dom.classes');
 goog.require('wtf.app.ui.MainDisplay');
 goog.require('wtf.pal.BrowserPlatform');
 goog.require('wtf.util');
@@ -60,6 +61,9 @@ wtf.app.ui.show = function(opt_options) {
  * @private
  */
 wtf.app.ui.showWhenDomLoaded_ = function(platform, options) {
+  // Setup theme root class/reset.
+  goog.dom.classes.add(document.body, goog.getCssName('k'));
+
   // Create display and add to the DOM.
   var mainDisplay = new wtf.app.ui.MainDisplay(platform, options);
   wtf.app.ui.mainDisplay_ = mainDisplay;

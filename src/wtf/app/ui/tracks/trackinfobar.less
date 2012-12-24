@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_TRACKSPANEL_INFO_HEADER_HEIGHT  40px;
+@wtfAppUiTracksPanelInfoHeaderHeight: 40px;
 
 .wtfAppUiTracksPanelInfoOuter {
 }
@@ -21,7 +21,7 @@
   left: 0;
   right: 0;
   top: 0;
-  height: sub(WTF_APP_UI_TRACKSPANEL_INFO_HEADER_HEIGHT, 5px);
+  height: @wtfAppUiTracksPanelInfoHeaderHeight - 5px;
   border-bottom: 1px solid #ebebeb;
   padding-left: 5px;
   padding-top: 5px;
@@ -34,7 +34,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: WTF_APP_UI_TRACKSPANEL_INFO_HEADER_HEIGHT;
+  top: @wtfAppUiTracksPanelInfoHeaderHeight;
   bottom: 0;
   padding: 3px;
   overflow-x: hidden;
@@ -42,7 +42,7 @@
 }
 
 
-@def WTF_APP_UI_TRACKSPANEL_INFO_ENTRY_HEADER_X   60px;
+@wtfAppUiTracksPanelInfoEntryHeaderX: 60px;
 
 .wtfAppUiTracksPanelInfoEntry {
   position: relative;
@@ -59,7 +59,7 @@
 .wtfAppUiTracksPanelInfoEntryValue {
   position: relative;
   left: 0;
-  width: WTF_APP_UI_TRACKSPANEL_INFO_ENTRY_HEADER_X;
+  width: @wtfAppUiTracksPanelInfoEntryHeaderX;
   top: 0;
   height: 13px;
   text-align: right;
@@ -67,7 +67,7 @@
 }
 .wtfAppUiTracksPanelInfoEntryTitle {
   position: absolute;
-  left: WTF_APP_UI_TRACKSPANEL_INFO_ENTRY_HEADER_X;
+  left: @wtfAppUiTracksPanelInfoEntryHeaderX;
   right: 0;
   top: 0;
   bottom: 0;
@@ -76,7 +76,7 @@
 .wtfAppUiTracksPanelInfoEntryContent {
   position: absolute;
   top: 13px;
-  left: WTF_APP_UI_TRACKSPANEL_INFO_ENTRY_HEADER_X;
+  left: @wtfAppUiTracksPanelInfoEntryHeaderX;
   right: 0;
   height: 13px;
   padding-left: 4px;

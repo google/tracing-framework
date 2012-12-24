@@ -11,8 +11,8 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_DEFAULT_HEIGHT  230px;
-@def WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT 40px;
+@wtfAppUiDocumentViewNavbarDefaultHeight: 230px;
+@wtfAppUiDocumentViewNavbarTimelineHeight: 40px;
 
 /* Navbar root. */
 .wtfAppUiNavbar {
@@ -20,7 +20,7 @@
   left: 0;
   right: 0;
   top: 0;
-  height: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_DEFAULT_HEIGHT;
+  height: @wtfAppUiDocumentViewNavbarDefaultHeight;
   overflow: hidden;
   background: white;
 }
@@ -30,7 +30,7 @@
   left: 0;
   right: 0;
   top: 0;
-  height: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT;
+  height: @wtfAppUiDocumentViewNavbarTimelineHeight;
   overflow: hidden;
   background-color: white;
 }
@@ -39,7 +39,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: WTF_APP_UI_DOCUMENTVIEW_NAVBAR_TIMELINE_HEIGHT;
+  top: @wtfAppUiDocumentViewNavbarTimelineHeight;
   bottom: 0;
   overflow: hidden;
   background-color: white;

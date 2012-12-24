@@ -26,6 +26,7 @@ goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.data.Variable');
 goog.require('wtf.data.formats.BinaryTrace');
 goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.io.EventType');

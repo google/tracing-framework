@@ -23,13 +23,14 @@
 .wtfAppUiToolbarInfo {
   float: left;
   height: 100%;
-  margin-top: 2px;
+  margin-top: 8px;
 }
 .wtfAppUiToolbarInfoIcon {
   width: 16px;
   height: 16px;
-  margin-top: 2px;
   margin-left: 6px;
+  position: relative;
+  top: 2px;
 }
 .wtfAppUiToolbarInfoTitle {
   max-width: 300px;
@@ -42,7 +43,7 @@
   padding-right: 6px;
 }
 .wtfAppUiToolbarInfoUrl {
-  @mixin allowSelect();
+  .allowSelect();
   display: block;
   max-width: 200px;
   overflow: hidden;

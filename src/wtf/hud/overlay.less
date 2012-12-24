@@ -1,0 +1,107 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.hudOuter {
+  position: absolute;
+  height: 40px;
+  margin: 3px;
+  z-index: 99999;
+  background-color: #DFDFDF;
+  border: 1px solid #C1C1C1;
+  border-radius: 2px;
+}
+
+.hudControl {
+}
+
+.hudGraph {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 56px;
+  float: left;
+  cursor: pointer;
+}
+
+.hudGraphCanvas {
+  border: 0;
+  background-color: transparent;
+}
+
+.hudButtons {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.hudButton {
+  position: relative;
+  height: 100%;
+  width: 23px;
+  float: left;
+  padding: 0 2px;
+  border-left: 1px solid #C1C1C1;
+  text-align: center;
+  color: #444;
+  background-color: #f5f5f5;
+  background-image: -webkit-linear-gradient(top,#f5f5f5,#f1f1f1);
+  background-image: -moz-linear-gradient(top,#f5f5f5,#f1f1f1);
+  background-image: -ms-linear-gradient(top,#f5f5f5,#f1f1f1);
+  background-image: -o-linear-gradient(top,#f5f5f5,#f1f1f1);
+  background-image: linear-gradient(top,#f5f5f5,#f1f1f1);
+
+  -webkit-transition: all 0.218s;
+  -moz-transition: all 0.218s;
+  -o-transition: all 0.218s;
+  transition: all 0.218s;
+}
+.hudButton:hover {
+  color: #222;
+  background-color: #f8f8f8;
+  background-image: -webkit-linear-gradient(top,#f8f8f8,#f1f1f1);
+  background-image: -moz-linear-gradient(top,#f8f8f8,#f1f1f1);
+  background-image: -ms-linear-gradient(top,#f8f8f8,#f1f1f1);
+  background-image: -o-linear-gradient(top,#f8f8f8,#f1f1f1);
+  background-image: linear-gradient(top,#f8f8f8,#f1f1f1);
+  -webkit-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
+  -moz-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
+  box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
+}
+.hudButton:active {
+  color: #333;
+  background-color: #f6f6f6;
+  background-image: -webkit-linear-gradient(top,#f6f6f6,#f1f1f1);
+  background-image: -moz-linear-gradient(top,#f6f6f6,#f1f1f1);
+  background-image: -ms-linear-gradient(top,#f6f6f6,#f1f1f1);
+  background-image: -o-linear-gradient(top,#f6f6f6,#f1f1f1);
+  background-image: linear-gradient(top,#f6f6f6,#f1f1f1);
+  -webkit-box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
+  -moz-box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
+  box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
+}
+.hudButton img {
+  position: relative;
+  top: 9px;
+  width: 21px;
+  height: 21px;
+  opacity: 0.55;
+}
+.hudButton:hover img {
+  opacity: 0.72;
+}
+.hudButton:active img {
+  opacity: 1.0;
+}
+
+.hudSplitter {
+}
