@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui.MainDisplay');
 
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
@@ -33,6 +34,7 @@ goog.require('wtf.doc.Document');
 goog.require('wtf.events');
 goog.require('wtf.events.CommandManager');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.ext');
 goog.require('wtf.io');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
@@ -40,6 +42,7 @@ goog.require('wtf.pal');
 goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.Dialog');
+goog.require('wtf.ui.SettingsDialog');
 
 
 
@@ -557,7 +560,63 @@ wtf.app.ui.MainDisplay.prototype.shareTrace_ = function() {
  * @private
  */
 wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
-  // TODO(benvanik): show a settings dialog.
+  // Show settings dialog.
+  var dom = this.getDom();
+  var body = dom.getDocument().body;
+  goog.asserts.assert(body);
+  var dialog = new wtf.ui.SettingsDialog(
+      this.options_, 'App Settings', body, dom);
+
+  var panes = [
+    {
+      'title': 'General',
+      'sections': [
+        {
+          'title': 'TODO',
+          'widgets': [
+            {
+              'type': 'label',
+              'title': 'Coming soon!',
+              'value': ''
+            }
+          ]
+        }
+      ]
+    }
+  ];
+
+  // Add extension panes.
+  var extensions = wtf.ext.getAppExtensions();
+  for (var n = 0; n < extensions.length; n++) {
+    var manifest = extensions[n].getManifest();
+    var info = extensions[n].getInfo();
+    var extensionSections = [
+      {
+        'title': 'Info',
+        'widgets': [
+          {
+            'type': 'label',
+            'title': 'Name:',
+            'value': manifest.getName()
+          },
+          {
+            'type': 'label',
+            'title': 'Source:',
+            'value': manifest.getUrl()
+          }
+        ]
+      }
+    ];
+    goog.array.extend(extensionSections, info.options);
+    panes.push({
+      'title': manifest.getName(),
+      'sections': extensionSections
+    });
+  }
+
+  dialog.setup({
+    'panes': panes
+  });
 };
 
 

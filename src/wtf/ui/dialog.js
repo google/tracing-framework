@@ -92,6 +92,7 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
 
   // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
+  goog.dom.classes.add(el, goog.getCssName('k'));
   goog.dom.classes.add(el, goog.getCssName('kDialog'));
   goog.style.setStyle(el, {
     'position': 'fixed',

@@ -54,7 +54,8 @@ wtf.ext.Manifest = function(url, json) {
   var jsonTracing = json['tracing'];
   if (jsonTracing) {
     this.tracing_ = {
-      scripts: jsonTracing['scripts'] || []
+      scripts: jsonTracing['scripts'] || [],
+      options: jsonTracing['options'] || []
     };
   }
 
@@ -69,6 +70,7 @@ wtf.ext.Manifest = function(url, json) {
   if (jsonApp) {
     this.app_ = {
       scripts: jsonApp['scripts'] || [],
+      options: jsonTracing['options'] || [],
       triggers: []
     };
     var jsonTriggers = jsonApp['triggers'];
@@ -87,7 +89,8 @@ wtf.ext.Manifest = function(url, json) {
 
 /**
  * @typedef {{
- *   scripts: !Array.<string>
+ *   scripts: !Array.<string>,
+ *   options: !Array
  * }}
  */
 wtf.ext.Manifest.TracingInfo;
@@ -96,6 +99,7 @@ wtf.ext.Manifest.TracingInfo;
 /**
  * @typedef {{
  *   scripts: !Array.<string>,
+ *   options: !Array,
  *   triggers: !Array.<{type: string, name: string}>
  * }}
  */
