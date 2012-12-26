@@ -19,18 +19,18 @@
  */
 {template .control}
   <div class="{css uiSettingsDialog}">
-    <div class="{css uiSettingsHeader}">
-      <div class="{css uiSettingsHeaderButtons}">
-        <a class="{css uiSettingsHeaderButton} {css uiSettingsButtonSave}">Save</a>
-        <a class="{css uiSettingsHeaderButton} {css uiSettingsButtonCancel}">Cancel</a>
+    <div class="{css header}">
+      <div class="{css buttons}">
+        <a class="{css kButton} {css kButtonBlue} {css buttonSave}">Save</a>
+        <a class="{css kButton} {css buttonCancel}">Cancel</a>
       </div>
-      <h1 class="{css uiSettingsHeaderTitle}">Title</h1>
+      <h1 class="{css title}">Title</h1>
     </div>
-    <div class="{css uiSettingsNav}">
+    <div class="{css nav}">
       <ul>
       </ul>
     </div>
-    <div class="{css uiSettingsContent}">
+    <div class="{css contents}">
     </div>
   </div>
 {/template}
@@ -49,7 +49,7 @@
  * Pane content.
  */
 {template .paneContent}
-  <div class="{css uiSettingsPane}">
+  <div class="{css pane}">
   </div>
 {/template}
 
@@ -59,11 +59,11 @@
  * @param title Title displayed.
  */
 {template .section}
-  <div class="{css uiSettingsSection}">
-    <div class="{css uiSettingsSectionLabel}">
+  <div class="{css section}">
+    <div class="{css label}">
       {$title}
     </div>
-    <div class="{css uiSettingsSectionContent}">
+    <div class="{css content}">
       <p>
       </p>
     </div>

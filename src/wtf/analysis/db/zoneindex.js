@@ -270,7 +270,7 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   }
   this.pendingOutOfOrderEvents_.length = 0;
 
-  // Reconcile pending system time scopes by subtracing their duratino from
+  // Reconcile pending system time scopes by subtracing their duration from
   // their ancestors.
   // This must be done here as out of order events could have added scopes
   // and such.
@@ -287,10 +287,13 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   this.rootTotalTime_ = 0;
   this.rootUserTime_ = 0;
   this.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
-    if (e instanceof wtf.analysis.ScopeEvent &&
-        e.scope.getDepth() == 0) {
-      this.rootTotalTime_ += e.scope.getTotalDuration();
-      this.rootUserTime_ += e.scope.getUserDuration();
+    if (e instanceof wtf.analysis.ScopeEvent) {
+      var scope = e.scope;
+      scope.computeTimes();
+      if (!scope.getDepth()) {
+        this.rootTotalTime_ += scope.getTotalDuration();
+        this.rootUserTime_ += scope.getUserDuration();
+      }
     }
   }, this);
 };

@@ -77,19 +77,19 @@ wtf.ui.SettingsDialog = function(options, title, parentElement, opt_dom) {
   this.config_ = null;
 
   var dom = this.getDom();
-  var titleEl = this.getChildElement(goog.getCssName('uiSettingsHeaderTitle'));
+  var titleEl = this.getChildElement(goog.getCssName('title'));
   dom.setTextContent(titleEl, title);
 
   var eh = this.getHandler();
   eh.listen(
-      this.getChildElement(goog.getCssName('uiSettingsButtonSave')),
+      this.getChildElement(goog.getCssName('buttonSave')),
       goog.events.EventType.CLICK,
       function() {
         this.saveSettings();
         this.close();
       }, false, this);
   eh.listen(
-      this.getChildElement(goog.getCssName('uiSettingsButtonCancel')),
+      this.getChildElement(goog.getCssName('buttonCancel')),
       goog.events.EventType.CLICK, this.close, false, this);
 };
 goog.inherits(wtf.ui.SettingsDialog, wtf.ui.Dialog);
@@ -255,7 +255,7 @@ wtf.ui.SettingsDialog.prototype.addPane = function(title) {
   this.panesByTitle_[title] = pane;
 
   // Add the pane to the DOM.
-  var contentEl = this.getChildElement(goog.getCssName('uiSettingsContent'));
+  var contentEl = this.getChildElement(goog.getCssName('contents'));
   goog.style.showElement(pane.el_, false);
   dom.appendChild(contentEl, pane.el_);
 
@@ -265,7 +265,7 @@ wtf.ui.SettingsDialog.prototype.addPane = function(title) {
   });
 
   // Add button to the nav bar.
-  var navRootEl = this.getChildElement(goog.getCssName('uiSettingsNav'));
+  var navRootEl = this.getChildElement(goog.getCssName('nav'));
   var navUlEl = /** @type {Element} */ (dom.getElementsByTagNameAndClass(
       goog.dom.TagName.UL, null, navRootEl)[0]);
   dom.appendChild(navUlEl, pane.navEl_);
@@ -295,12 +295,12 @@ wtf.ui.SettingsDialog.prototype.selectPane = function(title) {
 
   if (this.currentPane_) {
     goog.dom.classes.remove(this.currentPane_.navLinkEl_,
-        goog.getCssName('uiSettingsNavSelected'));
+        goog.getCssName('selected'));
     goog.style.showElement(this.currentPane_.el_, false);
   }
   this.currentPane_ = pane;
   goog.dom.classes.add(pane.navLinkEl_,
-      goog.getCssName('uiSettingsNavSelected'));
+      goog.getCssName('selected'));
   goog.style.showElement(pane.el_, true);
 };
 
