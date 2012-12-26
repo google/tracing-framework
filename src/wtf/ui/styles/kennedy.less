@@ -171,7 +171,7 @@
       vertical-align: middle;
     }
 
-    .kDisabled, .kDisabled:hover, .kDisabled:active {
+    &.kDisabled, &.kDisabled:hover, &.kDisabled:active {
       background: none;
       color: #b8b8b8;
       border: 1px solid #f3f3f3;
@@ -183,7 +183,7 @@
         opacity: 0.2;
       }
     }
-    .kSelected {
+    &.kSelected {
       .backgroundGradient(#eeeeee, #e0e0e0);
       .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
       border: 1px solid #CCC;
@@ -222,7 +222,7 @@
       opacity: 1;
     }
 
-    .kDisabled, .kDisabled:hover, .kDisabled:active {
+    &.kDisabled, &.kDisabled:hover, &.kDisabled:active {
       border: 1px solid #505050;
       background-color: #666;
       opacity: 0.5;
@@ -523,10 +523,10 @@
 
 
   .kTextField {
-    height: 29px;
+    height: 22px;
     background-color: #FFF;
-    line-height: 27px;
-    padding-left: 8px;
+    margin: 0;
+    padding: 2px;
     color: #333;
     border: 1px solid #d9d9d9;
     border-top: 1px solid #c0c0c0;
@@ -534,8 +534,6 @@
     vertical-align: top;
     .boxSizing(border-box);
     .borderRadius(1px);
-    margin: 0;
-    padding: 0;
     .allowSelect();
 
     &:hover {
@@ -554,6 +552,8 @@
   }
 
   .kSearchField {
+    height: 29px;
+    line-height: 27px;
     font-size: 15px;
     color: #000;
   }
@@ -572,6 +572,7 @@
     vertical-align: middle;
     margin-right: 4px;
     margin-bottom: 5px;
+    background-color: white;
 
     &:focus {
       outline: none;
