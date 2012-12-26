@@ -62,7 +62,7 @@ wtf.analysis.Storage.prototype.captureStream = function(sourceStream) {
 /**
  * @typedef {{
  *   type: string,
- *   data: !Array.<!wtf.io.ByteArray>
+ *   data: !wtf.io.ByteArray
  * }}
  */
 wtf.analysis.DataStream;

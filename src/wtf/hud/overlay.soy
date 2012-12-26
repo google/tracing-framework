@@ -17,138 +17,14 @@
 
 
 /**
- * Style tag.
- */
-{template .style}
-  <style>{literal}
-
-  .wtfHudOuter {
-    position: absolute;
-    height: 40px;
-    margin: 3px;
-    z-index: 99999;
-    background-color: #DFDFDF;
-    border: 1px solid #C1C1C1;
-    border-radius: 2px;
-  }
-
-  .wtfHudControl {
-  }
-
-  .wtfHudGraph {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    right: 56px;
-    float: left;
-    cursor: pointer;
-  }
-
-  .wtfHudGraphCanvas {
-    border: 0;
-    background-color: transparent;
-  }
-
-  .wtfHudButtons {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-  }
-
-  .wtfHudButton {
-    position: relative;
-    height: 100%;
-    width: 23px;
-    float: left;
-    padding: 0 2px;
-    border-left: 1px solid #C1C1C1;
-    text-align: center;
-    color: #444;
-    background-color: #f5f5f5;
-    background-image: -webkit-linear-gradient(top,#f5f5f5,#f1f1f1);
-    background-image: -moz-linear-gradient(top,#f5f5f5,#f1f1f1);
-    background-image: -ms-linear-gradient(top,#f5f5f5,#f1f1f1);
-    background-image: -o-linear-gradient(top,#f5f5f5,#f1f1f1);
-    background-image: linear-gradient(top,#f5f5f5,#f1f1f1);
-
-    -webkit-transition: all 0.218s;
-    -moz-transition: all 0.218s;
-    -o-transition: all 0.218s;
-    transition: all 0.218s;
-  }
-  .wtfHudButton:hover {
-    color: #222;
-    background-color: #f8f8f8;
-    background-image: -webkit-linear-gradient(top,#f8f8f8,#f1f1f1);
-    background-image: -moz-linear-gradient(top,#f8f8f8,#f1f1f1);
-    background-image: -ms-linear-gradient(top,#f8f8f8,#f1f1f1);
-    background-image: -o-linear-gradient(top,#f8f8f8,#f1f1f1);
-    background-image: linear-gradient(top,#f8f8f8,#f1f1f1);
-    -webkit-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
-    -moz-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
-    box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
-  }
-  .wtfHudButton:active {
-    color #333;
-    background-color: #f6f6f6;
-    background-image: -webkit-linear-gradient(top,#f6f6f6,#f1f1f1);
-    background-image: -moz-linear-gradient(top,#f6f6f6,#f1f1f1);
-    background-image: -ms-linear-gradient(top,#f6f6f6,#f1f1f1);
-    background-image: -o-linear-gradient(top,#f6f6f6,#f1f1f1);
-    background-image: linear-gradient(top,#f6f6f6,#f1f1f1);
-    -webkit-box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
-    -moz-box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
-    box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
-  }
-  .wtfHudButton img {
-    position: relative;
-    top: 9px;
-    width: 21px;
-    height: 21px;
-    opacity: 0.55;
-  }
-  .wtfHudButton:hover img {
-    opacity: 0.72;
-  }
-  .wtfHudButton:active img {
-    opacity: 1.0;
-  }
-
-  .wtfHudButtonClear {}
-  .wtfHudButtonClear img {
-    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><polygon points="15,6.414 13.586,5 10,8.586 6.414,5 5,6.414 8.586,10 5,13.586 6.414,15 10,11.414 13.586,15 15,13.586 11.414,10"/></svg>');
-  }
-  .wtfHudButtonSend {}
-  .wtfHudButtonSend img {
-    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M5,6H4v11h11v-1H5V6z M6,5v10h10V5H6z"/><polygon style="fill:white" points="10,7 10,8 12.293,8 7.793,12.5 8.5,13.207 13,8.707 13,11 14,11 14,7 "/></svg>');
-  }
-  .wtfHudButtonSave {}
-  .wtfHudButtonSave img {
-    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M15,3H4.5C3.672,3,3,3.672,3,4.5V9v6.5C3,16.328,3.672,17,4.5,17h11c0.828,0,1.5-0.672,1.5-1.5V5L15,3z M4,4.5 C4,4.223,4.225,4,4.5,4H6v3h2V4h7v5H4V4.5z M10,15.25c-1.242,0-2.25-1.008-2.25-2.25s1.008-2.25,2.25-2.25s2.25,1.008,2.25,2.25 S11.242,15.25,10,15.25z"/></svg>');
-  }
-  .wtfHudButtonSettings {}
-  .wtfHudButtonSettings img {
-    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M16.895,11.64C16.96,11.269,17,10.89,17,10.5s-0.04-0.77-0.106-1.14l1.535-1.129l0.183-0.683l-1.5-2.598l-0.684-0.184 l-1.738,0.762c-0.581-0.49-1.25-0.875-1.979-1.138L12.5,2.5L12,2H9L8.5,2.499L8.29,4.395C7.562,4.658,6.896,5.043,6.314,5.531 L4.571,4.768L3.889,4.951l-1.5,2.598l0.183,0.684l1.535,1.129C4.04,9.731,4,10.111,4,10.5s0.04,0.769,0.106,1.139l-1.535,1.129 l-0.183,0.684l1.5,2.598l0.682,0.184l1.744-0.764c0.58,0.488,1.248,0.873,1.975,1.137l0.21,1.896L9,19h3l0.5-0.5l0.21-1.892 c0.729-0.263,1.398-0.648,1.979-1.138l1.738,0.762l0.684-0.184l1.499-2.598l-0.181-0.683L16.895,11.64z M14.15,10.5 c0,2.016-1.635,3.65-3.65,3.65c-2.016,0-3.65-1.635-3.65-3.65s1.635-3.65,3.65-3.65C12.515,6.85,14.15,8.484,14.15,10.5z"/></svg>');
-  }
-
-  .wtfHudSplitter {
-  }
-
-  {/literal}</style>
-{/template}
-
-
-/**
  * Root control UI.
  */
 {template .control}
-  <div class="wtfHudOuter">
-    <div class="wtfHudControl">
-      <div class="wtfHudGraph"></div>
-      <div class="wtfHudButtons"></div>
+  <div class="{css hudOuter}">
+    <div class="{css hudControl}">
+      <div class="{css hudGraph}"></div>
+      <div class="{css hudButtons}"></div>
     </div>
-    <div class="wtfHudSplitter"></div>
+    <div class="{css hudSplitter}"></div>
   </div>
 {/template}

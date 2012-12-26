@@ -68,14 +68,7 @@ var Extension = function() {
         if (!pageUrl.length) {
           return;
         }
-        var status = options.getPageStatus(pageUrl);
-        port.postMessage({
-          'command': 'info',
-          'info': {
-            'url': pageUrl,
-            'status': status
-          }
-        });
+        this.sendPopupInfo_(pageUrl, port);
 
         // Listen for messages from the popup.
         port.onMessage.addListener((function(data, port) {
@@ -356,6 +349,26 @@ Extension.prototype.tabUpdated_ = function(tabId, changeInfo, tab) {
 
 
 /**
+ * Sends the latest information to the popup.
+ * @param {string} pageUrl Canonical page URL.
+ * @param {!Port} port Message port.
+ * @private
+ */
+Extension.prototype.sendPopupInfo_ = function(pageUrl, port) {
+  var options = this.getOptions();
+  port.postMessage({
+    'command': 'info',
+    'info': {
+      'url': pageUrl,
+      'status': options.getPageStatus(pageUrl),
+      'options': options.getPageOptions(pageUrl),
+      'all_extensions': options.getExtensions()
+    }
+  });
+};
+
+
+/**
  * Handles incoming messages from page action popups.
  * @param {!Tab} tab Current tab.
  * @param {!Object} data Message.
@@ -366,6 +379,7 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
   var options = this.getOptions();
   var pageUrl = URI.canonicalize(tab.url);
 
+  var needsReload = false;
   switch (data.command) {
     case 'toggle':
       // Perform toggling.
@@ -381,23 +395,51 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       }
       // Force update the page action ASAP.
       this.updatePageState_(tab.id, tab.url);
+      needsReload = true;
       break;
     case 'reset_settings':
       // Reset.
       options.resetPageOptions(pageUrl);
       // Force update the page action ASAP.
       this.updatePageState_(tab.id, tab.url);
+      needsReload = true;
       break;
     case 'show_ui':
       this.showUi_({
       });
       break;
+
+    case 'add_extension':
+      options.addExtension(data.url, data.manifest);
+      this.sendPopupInfo_(pageUrl, port);
+      break;
+    case 'remove_extension':
+      options.removeExtension(data.url);
+      this.sendPopupInfo_(pageUrl, port);
+      break;
+    case 'toggle_extension':
+      var pageOptions = options.getPageOptions(pageUrl);
+      var i = pageOptions['wtf.extensions'].indexOf(data.url);
+      if (data.enabled) {
+        if (i == -1) {
+          pageOptions['wtf.extensions'].push(data.url);
+        }
+      } else {
+        pageOptions['wtf.extensions'].splice(i, 1);
+      }
+      options.setPageOptions(pageUrl, pageOptions);
+      this.sendPopupInfo_(pageUrl, port);
+      needsReload = options.getPageStatus(pageUrl) == PageStatus.WHITELISTED;
+      this.updatePageState_(tab.id, tab.url);
+      break;
   }
 
   // Reload (and inject).
-  chrome.tabs.reload(tab.tabId, {
-    bypassCache: true
-  });
+  if (needsReload) {
+    chrome.tabs.reload(tab.tabId, {
+      bypassCache: true
+    });
+  }
 };
 
 
