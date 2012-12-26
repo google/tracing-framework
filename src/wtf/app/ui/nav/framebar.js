@@ -271,7 +271,7 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
           }, this);
         }
       }, this);
-  keyboardScope.addShortcut('ctrl+g', function() {
+  keyboardScope.addShortcut('command+g', function() {
     var result;
     try {
       keyboard.suspend();

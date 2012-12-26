@@ -71,6 +71,27 @@ goog.inherits(wtf.trace.providers.ExtendedInfoProvider, wtf.trace.Provider);
 
 
 /**
+ * @override
+ */
+wtf.trace.providers.ExtendedInfoProvider.prototype.getSettingsSectionConfigs =
+    function() {
+  return [
+    {
+      'title': 'System Events',
+      'widgets': [
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.javascript',
+          'title': 'Javascript GCs',
+          'default': false
+        }
+      ]
+    }
+  ];
+};
+
+
+/**
  * Handles messages from the extension.
  * @param {!Object} data Message data.
  * @private

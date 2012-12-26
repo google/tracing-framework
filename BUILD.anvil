@@ -32,21 +32,26 @@ file_set(
 # ------------------------------------------------------------------------------
 
 closure_soy_library(
+    name='wtf_ui_soy_js',
+    srcs=glob('src/wtf/ui/**/*.soy'),
+    compiler_jar=SOY_COMPILER_JAR)
+closure_soy_library(
     name='wtf_hud_soy_js',
     srcs=glob('src/wtf/hud/**/*.soy'),
+    deps=':wtf_ui_soy_js',
     compiler_jar=SOY_COMPILER_JAR)
-
 closure_soy_library(
-    name='wtf_ui_soy_js',
-    srcs=glob('src/wtf/ui/**/*.soy') +
-         glob('src/wtf/app/ui/**/*.soy'),
+    name='wtf_app_soy_js',
+    srcs=glob('src/wtf/app/ui/**/*.soy'),
+    deps=':wtf_ui_soy_js',
     compiler_jar=SOY_COMPILER_JAR)
 
 file_set(
     name='all_soy_js',
     srcs=[
+        ':wtf_ui_soy_js',
         ':wtf_hud_soy_js',
-        ':wtf_ui_soy_js'
+        ':wtf_app_soy_js',
         ])
 
 
@@ -136,6 +141,7 @@ closure_gss_library(
 
 WTF_TRACE_WEB_SRCS=[
     ':wtf_src_js',
+    ':wtf_ui_soy_js',
     ':wtf_hud_soy_js',
     ]
 
@@ -294,6 +300,7 @@ file_set(
 WTF_UI_SRCS=[
     ':wtf_src_js',
     ':wtf_ui_soy_js',
+    ':wtf_app_soy_js',
     ]
 
 # All uncompiled JS

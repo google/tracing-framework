@@ -1,0 +1,104 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Settings dialog DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.ui.settingsdialog}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css uiSettingsDialog}">
+    <div class="{css header}">
+      <div class="{css buttons}">
+        <a class="{css kButton} {css kButtonBlue} {css buttonSave}">Save</a>
+        <a class="{css kButton} {css buttonCancel}">Cancel</a>
+      </div>
+      <h1 class="{css title}">Title</h1>
+    </div>
+    <div class="{css nav}">
+      <ul>
+      </ul>
+    </div>
+    <div class="{css contents}">
+    </div>
+  </div>
+{/template}
+
+
+/**
+ * Pane nav bar link.
+ * @param title Title displayed.
+ */
+{template .paneNav}
+  <li><a>{$title}</a></li>
+{/template}
+
+
+/**
+ * Pane content.
+ */
+{template .paneContent}
+  <div class="{css pane}">
+  </div>
+{/template}
+
+
+/**
+ * Pane section.
+ * @param title Title displayed.
+ */
+{template .section}
+  <div class="{css section}">
+    <div class="{css label}">
+      {$title}
+    </div>
+    <div class="{css content}">
+      <p>
+      </p>
+    </div>
+  </div>
+{/template}
+
+
+/**
+ * Static label widget.
+ * @param title Title displayed.
+ * @param value Value.
+ */
+{template .labelWidget}
+  <div><span>{$title}</span> {$value}</div>
+{/template}
+
+
+/**
+ * Checkbox widget.
+ * @param title Title displayed.
+ */
+{template .checkboxWidget}
+  <input type="checkbox"><span>{$title}</span><br/>
+{/template}
+
+
+/**
+ * Dropdown widget.
+ * @param title Title displayed.
+ * @param options Value-label map.
+ */
+{template .dropdownWidget}
+  {$title} <select>
+    {foreach $option in $options}
+      <option value="{$option.value}">{$option.title}</option>
+    {/foreach}
+  </select>
+{/template}

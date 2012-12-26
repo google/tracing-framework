@@ -23,10 +23,22 @@ file_set(
         ])
 
 file_set(
+    name='all_less',
+    srcs=glob('../../src/**/*.less'))
+less_css_library(
+    name='popup_styles',
+    srcs=['popup.less', ':all_less'],
+    include_paths=['src',],
+    compiler_flags=[
+        #'--compress'
+        ])
+
+file_set(
     name='extension_files',
     srcs=[
         ':stripped_manifest',
         ':tracing_files',
+        ':popup_styles',
         'background.js',
         'debugger.js',
         'extendedinfo.js',
