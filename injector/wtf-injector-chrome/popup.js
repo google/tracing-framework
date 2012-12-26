@@ -31,7 +31,77 @@ document.addEventListener('DOMContentLoaded', function() {
       resetSettingsClicked;
   document.querySelector('.buttonShowUi').onclick =
       showUiClicked;
+
+  setupAddBox();
 });
+
+
+/**
+ * Sets up the add extensions box.
+ */
+function setupAddBox() {
+  var addBox = document.querySelector('.addRow input');
+  addBox.oninput = function() {
+    if (addBox.value == '') {
+      clearError();
+      return;
+    }
+    fetchExtensionManifest(addBox.value);
+  };
+  function fetchExtensionManifest(url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onerror = function() {
+      setError();
+    };
+    xhr.onload = function() {
+      var contentType = xhr.getResponseHeader('content-type') || '';
+      if (xhr.status != 200 ||
+          contentType.indexOf('/json') == -1) {
+        setError();
+        return;
+      }
+
+      var manifest;
+      try {
+        manifest = JSON.parse(xhr.responseText);
+      } catch (e) {
+      }
+      if (!manifest) {
+        setError();
+        return;
+      }
+
+      clearError();
+      addExtension(url, manifest);
+    };
+    try {
+      xhr.send(null);
+    } catch (e) {
+      setError();
+    }
+  };
+  function setError() {
+    addBox.classList.add('kTextFieldError');
+  };
+  function clearError() {
+    addBox.classList.remove('kTextFieldError');
+  };
+
+  function addExtension(url, manifest) {
+    addBox.value = '';
+    port.postMessage({
+      command: 'add_extension',
+      url: url,
+      manifest: manifest
+    });
+    port.postMessage({
+      command: 'toggle_extension',
+      enabled: true,
+      url: url
+    });
+  };
+};
 
 
 /**
@@ -51,6 +121,93 @@ function updateWithInfo(info) {
       toggleButton.innerText = 'Enable';
       break;
   }
+
+  buildExtensionTable(info.all_extensions, info.options['wtf.extensions']);
+};
+
+
+/**
+ * Builds the extension table.
+ * @param {!Array.<!Object>} extensions Extension information.
+ * @param {!Array.<string>} enabledExtensions Extensions that are enabled.
+ */
+function buildExtensionTable(extensions, enabledExtensions) {
+  var tbody = document.querySelector('.extensionPicker tbody');
+
+  // Remove all old content.
+  while (tbody.firstChild) {
+    tbody.firstChild.remove();
+  }
+
+  // Add empty row.
+  if (!extensions.length) {
+    var tr = document.createElement('tr');
+    tr.className = 'emptyRow';
+    var td = document.createElement('td');
+    td.innerText = 'No extensions added.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+
+  // Build the table.
+  for (var n = 0; n < extensions.length; n++) {
+    var extension = extensions[n];
+    addExtensionRow(extension);
+  }
+  function addExtensionRow(extension) {
+    var isEnabled = enabledExtensions.indexOf(extension.url) >= 0;;
+
+    var td = document.createElement('td');
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = isEnabled;
+    td.appendChild(input);
+    var span = document.createElement('span');
+    span.innerText = extension.manifest.name;
+    span.title = extension.url;
+    td.appendChild(span);
+
+    var remove = document.createElement('td');
+    remove.className = 'remove';
+    var removeImg = document.createElement('img');
+    removeImg.title = 'Remove extension';
+    remove.appendChild(removeImg);
+
+    var tr = document.createElement('tr');
+    tr.appendChild(td);
+    tr.appendChild(remove);
+
+    tbody.appendChild(tr);
+
+    function changed() {
+      port.postMessage({
+        command: 'toggle_extension',
+        enabled: input.checked,
+        url: extension.url
+      });
+    };
+    input.onchange = function() {
+      changed();
+    };
+    span.onclick = function() {
+      input.checked = !input.checked;
+      changed();
+    };
+
+    remove.onclick = function() {
+      if (isEnabled) {
+        port.postMessage({
+          command: 'toggle_extension',
+          enabled: false,
+          url: extension.url
+        });
+      }
+      port.postMessage({
+        command: 'remove_extension',
+        url: extension.url
+      });
+    };
+  };
 };
 
 

@@ -17,6 +17,7 @@ goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
+goog.require('goog.dom.classes');
 goog.require('goog.style');
 
 
@@ -71,13 +72,7 @@ wtf.ui.Tooltip.prototype.disposeInternal = function() {
 wtf.ui.Tooltip.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.style.showElement(el, false);
-  goog.style.setStyle(el, {
-    'position': 'absolute',
-    'color': 'white',
-    'backgroundColor': 'rgba(0,0,0,.7)',
-    'padding': '5px',
-    'white-space': 'pre'
-  });
+  goog.dom.classes.add(el, goog.getCssName('uiTooltip'));
   return el;
 };
 
