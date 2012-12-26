@@ -11,22 +11,22 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-.wtfUiErrorDialog {
+.uiErrorDialog {
   width: 400px;
   height: 300px;
-}
 
-.wtfUiErrorDialogButtonClose {
-}
+  .buttonClose {}
 
-.wtfUiErrorDialogContents {
-  @mixin allowSelect();
-}
-.wtfUiErrorDialogMessage {
-  font-weight: bold;
-  padding-bottom: 5px;
-  @mixin allowSelect();
-}
-.wtfUiErrorDialogDetails {
-  @mixin allowSelect();
+  .contents {
+    .allowSelect();
+
+    .message {
+      font-weight: bold;
+      padding-bottom: 5px;
+      .allowSelect();
+    }
+    .details {
+      .allowSelect();
+    }
+  }
 }

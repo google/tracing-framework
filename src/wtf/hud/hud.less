@@ -1,0 +1,24 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Main HUD LESS file.
+ * This is the root file built into the CSS used by the HUD.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+
+// This prevents the reset from taking over the entire page.
+.wtfReset {
+  // TODO(benvanik): figure out a way to get the reset on the page.
+  //@import "wtf/ui/styles/reset.less";
+}
+
+@import "wtf/ui/ui.less";
+@import "wtf/hud/overlay.less";
+@import "wtf/hud/livegraph.less";

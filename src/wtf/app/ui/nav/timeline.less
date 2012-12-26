@@ -11,11 +11,11 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@def WTF_APP_UI_TIMELINE_INFO_WIDTH   300px;
+@wtfAppUiTimelineInfoWidth: 300px;
 
 /* Timeline root. */
 .wtfAppUiTimeline {
-  @mixin fitParent();
+  .fitParent();
   background: white;
   border-bottom: 1px solid #EBEBEB;
 }
@@ -25,7 +25,7 @@
   left: 0;
   right: 0;
   height: 100%;
-  margin-right: WTF_APP_UI_TIMELINE_INFO_WIDTH;
+  margin-right: @wtfAppUiTimelineInfoWidth;
   border-right: 1px solid #ebebeb;
 }
 
@@ -38,7 +38,7 @@
   top: 0;
   bottom: 0;
   right: 0;
-  width: WTF_APP_UI_TIMELINE_INFO_WIDTH;
+  width: @wtfAppUiTimelineInfoWidth;
 }
 .wtfAppUiTimelineInfo {
   position: absolute;

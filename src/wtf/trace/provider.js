@@ -68,3 +68,13 @@ wtf.trace.Provider.prototype.injectFunction = function(target, name, value) {
   target[name] = value;
   value['raw'] = original;
 };
+
+
+/**
+ * Gets a list of settings section config, if any.
+ * See {@see wtf.ui.SettingsDialog} for more information.
+ * @return {!Array.<!Object>} Settings section config objects.
+ */
+wtf.trace.Provider.prototype.getSettingsSectionConfigs = function() {
+  return [];
+};

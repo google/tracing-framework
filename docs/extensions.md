@@ -21,6 +21,40 @@ between tracing and apps.
         "scripts": [
           // Scripts that are inserted into the page, in order
           "some/file.js"
+        ],
+        "options": [
+          {
+            "title": "Section A",
+            "widgets": [
+              {
+                "type": "label",
+                "title": "Something:",
+                "value": "woo"
+              },
+              {
+                "type": "checkbox",
+                "key": "my.option.value",
+                "title": "Some option",
+                "default": false
+              },
+              {
+                "type": "dropdown",
+                "key": "my.option.value",
+                "title": "Some choice:",
+                "options": [
+                  {"value": "a", "title": "A"}
+                ],
+                "default": "a"
+              },
+              {
+                "type": "textbox",
+                "key": "my.option.value",
+                "title": "Some input:",
+                "empty": "I'm empty!",
+                "default": "Default value!"
+              }
+            ]
+          }
         ]
       },
       "app": { // only include if needed
@@ -28,6 +62,7 @@ between tracing and apps.
           // Scripts that are inserted into a hidden iframe, in order
           "some/file.js"
         ],
+        "options": [], // same as above
         "triggers": [
           {
             "type": "event",

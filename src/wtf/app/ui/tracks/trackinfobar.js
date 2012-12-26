@@ -122,7 +122,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
-  keyboardScope.addShortcut('ctrl+f', function() {
+  keyboardScope.addShortcut('command+f', function() {
     this.searchControl_.focus();
   }, this);
   keyboardScope.addShortcut('esc', function() {

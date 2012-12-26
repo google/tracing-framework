@@ -120,6 +120,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
       'wtf.trace.extendFlow',
       wtf.trace.extendFlow);
   goog.exportSymbol(
+      'wtf.trace.terminateFlow',
+      wtf.trace.terminateFlow);
+  goog.exportSymbol(
       'wtf.trace.clearFlow',
       wtf.trace.clearFlow);
   goog.exportSymbol(

@@ -50,6 +50,13 @@ var Options = function() {
   this.showDevPanel = false;
 
   /**
+   * A list of all added extensions, mapped by URL.
+   * @type {!Object.<!Object>}
+   * @private
+   */
+  this.extensions_ = {};
+
+  /**
    * A list of page match patterns that will have tracing on.
    * @type {!Array.<string>}
    * @private
@@ -109,6 +116,7 @@ Options.prototype.load = function(opt_callback, opt_scope) {
       this.showPageAction = values['showPageAction'] || true;
       this.showContextMenu = values['showContextMenu'] || false;
       this.showDevPanel = values['showDevPanel'] || false;
+      this.extensions_ = values['extensions'] || {};
       this.pageWhitelist_ = values['pageWhitelist'] || [];
       this.pageBlacklist_ = values['pageBlacklist'] || [];
       this.pageOptions_ = values['pageOptions'] || {};
@@ -129,11 +137,49 @@ Options.prototype.save = function() {
       'showPageAction': this.showPageAction,
       'showContextMenu': this.showContextMenu,
       'showDevPanel': this.showDevPanel,
+      'extensions': this.extensions_,
       'pageWhitelist': this.pageWhitelist_,
       'pageBlacklist': this.pageBlacklist_,
       'pageOptions': this.pageOptions_
     }
   });
+};
+
+
+/**
+ * Adds an extension.
+ * @param {string} url Extension URL.
+ * @param {!Object} manifest Extension manifest.
+ */
+Options.prototype.addExtension = function(url, manifest) {
+  this.extensions_[url] = manifest;
+  this.save();
+};
+
+
+/**
+ * Removes an extension.
+ * @param {string} url Extension URL.
+ */
+Options.prototype.removeExtension = function(url) {
+  delete this.extensions_[url];
+  this.save();
+};
+
+
+/**
+ * Gets a list of all added extensions.
+ * @return {!Array.<{url: string, manifest: !Object}} A list of extensions.
+ */
+Options.prototype.getExtensions = function() {
+  var result = [];
+  for (var url in this.extensions_) {
+    result.push({
+      url: url,
+      manifest: this.extensions_[url]
+    });
+  }
+  return result;
 };
 
 
@@ -254,7 +300,7 @@ Options.prototype.getDefaultPageOptions = function(url) {
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
     'wtf.extensions': extensions,
-    'wtf.trace.provider.javascript': 1
+    'wtf.trace.provider.javascript': true
   };
 
   // TODO(benvanik): make a different page action setting?

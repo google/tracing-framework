@@ -1,0 +1,91 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+@dialogZIndex: 999999;
+
+.uiDialog {
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  color: black;
+  background-color: white;
+  border: 1px solid rgba(0,0,0,0.2);
+  .boxShadow(0, 4px, 16px, rgba(0,0,0,0.2));
+  cursor: default;
+
+  position: fixed;
+  z-index: @dialogZIndex;
+
+  // The default state is expanded/hidden - use .uiDialogPoppedIn to show.
+  .transitionTransformOpacity();
+  .transform(scale(1.05));
+  opacity: 0;
+
+  .header {
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ccc;
+    height: 71px;
+
+    h1 {
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: normal;
+      color: #222;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      padding-top: 26px;
+      padding-left: 42px;
+      cursor: default;
+    }
+    .buttons {
+      float: right;
+      padding-right: 26px;
+      padding-top: 22px;
+      margin: 0;
+    }
+  }
+
+  .contents {
+    margin: 10px;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 0;
+    margin: 10px;
+  }
+}
+.uiDialogPoppedIn {
+  .transform(scale(1.0));
+  opacity: 1;
+}
+
+.uiDialogShield {
+  display: block;
+  background-color: white;
+
+  z-index: @dialogZIndex - 1;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+
+  // The default state is expanded/hidden - use .uiDialogShieldPoppedIn to show.
+  .transition();
+  opacity: 0;
+}
+.uiDialogShieldPoppedIn {
+  opacity: 0.75;
+}

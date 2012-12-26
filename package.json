@@ -30,7 +30,8 @@
     "chai": "1.2.0",
     "benchmark": "1.0.0",
     "microtime": "0.3.3",
-    "wd": "*"
+    "wd": "*",
+    "less": "*"
   },
 
   "files": [
