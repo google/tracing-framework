@@ -1,0 +1,84 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+@import "wtf/ui/styles/reset.less";
+@import "wtf/ui/styles/css3.less";
+@import "wtf/ui/styles/common.less";
+@import "wtf/ui/styles/kennedy.less";
+
+body {
+  margin: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.buttonToggleInjector {}
+.buttonResetSettings {}
+.buttonShowUi {}
+
+.extensionPicker {
+  .noSelect();
+  cursor: default;
+
+  margin-top: 15px;
+  width: 100%;
+
+  table {
+    width: 100%;
+    margin-top: 3px;
+  }
+  tbody {
+    tr {
+      height: 21px;
+
+      &:hover {
+        background-color: #f8f8f8;
+      }
+    }
+    td {
+      vertical-align: bottom;
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 220px;
+        display: inline-block;
+      }
+      input[type="checkbox"] {
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .emptyRow {
+    td {
+      vertical-align: baseline;
+    }
+  }
+
+  .remove {
+    vertical-align: baseline;
+    width: 18px;
+    img {
+      position: absolute;
+      width: 21px;
+      height: 21px;
+      content: url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="utf-8"?><svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><polygon points="15,6.414 13.586,5 10,8.586 6.414,5 5,6.414 8.586,10 5,13.586 6.414,15 10,11.414 13.586,15 15,13.586 11.414,10"/></svg>');
+    }
+  }
+
+  .addRow {
+    input {
+      margin-top: 3px;
+      width: 100%;
+    }
+  }
+}
