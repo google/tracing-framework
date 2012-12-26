@@ -67,15 +67,6 @@ goog.inherits(wtf.ui.Dialog, wtf.ui.Control);
 
 
 /**
- * Z-index of the dialog.
- * @type {number}
- * @const
- * @private
- */
-wtf.ui.Dialog.ZINDEX_ = 999999;
-
-
-/**
  * Event types.
  * @type {!Object.<string>}
  */
@@ -93,15 +84,7 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('k'));
-  goog.dom.classes.add(el, goog.getCssName('kDialog'));
-  goog.style.setStyle(el, {
-    'position': 'fixed',
-    'z-index': wtf.ui.Dialog.ZINDEX_,
-    'opacity': 0,
-    '-webkit-transform': 'scale(1.05)',
-    '-moz-transform': 'scale(1.05)',
-    'transform': 'scale(1.05)'
-  });
+  goog.dom.classes.add(el, goog.getCssName('uiDialog'));
   goog.style.setStyle(el, {
     'left': '50%',
     'top': '50%'
@@ -125,15 +108,7 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
     // injection.
     // TODO(benvanik): remove all of this once CSS is properly added
     wtf.timing.setImmediate(function() {
-      goog.style.setStyle(el, {
-        '-webkit-transition': 'all 0.218s',
-        '-moz-transition': 'all 0.218s',
-        'transition': 'all 0.218s',
-        'opacity': 1,
-        '-webkit-transform': 'scale(1.0)',
-        '-moz-transform': 'scale(1.0)',
-        'transform': 'scale(1.0)'
-      });
+      goog.dom.classes.add(el, goog.getCssName('uiDialogPoppedIn'));
     }, this);
   }, this);
 };
@@ -148,12 +123,7 @@ wtf.ui.Dialog.prototype.close = function() {
   var rootElement = this.getRootElement();
   if (rootElement) {
     var el = dom.getParentElement(rootElement);
-    goog.style.setStyle(el, {
-      'opacity': 0,
-      '-webkit-transform': 'scale(1.05)',
-      '-moz-transform': 'scale(1.05)',
-      'transform': 'scale(1.05)'
-    });
+    goog.dom.classes.remove(el, goog.getCssName('uiDialogPoppedIn'));
     wtf.timing.setTimeout(218, function() {
       dom.removeNode(el);
       this.emitEvent(wtf.ui.Dialog.EventType.CLOSED);
@@ -177,24 +147,9 @@ wtf.ui.Dialog.Shield_ = function(dialog) {
   var dom = dialog.getDom();
 
   var el = dom.createElement(goog.dom.TagName.DIV);
-  goog.style.setStyle(el, {
-    'display': 'block',
-    'opacity': 0,
-    'background-color': 'white',
-    'position': 'fixed',
-    'left': 0,
-    'right': 0,
-    'top': 0,
-    'bottom': 0,
-    'z-index': wtf.ui.Dialog.ZINDEX_ - 1,
-    '-webkit-transition': 'all 0.218s',
-    '-moz-transition': 'all 0.218s',
-    'transition': 'all 0.218s'
-  });
+  goog.dom.classes.add(el, goog.getCssName('uiDialogShield'));
   wtf.timing.setImmediate(function() {
-    goog.style.setStyle(el, {
-      'opacity': 0.75
-    });
+    goog.dom.classes.add(el, goog.getCssName('uiDialogShieldPoppedIn'));
   });
 
   /**
@@ -228,9 +183,7 @@ goog.inherits(wtf.ui.Dialog.Shield_, goog.Disposable);
  */
 wtf.ui.Dialog.Shield_.prototype.disposeInternal = function() {
   var el = this.el_;
-  goog.style.setStyle(el, {
-    'opacity': 0
-  });
+  goog.dom.classes.remove(el, goog.getCssName('uiDialogShieldPoppedIn'));
   wtf.timing.setTimeout(218, function() {
     goog.dom.removeNode(el);
   });
