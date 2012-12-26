@@ -21,17 +21,17 @@
  */
 {template .control}
   <div class="{css uiErrorDialog}">
-    <div class="{css kDialogHeader}">
-      <div class="{css kDialogHeaderButtons}">
-        <a class="{css kButton} {css uiErrorDialogButtonClose}">OK</a>
+    <div class="{css header}">
+      <div class="{css buttons}">
+        <a class="{css kButton} {css buttonClose}">OK</a>
       </div>
       <h1>Error</h1>
     </div>
-    <div class="{css kDialogContent} {css uiErrorDialogContents}">
-      <div class="{css uiErrorDialogMessage}">{$message}</div>
-      <div class="{css uiErrorDialogDetails}">{$detail}</div>
+    <div class="{css contents}">
+      <div class="{css message}">{$message}</div>
+      <div class="{css details}">{$detail}</div>
     </div>
-    <div class="{css kDialogFooter}">
+    <div class="{css footer}">
       <a href="https://github.com/google/tracing-framework/" target="_blank">tracing-framework github</a>,&nbsp;
       <a href="https://github.com/google/tracing-framework/issues" target="_blank">issues</a>
     </div>

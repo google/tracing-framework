@@ -14,19 +14,19 @@
 .uiErrorDialog {
   width: 400px;
   height: 300px;
-}
 
-.uiErrorDialogButtonClose {
-}
+  .buttonClose {}
 
-.uiErrorDialogContents {
-  .allowSelect();
-}
-.uiErrorDialogMessage {
-  font-weight: bold;
-  padding-bottom: 5px;
-  .allowSelect();
-}
-.uiErrorDialogDetails {
-  .allowSelect();
+  .contents {
+    .allowSelect();
+
+    .message {
+      font-weight: bold;
+      padding-bottom: 5px;
+      .allowSelect();
+    }
+    .details {
+      .allowSelect();
+    }
+  }
 }

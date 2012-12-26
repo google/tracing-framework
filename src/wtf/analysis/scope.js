@@ -73,6 +73,13 @@ wtf.analysis.Scope = function() {
   this.children_ = [];
 
   /**
+   * Total time of all children, including system time.
+   * @type {number}
+   * @private
+   */
+  this.totalChildTime_ = 0;
+
+  /**
    * Total amount of time of all child system times.
    * @type {number}
    * @private
@@ -222,12 +229,24 @@ wtf.analysis.Scope.prototype.getTotalDuration = function() {
 
 /**
  * Gets the duration of the scope minus system time.
- * @return {number} TOtal duration of the scope excluding system time.
+ * @return {number} Total duration of the scope excluding system time.
  */
 wtf.analysis.Scope.prototype.getUserDuration = function() {
   if (this.enterEvent_ && this.leaveEvent_) {
     return this.leaveEvent_.time - this.enterEvent_.time -
         this.totalChildSystemTime_;
+  }
+  return 0;
+};
+
+
+/**
+ * Gets the duration of the scope minus its children and system time.
+ * @return {number} Total duration of the scope excluding children.
+ */
+wtf.analysis.Scope.prototype.getOwnDuration = function() {
+  if (this.enterEvent_ && this.leaveEvent_) {
+    return this.leaveEvent_.time - this.enterEvent_.time - this.totalChildTime_;
   }
   return 0;
 };
@@ -250,6 +269,18 @@ wtf.analysis.Scope.prototype.addChild = function(child) {
  */
 wtf.analysis.Scope.prototype.getChildren = function() {
   return this.children_;
+};
+
+
+/**
+ * Computes various cached times.
+ * This should be called whenever any children are added.
+ */
+wtf.analysis.Scope.prototype.computeTimes = function() {
+  this.totalChildTime_ = 0;
+  for (var n = 0; n < this.children_.length; n++) {
+    this.totalChildTime_ += this.children_[n].getTotalDuration();
+  }
 };
 
 
