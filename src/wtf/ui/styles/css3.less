@@ -62,10 +62,25 @@
   border-radius: @topRadius @rightRadius @bottomRadius @leftRadius;
 }
 
-.transition(@property, @time: 0.218s, @function: ease) {
+.transition(@property: all, @time: 0.218s, @function: ease) {
   -webkit-transition: @property @time @function;
   -moz-transition: @property @time @function;
   -ms-transition: @property @time @function;
   -o-transition: @property @time @function;
   transition: @property @time @function;
+}
+.transitionTransformOpacity(@time: 0.218s, @function: ease) {
+  -webkit-transition: -webkit-transform @time @function, opacity @time @function;
+  -moz-transition: -moz-transform @time @function, opacity @time @function;
+  -ms-transition: -ms-transform @time @function, opacity @time @function;
+  -o-transition: -o-transform @time @function, opacity @time @function;
+  transition: transform @time @function, opacity @time @function;
+}
+
+.transform(@value) {
+  -webkit-transform: @value;
+  -moz-transform: @value;
+  -ms-transform: @value;
+  -o-transform: @value;
+  transform: @value;
 }

@@ -67,7 +67,7 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonOpen'), true);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonShare'), false);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSave'), true);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSettings'), false);
+  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSettings'), true);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonHelp'), true);
 
   var db = documentView.getDatabase();

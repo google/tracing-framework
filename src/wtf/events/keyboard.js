@@ -19,6 +19,7 @@ goog.require('goog.asserts');
 goog.require('goog.dom.DomHelper');
 goog.require('goog.events.EventHandler');
 goog.require('goog.ui.KeyboardShortcutHandler');
+goog.require('goog.userAgent');
 goog.require('wtf.events.CommandManager');
 goog.require('wtf.events.EventEmitter');
 
@@ -108,6 +109,20 @@ wtf.events.Keyboard.prototype.resume = function() {
 
 
 /**
+ * Translates a shortcut string into the platform-specific variant.
+ * @param {string} shortcut Input shortcut string.
+ * @return {string} Translated platform-specific variant.
+ */
+wtf.events.Keyboard.prototype.translateShortcut_ = function(shortcut) {
+  if (goog.userAgent.MAC) {
+    return shortcut.replace(/command/g, 'meta');
+  } else {
+    return shortcut.replace(/command/g, 'ctrl');
+  }
+};
+
+
+/**
  * Adds a command to be executed on the given key press.
  * @param {string} shortcut Shortcut string (like 'ctrl+g').
  * @param {!function(this:T)} callback Callback function.
@@ -120,7 +135,7 @@ wtf.events.Keyboard.prototype.addShortcut_ = function(
   // Support multi shortcuts.
   var shortcuts = shortcut.split('|');
   for (var n = 0; n < shortcuts.length; n++) {
-    shortcut = shortcuts[n];
+    shortcut = this.translateShortcut_(shortcuts[n]);
     if (!this.hasListeners(shortcut)) {
       this.keyHandler_.registerShortcut(shortcut, shortcut);
     }
@@ -141,7 +156,7 @@ wtf.events.Keyboard.prototype.removeShortcut_ = function(
   // Support multi shortcuts.
   var shortcuts = shortcut.split('|');
   for (var n = 0; n < shortcuts.length; n++) {
-    shortcut = shortcuts[n];
+    shortcut = this.translateShortcut_(shortcuts[n]);
     this.removeListener(shortcut, callback, opt_scope);
     if (!this.hasListeners(shortcut)) {
       this.keyHandler_.unregisterShortcut(shortcut);

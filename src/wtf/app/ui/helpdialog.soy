@@ -18,6 +18,7 @@
  * Root control UI.
  * @param version Version string ('2012.12.12-1').
  * @param version_commit Version git commit SHA.
+ * @param system_key System command key string (like 'ctrl').
  */
 {template .control}
   <div class="{css wtfAppUiHelpDialog}">
@@ -32,19 +33,19 @@
 
     <br/>
     <br/>
-    ctrl-o : open a new trace<br/>
-    ctrl-s : save current trace<br/>
+    {$system_key|noAutoescape}-o : open a new trace<br/>
+    {$system_key|noAutoescape}-s : save current trace<br/>
     ? : show shortcuts<br/>
     <br/>
-    ctrl-f : focus filter box<br/>
+    {$system_key|noAutoescape}-f : focus filter box<br/>
     esc : clear filter contents<br/>
-    ctrl-g : zoom to frame #<br/>
+    {$system_key|noAutoescape}-g : zoom to frame #<br/>
     <br/>
     w/a/s/d up/left/down/right : move the viewport<br/>
     space/shift+space: move one viewport right/left<br/>
     home: fit viewport<br/>
     <br/>
     shift+drag mouse : select a region of the tracks<br/>
-    shift+click/ctrl-a : clear selection<br/>
+    shift+click/{$system_key|noAutoescape}-a : clear selection<br/>
   </div>
 {/template}

@@ -1,0 +1,93 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.uiSettingsDialog {
+  width: 800px;
+  height: 400px;
+
+  .buttonSave {}
+  .buttonCancel {}
+
+  .nav {
+    position: absolute;
+    top: 72px;
+    bottom: 0;
+    left: 0;
+    width: 108px;
+    padding: 36px 20px 36px 42px;
+    border-right: 1px solid #ebebeb;
+    overflow: auto;
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    li {
+      line-height: 17px;
+      margin-bottom: 13px;
+    }
+    li a {
+      display: block;
+      color: #333;
+      cursor: default;
+      text-decoration: none;
+
+      &:hover {
+        color: #111;
+      }
+
+      &.selected {
+        color: #DD4B39;
+        font-weight: bold;
+      }
+    }
+  }
+
+  .contents {
+    position: absolute;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 1px;
+    margin-left: 171px;
+    height: auto;
+    overflow: scroll;
+  }
+
+  .pane {
+    padding: 16px 32px;
+    height: auto;
+    overflow: auto;
+  }
+  .section {
+    clear: both;
+    border-bottom: 1px solid #ebebeb;
+    padding: 20px 0;
+
+    .label {
+      display: block;
+      width: 135px;
+      float: left;
+      font-weight: bold;
+      cursor: default;
+    }
+    .content {
+      margin-left: 160px;
+
+      p {
+        margin: 0 0 1em;
+        line-height: 13px;
+      }
+    }
+  }
+}
