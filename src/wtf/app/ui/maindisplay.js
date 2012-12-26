@@ -131,8 +131,8 @@ wtf.app.ui.MainDisplay = function(
   var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
-  keyboardScope.addCommandShortcut('ctrl+o', 'open_trace');
-  keyboardScope.addCommandShortcut('ctrl+s', 'save_trace');
+  keyboardScope.addCommandShortcut('command+o', 'open_trace');
+  keyboardScope.addCommandShortcut('command+s', 'save_trace');
   keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
 
   this.setupDragDropLoading_();

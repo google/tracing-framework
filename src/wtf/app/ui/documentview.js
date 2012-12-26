@@ -146,7 +146,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       'select_all', function() {
         this.selection_.clearTimeRange();
       }, this);
-  keyboardScope.addShortcut('ctrl+a', function() {
+  keyboardScope.addShortcut('command+a', function() {
     commandManager.execute('select_all', this, null);
   });
 

@@ -9,53 +9,53 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-h1.k, h2.k, h3.k, h4.k, h5.k {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: normal;
-  color: #222222;
-}
-p.k {
-  margin: 0 0 1em;
-  font-size: 13px;
-  line-height: 18px;
-}
-li.k {
-  line-height: 17px;
-}
-a.k {
-  text-decoration: none;
-  color: #15c;
-  cursor: pointer;
-
-  &:visited {
-    color: #61c;
-  }
-  &:active {
-    color: #d14836;
-  }
-
-  .secondary {
-    text-decoration: none;
-    color: #2D9AE3;
-  }
-}
-iframe.k {
-  border: 0px;
-}
-strong.k, b.k {
-  color: #000;
-  font-weight: bold;
-}
-em.k {
-  font-style: italic;
-}
-
 .k {
   font-family: "Arial", "Helvetica", sans-serif;
   color: #222222;
   font-size: 13px;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
+
+  h1, h2, h3, h4, h5 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: normal;
+    color: #222222;
+  }
+  p {
+    margin: 0 0 1em;
+    font-size: 13px;
+    line-height: 18px;
+  }
+  li {
+    line-height: 17px;
+  }
+  a {
+    text-decoration: none;
+    color: #15c;
+    cursor: pointer;
+
+    &:visited {
+      color: #61c;
+    }
+    &:active {
+      color: #d14836;
+    }
+
+    .secondary {
+      text-decoration: none;
+      color: #2D9AE3;
+    }
+  }
+  iframe {
+    border: 0px;
+  }
+  strong, b {
+    color: #000;
+    font-weight: bold;
+  }
+  em {
+    font-style: italic;
+  }
 
   .kTitle {
     color: #1155CC;
@@ -113,10 +113,11 @@ em.k {
     padding-top: 2px;
   }
   .kButton {
+    text-decoration: none;
     display: inline-block;
     min-width: 54px;
-    /* @alternate */ border: 1px solid #DCDCDC;
-    /* @alternate */ border: 1px solid rgba(0,0,0,0.1);
+    border: 1px solid #DCDCDC;
+    border: 1px solid rgba(0,0,0,0.1);
     text-align: center;
     color: #444;
     font-size: 11px;
@@ -125,31 +126,77 @@ em.k {
     padding: 0 8px;
     line-height: 27px;
     cursor: default;
-    .transition(all, 0.218s);
+    .transition();
     .borderRadius(2px);
     .backgroundGradient(#f5f5f5, #f1f1f1);
     .noSelect();
+
+    &:hover  {
+      text-decoration: none;
+      border: 1px solid #C6C6C6;
+      color: #222;
+      .transition(all, 0s);
+      .backgroundGradient(#f8f8f8, #f1f1f1);
+      .boxShadow(0px, 1px, 1px, rgba(0,0,0,0.1));
+
+      img {
+        opacity: 0.72;
+      }
+    }
+    &:active {
+      text-decoration: none;
+      .backgroundGradient(#f6f6f6, #f1f1f1);
+      .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+
+      img {
+        opacity: 1.0;
+      }
+    }
+    &:visited {
+      text-decoration: none;
+      color: #666;
+    }
+
+    input[type=checkbox] {
+      position: relative;
+      top: 3px;
+    }
+
+    img {
+      display: inline-block;
+      margin-top: -1px;
+      opacity: 0.55;
+      width: 21px;
+      height: 21px;
+      vertical-align: middle;
+    }
+
+    &.kDisabled, &.kDisabled:hover, &.kDisabled:active {
+      background: none;
+      color: #b8b8b8;
+      border: 1px solid #f3f3f3;
+      border: 1px solid rgba(0,0,0,0.05);
+      cursor: default;
+      pointer-events: none;
+
+      img {
+        opacity: 0.2;
+      }
+    }
+    &.kSelected {
+      .backgroundGradient(#eeeeee, #e0e0e0);
+      .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+      border: 1px solid #CCC;
+      color: #333;
+
+      img {
+        opacity: 0.9;
+      }
+    }
   }
-  .kButton:hover {
-    border: 1px solid #C6C6C6;
-    color: #222;
-    .transition(all, 0s);
-    .backgroundGradient(#f8f8f8, #f1f1f1);
-    .boxShadow(0px, 1px, 1px, rgba(0,0,0,0.1));
-  }
-  .kButton:active {
-    .backgroundGradient(#f6f6f6, #f1f1f1);
-    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
-  }
-  .kButton:visited {
-    color: #666;
-  }
-  .kButton.kSelected {
-    .backgroundGradient(#eeeeee, #e0e0e0);
-    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
-    border: 1px solid #CCC;
-    color: #333;
-  }
+
+  // TODO(benvanik): make the color variants mixins - auto gen gradient
+  //     colors with LESS functions.
   .kButtonAction {
     margin-bottom: 16px;
     border: 1px solid transparent;
@@ -157,66 +204,55 @@ em.k {
     text-transform: uppercase;
     letter-spacing:1;
     .backgroundGradient(#dd4b39, #d14836);
+
+    &:hover {
+      color: #FFFFFF;
+      border-color: #b0281a;
+      border-bottom-color: #AF301F;
+      opacity: 1;
+      .backgroundGradient(#dd4b39, #c53727);
+    }
+    &:active {
+      color: #FFFFFF;
+      border-color: #992A1B;
+      .backgroundGradient(#dd4b39, #b0281a);
+    }
+
+    &:hover img, &:active img, img, img:active, img:hover {
+      opacity: 1;
+    }
+
+    &.kDisabled, &.kDisabled:hover, &.kDisabled:active {
+      border: 1px solid #505050;
+      background-color: #666;
+      opacity: 0.5;
+
+      border-color: #b0281a;
+      background-color: #d14836;
+    }
   }
-  .kButtonAction:hover {
-    border-color: #b0281a;
-    border-bottom-color: #AF301F;
+
+  .kButtonBlue {
+    border: 1px solid #3079ed;
     color: #FFF;
-    .backgroundGradient(#dd4b39, #c53727);
+    .backgroundGradient(#4d90fe, #4787ed);
+    float: left;
+    margin-right: 16px;
+
+    &:hover {
+      color: #FFFFFF;
+      border-color: #2f5bb7;
+      .backgroundGradient(#4d90fe, #357ae8);
+    }
+    // TODO(benvanik): darker
+    &:active {
+      color: #FFFFFF;
+      border-color: #2f5bb7;
+      .backgroundGradient(#4d90fe, #357ae8);
+    }
   }
-  .kButtonAction:active {
-    border-color: #992A1B;
-    .backgroundGradient(#dd4b39, #b0281a);
-  }
-  .kButton.kDisabled, .kButton.kDisabled:hover, .kButton.kDisabled:active {
-    background: none;
-    color: #b8b8b8;
-    /* @alternate */ border: 1px solid #f3f3f3;
-    /* @alternate */ border: 1px solid rgba(0,0,0,0.05);
-    cursor: default;
-    pointer-events: none;
-  }
-  .kButtonAction.kDisabled, .kButtonAction.kDisabled:hover, .kButtonAction.kDisabled:active {
-    border: 1px solid #505050;
-    background-color: #666;
-    color: #FFF;
-    opacity: 0.5;
-  }
-  .kButtonAction.kDisabled, .kButtonAction.kDisabled:hover, .kButtonAction.kDisabled:active {
-    border-color: #b0281a;
-    background-color: #d14836;
-  }
-  .kButton input[type=checkbox] {
-    position: relative;
-    top: 3px;
-  }
-  .kButton img {
-    display: inline-block;
-    margin-top: -1px;
-    opacity: 0.55;
-    width: 21px;
-    height: 21px;
-    vertical-align: middle;
-  }
-  .kButton.kSelected img {
-    opacity: 0.9;
-  }
-  .kButton:hover img {
-    opacity: 0.72;
-  }
-  .kButton:active img {
-    opacity: 1.0;
-  }
-  .kDisabled img {
-    opacity: 0.2;
-  }
-  .kButtonAction:hover {
-    opacity: 1;
-  }
-  .kButtonAction img, .kButtonAction img:active, .kButtonAction img:hover,
-  .kButtonAction:hover img, .kButtonAction:active img {
-    opacity: 1;
-  }
+
+
   .kButtonBar .kButton,
   .kButtonBar .kComboButton,
   .kButtonBar .kExpandButton {
@@ -225,9 +261,9 @@ em.k {
     margin-left: 6px;
     position: relative;
     z-index: 1;
-  }
-  .kButtonBar .kButton:hover {
-    z-index: 2;
+    &:hover {
+      z-index: 2;
+    }
   }
   .kButtonBar .kButton:first-child,
   .kButtonBar .kComboButton:first-child,
@@ -273,18 +309,18 @@ em.k {
     min-width: 0;
     .borderRadiusTRBL(0, 2px, 2px, 0);
     z-index: 0;
-  }
-  .kComboButton .kMenuTrigger:hover {
-    border-left-color: #c6c6c6;
+    &:hover {
+      border-left-color: #c6c6c6;
+    }
   }
 
   .kButton.kButtonLeft {
     border-right-color: transparent;
     margin-right: 0;
     .borderRadiusTRBL(2px, 0, 0, 2px);
-  }
-  .kButton.kButtonLeft:hover {
-    border-right: 1px solid #c6c6c6;
+    &:hover {
+      border-right: 1px solid #c6c6c6;
+    }
   }
   .kButton.kButtonMid {
     margin-left:0;
@@ -298,9 +334,9 @@ em.k {
   .kButton.kButtonRight {
     margin-left: -1px;
     .borderRadiusTRBL(0, 2px, 2px, 0);
-  }
-  .kButton.kButtonRight:hover {
-    border-left: 1px solid #c6c6c6;
+    &:hover {
+      border-left: 1px solid #c6c6c6;
+    }
   }
 
   .kButtonDisclosure {
@@ -339,8 +375,8 @@ em.k {
   }
 
 
+  // TODO(benvanik): move to tabbar/etc
   .kTabControl {
-
   }
   .kTabHeader {
     border-bottom: 1px solid #CCC;
@@ -371,9 +407,10 @@ em.k {
     /* @alternate */ border-top-right-radius: 2px;
     .transition(all, 0.100s);
     .noSelect();
-  }
-  .kTab:hover {
-    color: #222;
+
+    &:hover {
+      color: #222;
+    }
   }
   .kTabSelected {
     color: #202020;
@@ -486,10 +523,10 @@ em.k {
 
 
   .kTextField {
-    height: 29px;
+    height: 22px;
     background-color: #FFF;
-    line-height: 27px;
-    padding-left: 8px;
+    margin: 0;
+    padding: 2px;
     color: #333;
     border: 1px solid #d9d9d9;
     border-top: 1px solid #c0c0c0;
@@ -497,71 +534,64 @@ em.k {
     vertical-align: top;
     .boxSizing(border-box);
     .borderRadius(1px);
-    margin: 0;
-    padding: 0;
     .allowSelect();
-  }
-  .kTextField:hover {
-    border: 1px solid #b9b9b9;
-    border-top: 1px solid #a0a0a0;
-    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
-  }
-  .kTextField:focus {
-    .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.3));
-    outline: none;
-    border: 1px solid #4d90fe;
+
+    &:hover {
+      border: 1px solid #b9b9b9;
+      border-top: 1px solid #a0a0a0;
+      .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.1));
+    }
+    &:focus {
+      .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.3));
+      outline: none;
+      border: 1px solid #4d90fe;
+    }
   }
   .kTextFieldError {
     border: 1px solid #DD4B39 !important;
   }
 
   .kSearchField {
+    height: 29px;
+    line-height: 27px;
     font-size: 15px;
     color: #000;
   }
 
-
-  .kDialog {
-    overflow: hidden;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 13px;
-    font-style: normal;
-    color: black;
+  input[type="checkbox"] {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border: 1px solid #C6C6C6;
+    margin: 0;
+    .borderRadius(1px);
+    .boxSizing();
+    box-sizing: border-box;
+    cursor: default;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 4px;
+    margin-bottom: 5px;
     background-color: white;
-    border: 1px solid rgba(0,0,0,0.2);
-    .boxShadow(0, 4px, 16px, rgba(0,0,0,0.2));
-    cursor: default;
-  }
-  .kDialogHeader {
-    background-color: #f1f1f1;
-    border-bottom: 1px solid #ccc;
-    height: 71px;
-  }
-  .kDialogHeader h1 {
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: normal;
-    color: #222;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    padding-top: 26px;
-    padding-left: 42px;
-    cursor: default;
-  }
-  .kDialogHeaderButtons {
-    float: right;
-    padding-right: 26px;
-    padding-top: 22px;
-    margin: 0;
-  }
-  .kDialogContent {
-    margin: 10px;
-  }
-  .kDialogFooter {
-    position: absolute;
-    bottom: 0;
-    margin: 10px;
+
+    &:focus {
+      outline: none;
+      border-color: #4d90fe;
+    }
+    &:active {
+      border-color: #666;
+      background: #ebebeb;
+    }
+    &:hover {
+      border-color: #666;
+      .insetBoxShadow(0px, 1px, 1px, rgba(0,0,0,0.1));
+    }
+    &:checked::after {
+      content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAOpJREFUeNpi/P//PwO1ARMDDcAwNZSRkRGFjYQlgZidLEORIxXEhvLNgbgSiG0wJInBWIA9EC8B4ihks1goCLpAIPYA4ktAvAJZghxDWYE4CYiNgPgy0GVTkMOaHEO5gTgPiBWA+A4QzyQp9oG2g1zgD8Qs0BgWAwpXQA18CsRTgPg3Vr24sinQEEcgFQHED4F4HxCHQV36Coi7gPgzLHJg3oeZhc9QEJUKxCZIwh+AuBOI3yGnHnRDCaVTUHJ5CWWDXDYJ2UC8CZpAmpQF4h5oWBKVIQh5HwY4gfg7LkOJDtPRom9wGQoQYADRjokrpemFfAAAAABJRU5ErkJggg==');
+      display: block;
+      position: absolute;
+      top: -6px;
+      left: -5px;
+    }
   }
 }

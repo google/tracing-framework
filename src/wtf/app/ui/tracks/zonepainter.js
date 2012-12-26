@@ -612,13 +612,17 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
  */
 wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
     scope) {
-  var enter = scope.getEnterEvent();
-  var leave = scope.getLeaveEvent();
-  var elapsed = wtf.util.formatTime(leave.time - enter.time);
+  var totalTime = wtf.util.formatTime(scope.getTotalDuration());
+  var times = totalTime;
+  if (scope.getTotalDuration() - scope.getOwnDuration()) {
+    var ownTime = wtf.util.formatTime(scope.getOwnDuration());
+    times += ' (' + ownTime + ')';
+  }
 
+  var enter = scope.getEnterEvent();
   var eventType = enter.eventType;
   var lines = [
-    elapsed + ': ' + eventType.name
+    times + ': ' + eventType.name
   ];
 
   var data = scope.getData();
