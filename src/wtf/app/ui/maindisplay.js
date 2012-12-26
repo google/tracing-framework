@@ -24,6 +24,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.fs.FileReader');
 goog.require('goog.net.EventType');
 goog.require('goog.net.XhrIo');
+goog.require('goog.result');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
@@ -36,6 +37,7 @@ goog.require('wtf.events.CommandManager');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ext');
 goog.require('wtf.io');
+goog.require('wtf.io.drive');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.pal');
@@ -119,6 +121,8 @@ wtf.app.ui.MainDisplay = function(
   this.commandManager_.registerSimpleCommand(
       'open_trace', this.requestTraceLoad, this);
   this.commandManager_.registerSimpleCommand(
+      'open_drive_trace', this.requestDriveTraceLoad, this);
+  this.commandManager_.registerSimpleCommand(
       'save_trace', this.saveTrace_, this);
   this.commandManager_.registerSimpleCommand(
       'share_trace', this.shareTrace_, this);
@@ -135,6 +139,9 @@ wtf.app.ui.MainDisplay = function(
   keyboardScope.addCommandShortcut('command+s', 'save_trace');
   keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
 
+  if (!wtf.CHROME_EXTENSION) {
+    wtf.io.drive.prepare();
+  }
   this.setupDragDropLoading_();
 
   // Use the query string as a URL.
@@ -452,6 +459,42 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
   }
 
   this.openDeferredSources_(deferreds);
+};
+
+
+/**
+ * Requests a file load from Google Drive.
+ */
+wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
+  goog.result.wait(wtf.io.drive.showFilePicker({
+    title: 'Select a trace file'
+  }), function(filesResult) {
+    var files = filesResult.getValue();
+    if (!files || !files.length) {
+      // Cancelled.
+      return;
+    }
+
+    var deferreds = [];
+
+    for (var n = 0; n < files.length; n++) {
+      var fileName = files[n][0];
+      var fileId = files[n][1];
+      var fileDeferred = new goog.async.Deferred();
+      deferreds.push(fileDeferred);
+      goog.result.wait(wtf.io.drive.downloadFile(fileId), function(result) {
+        var driveFile = result.getValue();
+        if (driveFile) {
+          // TODO(benvanik): pass back filename/etc?
+          fileDeferred.callback(driveFile.contents);
+        } else {
+          fileDeferred.errback(result.getError());
+        }
+      }, this);
+    }
+
+    this.openDeferredSources_(deferreds);
+  }, this);
 };
 
 

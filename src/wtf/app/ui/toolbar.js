@@ -48,6 +48,11 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       goog.events.EventType.CLICK,
       this.openClicked_, false);
   eh.listen(
+      this.getChildElement(
+          goog.getCssName('wtfAppUiToolbarButtonOpenDrive')),
+      goog.events.EventType.CLICK,
+      this.openDriveClicked_, false);
+  eh.listen(
       this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonShare')),
       goog.events.EventType.CLICK,
       this.shareClicked_, false);
@@ -65,6 +70,8 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       this.helpClicked_, false);
 
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonOpen'), true);
+  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonOpenDrive'),
+      !wtf.CHROME_EXTENSION);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonShare'), false);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSave'), true);
   this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSettings'), true);
@@ -159,6 +166,18 @@ wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('open_trace', this, null);
+};
+
+
+/**
+ * Handles 'open drive' button clicks.
+ * @param {!goog.events.BrowserEvent} e Event.
+ * @private
+ */
+wtf.app.ui.Toolbar.prototype.openDriveClicked_ = function(e) {
+  e.preventDefault();
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('open_drive_trace', this, null);
 };
 
 
