@@ -112,6 +112,18 @@ echo "Fetching submodules..."
 git submodule init
 git submodule update
 
+# On cygwin disable the filemode setting to prevent all the spurious +x diffs.
+# This cannot be set globally as git resets it each repo.
+if [ -e "/Cygwin.bat" ]; then
+  git config core.filemode false
+  git submodule foreach git config core.filemode false
+fi
+
+# Add an ignored gitignore to closure-linter, as the repo is missing one that
+# ignores .pyc files.
+echo '.gitignore' > third_party/closure-linter/.gitignore
+echo '*.pyc' >> third_party/closure-linter/.gitignore
+
 echo ""
 # =============================================================================
 # Node modules
