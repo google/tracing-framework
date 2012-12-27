@@ -26,6 +26,7 @@ goog.require('wtf.doc.View');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.SimpleEventfulList');
 goog.require('wtf.events.SimpleEventfulMap');
+goog.require('wtf.io');
 goog.require('wtf.io.MemoryReadStream');
 
 
@@ -317,20 +318,38 @@ wtf.doc.Document.prototype.endEventStream = function(streamId) {
 
 
 /**
- * Adds a binary event source to the database.
- * @param {!wtf.io.ByteArray} data Binary data.
+ * Adds an event data source to the database.
+ * The given data can be a binary array or some form of JSON.
+ * @param {!wtf.io.ByteArray|string|!Object} data Source data.
+ * @return {number} Estimated size, in bytes, of the data source.
  */
-wtf.doc.Document.prototype.addBinaryEventSource = function(data) {
-  this.session_.addBinarySource(data);
+wtf.doc.Document.prototype.addEventSource = function(data) {
+  if (wtf.io.isByteArray(data)) {
+    this.session_.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data));
+    return data.length;
+  } else if (data instanceof ArrayBuffer) {
+    var dataBuffer = new Uint8Array(data);
+    this.session_.addBinarySource(dataBuffer);
+    return dataBuffer.length;
+  } else {
+    this.session_.addJsonSource(data);
+    return goog.isString(data) ? data.length : 0;
+  }
 };
 
 
 /**
- * Adds a JSON event source to the database.
- * @param {string|!Array|!Object} data JSON data.
+ * Adds a list of event sources to the database.
+ * The given data can be binary arrays or some form of JSON.
+ * @param {!Array.<!wtf.io.ByteArray|string|!Object>} datas Source data list.
+ * @return {number} Estimated size, in bytes, of all the data sources.
  */
-wtf.doc.Document.prototype.addJsonEventSource = function(data) {
-  this.session_.addJsonSource(data);
+wtf.doc.Document.prototype.addEventSources = function(datas) {
+  var contentLength = 0;
+  for (var n = 0; n < datas.length; n++) {
+    contentLength += this.addEventSource(datas[n]);
+  }
+  return contentLength;
 };
 
 

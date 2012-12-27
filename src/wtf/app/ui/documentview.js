@@ -126,12 +126,11 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   // Relayout as required.
   var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
-  this.getHandler().listen(vsm, goog.events.EventType.RESIZE, function() {
-    this.layout_();
-  }, false);
+  this.getHandler().listen(
+      vsm, goog.events.EventType.RESIZE, this.layout, false);
   this.navbar_.addListener(
       wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
-      this.layout_, this);
+      this.layout, this);
 
   this.tabbar_.addPanel(new wtf.app.ui.tracks.TracksPanel(this));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
@@ -245,10 +244,9 @@ wtf.app.ui.DocumentView.prototype.registerViewport = function(viewport) {
 
 
 /**
- * Performs javascript-based layout.
- * @private
+ * @override
  */
-wtf.app.ui.DocumentView.prototype.layout_ = function() {
+wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
   // Update the tabbar with the latest size.
   var currentSize = goog.style.getSize(
       this.getChildElement(goog.getCssName('appUiDocumentViewInner')));

@@ -45,6 +45,7 @@ goog.require('wtf.pal');
 goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.Dialog');
+goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.SettingsDialog');
 
 
@@ -312,9 +313,8 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
 
   // Append data after a bit - gives the UI time to setup.
   wtf.timing.setImmediate(function() {
-    for (var n = 0; n < datas.length; n++) {
-      doc.addBinaryEventSource(datas[n]);
-    }
+    // Add all sources.
+    doc.addEventSources(datas);
 
     // Zoom to fit.
     // TODO(benvanik): remove setTimeout when zoomToFit is based on view
@@ -437,7 +437,10 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
     } else if (goog.string.endsWith(url, '.wtf-json')) {
       jsonSources.push(url);
     } else {
-      window.alert('bad file name...');
+      wtf.ui.ErrorDialog.show(
+          'Unsupported input URL',
+          'Only .wtf-trace and .wtf-json inputs are supported.',
+          this.getDom());
     }
   }
   if (!binarySources.length && !jsonSources.length) {
@@ -531,16 +534,7 @@ wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
   goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
       function(datas) {
         // Add all data.
-        var contentLength = 0;
-        for (var n = 0; n < datas.length; n++) {
-          var data = datas[n];
-          if (data instanceof ArrayBuffer) {
-            doc.addBinaryEventSource(new Uint8Array(data));
-          } else if (goog.isString(data)) {
-            doc.addJsonEventSource(data);
-          }
-          contentLength += data.length;
-        }
+        var contentLength = doc.addEventSources(datas);
         _gaq.push(['_trackEvent', 'app', 'open_files', null, contentLength]);
 
         // Zoom to fit.
@@ -550,8 +544,10 @@ wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
         }, this);
       },
       function(arg) {
-        // TODO(benvanik): handle errors better
-        window.alert('Unable to load files');
+        wtf.ui.ErrorDialog.show(
+            'Unable to load files',
+            'An input file could not be read.',
+            this.getDom());
       }, this);
 };
 
