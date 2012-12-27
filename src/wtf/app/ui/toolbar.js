@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.Toolbar');
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('wtf');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');

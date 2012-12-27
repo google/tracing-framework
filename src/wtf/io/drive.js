@@ -20,6 +20,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.result');
 goog.require('goog.result.Result');
 goog.require('goog.result.SimpleResult');
+goog.require('wtf');
 goog.require('wtf.timing');
 
 

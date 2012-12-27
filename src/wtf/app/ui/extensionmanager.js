@@ -90,6 +90,8 @@ wtf.app.ui.ExtensionManager = function(documentView) {
       //     ones with triggers?
       this.loadExtension(extensions[n]);
     }
+    _gaq.push(['_trackEvent', 'app', 'load_extensions',
+      null, extensions.length]);
   }, this);
 };
 goog.inherits(wtf.app.ui.ExtensionManager, goog.Disposable);
