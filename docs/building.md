@@ -9,7 +9,7 @@
     git clone git@github.com:google/tracing-framework.git
     cd tracing-framework/
     # Run one-time setup of dependencies
-    ./scripts/setup.sh
+    ./scripts/setup.sh # or setup.bat on Windows
 
     # Source the utility script to get the nice bash aliases
     # You'll want to do this every time you start up a new prompt
@@ -66,3 +66,18 @@ To debug the app features:
 On the first build attempt (`anvil build :debug :release`) you will be
 prompted to install Java if it is not already present. Follow the
 dialogs and try again and it should work.
+
+### Windows
+
+Although it's (somewhat) possible to use things from Cygwin, some
+stuff fails randomly. I recommend using the normal Windows command
+prompt.
+
+You'll need to install git, python, and node 0.8+. Once setup,
+clone the repo and run `scripts\setup.bat` - everything should
+happen automatically.
+
+Keep your working directory in the root tracing-framework\ path and
+use the `anvil` commands as described above. Builds may be a little
+slower than on *nix systems but should still work!
+
