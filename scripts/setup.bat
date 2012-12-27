@@ -30,6 +30,6 @@ REM Node modules
 REM ============================================================================
 ECHO Installing node modules...
 
-npm install mocha@1.4.2 chai@1.2.0
+npm install
 
 ECHO.
