@@ -143,7 +143,7 @@ goog.inherits(wtf.app.ui.EmptyTabPanel, wtf.app.ui.TabPanel);
  */
 wtf.app.ui.EmptyTabPanel.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
-  goog.dom.classes.add(el, goog.getCssName('wtfAppUiTabPanel'));
+  goog.dom.classes.add(el, goog.getCssName('appUiTabPanel'));
   dom.setTextContent(el, 'TODO');
   return el;
 };

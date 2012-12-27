@@ -235,7 +235,7 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
   this.documentView_ = null;
 
   goog.style.showElement(
-      this.getChildElement(goog.getCssName('wtfAppUiMainEmpty')),
+      this.getChildElement(goog.getCssName('appUiMainEmpty')),
       !documentView);
 
   if (documentView) {
@@ -254,7 +254,7 @@ wtf.app.ui.MainDisplay.prototype.openDocument = function(doc) {
 
   this.setDocumentView(null);
   var documentView = new wtf.app.ui.DocumentView(
-      this.getChildElement(goog.getCssName('wtfAppUiMainDocumentView')),
+      this.getChildElement(goog.getCssName('appUiMainDocumentView')),
       this.getDom(),
       doc);
   this.setDocumentView(documentView);

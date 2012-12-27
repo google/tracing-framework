@@ -46,13 +46,13 @@ wtf.app.ui.Statusbar = function(documentView, parentElement) {
    */
   this.divs_ = {
     selectionCounts: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarSelectionCounts')),
+        goog.getCssName('appUiStatusbarSelectionCounts')),
     selectionTimes: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarSelectionTimes')),
+        goog.getCssName('appUiStatusbarSelectionTimes')),
     timeTotals: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarTimeTotals')),
+        goog.getCssName('appUiStatusbarTimeTotals')),
     timeRange: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarTimeRange'))
+        goog.getCssName('appUiStatusbarTimeRange'))
   };
 
   var db = this.documentView_.getDatabase();

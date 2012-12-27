@@ -59,7 +59,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.infobar_ = new wtf.app.ui.tracks.TrackInfoBar(this,
-      this.getChildElement(goog.getCssName('wtfAppUiTracksPanelInfoControl')));
+      this.getChildElement(goog.getCssName('appUiTracksPanelInfoControl')));
   this.registerDisposable(this.infobar_);
 
   /**
@@ -106,7 +106,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
-      this.getChildElement(goog.getCssName('wtfAppUiTracksPanelCanvas')));
+      this.getChildElement(goog.getCssName('appUiTracksPanelCanvas')));
 
   var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);

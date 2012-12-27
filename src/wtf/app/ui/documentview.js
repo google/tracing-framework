@@ -86,7 +86,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.toolbar_ = new wtf.app.ui.Toolbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewToolbar')));
+      goog.getCssName('appUiDocumentViewToolbar')));
   this.registerDisposable(this.toolbar_);
 
   /**
@@ -95,7 +95,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.navbar_ = new wtf.app.ui.nav.Navbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewInner')));
+      goog.getCssName('appUiDocumentViewInner')));
   this.registerDisposable(this.navbar_);
 
   /**
@@ -104,7 +104,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.tabbar_ = new wtf.app.ui.Tabbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewInner')));
+      goog.getCssName('appUiDocumentViewInner')));
   this.registerDisposable(this.tabbar_);
 
   /**
@@ -113,7 +113,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.statusbar_ = new wtf.app.ui.Statusbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewStatusbar')));
+      goog.getCssName('appUiDocumentViewStatusbar')));
   this.registerDisposable(this.statusbar_);
 
   /**
@@ -251,7 +251,7 @@ wtf.app.ui.DocumentView.prototype.registerViewport = function(viewport) {
 wtf.app.ui.DocumentView.prototype.layout_ = function() {
   // Update the tabbar with the latest size.
   var currentSize = goog.style.getSize(
-      this.getChildElement(goog.getCssName('wtfAppUiDocumentViewInner')));
+      this.getChildElement(goog.getCssName('appUiDocumentViewInner')));
   var tabbarHeight = currentSize.height - this.navbar_.getSplitterSize();
   goog.style.setHeight(this.tabbar_.getRootElement(), tabbarHeight);
 

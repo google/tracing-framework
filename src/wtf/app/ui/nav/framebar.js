@@ -69,7 +69,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    * @private
    */
   this.framebarCanvas_ = /** @type {!HTMLCanvasElement} */ (
-      this.getChildElement(goog.getCssName('wtfAppUiFramebarCanvas')));
+      this.getChildElement(goog.getCssName('appUiFramebarCanvas')));
 
   var paintContext = new wtf.ui.Painter(this.framebarCanvas_);
   this.setPaintContext(paintContext);

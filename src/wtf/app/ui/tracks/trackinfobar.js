@@ -63,7 +63,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       wtf.events.EventType.INVALIDATED, this.updateInfo_, this);
 
   var headerEl = this.getChildElement(
-      goog.getCssName('wtfAppUiTracksPanelInfoHeader'));
+      goog.getCssName('appUiTracksPanelInfoHeader'));
   /**
    * Search text field.
    * @type {!wtf.ui.SearchControl}
@@ -173,7 +173,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   //goog.global.console.log('update info', updateDuration);
 
   var contentEl = this.getChildElement(
-      goog.getCssName('wtfAppUiTracksPanelInfoContent'));
+      goog.getCssName('appUiTracksPanelInfoContent'));
   var dom = this.getDom();
   contentEl.innerText = '';
 

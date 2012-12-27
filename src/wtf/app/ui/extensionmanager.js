@@ -266,7 +266,7 @@ wtf.app.ui.ExtensionTabPanel.Callback;
  */
 wtf.app.ui.ExtensionTabPanel.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
-  goog.dom.classes.add(el, goog.getCssName('wtfAppUiTabPanel'));
+  goog.dom.classes.add(el, goog.getCssName('appUiTabPanel'));
   return el;
 };
 
