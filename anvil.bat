@@ -1,3 +1,3 @@
 @ECHO OFF
 
-python third_party\anvil-build\anvil\manage.py %*
+third_party\anvil-build\anvil-local.bat %*
