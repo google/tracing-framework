@@ -48,7 +48,9 @@ file_set(
         'popup.js',
         'uri.js',
         'wtf-injector.js',
-        ] + glob('assets/**/*.png'),
+        ] +
+        glob('assets/scripts/*.js') +
+        glob('assets/icons/*.png'),
     src_exclude_filter='*-deps.js')
 
 file_set(

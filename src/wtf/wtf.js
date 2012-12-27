@@ -25,6 +25,16 @@ wtf.NODE = false;
 
 
 /**
+ * Whether the current code is running inside of a Chrome extension.
+ * @type {boolean}
+ */
+wtf.CHROME_EXTENSION =
+    goog.global['chrome'] &&
+    chrome.runtime &&
+    chrome.runtime.id;
+
+
+/**
  * Whether the runtime can provide high-resolution times.
  * @type {boolean}
  */

@@ -28,6 +28,10 @@ var chrome;
 chrome.runtime;
 
 
+/** @type {string} */
+chrome.runtime.id;
+
+
 /** @type {!ChromeEvent} */
 chrome.runtime.onStartup;
 
