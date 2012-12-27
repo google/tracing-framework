@@ -389,10 +389,9 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
     var dispatchFn = this.builtinDispatch_[eventType.name];
     if (dispatchFn) {
       e = dispatchFn.call(this, listener, eventType, zone, time, args);
-    } else {
-      e = new wtf.analysis.Event(eventType, zone, time, args);
     }
-  } else {
+  }
+  if (!e) {
     switch (eventType.eventClass) {
       case wtf.data.EventClass.SCOPE:
         var newScope = new wtf.analysis.Scope();

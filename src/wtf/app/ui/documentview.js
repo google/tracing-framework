@@ -155,6 +155,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       function(message, opt_detail) {
         goog.global.console.log(message, opt_detail);
         wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
+        _gaq.push(['_trackEvent', 'app', 'source_error', message]);
       }, this);
 };
 goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
