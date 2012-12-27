@@ -12,6 +12,8 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+var _gaq = _gaq || [];
+
 window['CLOSURE_NO_DEPS'] = true;
 window['CLOSURE_BASE_PATH'] = '../third_party/closure-library/closure/goog/';
 

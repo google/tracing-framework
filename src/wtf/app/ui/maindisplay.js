@@ -28,6 +28,7 @@ goog.require('goog.result');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
+goog.require('wtf');
 goog.require('wtf.app.ui.DocumentView');
 goog.require('wtf.app.ui.HelpDialog');
 goog.require('wtf.app.ui.maindisplay');
@@ -150,7 +151,10 @@ wtf.app.ui.MainDisplay = function(
   var queryString = dom.getWindow().location.search;
   if (queryString) {
     var urls = queryString.replace(/\?url=/, '');
-    this.loadNetworkTraces(urls.split(','));
+    if (urls.length) {
+      _gaq.push(['_trackEvent', 'app', 'open_querystring_files']);
+      this.loadNetworkTraces(urls.split(','));
+    }
   }
 };
 goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
@@ -200,6 +204,9 @@ wtf.app.ui.MainDisplay.prototype.setupDragDropLoading_ = function() {
         browserEvent.dataTransfer.files.length) {
       e.stopPropagation();
       e.preventDefault();
+
+      _gaq.push(['_trackEvent', 'app', 'open_drag_files']);
+
       this.loadTraceFiles(browserEvent.dataTransfer.files);
     }
   }, false, this);
@@ -243,6 +250,8 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
  * @param {!wtf.doc.Document} doc Document.
  */
 wtf.app.ui.MainDisplay.prototype.openDocument = function(doc) {
+  _gaq.push(['_trackEvent', 'app', 'open_document']);
+
   this.setDocumentView(null);
   var documentView = new wtf.app.ui.DocumentView(
       this.getChildElement(goog.getCssName('wtfAppUiMainDocumentView')),
@@ -286,13 +295,16 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   }
 
   // Convert data from Arrays to ensure we are typed all the way through.
+  var contentLength = 0;
   for (var n = 0; n < datas.length; n++) {
     if (goog.isArray(datas[n])) {
       datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
     } else if (goog.isString(datas[n])) {
       datas[n] = wtf.io.stringToNewByteArray(datas[n]);
     }
+    contentLength += datas[n].length;
   }
+  _gaq.push(['_trackEvent', 'app', 'open_snapshot', null, contentLength]);
 
   // Create document with snapshot data.
   var doc = new wtf.doc.Document(this.platform_);
@@ -322,6 +334,8 @@ wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
   var sessionId = data['session_id'];
   var streamId = data['stream_id'] || '0';
   var contentType = data['content_type'];
+
+  _gaq.push(['_trackEvent', 'app', 'open_stream']);
 
   // TODO(benvanik): support multiple streams into the same trace/etc
   var doc = new wtf.doc.Document(this.platform_);
@@ -366,6 +380,7 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
   inputElement.click();
   goog.events.listenOnce(inputElement, goog.events.EventType.CHANGE,
       function(e) {
+        _gaq.push(['_trackEvent', 'app', 'open_local_files']);
         this.loadTraceFiles(inputElement.files);
       }, false, this);
 };
@@ -475,6 +490,8 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
       return;
     }
 
+    _gaq.push(['_trackEvent', 'app', 'open_drive_files']);
+
     var deferreds = [];
 
     for (var n = 0; n < files.length; n++) {
@@ -514,6 +531,7 @@ wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
   goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
       function(datas) {
         // Add all data.
+        var contentLength = 0;
         for (var n = 0; n < datas.length; n++) {
           var data = datas[n];
           if (data instanceof ArrayBuffer) {
@@ -521,7 +539,9 @@ wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
           } else if (goog.isString(data)) {
             doc.addJsonEventSource(data);
           }
+          contentLength += data.length;
         }
+        _gaq.push(['_trackEvent', 'app', 'open_files', null, contentLength]);
 
         // Zoom to fit.
         // TODO(benvanik): remove setTimeout when zoomToFit is based on view
@@ -568,6 +588,7 @@ wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
 
   var storage = doc.getStorage();
   var dataStreams = storage.snapshotDataStreamBuffers();
+  var contentLength = 0;
   for (var n = 0; n < dataStreams.length; n++) {
     var dataStream = dataStreams[n];
     var streamFilename = filename;
@@ -581,7 +602,9 @@ wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
     }
     var platform = wtf.pal.getPlatform();
     platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
+    contentLength += dataStream.data.length;
   }
+  _gaq.push(['_trackEvent', 'app', 'save_trace', null, contentLength]);
 };
 
 
@@ -593,6 +616,8 @@ wtf.app.ui.MainDisplay.prototype.shareTrace_ = function() {
   if (!this.documentView_) {
     return;
   }
+
+  _gaq.push(['_trackEvent', 'app', 'share_trace']);
 
   // TODO(benvanik): share trace.
 };
@@ -660,6 +685,8 @@ wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
   dialog.setup({
     'panes': panes
   });
+
+  _gaq.push(['_trackEvent', 'app', 'show_settings']);
 };
 
 
@@ -686,4 +713,6 @@ wtf.app.ui.MainDisplay.prototype.toggleHelpDialog_ = function() {
   this.activeDialog_.addListener(wtf.ui.Dialog.EventType.CLOSED, function() {
     this.activeDialog_ = null;
   }, this);
+
+  _gaq.push(['_trackEvent', 'app', 'show_help']);
 };
