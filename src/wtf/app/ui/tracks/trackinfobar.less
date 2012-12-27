@@ -11,75 +11,82 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@appUiTracksPanelInfoHeaderHeight: 40px;
-
-.appUiTracksPanelInfoOuter {
-}
-
-.appUiTracksPanelInfoHeader {
+.appUiTracksPanelInfo {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: @appUiTracksPanelInfoHeaderHeight - 5px;
-  border-bottom: 1px solid #ebebeb;
-  padding-left: 5px;
-  padding-top: 5px;
-}
-
-.appUiTracksPanelInfoHeader .kSearchField {
-}
-
-.appUiTracksPanelInfoContent {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: @appUiTracksPanelInfoHeaderHeight;
-  bottom: 0;
-  padding: 3px;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-
-@appUiTracksPanelInfoEntryHeaderX: 60px;
-
-.appUiTracksPanelInfoEntry {
-  position: relative;
-  height: 26px;
-  font-family: monospace;
-  font-size: 11px;
-  border-bottom: 1px solid rgb(226, 226, 226);
-  margin-bottom: 2px;
-  cursor: pointer;
-}
-.appUiTracksPanelInfoEntryHeader {
-  position: relative;
-}
-.appUiTracksPanelInfoEntryValue {
-  position: relative;
-  left: 0;
-  width: @appUiTracksPanelInfoEntryHeaderX;
-  top: 0;
-  height: 13px;
-  text-align: right;
-  font-weight: bold;
-}
-.appUiTracksPanelInfoEntryTitle {
-  position: absolute;
-  left: @appUiTracksPanelInfoEntryHeaderX;
-  right: 0;
   top: 0;
   bottom: 0;
-  padding-left: 4px;
-}
-.appUiTracksPanelInfoEntryContent {
-  position: absolute;
-  top: 13px;
-  left: @appUiTracksPanelInfoEntryHeaderX;
   right: 0;
-  height: 13px;
-  padding-left: 4px;
-  color: rgb(160, 160, 160);
-  font-size: 10px;
+  width: 300px;
+
+  @headerHeight: 40px;
+  & > .header {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: @headerHeight - 5px;
+    border-bottom: 1px solid #ebebeb;
+    padding-left: 5px;
+    padding-top: 5px;
+
+    .kSearchField {
+    }
+  }
+
+  & > .content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: @headerHeight;
+    bottom: 0;
+    padding: 3px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .entry {
+    position: relative;
+    height: 26px;
+    font-family: monospace;
+    font-size: 11px;
+    border-bottom: 1px solid rgb(226, 226, 226);
+    margin-bottom: 2px;
+    cursor: pointer;
+
+    @headerX: 60px;
+
+    .header {
+      position: relative;
+    }
+
+    .value {
+      position: relative;
+      left: 0;
+      width: @headerX;
+      top: 0;
+      height: 13px;
+      text-align: right;
+      font-weight: bold;
+    }
+
+    .title {
+      position: absolute;
+      left: @headerX;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      padding-left: 4px;
+    }
+
+    .content {
+      position: absolute;
+      top: 13px;
+      left: @headerX;
+      right: 0;
+      height: 13px;
+      padding-left: 4px;
+      color: rgb(160, 160, 160);
+      font-size: 10px;
+    }
+  }
 }

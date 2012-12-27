@@ -26,8 +26,10 @@ goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.events.EventType');
+goog.require('wtf.timing');
 goog.require('wtf.ui.GridPainter');
 goog.require('wtf.ui.Painter');
+goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.ui.zoom.Viewport');
@@ -59,8 +61,11 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.infobar_ = new wtf.app.ui.tracks.TrackInfoBar(this,
-      this.getChildElement(goog.getCssName('appUiTracksPanelInfoControl')));
+      this.getChildElement(goog.getCssName('infoControl')));
   this.registerDisposable(this.infobar_);
+  this.infobar_.addListener(
+      wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
+      this.layout, this);
 
   /**
    * Zooming viewport.
@@ -106,7 +111,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
-      this.getChildElement(goog.getCssName('appUiTracksPanelCanvas')));
+      this.getChildElement(goog.getCssName('canvas')));
 
   var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);
@@ -169,6 +174,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   // Done last so any other handlers are properly registered.
   this.viewport_.registerElement(this.trackCanvas_);
 
+  wtf.timing.setImmediate(this.layout, this);
   this.requestRepaint();
 };
 goog.inherits(wtf.app.ui.tracks.TracksPanel, wtf.app.ui.TabPanel);
@@ -216,7 +222,12 @@ wtf.app.ui.tracks.TracksPanel.prototype.navigate = function(pathParts) {
  */
 wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
   var canvas = this.trackCanvas_;
-  var currentSize = goog.style.getSize(goog.dom.getParentElement(canvas));
+  var canvasOuter = goog.dom.getParentElement(canvas);
+
+  var infobarWidth = this.infobar_.getSplitterSize();
+  goog.style.setStyle(canvasOuter, 'margin-right', (infobarWidth + 1) + 'px');
+
+  var currentSize = goog.style.getSize(canvasOuter);
   this.viewport_.setScreenSize(currentSize.width, currentSize.height);
 };
 
