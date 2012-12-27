@@ -12,6 +12,12 @@
  */
 
 
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-37275478-1']);
+_gaq.push(['_setSessionCookieTimeout', 0]);
+_gaq.push(['_trackPageview', '/maindisplay']);
+
+
 // Launch UI.
 wtf.app.ui.show({
 });

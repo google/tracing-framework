@@ -52,6 +52,8 @@ var Extension = function() {
   chrome.extension.onConnect.addListener(function(port) {
     var options = this.getOptions();
     if (port.name == 'injector') {
+      _gaq.push(['_trackEvent', 'extension', 'injected']);
+
       // Setup the extended info provider for the page.
       var tab = port.sender.tab;
       var pageUrl = URI.canonicalize(tab.url);
@@ -94,14 +96,18 @@ var Extension = function() {
       whitelistMap[whitelist[n]] = true;
     }
     chrome.tabs.query({}, function(tabs) {
+      var tabsReloaded = 0;
       for (var n = 0; n < tabs.length; n++) {
         var pageUrl = URI.canonicalize(tabs[n].url);
         if (whitelistMap[pageUrl]) {
+          tabsReloaded++;
           chrome.tabs.reload(tabs[n].id, {
             bypassCache: true
           });
         }
       }
+      _gaq.push(['_trackEvent', 'extension', 'tabs_reloaded',
+          null, tabsReloaded]);
     });
   }, this);
 
@@ -122,12 +128,14 @@ var Extension = function() {
       text = text.trim();
       if (text == 'ui' || text.length == 0) {
         // Open the UI.
+        _gaq.push(['_trackEvent', 'extension', 'omnibox_show_ui']);
         this.showUi_({
           targetTab: tab
         });
       } else {
         // A URL? File path? etc?
         if (text.indexOf('http') == 0) {
+          _gaq.push(['_trackEvent', 'extension', 'omnibox_show_file']);
           this.showFileInUi_({
             targetTab: tab
           }, text);
@@ -165,6 +173,7 @@ Extension.prototype.detectApplication_ = function() {
         break;
       } else if (result.id == 'ofamllpnllolodilannpkikhjjcnfegg') {
         // Otherwise use CWS ID.
+        _gaq.push(['_trackEvent', 'extension', 'app_discovered']);
         console.log('Discovered WTF App - release ' + result.version);
         options.setDefaultEndpoint('remote', 'localhost:9023');
         break;
@@ -387,9 +396,11 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       switch (status) {
         case PageStatus.NONE:
         case PageStatus.BLACKLISTED:
+          _gaq.push(['_trackEvent', 'extension', 'page_enabled']);
           options.whitelistPage(pageUrl);
           break;
         case PageStatus.WHITELISTED:
+          _gaq.push(['_trackEvent', 'extension', 'page_disabled']);
           options.blacklistPage(pageUrl);
           break;
       }
@@ -399,6 +410,7 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       break;
     case 'reset_settings':
       // Reset.
+      _gaq.push(['_trackEvent', 'extension', 'page_settings_reset']);
       options.resetPageOptions(pageUrl);
       // Force update the page action ASAP.
       this.updatePageState_(tab.id, tab.url);
@@ -410,10 +422,12 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       break;
 
     case 'add_extension':
+      _gaq.push(['_trackEvent', 'extension', 'extension_added']);
       options.addExtension(data.url, data.manifest);
       this.sendPopupInfo_(pageUrl, port);
       break;
     case 'remove_extension':
+      _gaq.push(['_trackEvent', 'extension', 'extension_removed']);
       options.removeExtension(data.url);
       this.sendPopupInfo_(pageUrl, port);
       break;
@@ -423,9 +437,11 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       if (data.enabled) {
         if (i == -1) {
           pageOptions['wtf.extensions'].push(data.url);
+          _gaq.push(['_trackEvent', 'extension', 'page_extension_enabled']);
         }
       } else {
         pageOptions['wtf.extensions'].splice(i, 1);
+        _gaq.push(['_trackEvent', 'extension', 'page_extension_disabled']);
       }
       options.setPageOptions(pageUrl, pageOptions);
       this.sendPopupInfo_(pageUrl, port);
@@ -506,11 +522,19 @@ Extension.prototype.pageMessageReceived_ = function(data, port) {
       });
       break;
     case 'save_settings':
+      _gaq.push(['_trackEvent', 'extension', 'page_settings_updated']);
       options.setPageOptions(
           pageUrl,
           JSON.parse(data['content']));
       break;
     case 'show_snapshot':
+      var contentsLength = 0;
+      var dataContents = data['contents'];
+      for (var n = 0; n < dataContents.length; n++) {
+        contentsLength += dataContents[n].length;
+      }
+      _gaq.push(['_trackEvent', 'extension', 'show_snapshot',
+          null, contentsLength]);
       this.showSnapshot_(
           tab,
           data['page_url'],

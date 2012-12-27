@@ -12,6 +12,11 @@
  */
 
 
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-37275478-1']);
+_gaq.push(['_trackPageview', '/pageaction_popup']);
+
+
 // Connect to the background page so we can query page status/etc.
 var port = chrome.extension.connect({
   name: 'popup'
@@ -89,6 +94,8 @@ function setupAddBox() {
   };
 
   function addExtension(url, manifest) {
+    _gaq.push(['_trackEvent', 'popup', 'extension_added']);
+
     addBox.value = '';
     port.postMessage({
       command: 'add_extension',
@@ -180,6 +187,8 @@ function buildExtensionTable(extensions, enabledExtensions) {
     tbody.appendChild(tr);
 
     function changed() {
+      _gaq.push(['_trackEvent', 'popup', 'extension_toggled']);
+
       port.postMessage({
         command: 'toggle_extension',
         enabled: input.checked,
@@ -195,6 +204,8 @@ function buildExtensionTable(extensions, enabledExtensions) {
     };
 
     remove.onclick = function() {
+      _gaq.push(['_trackEvent', 'popup', 'extension_removed']);
+
       if (isEnabled) {
         port.postMessage({
           command: 'toggle_extension',
@@ -215,6 +226,8 @@ function buildExtensionTable(extensions, enabledExtensions) {
  * Toggles the injector content script on the given page.
  */
 function toggleInjectorClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'toggled']);
+
   port.postMessage({
     command: 'toggle'
   });
@@ -226,6 +239,8 @@ function toggleInjectorClicked() {
  * Resets the pages settings to their defaults.
  */
 function resetSettingsClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'reset_settings']);
+
   port.postMessage({
     command: 'reset_settings'
   });
@@ -237,6 +252,8 @@ function resetSettingsClicked() {
  * Shows the UI.
  */
 function showUiClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'show_ui']);
+
   port.postMessage({
     command: 'show_ui'
   });
