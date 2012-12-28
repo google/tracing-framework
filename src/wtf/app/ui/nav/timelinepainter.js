@@ -18,6 +18,7 @@ goog.require('goog.async.DeferredList');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.color.Palette');
 
 
 
@@ -37,6 +38,15 @@ wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
    * @private
    */
   this.documentView_ = documentView;
+
+  // TODO(benvanik): a better palette.
+  /**
+   * Color palette used for drawing marks.
+   * @type {!wtf.ui.color.Palette}
+   * @private
+   */
+  this.markPalette_ = new wtf.ui.color.Palette(
+      wtf.ui.color.Palette.SCOPE_COLORS);
 
   /**
    * Database.
@@ -167,9 +177,11 @@ wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
   ctx.fillRect(0, Math.floor(height - 33 * timeScale), width, 1);
 
   // Draw marks.
-  ctx.fillStyle = '#00FF33';
+  var markPalette = this.markPalette_;
   var ew = 3;
   this.markIndex_.forEach(timeLeft, timeRight, function(e) {
+    var color = markPalette.getColorForString(e.args['name']);
+    ctx.fillStyle = color.toString();
     var ex = wtf.math.remap(e.time, timeLeft, timeRight, 0, width) - 1;
     ctx.fillRect(ex, 0, ew, height);
   });

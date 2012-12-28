@@ -20,6 +20,7 @@ goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.color.Palette');
 goog.require('wtf.util');
 
 
@@ -47,6 +48,15 @@ wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
    * @private
    */
   this.y_ = 16;
+
+  // TODO(benvanik): a better palette.
+  /**
+   * Color palette used for drawing marks.
+   * @type {!wtf.ui.color.Palette}
+   * @private
+   */
+  this.palette_ = new wtf.ui.color.Palette(
+      wtf.ui.color.Palette.SCOPE_COLORS);
 
   /**
    * Mark event index.
@@ -116,6 +126,8 @@ wtf.app.ui.tracks.MarkPainter.HEIGHT = 16;
  */
 wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     ctx, width, height) {
+  var palette = this.palette_;
+
   var y = this.y_;
   var h = wtf.app.ui.tracks.MarkPainter.HEIGHT;
 
@@ -159,17 +171,17 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
       continue;
     }
 
-    // TODO(benvanik): compute color by name
-    var color = '#00FF33';
+    // Compute color by name.
+    var label = e.args['name'];
+    var color = palette.getColorForString(label);
 
     // Draw bar.
-    ctx.fillStyle = color;
+    ctx.fillStyle = color.toString();
     ctx.fillRect(screenLeft, y, screenRight - screenLeft, h - 1);
 
     if (screenWidth > 15) {
       // TODO(benvanik): move this to painter common
       // Calculate label width to determine fade.
-      var label = e.args['name'];
       var labelWidth = ctx.measureText(label).width;
       var labelScreenWidth = screenRight - screenLeft + 5 + 5;
       if (labelScreenWidth >= labelWidth) {
