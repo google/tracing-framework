@@ -35,6 +35,7 @@ goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events');
 goog.require('wtf.events.CommandManager');
+goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ext');
 goog.require('wtf.io');
@@ -182,7 +183,9 @@ wtf.app.ui.MainDisplay.prototype.disposeInternal = function() {
  */
 wtf.app.ui.MainDisplay.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.maindisplay.control, undefined, undefined, dom));
+      wtf.app.ui.maindisplay.control, {
+        system_key: wtf.events.Keyboard.SYSTEM_KEY
+      }, undefined, dom));
 };
 
 

@@ -16,6 +16,7 @@
 
 /**
  * Root control UI.
+ * @param system_key System command key string (like 'ctrl').
  */
 {template .control}
   <div class="{css appUiToolbar}">
@@ -38,7 +39,7 @@
         <!--[viewer info]-->
       </div>
       <div class="{css kButtonBar} {css kRight} {css appUiToolbarButtons}">
-        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css appUiToolbarButtonOpen}" title="Open a trace file (CTRL-O)">
+        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css appUiToolbarButtonOpen}" title="Open a trace file ({$system_key|noAutoescape}-o)">
           Open
         </a>
         <a class="{css kButton} {css kMenuButton} {css kDisabled} {css appUiToolbarButtonOpenDrive}" title="Open a trace file from Google Drive">
@@ -47,7 +48,7 @@
         <a class="{css kButton} {css kMenuButton} {css kDisabled} {css appUiToolbarButtonShare}" title="Share the trace">
           Share
         </a>
-        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css appUiToolbarButtonSave}" title="Save the current trace file (CTRL-S)">
+        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css appUiToolbarButtonSave}" title="Save the current trace file ({$system_key|noAutoescape}-s)">
           Save
         </a>
         <a class="{css kButton} {css kMenuButton} {css appUiToolbarButtonSettings}"

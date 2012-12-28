@@ -21,6 +21,7 @@ goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
+goog.require('wtf.events.Keyboard');
 goog.require('wtf.ui.Control');
 
 
@@ -93,7 +94,9 @@ goog.inherits(wtf.app.ui.Toolbar, wtf.ui.Control);
  */
 wtf.app.ui.Toolbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.toolbar.control, undefined, undefined, dom));
+      wtf.app.ui.toolbar.control, {
+        system_key: wtf.events.Keyboard.SYSTEM_KEY
+      }, undefined, dom));
 };
 
 
