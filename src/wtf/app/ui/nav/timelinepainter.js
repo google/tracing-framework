@@ -54,8 +54,17 @@ wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
    */
   this.frameIndex_ = null;
 
+  /**
+   * Mark event index.
+   * Only valid once it has been created and the control readied.
+   * @type {wtf.analysis.db.EventIndex}
+   * @private
+   */
+  this.markIndex_ = null;
+
   var deferreds = [];
   deferreds.push(this.db_.createEventIndex('wtf.timing#frameEnd'));
+  deferreds.push(this.db_.createEventIndex('wtf.trace#mark'));
 
   this.setReady(false);
   new goog.async.DeferredList(deferreds).addCallbacks(
@@ -71,6 +80,12 @@ wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
               this.setTimeRange(timeLeft, timeRight);
               this.requestRepaint();
             }, this);
+
+        var markIndex = this.db_.getEventIndex('wtf.trace#mark');
+        goog.asserts.assert(markIndex);
+        this.markIndex_ = markIndex;
+        this.markIndex_.addListener(wtf.events.EventType.INVALIDATED,
+            this.requestRepaint, this);
 
         // Ready and redraw.
         this.setReady(true);
@@ -150,6 +165,14 @@ wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
   ctx.fillStyle = '#DD4B39';
   ctx.fillRect(0, Math.floor(height - 17 * timeScale), width, 1);
   ctx.fillRect(0, Math.floor(height - 33 * timeScale), width, 1);
+
+  // Draw marks.
+  ctx.fillStyle = '#00FF33';
+  var ew = 3;
+  this.markIndex_.forEach(timeLeft, timeRight, function(e) {
+    var ex = wtf.math.remap(e.time, timeLeft, timeRight, 0, width) - 1;
+    ctx.fillRect(ex, 0, ew, height);
+  });
 
   // Draw visible ranges for each view.
   var localView = this.documentView_.getLocalView();

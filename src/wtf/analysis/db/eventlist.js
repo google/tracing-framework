@@ -147,6 +147,13 @@ wtf.analysis.db.EventList.prototype.indexOfChunkNear_ = function(time) {
     }
     return n;
   }
+  if (chunksLength) {
+    if (chunks[chunksLength - 1].getTimeEnd() < time) {
+      return chunksLength - 1;
+    } else {
+      return 0;
+    }
+  }
   return -1;
 };
 

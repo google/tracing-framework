@@ -107,7 +107,7 @@ goog.inherits(wtf.app.ui.tracks.ZonePainter, wtf.app.ui.tracks.TrackPainter);
  * @type {number}
  * @private
  */
-wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ = 25;
+wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ = 17 + 25;
 
 
 /**
@@ -272,13 +272,16 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     var right = wtf.math.remap(leave.time, timeLeft, timeRight, 0, width);
     var screenWidth = right - left;
 
+    // Clip with the screen.
+    var screenLeft = Math.max(0, left);
+    var screenRight = Math.min(width - 0.999, right);
+    if (screenLeft >= screenRight) {
+      continue;
+    }
+
     // Get color in the palette used for filling.
     var colorIndex = this.getColorIndexForScope_(scope);
     var color = scopeColors[colorIndex];
-
-    var screenLeft = Math.max(0, left);
-    var screenRight = Math.min(width - .999, right);
-    if (screenLeft >= screenRight) continue;
 
     var alpha = 1;
     if (enter.time > selectionEnd || leave.time < selectionStart) {
@@ -304,6 +307,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
         screenLeft, screenRight, color, alpha);
 
     if (screenWidth > 15) {
+      // TODO(benvanik): move this to painter common
       // Calculate label width to determine fade.
       var label = enter.eventType.name;
       var labelWidth = ctx.measureText(label).width;
@@ -499,6 +503,10 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
  */
 wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
     function(x, y, width, height) {
+  if (y < wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_) {
+    return false;
+  }
+
   var result = this.hitTest_(x, y, width, height);
   var newFilterString = '';
   if (result instanceof wtf.analysis.Scope) {
