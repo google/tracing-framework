@@ -148,6 +148,15 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   keyboardScope.addShortcut('command+a', function() {
     commandManager.execute('select_all', this, null);
   });
+  commandManager.registerSimpleCommand(
+      'select_visible', function() {
+        this.selection_.setTimeRange(
+            this.localView_.getVisibleTimeStart(),
+            this.localView_.getVisibleTimeEnd());
+      }, this);
+  keyboardScope.addShortcut('command+shift+a', function() {
+    commandManager.execute('select_visible', this, null);
+  });
 
   var db = doc.getDatabase();
   db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,

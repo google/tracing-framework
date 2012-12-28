@@ -24,30 +24,35 @@
   padding-top: 7px;
   padding-left: 7px;
   padding-right: 7px;
-}
 
-.appUiStatusbarLeft {
-  float: left;
-}
-.appUiStatusbarSelectionCounts {
-  float: left;
-  margin-right: 5px;
-  width: 100px;
-  text-align: center;
-}
-.appUiStatusbarSelectionTimes {
-  float: left;
-  width: 100px;
-  text-align: center;
-}
+  .left {
+    float: left;
+    div {
+      float: left;
+    }
+  }
+  .right {
+    float: right;
+    div {
+      float: left;
+    }
+  }
 
-.appUiStatusbarRight {
-  float: right;
-}
-.appUiStatusbarTimeTotals {
-  float: left;
-  margin-right: 5px;
-}
-.appUiStatusbarTimeRange {
-  float: left;
+  .selectionCounts {
+    margin-right: 5px;
+    width: 100px;
+    text-align: center;
+  }
+  .selectionTimes {
+    min-width: 200px;
+    text-align: center;
+  }
+  .selectionControls {
+  }
+
+  .timeTotals {
+    margin-right: 5px;
+  }
+  .timeRange {
+  }
 }
