@@ -672,7 +672,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.addArgumentLines_ = function(
     data, lines) {
   for (var argName in data) {
     var argValue = data[argName];
-    if (goog.isArray(argValue)) {
+    if (argValue === undefined) {
+      continue;
+    }
+    if (argValue === null) {
+      argValue = 'null';
+    } else if (goog.isArray(argValue)) {
       argValue = '[' + argValue + ']';
     } else if (argValue.buffer && argValue.buffer instanceof ArrayBuffer) {
       // TODO(benvanik): better display of big data blobs.
