@@ -249,8 +249,9 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
   keyboardScope.addShortcut('home', function() {
     var firstEventTime = this.db_.getFirstEventTime();
     var lastEventTime = this.db_.getLastEventTime();
+    var pad = (lastEventTime - firstEventTime) * 0.05;
     this.viewport_.zoomToBounds(
-        -1000, 0, lastEventTime - firstEventTime + 2000, 1);
+        -pad, 0, lastEventTime - firstEventTime + pad * 2, 1);
   }, this);
 
   var commandManager = wtf.events.getCommandManager();
@@ -265,13 +266,17 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
               var firstEventTime = this.db_.getFirstEventTime();
               var timeStart = e.time - e.args['duration'] / 1000;
               var timeEnd = e.time;
+              var pad = (timeEnd - timeStart) * 0.05;
               this.viewport_.zoomToBounds(
-                  timeStart - firstEventTime, 0, timeEnd - timeStart, 1);
+                  timeStart - firstEventTime - pad, 0,
+                  timeEnd - timeStart + pad * 2, 0.001);
             }
           }, this);
         }
       }, this);
   keyboardScope.addShortcut('command+g', function() {
+    // TODO(benvanik): make this a fancy dialog that allows frame/marker/etc
+    //     selection. window.prompt is prohibited in apps, too.
     var result;
     try {
       keyboard.suspend();
