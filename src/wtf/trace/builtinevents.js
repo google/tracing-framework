@@ -120,7 +120,7 @@ wtf.trace.BuiltinEvents = {
    */
   mark: wtf.trace.events.createInstance(
       'wtf.trace#mark(ascii name, any value)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * A simple timestamp event.

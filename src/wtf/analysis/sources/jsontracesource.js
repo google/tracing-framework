@@ -133,7 +133,7 @@ wtf.analysis.sources.JsonTraceSource.BuiltinEvents_ = {
 
   'wtf.trace#mark': wtf.analysis.EventType.createInstance(
       'wtf.trace#mark(ascii name, any value)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
   'wtf.trace#timeStamp': wtf.analysis.EventType.createInstance(
       'wtf.trace#timeStamp(ascii name, any value)',
       wtf.data.EventFlag.BUILTIN)
