@@ -297,23 +297,23 @@ wtfapi.trace.branchFlow = wtfapi.PRESENT ?
 
 /**
  * Extends the flow into the current scope.
- * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {wtfapi.trace.Flow} flow Flow to extend.
  * @param {string} name Flow stage name.
  * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the extend; omit to use the current time.
  */
-wtf.trace.extendFlow = wtfapi.PRESENT ?
+wtfapi.trace.extendFlow = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['extendFlow'] : goog.nullFunction;
 
 
 /**
  * Terminates a flow.
- * @param {wtf.trace.Flow} flow Flow to terminate.
+ * @param {wtfapi.trace.Flow} flow Flow to terminate.
  * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the terminate; omit to use the current
  *     time.
  */
-wtf.trace.terminateFlow = wtfapi.PRESENT ?
+wtfapi.trace.terminateFlow = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['terminateFlow'] : goog.nullFunction;
 
 
