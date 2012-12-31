@@ -181,7 +181,10 @@ wtfapi.trace.stop = wtfapi.PRESENT ?
  * @return {Function} New event type.
  */
 wtfapi.trace.events.createInstance = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['events']['createInstance'] : goog.nullFunction;
+    goog.global['wtf']['trace']['events']['createInstance'] :
+    function(signature, opt_flags) {
+      return goog.nullFunction;
+    };
 
 
 /**
@@ -191,7 +194,10 @@ wtfapi.trace.events.createInstance = wtfapi.PRESENT ?
  * @return {Function} New event type.
  */
 wtfapi.trace.events.createScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['events']['createScope'] : goog.nullFunction;
+    goog.global['wtf']['trace']['events']['createScope'] :
+    function(signature, opt_flags) {
+      return goog.nullFunction;
+    };
 
 
 /**
@@ -448,7 +454,7 @@ wtfapi.trace.instrumentTypeSimple = wtfapi.PRESENT ?
 
 
 // Replace goog.base in debug mode.
-if (wtfapi.PRESENT && !COMPILED) {
+if (!COMPILED && wtfapi.PRESENT) {
   /**
    * A variant of {@code goog.base} that supports our method rewriting.
    * This should only be used in uncompiled builds.
@@ -460,7 +466,7 @@ if (wtfapi.PRESENT && !COMPILED) {
    * @param {...*} var_args The rest of the arguments.
    * @return {*} The return value of the superclass method.
    */
-  goog.base = function(me, opt_methodName, var_args) {
+  goog.global['goog']['base'] = function(me, opt_methodName, var_args) {
     var caller = arguments.callee.caller;
     if (caller.superClass_) {
       // This is a constructor. Call the superclass constructor.
