@@ -19,6 +19,7 @@ goog.require('wtf.trace.providers.ConsoleProvider');
 goog.require('wtf.trace.providers.DomProvider');
 goog.require('wtf.trace.providers.ExtendedInfoProvider');
 goog.require('wtf.trace.providers.TimingProvider');
+goog.require('wtf.trace.providers.WebWorkerProvider');
 
 
 /**
@@ -33,6 +34,7 @@ wtf.trace.providers.setup = function() {
   if (!wtf.NODE) {
     traceManager.addProvider(new wtf.trace.providers.DomProvider());
     traceManager.addProvider(new wtf.trace.providers.ExtendedInfoProvider());
+    traceManager.addProvider(new wtf.trace.providers.WebWorkerProvider());
   }
 
   // Node only:
