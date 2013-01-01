@@ -32,6 +32,12 @@ if (wtf.NODE) {
       wtf.trace.snapshot('file://');
       wtf.trace.stop();
     });
+
+    // Handle ctrl-c.
+    // NOTE: this may not work on Windows.
+    process.on('SIGINT', function() {
+      process.exit();
+    });
   };
 
   goog.exportSymbol(

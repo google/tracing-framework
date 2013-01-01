@@ -73,6 +73,9 @@ NodeProcessModule.prototype.version;
 NodeProcessModule.prototype.cwd = function() {};
 
 
+NodeProcessModule.prototype.exit = function() {};
+
+
 /**
  * @type {!NodeProcessModule}
  */

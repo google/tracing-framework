@@ -162,7 +162,11 @@ wtf.ui.Painter.prototype.addChildPainter = function(value, opt_before) {
   goog.asserts.assert(!value.parentPainter_);
   goog.asserts.assert(!goog.array.contains(this.childPainters_, value));
   value.parentPainter_ = this;
-  goog.array.insertBefore(this.childPainters_, value, opt_before);
+  if (opt_before) {
+    goog.array.insertBefore(this.childPainters_, value, opt_before);
+  } else {
+    this.childPainters_.push(value);
+  }
 };
 
 

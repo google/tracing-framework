@@ -70,11 +70,6 @@ wtf.trace.getTraceManager = function() {
   // Add providers.
   // TODO(benvanik): query providers somehow
 
-  // Overwrite goog.base when in uncompiled mode with our version.
-  if (!COMPILED) {
-    goog.base = wtf.trace.base;
-  }
-
   return traceManager;
 };
 

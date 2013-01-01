@@ -256,6 +256,17 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
+      'goto_mark', function(source, target, e) {
+        // Go to mark event.
+        var firstEventTime = this.db_.getFirstEventTime();
+        var timeStart = e.time;
+        var timeEnd = e.time + e.args['duration'];
+        var pad = (timeEnd - timeStart) * 0.05;
+        this.viewport_.zoomToBounds(
+            timeStart - firstEventTime - pad, 0,
+            timeEnd - timeStart + pad * 2, 0.001);
+      }, this);
+  commandManager.registerSimpleCommand(
       'goto_frame', function(source, target, frameNumber) {
         // Go to frame.
         // TODO(benvanik): move to document view?
