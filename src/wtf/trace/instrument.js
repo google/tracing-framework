@@ -114,7 +114,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
  *
  * @param {Function} value Target type.
  * @param {string} constructorSignature Type name and constructor signature.
- * @param {!Object.<string>} methodMap A map of translated method names
+ * @param {Object|!Object.<string>} methodMap A map of translated method names
  *     to method signatures. Only the methods in this map will be
  *     auto-instrumented.
  * @return {Function} The instrumented input value.
@@ -147,13 +147,15 @@ wtf.trace.instrumentType = function(value, constructorSignature, methodMap) {
   var typeName = parsedSignature.name;
 
   // Instrument all methods.
-  var proto = newValue.prototype;
-  for (var methodName in methodMap) {
-    var methodSignature = methodMap[methodName];
-    var method = proto[methodName];
-    if (method) {
-      proto[methodName] = wtf.trace.instrument(
-          method, methodSignature, typeName + '#');
+  if (methodMap) {
+    var proto = newValue.prototype;
+    for (var methodName in methodMap) {
+      var methodSignature = methodMap[methodName];
+      var method = proto[methodName];
+      if (method) {
+        proto[methodName] = wtf.trace.instrument(
+            method, methodSignature, typeName + '#');
+      }
     }
   }
 

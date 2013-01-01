@@ -428,12 +428,13 @@ wtfapi.trace.instrument = wtfapi.PRESENT ?
  *     }));
  * </code>
  *
- * @param {Function} value Target type.
+ * @param {T} value Target type.
  * @param {string} constructorSignature Type name and constructor signature.
- * @param {!Object.<string>} methodMap A map of translated method names
+ * @param {Object|!Object.<string>} methodMap A map of translated method names
  *     to method signatures. Only the methods in this map will be
  *     auto-instrumented.
- * @return {Function} The instrumented input value.
+ * @return {T} The instrumented input value.
+ * @template T
  */
 wtfapi.trace.instrumentType = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['instrumentType'] : goog.identityFunction;
