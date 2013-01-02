@@ -74,6 +74,14 @@ goog.inherits(wtf.events.Keyboard, wtf.events.EventEmitter);
 
 
 /**
+ * The HTML code of the system key.
+ * @const
+ * @type {string}
+ */
+wtf.events.Keyboard.SYSTEM_KEY = goog.userAgent.MAC ? '&#8984;' : 'ctrl';
+
+
+/**
  * Suspends listening for events.
  * Must be matched with a resume.
  */

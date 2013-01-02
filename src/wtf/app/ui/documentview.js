@@ -86,7 +86,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.toolbar_ = new wtf.app.ui.Toolbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewToolbar')));
+      goog.getCssName('appUiDocumentViewToolbar')));
   this.registerDisposable(this.toolbar_);
 
   /**
@@ -95,7 +95,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.navbar_ = new wtf.app.ui.nav.Navbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewInner')));
+      goog.getCssName('appUiDocumentViewInner')));
   this.registerDisposable(this.navbar_);
 
   /**
@@ -104,7 +104,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.tabbar_ = new wtf.app.ui.Tabbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewInner')));
+      goog.getCssName('appUiDocumentViewInner')));
   this.registerDisposable(this.tabbar_);
 
   /**
@@ -113,7 +113,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @private
    */
   this.statusbar_ = new wtf.app.ui.Statusbar(this, this.getChildElement(
-      goog.getCssName('wtfAppUiDocumentViewStatusbar')));
+      goog.getCssName('appUiDocumentViewStatusbar')));
   this.registerDisposable(this.statusbar_);
 
   /**
@@ -126,12 +126,11 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   // Relayout as required.
   var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
-  this.getHandler().listen(vsm, goog.events.EventType.RESIZE, function() {
-    this.layout_();
-  }, false);
+  this.getHandler().listen(
+      vsm, goog.events.EventType.RESIZE, this.layout, false);
   this.navbar_.addListener(
       wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
-      this.layout_, this);
+      this.layout, this);
 
   this.tabbar_.addPanel(new wtf.app.ui.tracks.TracksPanel(this));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
@@ -148,6 +147,15 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       }, this);
   keyboardScope.addShortcut('command+a', function() {
     commandManager.execute('select_all', this, null);
+  });
+  commandManager.registerSimpleCommand(
+      'select_visible', function() {
+        this.selection_.setTimeRange(
+            this.localView_.getVisibleTimeStart(),
+            this.localView_.getVisibleTimeEnd());
+      }, this);
+  keyboardScope.addShortcut('command+shift+a', function() {
+    commandManager.execute('select_visible', this, null);
   });
 
   var db = doc.getDatabase();
@@ -245,13 +253,12 @@ wtf.app.ui.DocumentView.prototype.registerViewport = function(viewport) {
 
 
 /**
- * Performs javascript-based layout.
- * @private
+ * @override
  */
-wtf.app.ui.DocumentView.prototype.layout_ = function() {
+wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
   // Update the tabbar with the latest size.
   var currentSize = goog.style.getSize(
-      this.getChildElement(goog.getCssName('wtfAppUiDocumentViewInner')));
+      this.getChildElement(goog.getCssName('appUiDocumentViewInner')));
   var tabbarHeight = currentSize.height - this.navbar_.getSplitterSize();
   goog.style.setHeight(this.tabbar_.getRootElement(), tabbarHeight);
 

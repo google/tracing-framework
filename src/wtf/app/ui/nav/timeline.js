@@ -48,7 +48,7 @@ wtf.app.ui.nav.Timeline = function(documentView, parentElement) {
    * @private
    */
   this.timelineCanvas_ = /** @type {!HTMLCanvasElement} */ (
-      this.getChildElement(goog.getCssName('wtfAppUiTimelineCanvas')));
+      this.getChildElement(goog.getCssName('appUiTimelineCanvas')));
 
   var doc = documentView.getDocument();
   var db = doc.getDatabase();

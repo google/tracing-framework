@@ -142,7 +142,7 @@ wtf.app.ui.Tabbar.prototype.addPanel = function(panel) {
   // Add to DOM now - we don't defer in case the panel expects to really be
   // in the DOM.
   dom.appendChild(
-      this.getChildElement(goog.getCssName('wtfAppUiTabbarContents')),
+      this.getChildElement(goog.getCssName('appUiTabbarContents')),
       panel.getRootElement());
 
   // Select the first panel added by default.

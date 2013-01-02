@@ -11,29 +11,21 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@wtfAppUiTracksPanelInfoWidth: 300px;
-
 /* TracksPanel root. */
-.wtfAppUiTracksPanel {
-}
+.appUiTracksPanel {
+  .canvasOuter {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin-right: 300px;
+    border-right: 1px solid #ebebeb;
+  }
+  .canvas {
+    cursor: crosshair;
+  }
 
-.wtfAppUiTracksPanelCanvasOuter {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  margin-right: @wtfAppUiTracksPanelInfoWidth;
-  border-right: 1px solid #ebebeb;
-}
-.wtfAppUiTracksPanelCanvas {
-  cursor: crosshair;
-}
-
-.wtfAppUiTracksPanelInfoControl {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: @wtfAppUiTracksPanelInfoWidth;
+  .infoControl {
+  }
 }

@@ -13,9 +13,12 @@
 
 goog.provide('wtf.app.ui.Statusbar');
 
+goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.statusbar');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
+goog.require('wtf.events.Keyboard');
 goog.require('wtf.ui.Control');
 goog.require('wtf.util');
 
@@ -46,14 +49,27 @@ wtf.app.ui.Statusbar = function(documentView, parentElement) {
    */
   this.divs_ = {
     selectionCounts: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarSelectionCounts')),
+        goog.getCssName('selectionCounts')),
     selectionTimes: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarSelectionTimes')),
+        goog.getCssName('selectionTimes')),
     timeTotals: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarTimeTotals')),
+        goog.getCssName('timeTotals')),
     timeRange: this.getChildElement(
-        goog.getCssName('wtfAppUiStatusbarTimeRange'))
+        goog.getCssName('timeRange'))
   };
+
+  var commandManager = wtf.events.getCommandManager();
+  var eh = this.getHandler();
+  eh.listen(this.getChildElement('selectAll'),
+      goog.events.EventType.CLICK, function(e) {
+        e.preventDefault();
+        commandManager.execute('select_all', this, null);
+      });
+  eh.listen(this.getChildElement('selectVisible'),
+      goog.events.EventType.CLICK, function(e) {
+        e.preventDefault();
+        commandManager.execute('select_visible', this, null);
+      });
 
   var db = this.documentView_.getDatabase();
   db.addListener(wtf.events.EventType.INVALIDATED, this.update_, this);
@@ -70,7 +86,9 @@ goog.inherits(wtf.app.ui.Statusbar, wtf.ui.Control);
  */
 wtf.app.ui.Statusbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.statusbar.control, undefined, undefined, dom));
+      wtf.app.ui.statusbar.control, {
+        system_key: wtf.events.Keyboard.SYSTEM_KEY
+      }, undefined, dom));
 };
 
 

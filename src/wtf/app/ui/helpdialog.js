@@ -14,8 +14,8 @@
 goog.provide('wtf.app.ui.HelpDialog');
 
 goog.require('goog.soy');
-goog.require('goog.userAgent');
 goog.require('wtf.app.ui.helpdialog');
+goog.require('wtf.events.Keyboard');
 goog.require('wtf.ui.Dialog');
 goog.require('wtf.version');
 
@@ -45,6 +45,6 @@ wtf.app.ui.HelpDialog.prototype.createDom = function(dom) {
       wtf.app.ui.helpdialog.control, {
         version: wtf.version.toString(),
         version_commit: wtf.version.getCommit(),
-        system_key: goog.userAgent.MAC ? '&#8984;' : 'ctrl'
+        system_key: wtf.events.Keyboard.SYSTEM_KEY
       }, undefined, dom));
 };

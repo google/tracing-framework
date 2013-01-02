@@ -146,11 +146,6 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
       wtf.trace.ignoreDomTree);
 
   // Instrumentation utilities
-  if (!COMPILED) {
-    goog.exportSymbol(
-        'wtf.trace.base',
-        wtf.trace.base);
-  }
   goog.exportSymbol(
       'wtf.trace.instrument',
       wtf.trace.instrument);

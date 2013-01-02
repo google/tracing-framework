@@ -37,6 +37,7 @@ goog.require('wtf.ui.Control');
 wtf.ui.ResizableControl = function(orientation, splitterClassName,
     parentElement, opt_dom) {
   goog.base(this, parentElement, opt_dom);
+  var dom = this.getDom();
 
   /**
    * Orientation.
@@ -89,7 +90,7 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
    * @type {!Element}
    * @private
    */
-  this.splitterDiv_ = /** @type {!Element} */ (this.getDom().getElementByClass(
+  this.splitterDiv_ = /** @type {!Element} */ (dom.getElementByClass(
       splitterClassName, this.getRootElement()));
   goog.asserts.assert(this.splitterDiv_);
 
@@ -262,6 +263,7 @@ wtf.ui.ResizableControl.prototype.setSplitterSize = function(value) {
   value = goog.math.clamp(
       value, this.minimumSize_ || 0, this.maximumSize_ || 10000);
   if (this.currentSize_ == value) {
+    this.sizeChanged();
     return;
   }
   this.currentSize_ = value;

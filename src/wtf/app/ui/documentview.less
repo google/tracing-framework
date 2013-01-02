@@ -11,35 +11,35 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@wtfAppUiDocumentViewToolbarHeight: 41px;
-@wtfAppUiDocumentViewStatusbarHeight: 29px;
+@appUiDocumentViewToolbarHeight: 41px;
+@appUiDocumentViewStatusbarHeight: 29px;
 
 /* Document view root. */
-.wtfAppUiDocumentView {
+.appUiDocumentView {
   .fitParent();
   overflow: hidden;
 
   background: white;
 }
 
-.wtfAppUiDocumentViewToolbar {
+.appUiDocumentViewToolbar {
   overflow: hidden;
 }
 
-.wtfAppUiDocumentViewInner {
+.appUiDocumentViewInner {
   position: absolute;
   left: 0;
   right: 0;
-  top: @wtfAppUiDocumentViewToolbarHeight;
-  bottom: @wtfAppUiDocumentViewStatusbarHeight;
+  top: @appUiDocumentViewToolbarHeight;
+  bottom: @appUiDocumentViewStatusbarHeight;
   overflow: hidden;
 }
 
-.wtfAppUiDocumentViewStatusbar {
+.appUiDocumentViewStatusbar {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: @wtfAppUiDocumentViewStatusbarHeight;
+  height: @appUiDocumentViewStatusbarHeight;
   overflow: hidden;
 }

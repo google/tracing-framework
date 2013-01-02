@@ -15,7 +15,6 @@ goog.provide('wtf.app.ui.tracks.ZonePainter');
 
 goog.require('goog.dom.TagName');
 goog.require('goog.math');
-goog.require('goog.string');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
@@ -25,6 +24,7 @@ goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.RangeRenderer');
+goog.require('wtf.ui.color.Palette');
 goog.require('wtf.util');
 
 
@@ -58,6 +58,14 @@ wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
   this.selection_ = selection;
   this.selection_.addListener(
       wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
+
+  /**
+   * Color palette used for drawing scopes/instances.
+   * @type {!wtf.ui.color.Palette}
+   * @private
+   */
+  this.palette_ = new wtf.ui.color.Palette(
+      wtf.ui.color.Palette.SCOPE_COLORS);
 
   /**
    * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
@@ -107,7 +115,7 @@ goog.inherits(wtf.app.ui.tracks.ZonePainter, wtf.app.ui.tracks.TrackPainter);
  * @type {number}
  * @private
  */
-wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ = 25;
+wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ = 17 + 25;
 
 
 /**
@@ -236,7 +244,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.resetRangeRenderers_ = function(width) {
  */
 wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     ctx, width, height, top, timeLeft, timeRight, scopeEvents, scopeCount) {
-  var scopeColors = wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_;
+  var palette = this.palette_;
 
   this.resetRangeRenderers_(width);
 
@@ -272,13 +280,15 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     var right = wtf.math.remap(leave.time, timeLeft, timeRight, 0, width);
     var screenWidth = right - left;
 
-    // Get color in the palette used for filling.
-    var colorIndex = this.getColorIndexForScope_(scope);
-    var color = scopeColors[colorIndex];
-
+    // Clip with the screen.
     var screenLeft = Math.max(0, left);
-    var screenRight = Math.min(width - .999, right);
-    if (screenLeft >= screenRight) continue;
+    var screenRight = Math.min(width - 0.999, right);
+    if (screenLeft >= screenRight) {
+      continue;
+    }
+
+    // Get color in the palette used for filling.
+    var color = palette.getColorForString(enter.eventType.name);
 
     var alpha = 1;
     if (enter.time > selectionEnd || leave.time < selectionStart) {
@@ -304,6 +314,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
         screenLeft, screenRight, color, alpha);
 
     if (screenWidth > 15) {
+      // TODO(benvanik): move this to painter common
       // Calculate label width to determine fade.
       var label = enter.eventType.name;
       var labelWidth = ctx.measureText(label).width;
@@ -347,71 +358,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 
 
 /**
- * Color palette for scopes.
- * @const
- * @type {!Array.<wtf.ui.RgbColor>}
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_ = [
-  // TODO(benvanik): prettier colors - these are from chrome://tracing
-  {r: 138, g: 113, b: 152},
-  {r: 175, g: 112, b: 133},
-  {r: 127, g: 135, b: 225},
-  {r: 93, g: 81, b: 137},
-  {r: 116, g: 143, b: 119},
-  {r: 178, g: 214, b: 122},
-  {r: 87, g: 109, b: 147},
-  {r: 119, g: 155, b: 95},
-  {r: 114, g: 180, b: 160},
-  {r: 132, g: 85, b: 103},
-  {r: 157, g: 210, b: 150},
-  {r: 148, g: 94, b: 86},
-  {r: 164, g: 108, b: 138},
-  {r: 139, g: 191, b: 150},
-  {r: 110, g: 99, b: 145},
-  {r: 80, g: 129, b: 109},
-  {r: 125, g: 140, b: 149},
-  {r: 93, g: 124, b: 132},
-  {r: 140, g: 85, b: 140},
-  {r: 104, g: 163, b: 162},
-  {r: 132, g: 141, b: 178},
-  {r: 131, g: 105, b: 147},
-  {r: 135, g: 183, b: 98},
-  {r: 152, g: 134, b: 177},
-  {r: 141, g: 188, b: 141},
-  {r: 133, g: 160, b: 210},
-  {r: 126, g: 186, b: 148},
-  {r: 112, g: 198, b: 205},
-  {r: 180, g: 122, b: 195},
-  {r: 203, g: 144, b: 152}
-];
-
-
-/**
- * Gets a color palette index for the given scope based on selection state and
- * the scope contents.
- * @param {!wtf.analysis.Scope} scope Scope.
- * @return {number} Index into the color palette.
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
-    function(scope) {
-  // TODO(benvanik): highlight/search state/?
-
-  var cachedColorIndex = scope.getRenderData();
-  if (cachedColorIndex !== null) {
-    return /** @type {number} */ (cachedColorIndex);
-  }
-
-  var scopeColors = wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_;
-  var hash = goog.string.hashCode(scope.getEnterEvent().eventType.name);
-  var colorIndex = hash % scopeColors.length;
-  scope.setRenderData(colorIndex);
-  return colorIndex;
-};
-
-
-/**
  * Draw instance events.
  * @param {!CanvasRenderingContext2D} ctx Target canvas context.
  * @param {number} width Canvas backing store width.
@@ -425,7 +371,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.getColorIndexForScope_ =
  */
 wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
     ctx, width, height, top, timeLeft, timeRight, events, eventCount) {
-  var scopeColors = wtf.app.ui.tracks.ZonePainter.SCOPE_COLORS_;
+  var palette = this.palette_;
 
   this.resetRangeRenderers_(width);
 
@@ -448,8 +394,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
     var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
 
     // Get color in the palette used for filling.
-    var colorIndex = 0;//this.getColorIndexForScope_(scope);
-    var color = scopeColors[colorIndex];
+    var color = palette.getColorForString(e.eventType.name);
 
     var screenLeft = Math.max(0, left);
     var screenRight = Math.min(width - .999, right);
@@ -499,6 +444,10 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
  */
 wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
     function(x, y, width, height) {
+  if (y < wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_) {
+    return false;
+  }
+
   var result = this.hitTest_(x, y, width, height);
   var newFilterString = '';
   if (result instanceof wtf.analysis.Scope) {
@@ -672,7 +621,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.addArgumentLines_ = function(
     data, lines) {
   for (var argName in data) {
     var argValue = data[argName];
-    if (goog.isArray(argValue)) {
+    if (argValue === undefined) {
+      continue;
+    }
+    if (argValue === null) {
+      argValue = 'null';
+    } else if (goog.isArray(argValue)) {
       argValue = '[' + argValue + ']';
     } else if (argValue.buffer && argValue.buffer instanceof ArrayBuffer) {
       // TODO(benvanik): better display of big data blobs.
