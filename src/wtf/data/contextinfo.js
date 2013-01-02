@@ -296,8 +296,8 @@ wtf.data.ScriptContextInfo.prototype.detect = function() {
     this.args = process.argv.slice();
   } else {
     this.uri = goog.global.location.href;
-    this.title = goog.global.document.title;
     if (goog.global.document) {
+      this.title = goog.global.document.title;
       var link = goog.global.document.querySelector('link[rel~="icon"]');
       if (link && link.href) {
         this.icon = {

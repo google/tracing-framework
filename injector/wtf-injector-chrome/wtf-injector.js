@@ -33,7 +33,11 @@ function main() {
   }
 
   // Inject the tracing framework script and the prepare function.
-  injectScriptFile(chrome.extension.getURL('wtf_trace_web_js_compiled.js'));
+  var traceScriptUrl = chrome.extension.getURL('wtf_trace_web_js_compiled.js');
+  injectScriptFunction(function(traceScriptUrl) {
+    window.WTF_TRACE_SCRIPT_URL = traceScriptUrl;
+  }, [traceScriptUrl]);
+  injectScriptFile(traceScriptUrl);
   injectScriptFunction(function() {
     wtf.trace.prepare();
   });

@@ -170,6 +170,13 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
     domTypes.push(name);
   }
 
+  // These types won't get prepareOnEventHooks called on them.
+  var ignoreHookingEvents = {
+    'Document': true,
+    'File': true,
+    'Window': true
+  };
+
   var instrumentedTypeMap = {};
   for (var n = 0; n < domTypes.length; n++) {
     var typeName = domTypes[n];
@@ -179,25 +186,31 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
       var instrumentedType =
           new wtf.trace.providers.DomProvider.InstrumentedType(
               typeName, classConstructor, classPrototype);
-      instrumentedType.prepareOnEventHooks(elementTypes[typeName]);
+      if (!ignoreHookingEvents[typeName]) {
+        instrumentedType.prepareOnEventHooks(elementTypes[typeName]);
+      }
       this.registerDisposable(instrumentedType);
       instrumentedTypeMap[typeName] = instrumentedType;
     }
   }
 
   // Always instrument Window, as the events live on its prototype.
-  instrumentedTypeMap['Window'].hookObjectEvents(
-      goog.global['Window'].prototype);
+  if (goog.global['Window']) {
+    instrumentedTypeMap['Window'].hookObjectEvents(
+        goog.global['Window'].prototype);
+  }
 
   // Inject document, as it's already existing, and body if it's there.
-  instrumentedTypeMap['Document'].hookObjectEvents(
-      goog.global['document']);
-  if (goog.global['document']['body']) {
-    // TODO(benvanik): this doesn't really work - the DOM has been initialized
-    //     and if an event has already been set then it will be queued for
-    //     dispatch unwrapped. Need to find a better way.
-    instrumentedTypeMap['HTMLBodyElement'].hookObjectEvents(
-        goog.global['document']['body']);
+  if (goog.global.document) {
+    instrumentedTypeMap['Document'].hookObjectEvents(
+        goog.global.document);
+    if (goog.global.document['body']) {
+      // TODO(benvanik): this doesn't really work - the DOM has been initialized
+      //     and if an event has already been set then it will be queued for
+      //     dispatch unwrapped. Need to find a better way.
+      instrumentedTypeMap['HTMLBodyElement'].hookObjectEvents(
+          goog.global.document['body']);
+    }
   }
 
   // Hook special type on* events.
@@ -210,34 +223,38 @@ wtf.trace.providers.DomProvider.prototype.injectEvents_ = function() {
   ];
   for (var n = 0; n < eventInstrumentedTypes.length; n++) {
     var instrumentedType = instrumentedTypeMap[eventInstrumentedTypes[n]];
-    instrumentedType.prepareOnEventHooks();
-    instrumentedType.hookObjectEvents();
+    if (instrumentedType) {
+      instrumentedType.prepareOnEventHooks();
+      instrumentedType.hookObjectEvents();
+    }
   }
 
   // Hook DOM element on* events.
   // If prototype events can be defined we can do that, otherwise we must
   // rewrite document.createElement.
-  if (wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
-    for (var name in elementTypes) {
-      var instrumentedType = instrumentedTypeMap[name];
-      if (instrumentedType) {
-        instrumentedType.hookObjectEvents();
+  if (goog.global.document) {
+    if (wtf.trace.providers.DomProvider.support_.prototypeEventDefine) {
+      for (var name in elementTypes) {
+        var instrumentedType = instrumentedTypeMap[name];
+        if (instrumentedType) {
+          instrumentedType.hookObjectEvents();
+        }
       }
+    } else if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
+      var documentPrototype = goog.global.HTMLDocument ?
+          HTMLDocument.prototype : Document.prototype;
+      var originalCreateElement = documentPrototype['createElement'];
+      this.injectFunction(documentPrototype, 'createElement',
+          function(name) {
+            var result = originalCreateElement.apply(this, arguments);
+            var ctorName = result.constructor.name;
+            var instrumentedType = instrumentedTypeMap[ctorName];
+            if (instrumentedType) {
+              instrumentedType.hookObjectEvents(result);
+            }
+            return result;
+          });
     }
-  } else if (wtf.trace.providers.DomProvider.support_.redefineEvent) {
-    var documentPrototype = goog.global.HTMLDocument ?
-        HTMLDocument.prototype : Document.prototype;
-    var originalCreateElement = documentPrototype['createElement'];
-    this.injectFunction(documentPrototype, 'createElement',
-        function(name) {
-          var result = originalCreateElement.apply(this, arguments);
-          var ctorName = result.constructor.name;
-          var instrumentedType = instrumentedTypeMap[ctorName];
-          if (instrumentedType) {
-            instrumentedType.hookObjectEvents(result);
-          }
-          return result;
-        });
   }
 
   // TODO(benvanik): find a way to add object events to HTML elements?

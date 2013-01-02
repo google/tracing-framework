@@ -54,7 +54,7 @@ wtf.trace.providers.ExtendedInfoProvider = function() {
    * @private
    */
   this.extensionChannel_ = null;
-  if (!wtf.NODE) {
+  if (goog.global.document) {
     this.extensionChannel_ = wtf.ipc.openDomChannel(
         goog.global.document,
         'WtfContentScriptEvent');

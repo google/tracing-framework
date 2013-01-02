@@ -14,9 +14,11 @@
 goog.provide('wtf.trace.providers.WebWorkerProvider');
 
 goog.require('goog.Disposable');
+goog.require('goog.Uri');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
+goog.require('wtf.trace.util');
 
 
 
@@ -63,6 +65,10 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
   var onmessageScope = wtf.trace.events.createScope(
       'Worker#onmessage(uint32 id)');
 
+  // Get WTF URL.
+  var wtfUrl = wtf.trace.util.getScriptUrl();
+  var baseUri = new goog.Uri(goog.global.location.href);
+
   /**
    * Worker shim.
    * @param {string} scriptUrl Script URL.
@@ -87,12 +93,28 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
      */
     this.workerId_ = workerId;
 
+    var resolvedScriptUrl = goog.Uri.resolve(baseUri, scriptUrl).toString();
+
+    var shimScript = [
+      'this.WTF_WORKER_BASE_URI = "' + goog.global.location.href + '";',
+      'importScripts("' + wtfUrl + '");',
+      'wtf.trace.start({',
+      '});',
+      'importScripts("' + resolvedScriptUrl + '");'
+    ].join('\n');
+    var shimBlob = new Blob([shimScript], {
+      'type': 'text/javascript'
+    });
+    var shimScriptUrl = goog.global['URL'] ?
+        goog.global['URL'].createObjectURL(shimBlob) :
+        goog.global['webkitURL'].createObjectURL(shimBlob);
+
     /**
      * Handle to the underlying worker instance.
      * @type {!Worker}
      * @private
      */
-    this.handle_ = new originalWorker(scriptUrl);
+    this.handle_ = new originalWorker(shimScriptUrl);
 
     var self = this;
     this.handle_.onerror = function(e) {
@@ -154,6 +176,27 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
  */
 wtf.trace.providers.WebWorkerProvider.prototype.injectWorkerShim_ =
     function() {
+  var baseUri = new goog.Uri(goog.global['WTF_WORKER_BASE_URI']);
+
+  var originalImportScripts = goog.global.importScripts;
+  var importScriptsEvent = wtf.trace.events.createScope(
+      'WorkerUtils#importScripts(any urls)');
+  this.injectFunction(goog.global, 'importScripts', function importScripts(
+      var_args) {
+        var urls = new Array(arguments.length);
+        for (var n = 0; n < arguments.length; n++) {
+          urls[n] = goog.Uri.resolve(baseUri, arguments[n]).toString();
+        }
+        var scope = importScriptsEvent(urls);
+        try {
+          return originalImportScripts.apply(this, urls);
+        } finally {
+          wtf.trace.leaveScope(scope);
+        }
+      });
+
+  // TODO(benvanik): spoof location with baseUri
+
   //WorkerUtils
   //  importScripts(var_arg urls)
   //  WorkerNavigator navigator:
