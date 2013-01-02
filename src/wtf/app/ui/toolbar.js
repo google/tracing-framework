@@ -21,6 +21,7 @@ goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
+goog.require('wtf.events.Keyboard');
 goog.require('wtf.ui.Control');
 
 
@@ -45,38 +46,38 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
   this.documentView_ = documentView;
 
   eh.listen(
-      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonOpen')),
+      this.getChildElement(goog.getCssName('appUiToolbarButtonOpen')),
       goog.events.EventType.CLICK,
       this.openClicked_, false);
   eh.listen(
       this.getChildElement(
-          goog.getCssName('wtfAppUiToolbarButtonOpenDrive')),
+          goog.getCssName('appUiToolbarButtonOpenDrive')),
       goog.events.EventType.CLICK,
       this.openDriveClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonShare')),
+      this.getChildElement(goog.getCssName('appUiToolbarButtonShare')),
       goog.events.EventType.CLICK,
       this.shareClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonSave')),
+      this.getChildElement(goog.getCssName('appUiToolbarButtonSave')),
       goog.events.EventType.CLICK,
       this.saveClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonSettings')),
+      this.getChildElement(goog.getCssName('appUiToolbarButtonSettings')),
       goog.events.EventType.CLICK,
       this.settingsClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('wtfAppUiToolbarButtonHelp')),
+      this.getChildElement(goog.getCssName('appUiToolbarButtonHelp')),
       goog.events.EventType.CLICK,
       this.helpClicked_, false);
 
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonOpen'), true);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonOpenDrive'),
+  this.toggleButton(goog.getCssName('appUiToolbarButtonOpen'), true);
+  this.toggleButton(goog.getCssName('appUiToolbarButtonOpenDrive'),
       !wtf.CHROME_EXTENSION);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonShare'), false);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSave'), true);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonSettings'), true);
-  this.toggleButton(goog.getCssName('wtfAppUiToolbarButtonHelp'), true);
+  this.toggleButton(goog.getCssName('appUiToolbarButtonShare'), false);
+  this.toggleButton(goog.getCssName('appUiToolbarButtonSave'), true);
+  this.toggleButton(goog.getCssName('appUiToolbarButtonSettings'), true);
+  this.toggleButton(goog.getCssName('appUiToolbarButtonHelp'), true);
 
   var db = documentView.getDatabase();
   db.addListener(
@@ -93,7 +94,9 @@ goog.inherits(wtf.app.ui.Toolbar, wtf.ui.Control);
  */
 wtf.app.ui.Toolbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.toolbar.control, undefined, undefined, dom));
+      wtf.app.ui.toolbar.control, {
+        system_key: wtf.events.Keyboard.SYSTEM_KEY
+      }, undefined, dom));
 };
 
 
@@ -115,9 +118,9 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   }
 
   var titleEl = this.getChildElement(
-      goog.getCssName('wtfAppUiToolbarInfoTitle'));
+      goog.getCssName('appUiToolbarInfoTitle'));
   var urlEl = this.getChildElement(
-      goog.getCssName('wtfAppUiToolbarInfoUrl'));
+      goog.getCssName('appUiToolbarInfoUrl'));
 
   dom.setTextContent(titleEl, source.title || '');
   dom.setTextContent(urlEl, source.uri);
@@ -143,7 +146,7 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
 wtf.app.ui.Toolbar.prototype.refreshIcon_ = function(uri) {
   var dom = this.getDom();
   var iconEl = this.getChildElement(
-      goog.getCssName('wtfAppUiToolbarInfoIcon'));
+      goog.getCssName('appUiToolbarInfoIcon'));
 
   // TODO(benvanik): use XHR to grab the ico - if it fails, use a default.
   // TODO(benvanik): a way that is compatible with security - this may mean

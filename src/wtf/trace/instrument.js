@@ -21,54 +21,6 @@ goog.require('wtf.trace.events');
 goog.require('wtf.util');
 
 
-if (!COMPILED) {
-  /**
-   * A variant of {@code goog.base} that supports our method rewriting.
-   * This should only be used in uncompiled builds.
-   *
-   * To use, replace {@code goog.base} with this method as soon as possible.
-   *
-   * @param {!Object} me Should always be "this".
-   * @param {*=} opt_methodName The method name if calling a super method.
-   * @param {...*} var_args The rest of the arguments.
-   * @return {*} The return value of the superclass method.
-   */
-  wtf.trace.base = function(me, opt_methodName, var_args) {
-    var caller = arguments.callee.caller;
-    if (caller.superClass_) {
-      // This is a constructor. Call the superclass constructor.
-      return caller.superClass_.constructor.apply(
-          me, Array.prototype.slice.call(arguments, 1));
-    }
-
-    var args = Array.prototype.slice.call(arguments, 2);
-    var foundCaller = false;
-    for (var ctor = me.constructor;
-         ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
-      if (ctor.prototype[opt_methodName] === caller ||
-          ctor.prototype[opt_methodName]['uninstrumented'] === caller) {
-        foundCaller = true;
-      } else if (foundCaller) {
-        return ctor.prototype[opt_methodName].apply(me, args);
-      }
-    }
-
-    // If we did not find the caller in the prototype chain,
-    // then one of two things happened:
-    // 1) The caller is an instance method.
-    // 2) This method was not called by the right caller.
-    if (me[opt_methodName] === caller ||
-        me[opt_methodName]['uninstrumented'] === caller) {
-      return me.constructor.prototype[opt_methodName].apply(me, args);
-    } else {
-      throw Error(
-          'goog.base called from a method of one name ' +
-          'to a method of a different name');
-    }
-  };
-}
-
-
 /**
  * Automatically instruments a method.
  * This will likely produce code slower than manually instrumenting, but is
@@ -162,7 +114,7 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
  *
  * @param {Function} value Target type.
  * @param {string} constructorSignature Type name and constructor signature.
- * @param {!Object.<string>} methodMap A map of translated method names
+ * @param {Object|!Object.<string>} methodMap A map of translated method names
  *     to method signatures. Only the methods in this map will be
  *     auto-instrumented.
  * @return {Function} The instrumented input value.
@@ -195,13 +147,15 @@ wtf.trace.instrumentType = function(value, constructorSignature, methodMap) {
   var typeName = parsedSignature.name;
 
   // Instrument all methods.
-  var proto = newValue.prototype;
-  for (var methodName in methodMap) {
-    var methodSignature = methodMap[methodName];
-    var method = proto[methodName];
-    if (method) {
-      proto[methodName] = wtf.trace.instrument(
-          method, methodSignature, typeName + '#');
+  if (methodMap) {
+    var proto = newValue.prototype;
+    for (var methodName in methodMap) {
+      var methodSignature = methodMap[methodName];
+      var method = proto[methodName];
+      if (method) {
+        proto[methodName] = wtf.trace.instrument(
+            method, methodSignature, typeName + '#');
+      }
     }
   }
 

@@ -181,7 +181,10 @@ wtfapi.trace.stop = wtfapi.PRESENT ?
  * @return {Function} New event type.
  */
 wtfapi.trace.events.createInstance = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['events']['createInstance'] : goog.nullFunction;
+    goog.global['wtf']['trace']['events']['createInstance'] :
+    function(signature, opt_flags) {
+      return goog.nullFunction;
+    };
 
 
 /**
@@ -191,7 +194,10 @@ wtfapi.trace.events.createInstance = wtfapi.PRESENT ?
  * @return {Function} New event type.
  */
 wtfapi.trace.events.createScope = wtfapi.PRESENT ?
-    goog.global['wtf']['trace']['events']['createScope'] : goog.nullFunction;
+    goog.global['wtf']['trace']['events']['createScope'] :
+    function(signature, opt_flags) {
+      return goog.nullFunction;
+    };
 
 
 /**
@@ -297,23 +303,23 @@ wtfapi.trace.branchFlow = wtfapi.PRESENT ?
 
 /**
  * Extends the flow into the current scope.
- * @param {wtf.trace.Flow} flow Flow to extend.
+ * @param {wtfapi.trace.Flow} flow Flow to extend.
  * @param {string} name Flow stage name.
  * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the extend; omit to use the current time.
  */
-wtf.trace.extendFlow = wtfapi.PRESENT ?
+wtfapi.trace.extendFlow = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['extendFlow'] : goog.nullFunction;
 
 
 /**
  * Terminates a flow.
- * @param {wtf.trace.Flow} flow Flow to terminate.
+ * @param {wtfapi.trace.Flow} flow Flow to terminate.
  * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the terminate; omit to use the current
  *     time.
  */
-wtf.trace.terminateFlow = wtfapi.PRESENT ?
+wtfapi.trace.terminateFlow = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['terminateFlow'] : goog.nullFunction;
 
 
@@ -422,12 +428,13 @@ wtfapi.trace.instrument = wtfapi.PRESENT ?
  *     }));
  * </code>
  *
- * @param {Function} value Target type.
+ * @param {T} value Target type.
  * @param {string} constructorSignature Type name and constructor signature.
- * @param {!Object.<string>} methodMap A map of translated method names
+ * @param {Object|!Object.<string>} methodMap A map of translated method names
  *     to method signatures. Only the methods in this map will be
  *     auto-instrumented.
- * @return {Function} The instrumented input value.
+ * @return {T} The instrumented input value.
+ * @template T
  */
 wtfapi.trace.instrumentType = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['instrumentType'] : goog.identityFunction;
@@ -445,3 +452,52 @@ wtfapi.trace.instrumentType = wtfapi.PRESENT ?
  */
 wtfapi.trace.instrumentTypeSimple = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['instrumentTypeSimple'] : goog.nullFunction;
+
+
+// Replace goog.base in debug mode.
+if (!COMPILED && wtfapi.PRESENT) {
+  /**
+   * A variant of {@code goog.base} that supports our method rewriting.
+   * This should only be used in uncompiled builds.
+   *
+   * To use, replace {@code goog.base} with this method as soon as possible.
+   *
+   * @param {!Object} me Should always be "this".
+   * @param {*=} opt_methodName The method name if calling a super method.
+   * @param {...*} var_args The rest of the arguments.
+   * @return {*} The return value of the superclass method.
+   */
+  goog.global['goog']['base'] = function(me, opt_methodName, var_args) {
+    var caller = arguments.callee.caller;
+    if (caller.superClass_) {
+      // This is a constructor. Call the superclass constructor.
+      return caller.superClass_.constructor.apply(
+          me, Array.prototype.slice.call(arguments, 1));
+    }
+
+    var args = Array.prototype.slice.call(arguments, 2);
+    var foundCaller = false;
+    for (var ctor = me.constructor;
+         ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
+      if (ctor.prototype[opt_methodName] === caller ||
+          ctor.prototype[opt_methodName]['uninstrumented'] === caller) {
+        foundCaller = true;
+      } else if (foundCaller) {
+        return ctor.prototype[opt_methodName].apply(me, args);
+      }
+    }
+
+    // If we did not find the caller in the prototype chain,
+    // then one of two things happened:
+    // 1) The caller is an instance method.
+    // 2) This method was not called by the right caller.
+    if (me[opt_methodName] === caller ||
+        me[opt_methodName]['uninstrumented'] === caller) {
+      return me.constructor.prototype[opt_methodName].apply(me, args);
+    } else {
+      throw Error(
+          'goog.base called from a method of one name ' +
+          'to a method of a different name');
+    }
+  };
+}

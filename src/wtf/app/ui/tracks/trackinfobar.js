@@ -26,7 +26,7 @@ goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
-goog.require('wtf.ui.Control');
+goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.SearchControl');
 goog.require('wtf.util');
 
@@ -38,12 +38,18 @@ goog.require('wtf.util');
  * @param {!wtf.app.ui.tracks.TracksPanel} tracksPanel Parent tracks panel.
  * @param {!Element} parentElement Element to display in.
  * @constructor
- * @extends {wtf.ui.Control}
+ * @extends {wtf.ui.ResizableControl}
  */
 wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   var documentView = tracksPanel.getDocumentView();
   var dom = documentView.getDom();
-  goog.base(this, parentElement, dom);
+  goog.base(
+      this,
+      wtf.ui.ResizableControl.Orientation.VERTICAL,
+      goog.getCssName('splitter'),
+      parentElement, dom);
+  this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+  this.setSplitterLimits(300, undefined);
 
   /**
    * Parent tracks panel.
@@ -63,7 +69,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       wtf.events.EventType.INVALIDATED, this.updateInfo_, this);
 
   var headerEl = this.getChildElement(
-      goog.getCssName('wtfAppUiTracksPanelInfoHeader'));
+      goog.getCssName('header'));
   /**
    * Search text field.
    * @type {!wtf.ui.SearchControl}
@@ -136,7 +142,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
     this.updateInfo_();
   }, this);
 };
-goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.Control);
+goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.ResizableControl);
 
 
 /**
@@ -173,7 +179,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   //goog.global.console.log('update info', updateDuration);
 
   var contentEl = this.getChildElement(
-      goog.getCssName('wtfAppUiTracksPanelInfoContent'));
+      goog.getCssName('content'));
   var dom = this.getDom();
   contentEl.innerText = '';
 

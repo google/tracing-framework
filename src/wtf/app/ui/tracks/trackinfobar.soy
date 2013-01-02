@@ -18,11 +18,12 @@
  * Root control UI.
  */
 {template .control}
-  <div class="{css wtfAppUiTracksPanelInfoOuter}">
-    <div class="{css wtfAppUiTracksPanelInfoHeader}">
+  <div class="{css appUiTracksPanelInfo}">
+    <div class="{css header}">
     </div>
-    <div class="{css kSrollBarInner} {css wtfAppUiTracksPanelInfoContent}">
+    <div class="{css kSrollBarInner} {css content}">
     </div>
+    <div class="{css splitter}"></div>
   </div>
 {/template}
 
@@ -34,12 +35,12 @@
  * @param content Content line value.
  */
 {template .entry}
-  <div class="{css wtfAppUiTracksPanelInfoEntry}">
-    <div class="{css wtfAppUiTracksPanelInfoEntryHeader}">
-      <div class="{css wtfAppUiTracksPanelInfoEntryValue}">{$value}</div>
-      <div class="{css wtfAppUiTracksPanelInfoEntryTitle}">{$title}</div>
+  <div class="{css entry}">
+    <div class="{css header}">
+      <div class="{css value}">{$value}</div>
+      <div class="{css title}">{$title}</div>
     </div>
-    <div class="{css wtfAppUiTracksPanelInfoEntryContent}"
+    <div class="{css content}"
         title="total count / total time / user time / average time">
       {$content}
     </div>

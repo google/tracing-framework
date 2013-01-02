@@ -20,6 +20,21 @@ goog.require('goog.string');
 
 
 /**
+ * Pads a number with leading zeros.
+ * @param {number|string} value Value to pad.
+ * @param {number} count Length to pad to.
+ * @return {string} Padded number.
+ */
+wtf.util.pad0 = function(value, count) {
+  value = String(value);
+  while (value.length < count) {
+    value = '0' + value;
+  }
+  return value;
+};
+
+
+/**
  * Formats a time value, rounding to ms at 3 decimal places.
  * @param {number} value Time value.
  * @return {string} Formatted time string.

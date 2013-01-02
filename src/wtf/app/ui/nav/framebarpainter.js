@@ -173,6 +173,8 @@ wtf.app.ui.nav.FramebarPainter.prototype.onClickInternal =
     function(x, y, width, height) {
   var e = this.hitTestFrame_(x, y, width, height);
   if (e) {
+    // TODO(benvanik): get shift plumbed through to enable selecting the frame
+    //     time region. Needs event handling rewrite?
     var commandManager = wtf.events.getCommandManager();
     commandManager.execute('goto_frame', this, null, e.args['number']);
     return true;

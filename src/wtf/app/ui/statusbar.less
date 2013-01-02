@@ -12,7 +12,7 @@
  */
 
 /* Statusbar root. */
-.wtfAppUiStatusbar {
+.appUiStatusbar {
   .fitParent();
 
   color: #777777;
@@ -24,30 +24,35 @@
   padding-top: 7px;
   padding-left: 7px;
   padding-right: 7px;
-}
 
-.wtfAppUiStatusbarLeft {
-  float: left;
-}
-.wtfAppUiStatusbarSelectionCounts {
-  float: left;
-  margin-right: 5px;
-  width: 100px;
-  text-align: center;
-}
-.wtfAppUiStatusbarSelectionTimes {
-  float: left;
-  width: 100px;
-  text-align: center;
-}
+  .left {
+    float: left;
+    div {
+      float: left;
+    }
+  }
+  .right {
+    float: right;
+    div {
+      float: left;
+    }
+  }
 
-.wtfAppUiStatusbarRight {
-  float: right;
-}
-.wtfAppUiStatusbarTimeTotals {
-  float: left;
-  margin-right: 5px;
-}
-.wtfAppUiStatusbarTimeRange {
-  float: left;
+  .selectionCounts {
+    margin-right: 5px;
+    width: 100px;
+    text-align: center;
+  }
+  .selectionTimes {
+    min-width: 200px;
+    text-align: center;
+  }
+  .selectionControls {
+  }
+
+  .timeTotals {
+    margin-right: 5px;
+  }
+  .timeRange {
+  }
 }
