@@ -102,6 +102,10 @@ function fetchOptions() {
     return JSON.parse(xhr.responseText);
   } catch(e) {
     log('Failed to parse WTF injection options:', e, xhr.responseText);
+
+    // Try again!
+    window.location.reload();
+
     return null;
   }
 
