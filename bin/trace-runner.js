@@ -47,6 +47,11 @@ global.wtf = wtf;
 var filename = path.join(process.cwd(), process.argv[2]);
 var code = fs.readFileSync(filename, 'utf8');
 
+// Strip the #!, if present.
+if (code[0] == '#') {
+  code = code.replace(/^#!.+\n/, '/* hash bang */\n');
+}
+
 // Setup process arguments to strip our run script.
 // TODO(benvanik): look for -- to split args/etc
 var args = process.argv.slice();
@@ -57,6 +62,18 @@ var options = {
   'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
   'wtf.trace.mode': 'snapshotting',
   'wtf.trace.target': 'file://'
+};
+
+// Make require relative to the input file.
+var targetPath = path.dirname(filename);
+var originalRequire = require;
+global.require = function(name) {
+  var relativePath = path.join(targetPath, name);
+  try {
+    return originalRequire(relativePath);
+  } catch (e) {
+  }
+  return originalRequire(name);
 };
 
 // Starting the tracing framework.

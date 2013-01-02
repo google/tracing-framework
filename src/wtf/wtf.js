@@ -113,7 +113,7 @@ wtf.timebase = (function() {
   if (wtf.NODE) {
     try {
       var microtime = require('microtime');
-      timebase = microtime['nowDouble']();
+      timebase = microtime['nowDouble']() * 1000;
     } catch (e) {
       var timeValue = goog.global['process']['hrtime']();
       timebase = timeValue[0] * 1000 + timeValue[1] / 1000000;
@@ -149,7 +149,7 @@ wtf.now = (function() {
     try {
       var microtime = require('microtime');
       return function wtfNowMicrotime() {
-        return microtime['nowDouble']() - timebase;
+        return microtime['nowDouble']() * 1000 - timebase;
       };
     } catch (e) {
       var hrtime = goog.global['process']['hrtime'];

@@ -15,11 +15,6 @@
  */
 
 goog.provide('wtf.ui.RangeRenderer');
-goog.provide('wtf.ui.RgbColor');
-
-
-/** @typedef {{r: number, g: number, b: number}} */
-wtf.ui.RgbColor;
 
 
 
@@ -69,7 +64,7 @@ wtf.ui.RangeRenderer.prototype.reset = function(width) {
  * Draws a range into the buffer.
  * @param {number} left The left edge of the range.
  * @param {number} right The right edge of the range.
- * @param {wtf.ui.RgbColor} color The color for the range. Each
+ * @param {!wtf.ui.color.RgbColor} color The color for the range. Each
  *   component should be in the range 0 to 255.
  * @param {number} alpha The alpha to use for drawing color, in the range 0 to
  *   1.
@@ -96,7 +91,7 @@ wtf.ui.RangeRenderer.prototype.drawRange = function(left, right, color, alpha) {
 /**
  * Replace pixel x with 100% color.
  * @param {number} x Pixel coordinate.
- * @param {{r:number,g:number,b:number}} color The color to write.
+ * @param {!wtf.ui.color.RgbColor} color The color to write.
  * @param {number} alpha The alpha to draw with.
  * @private
  */
@@ -112,7 +107,7 @@ wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
  * Accumulate a partial pixel into position x.
  * @param {number} x Pixel coordinate.
  * @param {number} d The fraction of the pixel covered.
- * @param {{r:number,g:number,b:number}} color The color to write.
+ * @param {!wtf.ui.color.RgbColor} color The color to write.
  * @param {number} alpha The alpha to draw with.
  * @private
  */

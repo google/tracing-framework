@@ -22,6 +22,7 @@ goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.SelectionPainter');
 goog.require('wtf.app.ui.TabPanel');
+goog.require('wtf.app.ui.tracks.MarkPainter');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
@@ -162,6 +163,10 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(this.rulerPainter_);
+
+  var markPainter = new wtf.app.ui.tracks.MarkPainter(this.trackCanvas_, db);
+  paintContext.addChildPainter(markPainter);
+  this.timeRangePainters_.push(markPainter);
 
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
