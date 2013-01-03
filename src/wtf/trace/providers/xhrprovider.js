@@ -84,29 +84,19 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
 
     /**
      * Properties, accumulated during setup before send().
-     * @type {{
-     *   method: string?,
-     *   url: string?,
-     *   async: boolean,
-     *   user: string?,
-     *   headers: !Object,
-     *   timeout: number,
-     *   withCredentials: boolean,
-     *   overrideMimeType: string?,
-     *   responseType: string
-     * }}
+     * @type {!Object}
      * @private
      */
     this.props_ = {
-      method: null,
-      url: null,
-      async: true,
-      user: null,
-      headers: {},
-      timeout: 0,
-      withCredentials: false,
-      overrideMimeType: null,
-      responseType: ''
+      'method': null,
+      'url': null,
+      'async': true,
+      'user': null,
+      'headers': {},
+      'timeout': 0,
+      'withCredentials': false,
+      'overrideMimeType': null,
+      'responseType': ''
     };
 
     /**
@@ -156,11 +146,11 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
 
     // Add data to interesting events.
     this.setEventHook('readystatechange', function(e) {
-      wtf.trace.appendScopeData('url', props.url);
-      wtf.trace.appendScopeData('readyState', handle.readyState);
+      wtf.trace.appendScopeData('url', props['url']);
+      wtf.trace.appendScopeData('readyState', handle['readyState']);
     });
     this.setEventHook('load', function(e) {
-      wtf.trace.appendScopeData('url', props.url);
+      wtf.trace.appendScopeData('url', props['url']);
     });
   };
   goog.inherits(ProxyXMLHttpRequest, wtf.trace.eventtarget.BaseEventTarget);
@@ -204,78 +194,58 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
         });
   }
 
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'readyState', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.readyState;
-    },
-    'set': function(value) {
-      this.handle_.readyState = value;
-    }
-  });
+  /**
+   * Sets up a proxy property, optionally setting a props bag value.
+   * @param {string} name Property name.
+   * @param {boolean=} opt_setPropsValue True to set a props value of the same
+   *     name with the given value.
+   */
+  function setupProxyProperty(name, opt_setPropsValue) {
+    Object.defineProperty(ProxyXMLHttpRequest.prototype, name, {
+      'configurable': true,
+      'enumerable': true,
+      'get': function() {
+        return this.handle_[name];
+      },
+      'set': opt_setPropsValue ? function(value) {
+        this.props_[name] = value;
+        this.handle_[name] = value;
+      } : function(value) {
+        this.handle_[name] = value;
+      }
+    });
+  };
+
+  setupProxyProperty('readyState');
+  setupProxyProperty('timeout', true);
+  setupProxyProperty('withCredentials', true);
+  setupProxyProperty('upload');
   ProxyXMLHttpRequest.prototype['setRequestHeader'] = function(
       header, value) {
     var props = this.props_;
-    props.headers[header] = value;
+    props['headers'][header] = value;
     this.handle_.setRequestHeader(header, value);
   };
   ProxyXMLHttpRequest.prototype['overrideMimeType'] = function(mime) {
     var props = this.props_;
-    props.overrideMimeType = mime;
+    props['overrideMimeType'] = mime;
     this.handle_.overrideMimeType(mime);
   };
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'timeout', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.timeout;
-    },
-    'set': function(value) {
-      var props = this.props_;
-      props.timeout = value;
-      this.handle_.timeout = value;
-    }
-  });
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'withCredentials', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.withCredentials;
-    },
-    'set': function(value) {
-      var props = this.props_;
-      props.withCredentials = value;
-      this.handle_.withCredentials = value;
-    }
-  });
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'upload', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.upload;
-    },
-    'set': function(value) {
-      var props = this.props_;
-      // TODO(benvanik): track upload info.
-      this.handle_.upload = value;
-    }
-  });
 
   var openEvent = wtf.trace.events.createScope(
       'XMLHttpRequest#open(ascii method, ascii url, any props)');
   ProxyXMLHttpRequest.prototype['open'] = function(
       method, url, opt_async, opt_user, opt_password) {
     var props = this.props_;
-    props.method = method;
-    props.url = url;
-    props.async = opt_async === undefined ? true : opt_async;
-    props.user = opt_user || null;
+    props['method'] = method;
+    props['url'] = url;
+    props['async'] = opt_async === undefined ? true : opt_async;
+    props['user'] = opt_user || null;
 
     var flow = wtf.trace.Flow.branch('open');
     this.flow_ = flow;
 
-    var scope = openEvent(props.method, props.url, props);
+    var scope = openEvent(props['method'], props['url'], props);
 
     try {
       return this.handle_.open(method, url, opt_async, opt_user, opt_password);
@@ -296,7 +266,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
       // TODO(benvanik): append props to flow
     }
 
-    var scope = sendEvent(props.method, props.url, props);
+    var scope = sendEvent(props['method'], props['url'], props);
 
     // TODO(benvanik): find a way to do this - may need an option.
     // Right now this breaks cross-origin XHRs. The server would need to
@@ -328,74 +298,18 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     }
   };
 
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'status', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.status;
-    },
-    'set': function(value) {
-      this.handle_.status = value;
-    }
-  });
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'statusText', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.statusText;
-    },
-    'set': function(value) {
-      this.handle_.statusText = value;
-    }
-  });
+  setupProxyProperty('status');
+  setupProxyProperty('statusText');
+  setupProxyProperty('responseType', true);
+  setupProxyProperty('response');
+  setupProxyProperty('responseText');
+  setupProxyProperty('responseXML');
   ProxyXMLHttpRequest.prototype['getResponseHeader'] = function(header) {
     return this.handle_.getResponseHeader(header);
   };
   ProxyXMLHttpRequest.prototype['getAllResponseHeaders'] = function() {
     return this.handle_.getAllResponseHeaders();
   };
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'responseType', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.responseType;
-    },
-    'set': function(value) {
-      var props = this.props_;
-      props.responseType = value || '';
-      this.handle_.responseType = value;
-    }
-  });
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'response', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.response;
-    },
-    'set': function(value) {
-      this.handle_.response = value;
-    }
-  });
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'responseText', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.responseText;
-    },
-    'set': function(value) {
-      this.handle_.responseText = value;
-    }
-  });
-  Object.defineProperty(ProxyXMLHttpRequest.prototype, 'responseXML', {
-    'configurable': true,
-    'enumerable': true,
-    'get': function() {
-      return this.handle_.responseXML;
-    },
-    'set': function(value) {
-      this.handle_.responseXML = value;
-    }
-  });
 
   this.injectFunction(goog.global, 'XMLHttpRequest', ProxyXMLHttpRequest);
 };

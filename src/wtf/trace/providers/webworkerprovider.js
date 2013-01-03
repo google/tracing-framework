@@ -15,7 +15,6 @@ goog.provide('wtf.trace.providers.WebWorkerProvider');
 
 goog.require('goog.Uri');
 goog.require('goog.array');
-goog.require('goog.result');
 goog.require('goog.result.SimpleResult');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
