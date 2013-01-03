@@ -155,7 +155,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   };
   goog.inherits(ProxyXMLHttpRequest, wtf.trace.eventtarget.BaseEventTarget);
 
-  // Constnats.
+  // Constants.
   ProxyXMLHttpRequest['UNSENT'] = 0;
   ProxyXMLHttpRequest['OPENED'] = 1;
   ProxyXMLHttpRequest['HEADERS_RECEIVED'] = 2;
