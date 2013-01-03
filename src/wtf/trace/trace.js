@@ -31,6 +31,7 @@ goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
+goog.require('wtf.trace.eventtarget');
 goog.require('wtf.trace.util');
 goog.require('wtf.util.Options');
 
@@ -471,3 +472,14 @@ wtf.trace.ignoreListener = wtf.trace.util.ignoreListener;
  * @param {!Element} el Root DOM element.
  */
 wtf.trace.ignoreDomTree = wtf.trace.util.ignoreDomTree;
+
+
+/**
+ * Initializes on* event properties on the given DOM element and optionally
+ * for all children.
+ * This must be called to ensure the properties work correctly.
+ * @param {!Element} target Target DOM element.
+ * @param {boolean=} opt_recursive Also initialize for all children.
+ */
+wtf.trace.initializeDomEventProperties =
+    wtf.trace.eventtarget.initializeDomEventProperties;

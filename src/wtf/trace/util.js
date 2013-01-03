@@ -15,6 +15,36 @@
 
 goog.provide('wtf.trace.util');
 
+goog.require('goog.dom');
+goog.require('goog.dom.TagName');
+goog.require('goog.string');
+goog.require('wtf');
+
+
+/**
+ * Attempts to get the WTF trace script URL.
+ * @return {?string} Script URL, if found.
+ */
+wtf.trace.util.getScriptUrl = function() {
+  if (goog.global['WTF_TRACE_SCRIPT_URL']) {
+    return goog.global['WTF_TRACE_SCRIPT_URL'];
+  }
+  if (!wtf.NODE) {
+    if (!goog.global.document) {
+      return null;
+    }
+    var scriptEls = goog.dom.getElementsByTagNameAndClass(
+        goog.dom.TagName.SCRIPT);
+    for (var n = 0; n < scriptEls.length; n++) {
+      var scriptEl = scriptEls[n];
+      if (goog.string.contains(scriptEl.src, 'wtf_trace_web_js_compiled.js')) {
+        return scriptEl.src;
+      }
+    }
+  }
+  return null;
+};
+
 
 /**
  * Marks an event listener as being ignored, meaning that it will not show up

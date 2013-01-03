@@ -175,6 +175,7 @@ goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
 wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
   commandManager.unregisterCommand('select_all');
+  commandManager.unregisterCommand('select_visible');
   goog.base(this, 'disposeInternal');
 };
 
