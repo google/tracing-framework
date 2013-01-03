@@ -197,6 +197,7 @@ goog.inherits(wtf.app.ui.nav.Framebar, wtf.ui.Control);
 wtf.app.ui.nav.Framebar.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
   commandManager.unregisterCommand('goto_frame');
+  commandManager.unregisterCommand('goto_mark');
   goog.base(this, 'disposeInternal');
 };
 
