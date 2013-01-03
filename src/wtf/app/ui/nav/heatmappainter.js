@@ -17,7 +17,7 @@ goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 
 
 
@@ -26,7 +26,7 @@ goog.require('wtf.ui.TimeRangePainter');
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
 wtf.app.ui.nav.HeatmapPainter = function(canvas, db) {
   goog.base(this, canvas);
@@ -74,7 +74,7 @@ wtf.app.ui.nav.HeatmapPainter = function(canvas, db) {
         // Failued to create indices.
       }, this);
 };
-goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimePainter);
 
 
 /**

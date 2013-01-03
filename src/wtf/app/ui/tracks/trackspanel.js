@@ -127,10 +127,10 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.setTooltip(this.tooltip_);
 
   /**
-   * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
+   * A list of all paint contexts that extend {@see wtf.ui.TimePainter}.
    * This is used to update all of the painters when the current time range
    * changes.
-   * @type {!Array.<!wtf.ui.TimeRangePainter>}
+   * @type {!Array.<!wtf.ui.TimePainter>}
    * @private
    */
   this.timeRangePainters_ = [];

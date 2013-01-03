@@ -17,7 +17,7 @@ goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 goog.require('wtf.ui.color.Palette');
 
 
@@ -27,7 +27,7 @@ goog.require('wtf.ui.color.Palette');
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.app.ui.DocumentView} documentView Document view.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
 wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
   goog.base(this, canvas);
@@ -104,7 +104,7 @@ wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
         // Failued to create indices.
       }, this);
 };
-goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
 
 
 /**

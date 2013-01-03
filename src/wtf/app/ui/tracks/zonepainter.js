@@ -51,6 +51,13 @@ wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
   this.zoneIndex_ = zoneIndex;
 
   /**
+   * Time range index.
+   * @type {!wtf.analysis.db.TimeRangeIndex}
+   * @private
+   */
+  this.timeRangeIndex_ = zoneIndex.getTimeRangeIndex();
+
+  /**
    * Selection state.
    * @type {!wtf.app.ui.Selection}
    * @private
@@ -190,6 +197,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
   this.beginRepaint(ctx, width, height);
 
   var top = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_;
+
+  // Draw time ranges.
+  // TODO(benvanik): draw time ranges
 
   // Draw scopes first.
   this.drawScopes_(
@@ -336,7 +346,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_;
+  var y = top;
   for (var i = 0; i < this.rangeRenderers_.length; i++) {
     this.rangeRenderers_[i].getPixels(this.rangeStamperImageData_.data);
     var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
@@ -425,8 +435,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ +
-      wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  var y = top + wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
   var h = wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_;
   for (var i = 0; i < this.rangeRenderers_.length; i++) {
     this.rangeRenderers_[i].getPixels(this.rangeStamperImageData_.data);

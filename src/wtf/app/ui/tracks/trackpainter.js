@@ -13,7 +13,7 @@
 
 goog.provide('wtf.app.ui.tracks.TrackPainter');
 
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 
 
 
@@ -22,7 +22,7 @@ goog.require('wtf.ui.TimeRangePainter');
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
 wtf.app.ui.tracks.TrackPainter = function(canvas, db) {
   goog.base(this, canvas);
@@ -34,7 +34,7 @@ wtf.app.ui.tracks.TrackPainter = function(canvas, db) {
    */
   this.db = db;
 };
-goog.inherits(wtf.app.ui.tracks.TrackPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.app.ui.tracks.TrackPainter, wtf.ui.TimePainter);
 
 
 /**

@@ -14,7 +14,7 @@
 goog.provide('wtf.ui.RulerPainter');
 
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 goog.require('wtf.util');
 
 
@@ -23,7 +23,7 @@ goog.require('wtf.util');
  * Paints a ruler into the view.
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
 wtf.ui.RulerPainter = function(canvas) {
   goog.base(this, canvas);
@@ -64,7 +64,7 @@ wtf.ui.RulerPainter = function(canvas) {
    */
   this.hoverX_ = 0;
 };
-goog.inherits(wtf.ui.RulerPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.ui.RulerPainter, wtf.ui.TimePainter);
 
 
 /**

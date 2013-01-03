@@ -14,7 +14,7 @@
 goog.provide('wtf.ui.GridPainter');
 
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 
 
 
@@ -23,7 +23,7 @@ goog.require('wtf.ui.TimeRangePainter');
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {number=} opt_y Y offset, in pixels.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
 wtf.ui.GridPainter = function(canvas, opt_y) {
   goog.base(this, canvas);
@@ -49,7 +49,7 @@ wtf.ui.GridPainter = function(canvas, opt_y) {
    */
   this.maxGranularity_ = 0;
 };
-goog.inherits(wtf.ui.GridPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.ui.GridPainter, wtf.ui.TimePainter);
 
 
 /**
