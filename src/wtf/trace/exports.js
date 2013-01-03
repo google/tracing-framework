@@ -144,6 +144,9 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.trace.ignoreDomTree',
       wtf.trace.ignoreDomTree);
+  goog.exportSymbol(
+      'wtf.trace.initializeDomEventProperties',
+      wtf.trace.initializeDomEventProperties);
 
   // Instrumentation utilities
   goog.exportSymbol(

@@ -41,7 +41,7 @@ Manual control:
       // Options
     });
 
-    // Perform a snapshot immediately.
+    // Perform a snapshot.
     wtf.trace.snapshot();
 
     // Stop recording.

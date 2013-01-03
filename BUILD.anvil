@@ -170,7 +170,7 @@ WTF_TRACE_WEB_ENTRY_POINTS=[
 WTF_TRACE_WEB_JS_FLAGS=[
     '--define=wtf.hud.exports.ENABLE_EXPORTS=true',
     '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
-    '--output_wrapper="if(!window.wtf){(function(){%output%}).call(window);}"',
+    '--output_wrapper="if(!this.wtf){(function(){%output%}).call(this);}"',
     ]
 # wtf_trace_web_js_compiled_debug js
 closure_js_library(
@@ -200,7 +200,7 @@ closure_js_library(
 
 # TODO(benvanik): test in IE
 STYLES_WRAPPER=''.join([
-    "if(!window.wtf_styles){window.wtf_styles=1;",
+    "if(this.window && !window.wtf_styles){window.wtf_styles=1;",
     "var style = document.createElement('style');",
     "style.innerHTML = '%output%';",
     "(document.documentElement || document.head).appendChild(style);",

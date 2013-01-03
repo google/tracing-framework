@@ -386,6 +386,18 @@ wtfapi.trace.ignoreDomTree = wtfapi.PRESENT ?
 
 
 /**
+ * Initializes on* event properties on the given DOM element and optionally
+ * for all children.
+ * This must be called to ensure the properties work correctly.
+ * @param {!Element} target Target DOM element.
+ * @param {boolean=} opt_recursive Also initialize for all children.
+ */
+wtfapi.trace.initializeDomEventProperties = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['initializeDomEventProperties'] :
+    goog.nullFunction;
+
+
+/**
  * Automatically instruments a method.
  * This will likely produce code slower than manually instrumenting, but is
  * much more readable.
