@@ -104,7 +104,9 @@ function fetchOptions() {
     log('Failed to parse WTF injection options:', e, xhr.responseText);
 
     // Try again!
-    window.location.reload();
+    window.setTimeout(function() {
+      window.location.reload();
+    }, 100);
 
     return null;
   }

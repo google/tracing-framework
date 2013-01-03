@@ -47,6 +47,13 @@
 
         arrayEvent(new Uint8Array([1, 2, 3]));
 
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'test-uncompiled.html?random=' + Math.random());
+        xhr.onreadystatechange = function() {
+          console.log('xhr', xhr.readyState);
+        };
+        xhr.send(null);
+
         // Start flow...
         var flow = wtf.trace.branchFlow('click');
         wtf.trace.extendFlow(flow);
@@ -241,7 +248,11 @@
         console.log('mean duration: ' + meanDuration + ', per ~call: ' +
             (meanDuration / count / 2));
       };
+
+      wtf.trace.initializeDomEventProperties(document.body, true);
     };
+
+    wtf.trace.initializeDomEventProperties(document.body, true);
   </script>
 </body>
 </html>

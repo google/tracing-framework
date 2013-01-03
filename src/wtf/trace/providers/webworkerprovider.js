@@ -13,11 +13,15 @@
 
 goog.provide('wtf.trace.providers.WebWorkerProvider');
 
-goog.require('goog.Disposable');
 goog.require('goog.Uri');
+goog.require('goog.array');
+goog.require('goog.result');
+goog.require('goog.result.SimpleResult');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
+goog.require('wtf.trace.eventtarget');
+goog.require('wtf.trace.eventtarget.BaseEventTarget');
 goog.require('wtf.trace.util');
 
 
@@ -31,6 +35,17 @@ goog.require('wtf.trace.util');
 wtf.trace.providers.WebWorkerProvider = function() {
   goog.base(this);
 
+  // TODO(benvanik): use weak references (WeakMap) when supported.
+  /**
+   * All active child workers.
+   * @type {!Array.<!Object>}
+   * @private
+   */
+  this.childWorkers_ = [];
+
+  // TODO(benvanik): read wtf.trace.provider.webworker.inject to choose
+  //     injection behavior.
+
   // Since workers will eventually be available within workers we test for them.
   if (typeof goog.global['Worker'] == 'function') {
     this.injectBrowserShim_();
@@ -38,10 +53,41 @@ wtf.trace.providers.WebWorkerProvider = function() {
 
   // Nasty test - assume we aren't Node.
   if (!goog.global['HTMLDivElement']) {
-    this.injectWorkerShim_();
+    this.injectProxyWorker_();
   }
+
+  // TODO(benvanik): async snapshot API
+  // goog.global['snapshotworkers'] = goog.bind(function() {
+  //   var results = [];
+  //   for (var n = 0; n < this.childWorkers_.length; n++) {
+  //     var worker = this.childWorkers_[n];
+  //     results.push(worker.requestSnapshot());
+  //   }
+  //   return goog.result.combine.apply(null, results);
+  // }, this);
 };
 goog.inherits(wtf.trace.providers.WebWorkerProvider, wtf.trace.Provider);
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.WebWorkerProvider.prototype.getSettingsSectionConfigs =
+    function() {
+  return [
+    {
+      'title': 'Web Workers',
+      'widgets': [
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.webworker.inject',
+          'title': 'Auto Inject',
+          'default': true
+        }
+      ]
+    }
+  ];
+};
 
 
 /**
@@ -50,34 +96,34 @@ goog.inherits(wtf.trace.providers.WebWorkerProvider, wtf.trace.Provider);
  */
 wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     function() {
+  var provider = this;
+
   // TODO(benvanik): add flow ID tracking code
 
   var originalWorker = goog.global['Worker'];
   var prefix = 'Worker';
 
-  var eventMap = {
-    'error': wtf.trace.events.createScope('Worker#onerror:child'),
-    'message': wtf.trace.events.createScope('Worker#onmessage:child')
-  };
-
-  var onerrorScope = wtf.trace.events.createScope(
-      'Worker#onerror(uint32 id)');
-  var onmessageScope = wtf.trace.events.createScope(
-      'Worker#onmessage(uint32 id)');
+  var descriptor = wtf.trace.eventtarget.createDescriptor('Worker', [
+    'error',
+    'message'
+  ]);
 
   // Get WTF URL.
   var wtfUrl = wtf.trace.util.getScriptUrl();
   var baseUri = new goog.Uri(goog.global.location.href);
 
+  var nextWorkerId = 0;
+  var workerCtorEvent = wtf.trace.events.createScope(
+      'Worker(ascii scriptUrl, uint32 id)');
+
   /**
    * Worker shim.
    * @param {string} scriptUrl Script URL.
-   * @param {number} workerId Tracking ID.
    * @constructor
-   * @extends {wtf.trace.providers.WebWorkerProvider.ShimEventTarget}
+   * @extends {wtf.trace.eventtarget.BaseEventTarget}
    */
-  var WorkerShim = function(scriptUrl, workerId) {
-    goog.base(this, eventMap);
+  var ProxyWorker = function(scriptUrl) {
+    goog.base(this, descriptor);
 
     /**
      * Script URL.
@@ -91,11 +137,12 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
      * @type {number}
      * @private
      */
-    this.workerId_ = workerId;
+    this.workerId_ = nextWorkerId++;
 
     var resolvedScriptUrl = goog.Uri.resolve(baseUri, scriptUrl).toString();
 
     var shimScript = [
+      'this.WTF_WORKER_ID = ' + this.workerId_ + ';',
       'this.WTF_WORKER_BASE_URI = "' + goog.global.location.href + '";',
       'importScripts("' + wtfUrl + '");',
       'wtf.trace.start({',
@@ -109,37 +156,105 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
         goog.global['URL'].createObjectURL(shimBlob) :
         goog.global['webkitURL'].createObjectURL(shimBlob);
 
+    var scope = workerCtorEvent(scriptUrl, this.workerId_);
+    var handle;
+    try {
+      handle = new originalWorker(shimScriptUrl);
+    } finally {
+      wtf.trace.leaveScope(scope);
+    }
+
     /**
      * Handle to the underlying worker instance.
      * @type {!Worker}
      * @private
      */
-    this.handle_ = new originalWorker(shimScriptUrl);
+    this.handle_ = handle;
 
+    /**
+     * Event type trackers, by name.
+     * @type {!Object.<Function>}
+     * @private
+     */
+    this.trackers_ = {};
+
+    this.setEventHook('error', function(e) {
+      wtf.trace.appendScopeData('id', this.workerId_);
+    }, this);
+    this.setEventHook('message', function(e) {
+      wtf.trace.appendScopeData('id', this.workerId_);
+    }, this);
+
+    // Always hook onmessage.
+    // By doing it here we get first access to the event.
     var self = this;
-    this.handle_.onerror = function(e) {
-      var scope = onerrorScope(self.workerId_);
-      try {
-        self.dispatchEvent(e);
-      } finally {
-        wtf.trace.leaveScope(scope);
+    this.handle_.addEventListener('message', function(e) {
+      // Sniff provider messages.
+      if (e.data['__wtf_worker_msg__']) {
+        var value = e.data['value'];
+        switch (e.data['command']) {
+          case 'snapshot':
+            var result = pendingSnapshots[value['id']];
+            delete pendingSnapshots[value['id']];
+            if (!result.getError()) {
+              result.setValue(value['data']);
+            }
+            break;
+          case 'close':
+            goog.array.remove(provider.childWorkers_, self);
+            break;
+        }
+        return;
       }
-    };
-    this.handle_.onmessage = function(e) {
-      var scope = onmessageScope(self.workerId_);
-      try {
-        self.dispatchEvent(e);
-      } finally {
-        wtf.trace.leaveScope(scope);
-      }
-    };
+    }, false);
+
+    provider.childWorkers_.push(this);
   };
-  goog.inherits(WorkerShim,
-      wtf.trace.providers.WebWorkerProvider.ShimEventTarget);
+  goog.inherits(ProxyWorker, wtf.trace.eventtarget.BaseEventTarget);
+
+  // Event tracking.
+  ProxyWorker.prototype.beginTrackingEvent = function(type) {
+    var self = this;
+    var tracker = function(e) {
+      self['dispatchEvent'](e);
+    };
+    this.trackers_[type] = tracker;
+    this.handle_.addEventListener(type, tracker, false);
+  };
+  ProxyWorker.prototype.endTrackingEvent = function(type) {
+    this.handle_.removeEventListener(type, this.trackers_[type], false);
+    delete this.trackers_[type];
+  };
+
+  // Setup on* events.
+  var eventInfos = descriptor.eventInfos;
+  for (var n = 0; n < eventInfos.length; n++) {
+    var eventInfo = eventInfos[n];
+    Object.defineProperty(ProxyWorker.prototype,
+        'on' + eventInfo.name, {
+          'configurable': false,
+          'enumerable': false,
+          'get': eventInfo.getter,
+          'set': eventInfo.setter
+        });
+  }
+
+  /**
+   * Sends an internal message to the worker.
+   * @param {string} command Command name.
+   * @param {*=} opt_value Command value.
+   */
+  ProxyWorker.prototype.sendMessage = function(command, opt_value) {
+    this.handle_.postMessage({
+      '__wtf_worker_msg__': true,
+      'command': command,
+      'value': opt_value || null
+    });
+  };
 
   var postMessageEvent = wtf.trace.events.createScope(
       'Worker#postMessage(uint32 id)');
-  WorkerShim.prototype['postMessage'] = function(message, opt_transfer) {
+  ProxyWorker.prototype['postMessage'] = function(message, opt_transfer) {
     var scope = postMessageEvent(this.workerId_);
     try {
       this.handle_.postMessage(message, opt_transfer);
@@ -150,23 +265,27 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
 
   var terminateEvent = wtf.trace.events.createInstance(
       'Worker#terminate(uint32 id)');
-  WorkerShim.prototype['terminate'] = function() {
+  ProxyWorker.prototype['terminate'] = function() {
+    // TODO(benvanik): request a snapshot before terminating?
+    goog.array.remove(provider.childWorkers_, this);
+
     terminateEvent(this.workerId_);
     this.handle_.terminate();
   };
 
-  var nextWorkerId = 0;
-  var workerCtorEvent = wtf.trace.events.createScope(
-      'Worker(ascii scriptUrl, uint32 id)');
-  this.injectFunction(goog.global, 'Worker', function Worker(scriptUrl) {
-    var workerId = nextWorkerId++;
-    var scope = workerCtorEvent(scriptUrl, workerId);
-    try {
-      return new WorkerShim(scriptUrl, workerId);
-    } finally {
-      wtf.trace.leaveScope(scope);
-    }
-  });
+  var pendingSnapshots = {};
+  var snapshotRequestId = 0;
+  ProxyWorker.prototype.requestSnapshot = function() {
+    var result = new goog.result.SimpleResult();
+    var snapshotId = snapshotRequestId++;
+    pendingSnapshots[snapshotId] = result;
+    this.sendMessage('snapshot', {
+      'id': snapshotId
+    });
+    return result;
+  };
+
+  this.injectFunction(goog.global, 'Worker', ProxyWorker);
 };
 
 
@@ -174,47 +293,83 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
  * Injects worker constructor shims.
  * @private
  */
-wtf.trace.providers.WebWorkerProvider.prototype.injectWorkerShim_ =
+wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
     function() {
+  var workerId = goog.global['WTF_WORKER_ID'];
   var baseUri = new goog.Uri(goog.global['WTF_WORKER_BASE_URI']);
+
+  // Mixin addEventListener/etc.
+  var globalDescriptor = wtf.trace.eventtarget.createDescriptor(
+      'WorkerGlobalScope', [
+        'error',
+        'online',
+        'offline',
+        'message'
+      ]);
+  wtf.trace.eventtarget.mixin(globalDescriptor, goog.global);
+
+  // Setup on* events.
+  wtf.trace.eventtarget.setEventProperties(globalDescriptor, goog.global);
+  //wtf.trace.eventtarget.initializeEventProperties(goog.global);
+
+  // -- WorkerUtils --
 
   var originalImportScripts = goog.global.importScripts;
   var importScriptsEvent = wtf.trace.events.createScope(
       'WorkerUtils#importScripts(any urls)');
-  this.injectFunction(goog.global, 'importScripts', function importScripts(
-      var_args) {
-        var urls = new Array(arguments.length);
-        for (var n = 0; n < arguments.length; n++) {
-          urls[n] = goog.Uri.resolve(baseUri, arguments[n]).toString();
-        }
-        var scope = importScriptsEvent(urls);
-        try {
-          return originalImportScripts.apply(this, urls);
-        } finally {
-          wtf.trace.leaveScope(scope);
-        }
-      });
+  this.injectFunction(goog.global, 'importScripts', function(var_args) {
+    var urls = new Array(arguments.length);
+    for (var n = 0; n < arguments.length; n++) {
+      urls[n] = goog.Uri.resolve(baseUri, arguments[n]).toString();
+    }
+    var scope = importScriptsEvent(urls);
+    try {
+      return originalImportScripts.apply(goog.global, urls);
+    } finally {
+      wtf.trace.leaveScope(scope);
+    }
+  });
 
   // TODO(benvanik): spoof location with baseUri
+  //goog.global['location'] = WorkerLocation;
 
-  //WorkerUtils
-  //  importScripts(var_arg urls)
-  //  WorkerNavigator navigator:
-  //WorkerGlobalScope <- WorkerUtils, EventTarget
-  //  location
-  //  onerror
-  //  onoffline
-  //  ononline
-  //DedicatedWorkerGlobalScope <- WorkerGlobalScope
-  //  postMessage(message, opt_transfer)
-  //  onmessage - MessageEvent
-  //
+  // -- WorkerGlobalScope --
+
+  var originalClose = goog.global.close;
+  var closeEvent = wtf.trace.events.createInstance(
+      'WorkerGlobalScope#close()');
+  this.injectFunction(goog.global, 'close', function() {
+    closeEvent();
+    sendMessage('close');
+    originalClose.call(goog.global);
+  });
+
+  // TODO(benvanik): onerror - ErrorEvent
   // interface ErrorEvent : Event {
   //   readonly attribute DOMString message;
   //   readonly attribute DOMString filename;
   //   readonly attribute unsigned long lineno;
   //   readonly attribute unsigned long column;
   // };
+
+  // TODO(benvanik): onoffline/ononline
+
+  // -- DedicatedWorkerGlobalScope --
+
+  var originalPostMessage = goog.global.postMessage;
+  var postMessageEvent = wtf.trace.events.createScope(
+      'DedicatedWorkerGlobalScope#postMessage()');
+  this.injectFunction(goog.global, 'postMessage', function(
+      message, opt_transfer) {
+        var scope = postMessageEvent();
+        try {
+          originalPostMessage.call(goog.global, message, opt_transfer);
+        } finally {
+          wtf.trace.leaveScope(scope);
+        }
+      });
+
+  // TODO(benvanik): DedicatedWorkerGlobalScope#onmessage - MessageEvent
   // interface MessageEvent : Event {
   //   readonly attribute any data;
   //   readonly attribute DOMString origin;
@@ -222,181 +377,40 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectWorkerShim_ =
   //   readonly attribute (WindowProxy or MessagePort)? source;
   //   readonly attribute MessagePort[]? ports;
   // }
-};
-
-
-
-// TODO(benvanik): move to shared code
-// TODO(benvanik): enhance and use for other DOM proxies (XHR/etc)
-/**
- * EventTarget shim.
- * @param {!Object.<Function>} eventMap Event map.
- * @constructor
- * @extends {goog.Disposable}
- */
-wtf.trace.providers.WebWorkerProvider.ShimEventTarget = function(eventMap) {
-  goog.base(this);
-
-  /**
-   * Event map.
-   * @type {!Object.<!Function>}
-   * @private
-   */
-  this.eventMap_ = eventMap;
-
-  /**
-   * Event listeners.
-   * @type {!Object.<!Array.<!Object>>}
-   * @private
-   */
-  this.listeners_ = {};
-
-  /**
-   * on* listeners.
-   * @type {!Object.<Function?>}
-   * @private
-   */
-  this.onListeners_ = {};
-};
-goog.inherits(wtf.trace.providers.WebWorkerProvider.ShimEventTarget,
-    goog.Disposable);
-
-
-/**
- * Adds an event listener.
- * @param {string} type The type of the event to listen for.
- * @param {Function|Object} listener The function to handle the event. The
- *     handler can also be an object that implements the handleEvent method
- *     which takes the event object as argument.
- * @param {boolean=} opt_useCapture In DOM-compliant browsers, this determines
- *     whether the listener is fired during the capture or bubble phase
- *     of the event.
- */
-wtf.trace.providers.WebWorkerProvider.ShimEventTarget.
-    prototype['addEventListener'] = function(type, listener, opt_useCapture) {
-  var list = this.listeners_[type] || [];
-  this.listeners_[type] = list;
-  list.push({
-    listener: listener,
-    useCapture: opt_useCapture || false
-  });
-};
-
-
-/**
- * Removes an event listener.
- * @param {string} type The type of the event to listen for.
- * @param {Function|Object} listener The function to handle the event. The
- *     handler can also be an object that implements the handleEvent method
- *     which takes the event object as argument.
- * @param {boolean=} opt_useCapture In DOM-compliant browsers, this determines
- *     whether the listener is fired during the capture or bubble phase
- *     of the event.
- */
-wtf.trace.providers.WebWorkerProvider.ShimEventTarget.
-    prototype['removeEventListener'] = function(
-        type, listener, opt_useCapture) {
-  var list = this.listeners_[type];
-  if (list) {
-    for (var n = 0; n < list.length; n++) {
-      if (list[n].listener == listener &&
-          list[n].useCapture == opt_useCapture) {
-        list.splice(n, 1);
-        break;
+  // TODO(benvanik): fully override the event dispatch.
+  goog.global.addEventListener('message', function(e) {
+    // Sniff provider messages.
+    if (e.data['__wtf_worker_msg__']) {
+      var value = e.data['value'];
+      switch (e.data['command']) {
+        case 'snapshot':
+          var data = [];
+          wtf.trace.snapshot(data);
+          sendMessage('snapshot', {
+            'id': value['id'],
+            'data': data
+          }, data[0]);
+          break;
       }
+      // This won't be required once we hook dispatch.
+      delete e.data['__wtf_worker_msg__'];
+      delete e.data['command'];
+      delete e.data['value'];
     }
-    if (!list.length) {
-      delete this.listeners_[type];
-    }
-  }
-};
+  }, false);
 
-
-Object.defineProperty(wtf.trace.providers.WebWorkerProvider.ShimEventTarget.
-    prototype, 'onerror', {
-      'configurable': false,
-      'enumerable': false,
-      'get':
-          /**
-           * @return {?Function}
-           * @this {wtf.trace.providers.WebWorkerProvider.ShimEventTarget}
-           */
-          function() {
-            return this.onListeners_['error'] || null;
-          },
-      'set':
-          /**
-           * @param {?Function} value
-           * @this {wtf.trace.providers.WebWorkerProvider.ShimEventTarget}
-           */
-          function(value) {
-            delete this.listeners_['error'];
-            this.onListeners_['error'] = value || null;
-          }
-    });
-
-
-Object.defineProperty(wtf.trace.providers.WebWorkerProvider.ShimEventTarget.
-    prototype, 'onmessage', {
-      'configurable': false,
-      'enumerable': false,
-      'get':
-          /**
-           * @return {?Function}
-           * @this {wtf.trace.providers.WebWorkerProvider.ShimEventTarget}
-           */
-          function() {
-            return this.onListeners_['message'] || null;
-          },
-      'set':
-          /**
-           * @param {?Function} value
-           * @this {wtf.trace.providers.WebWorkerProvider.ShimEventTarget}
-           */
-          function(value) {
-            delete this.listeners_['message'];
-            this.onListeners_['message'] = value || null;
-          }
-    });
-
-
-/**
- * Dispatches an event.
- * @param {Event} e Event.
- */
-wtf.trace.providers.WebWorkerProvider.ShimEventTarget.prototype.dispatchEvent =
-    function(e) {
-  var onListener = this.onListeners_[e.type];
-  if (onListener) {
-    this.dispatchToListener(e, onListener);
-  } else {
-    var list = this.listeners_[e.type];
-    for (var n = 0; n < list.length; n++) {
-      this.dispatchToListener(e, list[n].listener);
-    }
-  }
-};
-
-
-/**
- * Dispatches an event ot a listener, wrapping it in a scope.
- * @param {Event} e Event.
- * @param {Function|Object} listener Event listener.
- */
-wtf.trace.providers.WebWorkerProvider.ShimEventTarget.prototype.
-    dispatchToListener = function(e, listener) {
-  var eventKey = e.type;
-  var eventType = this.eventMap_[eventKey];
-  var scope = this['__wtf_ignore__'] ? null : eventType();
-  try {
-    if (listener['handleEvent']) {
-      // Listener is an EventListener.
-      listener['handleEvent'](e);
-    } else {
-      // Listener is a function.
-      return listener.apply(this, arguments);
-    }
-  } finally {
-    wtf.trace.leaveScope(scope);
-  }
+  /**
+   * Sends an internal message to the worker.
+   * @param {string} command Command name.
+   * @param {*=} opt_value Command value.
+   * @param {Array=} opt_transfer Transferrable values.
+   */
+  function sendMessage(command, opt_value, opt_transfer) {
+    // TODO(benvanik): attempt to use webkitPostMessage
+    originalPostMessage.call(goog.global, {
+      '__wtf_worker_msg__': true,
+      'command': command,
+      'value': opt_value || null
+    }, []);
+  };
 };

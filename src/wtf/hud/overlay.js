@@ -31,6 +31,7 @@ goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace');
+goog.require('wtf.trace.util');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.SettingsDialog');
 goog.require('wtf.ui.icons');
@@ -53,6 +54,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
       opt_parentElement || dom.getDocument().body);
   // Wrap in #wtf for stylesheets.
   var wtfEl = dom.createElement(goog.dom.TagName.DIV);
+  wtf.trace.util.ignoreDomTree(wtfEl);
   goog.dom.classes.add(wtfEl, goog.getCssName('wtfReset'));
   parentElement.appendChild(wtfEl);
   parentElement = wtfEl;
