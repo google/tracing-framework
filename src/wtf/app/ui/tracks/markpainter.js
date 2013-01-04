@@ -15,12 +15,11 @@ goog.provide('wtf.app.ui.tracks.MarkPainter');
 
 goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
-goog.require('goog.math');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.ModifierKey');
-goog.require('wtf.ui.TimePainter');
+goog.require('wtf.ui.RangePainter');
 goog.require('wtf.ui.color.Palette');
 goog.require('wtf.util');
 
@@ -31,7 +30,7 @@ goog.require('wtf.util');
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @constructor
- * @extends {wtf.ui.TimePainter}
+ * @extends {wtf.ui.RangePainter}
  */
 wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
   goog.base(this, canvas);
@@ -88,7 +87,7 @@ wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
         // Failued to create indices.
       }, this);
 };
-goog.inherits(wtf.app.ui.tracks.MarkPainter, wtf.ui.TimePainter);
+goog.inherits(wtf.app.ui.tracks.MarkPainter, wtf.ui.RangePainter);
 
 
 /**
@@ -129,19 +128,23 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
 
+  // HACK(benvanik): remove once layout is implemented.
+  bounds.top = this.y_;
+  bounds.height = wtf.app.ui.tracks.MarkPainter.HEIGHT;
+
   var width = bounds.width;
   var height = bounds.height;
-  var y = this.y_;
-  var h = wtf.app.ui.tracks.MarkPainter.HEIGHT;
 
   // Clip to extents.
-  this.clip(0, y, width, h);
+  this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Clear gutter.
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, y, width, h);
+  ctx.fillRect(0, bounds.top, bounds.width, bounds.height);
   ctx.fillStyle = '#000000';
-  ctx.fillRect(0, y + h - 1, width, 1);
+  ctx.fillRect(0, bounds.top + bounds.height - 1, bounds.width, 1);
+
+  this.beginRenderingRanges(bounds, 1);
 
   var markIndex = this.markIndex_;
   var timeLeft = this.timeLeft;
@@ -153,14 +156,8 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
   });
   var searchLeft = firstMarkEvent ? firstMarkEvent.time : timeLeft;
 
-  // Get all of the marks.
-  // This should be fixed to create less garbage.
-  var markEvents = markIndex.findInstances(
-      searchLeft, timeRight, undefined, true);
-
-  for (var n = 0; n < markEvents.length; n++) {
-    var e = markEvents[n];
-
+  // Draw all visible marks.
+  markIndex.forEach(searchLeft, timeRight, function(e) {
     // Compute screen size.
     var startTime = e.time;
     var endTime = e.time + e.args['duration'];
@@ -172,7 +169,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     var screenLeft = Math.max(0, left);
     var screenRight = Math.min(width - 0.999, right);
     if (screenLeft >= screenRight) {
-      continue;
+      return;
     }
 
     // Compute color by name.
@@ -180,29 +177,18 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     var color = palette.getColorForString(label);
 
     // Draw bar.
-    ctx.fillStyle = color.toString();
-    ctx.fillRect(screenLeft, y, screenRight - screenLeft, h - 1);
+    this.drawRange(0, screenLeft, screenRight, color, 1);
 
     if (screenWidth > 15) {
-      // TODO(benvanik): move this to painter common
-      // Calculate label width to determine fade.
-      var labelWidth = ctx.measureText(label).width;
-      var labelScreenWidth = screenRight - screenLeft + 5 + 5;
-      if (labelScreenWidth >= labelWidth) {
-        var labelAlpha = wtf.math.smoothRemap(
-            labelScreenWidth, labelWidth, labelWidth + 15 * 2, 0, 1);
-
-        // Center the label within the box then clamp to the screen.
-        var x = left + (right - left) / 2 - labelWidth / 2;
-        x = goog.math.clamp(x, 5, width - labelWidth - 5);
-
-        ctx.globalAlpha = labelAlpha;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(label, x, y + 11);
-        ctx.globalAlpha = 1;
-      }
+      this.drawRangeLabel(
+          bounds, left, right, screenLeft, screenRight, -1, label);
     }
-  }
+  }, this);
+
+  // Now blit the nicely rendered ranges onto the screen.
+  var y = 0;
+  var h = wtf.app.ui.tracks.MarkPainter.HEIGHT - 1;
+  this.endRenderingRanges(bounds, y, h);
 };
 
 

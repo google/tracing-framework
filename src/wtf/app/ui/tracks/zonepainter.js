@@ -13,17 +13,14 @@
 
 goog.provide('wtf.app.ui.tracks.ZonePainter');
 
-goog.require('goog.dom.TagName');
-goog.require('goog.math');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
-goog.require('wtf.app.ui.tracks.TrackPainter');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
-goog.require('wtf.ui.RangeRenderer');
+goog.require('wtf.ui.RangePainter');
 goog.require('wtf.ui.color.Palette');
 goog.require('wtf.util');
 
@@ -36,12 +33,19 @@ goog.require('wtf.util');
  * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
  * @param {!wtf.app.ui.Selection} selection Selection state.
  * @constructor
- * @extends {wtf.app.ui.tracks.TrackPainter}
+ * @extends {wtf.ui.RangePainter}
  */
 wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
     selection) {
-  goog.base(this, canvas, db);
+  goog.base(this, canvas);
   var dom = this.getDom();
+
+  /**
+   * Database.
+   * @type {!wtf.analysis.db.EventDatabase}
+   * @private
+   */
+  this.db_ = db;
 
   /**
    * Zone index.
@@ -49,13 +53,6 @@ wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
    * @private
    */
   this.zoneIndex_ = zoneIndex;
-
-  /**
-   * Time range index.
-   * @type {!wtf.analysis.db.TimeRangeIndex}
-   * @private
-   */
-  this.timeRangeIndex_ = zoneIndex.getTimeRangeIndex();
 
   /**
    * Selection state.
@@ -73,47 +70,8 @@ wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
    */
   this.palette_ = new wtf.ui.color.Palette(
       wtf.ui.color.Palette.SCOPE_COLORS);
-
-  /**
-   * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
-   * @type {!Array.<!wtf.ui.RangeRenderer>}
-   * @private
-   */
-  this.rangeRenderers_ = [];
-  for (var n = 0; n < 32; n++) {
-    this.rangeRenderers_.push(new wtf.ui.RangeRenderer());
-  }
-
-  /**
-   * Helper canvas for blitting ranges on the screen.
-   * @type {HTMLCanvasElement}
-   * @private
-   */
-  this.rangeStamper_ = /** @type {HTMLCanvasElement} */(
-      dom.createElement(goog.dom.TagName.CANVAS));
-
-  // Initialize range stamper to 1x1. The first time we redraw this will be
-  // resized to be as wide as our draw area.
-  this.rangeStamper_.width = 1;
-  this.rangeStamper_.height = 1;
-
-  /**
-   * The context for rangeStamper_.
-   * @type {CanvasRenderingContext2D}
-   * @private
-   */
-  this.rangeStamperContext_ = /** @type {CanvasRenderingContext2D} */(
-      this.rangeStamper_.getContext('2d'));
-
-  /**
-   * ImageData used for scribbling into rangeStamper.
-   * @type {ImageData}
-   * @private
-   */
-  this.rangeStamperImageData_ =
-      this.rangeStamperContext_.createImageData(this.rangeStamper_.width, 1);
 };
-goog.inherits(wtf.app.ui.tracks.ZonePainter, wtf.app.ui.tracks.TrackPainter);
+goog.inherits(wtf.app.ui.tracks.ZonePainter, wtf.ui.RangePainter);
 
 
 /**
@@ -160,6 +118,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
   var width = bounds.width;
   var height = bounds.height;
 
+  // HACK(benvanik): remove once layout is implemented.
+  bounds.top = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_;
+
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -197,16 +158,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
     }
   });
 
-  this.beginRepaint(ctx, bounds);
-
-  var top = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_;
-
   // Draw time ranges.
   // TODO(benvanik): draw time ranges
 
   // Draw scopes first.
   this.drawScopes_(
-      ctx, width, height, top, timeLeft, timeRight,
+      bounds, timeLeft, timeRight,
       scopeEvents, scopeCount);
 
   // Draw flow lines.
@@ -214,41 +171,14 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
 
   // Draw instance events.
   this.drawInstanceEvents_(
-      ctx, width, height, top, timeLeft, timeRight,
+      bounds, timeLeft, timeRight,
       otherEvents, otherCount);
-
-  this.endRepaint(ctx, bounds);
-};
-
-
-/**
- * Resets scope/event drawing caches.
- * @param {number} width Width of the canvas.
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.prototype.resetRangeRenderers_ = function(width) {
-  var maxScopeDepth = this.zoneIndex_.getMaximumScopeDepth();
-  while (this.rangeRenderers_.length < maxScopeDepth) {
-    this.rangeRenderers_.push(new wtf.ui.RangeRenderer());
-  }
-  for (var n = 0; n < this.rangeRenderers_.length; n++) {
-    this.rangeRenderers_[n].reset(width);
-  }
-
-  if (width != this.rangeStamper_.width) {
-    this.rangeStamper_.width = width;
-    this.rangeStamperImageData_ = this.rangeStamperContext_.createImageData(
-        this.rangeStamper_.width, 1);
-  }
 };
 
 
 /**
  * Draw scopes.
- * @param {!CanvasRenderingContext2D} ctx Target canvas context.
- * @param {number} width Canvas backing store width.
- * @param {number} height Canvas backing store height.
- * @param {number} top Y to start drawing at.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @param {number} timeLeft Left-most visible time.
  * @param {number} timeRight Right-most visible time.
  * @param {!Array.<!wtf.analysis.ScopeEvent>} scopeEvents Scope events.
@@ -256,19 +186,17 @@ wtf.app.ui.tracks.ZonePainter.prototype.resetRangeRenderers_ = function(width) {
  * @private
  */
 wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
-    ctx, width, height, top, timeLeft, timeRight, scopeEvents, scopeCount) {
+    bounds, timeLeft, timeRight, scopeEvents, scopeCount) {
   var palette = this.palette_;
+  var width = bounds.width;
+  var height = bounds.height;
 
-  this.resetRangeRenderers_(width);
+  this.beginRenderingRanges(bounds, this.zoneIndex_.getMaximumScopeDepth());
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
   var selectionEvaluator = this.selection_.hasFilterSpecified() ?
       this.selection_.getFilterEvaluator() : null;
-
-  // We need to draw all the rects before the labels so we keep track of the
-  // labels to draw and then draw them after.
-  var labelsToDraw = [];
 
   // Draw all scopes.
   for (var n = 0; n < scopeCount; n++) {
@@ -323,59 +251,26 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     }
 
     var depth = scope.getDepth();
-    this.rangeRenderers_[depth].drawRange(
-        screenLeft, screenRight, color, alpha);
+    this.drawRange(depth, screenLeft, screenRight, color, alpha);
 
     if (screenWidth > 15) {
-      // TODO(benvanik): move this to painter common
-      // Calculate label width to determine fade.
+      var y = depth * wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
       var label = enter.eventType.name;
-      var labelWidth = ctx.measureText(label).width;
-      var labelScreenWidth = screenRight - screenLeft;
-      if (labelScreenWidth >= labelWidth) {
-        var labelAlpha = wtf.math.smoothRemap(
-            labelScreenWidth, labelWidth, labelWidth + 15 * 2, 0, 1);
-
-        // Center the label within the box then clamp to the screen.
-        var x = left + (right - left) / 2 - labelWidth / 2;
-        x = goog.math.clamp(x, 0, width - labelWidth);
-
-        var scopeTop =
-            top + depth * wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-        var y = scopeTop + 12;
-        labelsToDraw.push({text: label, x: x, y: y, alpha: labelAlpha});
-      }
+      this.drawRangeLabel(
+          bounds, left, right, screenLeft, screenRight, y, label);
     }
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = top;
-  for (var i = 0; i < this.rangeRenderers_.length; i++) {
-    this.rangeRenderers_[i].getPixels(this.rangeStamperImageData_.data);
-    var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-    this.rangeStamperContext_.putImageData(
-        this.rangeStamperImageData_, 0, 0);
-    // Draw the ranges for this depth, stretching to height h.
-    ctx.drawImage(this.rangeStamper_, 0, y, width, h);
-    y += h;
-  }
-
-  // And, finally, draw the designated labels on top.
-  labelsToDraw.forEach(function(label) {
-    ctx.globalAlpha = label.alpha;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(label.text, label.x, label.y);
-  });
-  ctx.globalAlpha = 1;
+  var y = 0;
+  var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  this.endRenderingRanges(bounds, y, h);
 };
 
 
 /**
  * Draw instance events.
- * @param {!CanvasRenderingContext2D} ctx Target canvas context.
- * @param {number} width Canvas backing store width.
- * @param {number} height Canvas backing store height.
- * @param {number} top Y to start drawing at.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @param {number} timeLeft Left-most visible time.
  * @param {number} timeRight Right-most visible time.
  * @param {!Array.<!wtf.analysis.Event>} events Instance events.
@@ -383,10 +278,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
  * @private
  */
 wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
-    ctx, width, height, top, timeLeft, timeRight, events, eventCount) {
+    bounds, timeLeft, timeRight, events, eventCount) {
   var palette = this.palette_;
+  var width = bounds.width;
+  var height = bounds.height;
 
-  this.resetRangeRenderers_(width);
+  this.beginRenderingRanges(bounds, this.zoneIndex_.getMaximumScopeDepth());
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
@@ -433,21 +330,13 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
     }
 
     var depth = e.scope ? e.scope.getDepth() : 0;
-    this.rangeRenderers_[depth].drawRange(
-        screenLeft, screenRight, color, alpha);
+    this.drawRange(depth, screenLeft, screenRight, color, alpha);
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = top + wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  var y = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
   var h = wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_;
-  for (var i = 0; i < this.rangeRenderers_.length; i++) {
-    this.rangeRenderers_[i].getPixels(this.rangeStamperImageData_.data);
-    this.rangeStamperContext_.putImageData(
-        this.rangeStamperImageData_, 0, 0);
-    // Draw the ranges for this depth, stretching to height h.
-    ctx.drawImage(this.rangeStamper_, 0, y, width, h);
-    y += wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-  }
+  this.endRenderingRanges(bounds, y, h);
 };
 
 
