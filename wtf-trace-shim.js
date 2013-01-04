@@ -324,6 +324,21 @@ wtfapi.trace.terminateFlow = wtfapi.PRESENT ?
 
 
 /**
+ * Appends a named argument of any type to the given flow.
+ * This is slow and should only be used for very infrequent appends.
+ * Prefer instead to use a custom instance event with the
+ * {@see wtfapi.data.EventFlag#APPEND_FLOW_DATA} flag set.
+ *
+ * @param {wtfapi.trace.Flow} flow Flow to append.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {*} value Value. Will be JSON stringified.
+ * @param {number=} opt_time Time for the event; omit to use the current time.
+ */
+wtfapi.trace.appendFlowData = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['appendFlowData'] : goog.nullFunction;
+
+
+/**
  * Clears the current scope flow.
  */
 wtfapi.trace.clearFlow = wtfapi.PRESENT ?

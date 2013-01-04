@@ -36,6 +36,9 @@
   <script>
     window.onload = function() {
       var arrayEvent = wtf.trace.events.createInstance('arrayEvent(uint8[] v)');
+      var appendFlowData = wtf.trace.events.createInstance(
+          'customAppendFlowData(flowId id, int32 a)',
+          wtf.data.EventFlag.APPEND_FLOW_DATA);
       var someLink = document.getElementById('someLink');
       someLink.addEventListener('click', function(e) {
         e.preventDefault();
@@ -57,6 +60,8 @@
         // Start flow...
         var flow = wtf.trace.branchFlow('click');
         wtf.trace.extendFlow(flow);
+        wtf.trace.appendFlowData(flow, 'x', 123);
+        appendFlowData(flow, 456);
         window.setTimeout(function() {
           // Enter scope, resume flow
           var scope = wtf.trace.enterScope('setTimeout callback');

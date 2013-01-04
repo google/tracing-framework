@@ -13,6 +13,8 @@
 
 goog.provide('wtf.analysis.Flow');
 
+goog.require('wtf.data.EventFlag');
+
 
 
 /**
@@ -60,6 +62,13 @@ wtf.analysis.Flow = function(flowId, parentFlow) {
    * @private
    */
   this.terminateEvent_ = null;
+
+  /**
+   * A list of events that add data to this flow.
+   * @type {Array.<!wtf.analysis.Event>}
+   * @private
+   */
+  this.dataEvents_ = null;
 };
 
 
@@ -137,6 +146,47 @@ wtf.analysis.Flow.prototype.setTerminateEvent = function(e) {
 };
 
 
+/**
+ * Adds a data event.
+ * This events arguments will be used when building the flow data.
+ * @param {!wtf.analysis.Event} e Event to add.
+ */
+wtf.analysis.Flow.prototype.addDataEvent = function(e) {
+  if (!this.dataEvents_) {
+    this.dataEvents_ = [e];
+  } else {
+    this.dataEvents_.push(e);
+  }
+};
+
+
+/**
+ * Gets the flow data as a key-value map.
+ * This is all data appended by events.
+ * @return {Object} Flow data, if any.
+ */
+wtf.analysis.Flow.prototype.getData = function() {
+  var data = {};
+  if (this.dataEvents_) {
+    for (var n = 0; n < this.dataEvents_.length; n++) {
+      var e = this.dataEvents_[n];
+      if (e.eventType.flags & wtf.data.EventFlag.INTERNAL) {
+        // name-value pair from the builtin appending functions.
+        data[e.args['name']] = e.args['value'];
+      } else {
+        // Custom appender, use args.
+        // Skip the flow ID.
+        for (var m = 1; m < e.eventType.args.length; m++) {
+          var arg = e.eventType.args[m];
+          data[arg.name] = e.args[arg.name];
+        }
+      }
+    }
+  }
+  return data;
+};
+
+
 goog.exportSymbol(
     'wtf.analysis.Flow',
     wtf.analysis.Flow);
@@ -155,3 +205,6 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.analysis.Flow.prototype, 'getTerminateEvent',
     wtf.analysis.Flow.prototype.getTerminateEvent);
+goog.exportProperty(
+    wtf.analysis.Flow.prototype, 'getData',
+    wtf.analysis.Flow.prototype.getData);

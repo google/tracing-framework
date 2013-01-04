@@ -97,8 +97,6 @@ wtf.util.FunctionBuilder.prototype.begin = function() {
   goog.asserts.assert(!this.currentSource_.length);
 
   this.isBuilding_ = true;
-
-  this.append('"use strict";');
 };
 
 
