@@ -156,7 +156,10 @@ wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_ = 0.001;
  * @override
  */
 wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
+
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -194,7 +197,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
     }
   });
 
-  this.beginRepaint(ctx, width, height);
+  this.beginRepaint(ctx, bounds);
 
   var top = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_;
 
@@ -214,7 +217,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
       ctx, width, height, top, timeLeft, timeRight,
       otherEvents, otherCount);
 
-  this.endRepaint(ctx, width, height);
+  this.endRepaint(ctx, bounds);
 };
 
 
@@ -452,12 +455,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
  * @override
  */
 wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
-    function(x, y, width, height) {
+    function(x, y, modifiers, bounds) {
   if (y < wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_) {
     return false;
   }
 
-  var result = this.hitTest_(x, y, width, height);
+  var result = this.hitTest_(x, y, bounds);
   var newFilterString = '';
   if (result instanceof wtf.analysis.Scope) {
     // Single scope clicked.
@@ -494,8 +497,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
  * @override
  */
 wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
-    function(x, y, width, height) {
-  var result = this.hitTest_(x, y, width, height);
+    function(x, y, bounds) {
+  var result = this.hitTest_(x, y, bounds);
   if (result instanceof wtf.analysis.Scope) {
     return this.generateScopeTooltip_(result);
   } else if (result && result.length) {
@@ -509,14 +512,15 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
  * Finds the scope at the given point.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {wtf.analysis.Scope|Array.<!wtf.analysis.Event>} Scope, a list of
  *     instance events, or nothing.
  * @private
  */
 wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
-    x, y, width, height) {
+    x, y, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;

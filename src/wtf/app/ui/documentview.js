@@ -157,6 +157,10 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   keyboardScope.addShortcut('command+shift+a', function() {
     commandManager.execute('select_visible', this, null);
   });
+  commandManager.registerSimpleCommand(
+      'select_range', function(source, target, startTime, endTime) {
+        this.selection_.setTimeRange(startTime, endTime);
+      }, this);
 
   var db = doc.getDatabase();
   db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
@@ -176,6 +180,7 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
   commandManager.unregisterCommand('select_all');
   commandManager.unregisterCommand('select_visible');
+  commandManager.unregisterCommand('select_range');
   goog.base(this, 'disposeInternal');
 };
 

@@ -14,6 +14,7 @@
 goog.provide('wtf.analysis.db.ZoneIndex');
 
 goog.require('wtf.analysis.ScopeEvent');
+goog.require('wtf.analysis.TimeRangeEvent');
 goog.require('wtf.analysis.db.EventList');
 goog.require('wtf.analysis.db.TimeRangeIndex');
 goog.require('wtf.data.EventClass');

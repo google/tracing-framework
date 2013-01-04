@@ -111,7 +111,9 @@ goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
  * @override
  */
 wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
   var timeScale = 1 / wtf.math.remap(45, 0, height, 0, 1);

@@ -19,6 +19,7 @@ goog.require('goog.math');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
+goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.TimePainter');
 goog.require('wtf.ui.color.Palette');
 goog.require('wtf.util');
@@ -125,9 +126,11 @@ wtf.app.ui.tracks.MarkPainter.HEIGHT = 16;
  * @override
  */
 wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
   var palette = this.palette_;
 
+  var width = bounds.width;
+  var height = bounds.height;
   var y = this.y_;
   var h = wtf.app.ui.tracks.MarkPainter.HEIGHT;
 
@@ -207,12 +210,16 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
  * @override
  */
 wtf.app.ui.tracks.MarkPainter.prototype.onClickInternal =
-    function(x, y, width, height) {
-  // TODO(benvanik): shift+click to select mark time
-  var e = this.hitTest_(x, y, width, height);
+    function(x, y, modifiers, bounds) {
+  var e = this.hitTest_(x, y, bounds);
   if (e) {
     var commandManager = wtf.events.getCommandManager();
     commandManager.execute('goto_mark', this, null, e);
+    if (modifiers & wtf.ui.ModifierKey.SHIFT) {
+      // Select frame time.
+      commandManager.execute('select_range', this, null,
+          e.time, e.time + e.args['duration']);
+    }
   }
   return true;
 };
@@ -222,8 +229,8 @@ wtf.app.ui.tracks.MarkPainter.prototype.onClickInternal =
  * @override
  */
 wtf.app.ui.tracks.MarkPainter.prototype.getInfoStringInternal =
-    function(x, y, width, height) {
-  var e = this.hitTest_(x, y, width, height);
+    function(x, y, bounds) {
+  var e = this.hitTest_(x, y, bounds);
   if (e) {
     var lines = [
       wtf.util.formatTime(e.args['duration']) + ': ' + e.args['name']
@@ -239,13 +246,14 @@ wtf.app.ui.tracks.MarkPainter.prototype.getInfoStringInternal =
  * Finds the mark at the given point.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {wtf.analysis.Event} Mark or nothing.
  * @private
  */
 wtf.app.ui.tracks.MarkPainter.prototype.hitTest_ = function(
-    x, y, width, height) {
+    x, y, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   if (y < this.y_ || y > this.y_ + wtf.app.ui.tracks.MarkPainter.HEIGHT) {
     return null;
   }

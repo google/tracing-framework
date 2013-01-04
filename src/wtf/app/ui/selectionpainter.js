@@ -77,6 +77,7 @@ wtf.app.ui.SelectionPainter = function(canvas, selection, viewport) {
     viewport.setEnabled(true);
   }, false);
 
+  // TODO(benvanik): move to painter onClick API.
   eh.listen(canvas, goog.events.EventType.MOUSEDOWN, function(e) {
     if (e.shiftKey) {
       viewport.setEnabled(false);
@@ -94,7 +95,9 @@ goog.inherits(wtf.app.ui.SelectionPainter, wtf.ui.TimePainter);
  * @override
  */
 wtf.app.ui.SelectionPainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 

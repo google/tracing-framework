@@ -89,7 +89,9 @@ wtf.ui.RulerPainter.prototype.setGranularities = function(min, max) {
 /**
  * @override
  */
-wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
+wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var y = this.y_;
   var h = wtf.ui.RulerPainter.HEIGHT;
 
@@ -162,7 +164,7 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
  * @override
  */
 wtf.ui.RulerPainter.prototype.onMouseMoveInternal =
-    function(x, y, width, height) {
+    function(x, y, modifiers, bounds) {
   if (!this.showHoverTip_) {
     return;
   }

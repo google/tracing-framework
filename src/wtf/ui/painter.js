@@ -11,12 +11,14 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+goog.provide('wtf.ui.ModifierKey');
 goog.provide('wtf.ui.Painter');
 
 goog.require('goog.Disposable');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
+goog.require('goog.math.Rect');
 goog.require('wtf.timing');
 goog.require('wtf.util.canvas');
 
@@ -134,6 +136,17 @@ wtf.ui.Painter.prototype.getScaledCanvasHeight = function() {
 
 
 /**
+ * Gets the painter bounds.
+ * @return {!goog.math.Rect} Painting bounds, in pixels.
+ */
+wtf.ui.Painter.prototype.getBounds = function() {
+  var width = this.getScaledCanvasWidth();
+  var height = this.getScaledCanvasHeight();
+  return new goog.math.Rect(0, 0, width, height);
+};
+
+
+/**
  * Gets a dom helper.
  * @return {!goog.dom.DomHelper} A dom helper for the document containing
  *     this paint context's canvas.
@@ -232,9 +245,8 @@ wtf.ui.Painter.prototype.repaint = function() {
   wtf.util.canvas.reset(ctx, this.pixelRatio_);
 
   // Skip all drawing if too small.
-  var width = this.getScaledCanvasWidth();
-  var height = this.getScaledCanvasHeight();
-  if (height <= 1) {
+  var bounds = this.getBounds();
+  if (bounds.height <= 1) {
     return;
   }
 
@@ -242,9 +254,9 @@ wtf.ui.Painter.prototype.repaint = function() {
 
   // Clear contents.
   // TODO(benvanik): only if needed
-  this.clear(0, 0, width, height);
+  this.clear(0, 0, bounds.width, bounds.height);
 
-  var preventChildren = this.repaintInternal(ctx, width, height);
+  var preventChildren = this.repaintInternal(ctx, bounds);
 
   ctx.restore();
   if (preventChildren) {
@@ -255,7 +267,7 @@ wtf.ui.Painter.prototype.repaint = function() {
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     ctx.save();
-    childContext.repaintInternal(ctx, width, height);
+    childContext.repaintInternal(ctx, bounds);
     ctx.restore();
   }
 };
@@ -264,8 +276,7 @@ wtf.ui.Painter.prototype.repaint = function() {
 /**
  * Repaints the context contents.
  * @param {!CanvasRenderingContext2D} ctx Canvas render context.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {boolean|undefined} True to prevent painting of children.
  * @protected
  */
@@ -312,20 +323,33 @@ wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
 
 
 /**
+ * Bitmask values for input modifier keys.
+ * @enum {number}
+ */
+wtf.ui.ModifierKey = {
+  CTRL: 1 << 1,
+  ALT: 1 << 2,
+  SHIFT: 1 << 3,
+  META: 1 << 4
+};
+
+
+/**
  * Handles click events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} modifiers Modifier key bitmask from
+ *     {@see wtf.ui.ModifierKey}.
  * @return {boolean} True if the event was handled.
  */
-wtf.ui.Painter.prototype.onClick = function(x, y) {
-  var width = this.getScaledCanvasWidth();
-  var height = this.getScaledCanvasHeight();
-  if (this.onClickInternal(x, y, width, height)) {
+wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
+  var bounds = this.getBounds();
+  if (this.onClickInternal(x, y, modifiers, bounds)) {
     return true;
   }
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    if (childContext.onClick(x, y)) {
+    if (childContext.onClick(x, y, modifiers)) {
       return true;
     }
   }
@@ -337,8 +361,9 @@ wtf.ui.Painter.prototype.onClick = function(x, y) {
  * Handles click events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {number} modifiers Modifier key bitmask from
+ *     {@see wtf.ui.ModifierKey}.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {boolean|undefined} True if the event was handled.
  * @protected
  */
@@ -349,17 +374,18 @@ wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
  * Handles mouse move events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
+ * @param {number} modifiers Modifier key bitmask from
+ *     {@see wtf.ui.ModifierKey}.
  * @return {boolean} True if the event was handled.
  */
-wtf.ui.Painter.prototype.onMouseMove = function(x, y) {
-  var width = this.getScaledCanvasWidth();
-  var height = this.getScaledCanvasHeight();
-  if (this.onMouseMoveInternal(x, y, width, height)) {
+wtf.ui.Painter.prototype.onMouseMove = function(x, y, modifiers) {
+  var bounds = this.getBounds();
+  if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
     return true;
   }
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    if (childContext.onMouseMove(x, y)) {
+    if (childContext.onMouseMove(x, y, modifiers)) {
       return true;
     }
   }
@@ -371,8 +397,9 @@ wtf.ui.Painter.prototype.onMouseMove = function(x, y) {
  * Handles mouse move events at the given pixel.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {number} modifiers Modifier key bitmask from
+ *     {@see wtf.ui.ModifierKey}.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {boolean|undefined} True if the event was handled.
  * @protected
  */
@@ -413,10 +440,8 @@ wtf.ui.Painter.prototype.onMouseOutInternal = goog.nullFunction;
  * @return {string|undefined} Info string or undefined for none.
  */
 wtf.ui.Painter.prototype.getInfoString = function(x, y) {
-  var width = this.getScaledCanvasWidth();
-  var height = this.getScaledCanvasHeight();
-
-  var info = this.getInfoStringInternal(x, y, width, height);
+  var bounds = this.getBounds();
+  var info = this.getInfoStringInternal(x, y, bounds);
   if (info) return info;
 
   for (var n = 0; n < this.childPainters_.length; n++) {
@@ -433,8 +458,7 @@ wtf.ui.Painter.prototype.getInfoString = function(x, y) {
  * Attempt to describe the pixel at x,y.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {string|undefined} Info string or undefined for none.
  * @protected
  */

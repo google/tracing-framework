@@ -40,12 +40,11 @@ goog.inherits(wtf.app.ui.tracks.TrackPainter, wtf.ui.TimePainter);
 /**
  * Performs any painting required before the track painter subclass paints.
  * @param {!CanvasRenderingContext2D} ctx Canvas render context.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @protected
  */
 wtf.app.ui.tracks.TrackPainter.prototype.beginRepaint = function(
-    ctx, width, height) {
+    ctx, bounds) {
   // TODO(benvanik): compute height?
 
   // TODO(benvanik): clip to size
@@ -55,11 +54,10 @@ wtf.app.ui.tracks.TrackPainter.prototype.beginRepaint = function(
 /**
  * Performs any painting required after the track painter subclass paints.
  * @param {!CanvasRenderingContext2D} ctx Canvas render context.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @protected
  */
 wtf.app.ui.tracks.TrackPainter.prototype.endRepaint = function(
-    ctx, width, height) {
+    ctx, bounds) {
   // TODO(benvanik): paint label
 };

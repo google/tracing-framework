@@ -81,13 +81,15 @@ goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimePainter);
  * @override
  */
 wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
   if (!(timeRight - timeLeft)) {
     return;
   }
 
+  var width = bounds.width;
+  var height = bounds.height;
   var h = Math.floor(0.5 * (height - 16));
   var y = 16 + h;
 

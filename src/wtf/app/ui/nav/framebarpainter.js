@@ -19,6 +19,7 @@ goog.require('goog.math');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
+goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.TimePainter');
 
 
@@ -99,7 +100,9 @@ wtf.app.ui.nav.FramebarPainter.FRAME_TOP_ = 16;
  * @override
  */
 wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
   var palette = wtf.app.ui.nav.FramebarPainter.FRAME_COLOR_PALETTE_;
@@ -170,13 +173,16 @@ wtf.app.ui.nav.FramebarPainter.prototype.repaintInternal = function(
  * @override
  */
 wtf.app.ui.nav.FramebarPainter.prototype.onClickInternal =
-    function(x, y, width, height) {
-  var e = this.hitTestFrame_(x, y, width, height);
+    function(x, y, modifiers, bounds) {
+  var e = this.hitTestFrame_(x, y, bounds);
   if (e) {
-    // TODO(benvanik): get shift plumbed through to enable selecting the frame
-    //     time region. Needs event handling rewrite?
     var commandManager = wtf.events.getCommandManager();
     commandManager.execute('goto_frame', this, null, e.args['number']);
+    if (modifiers & wtf.ui.ModifierKey.SHIFT) {
+      // Select frame time.
+      commandManager.execute('select_range', this, null,
+          e.time - e.args['duration'] / 1000, e.time);
+    }
     return true;
   }
   return false;
@@ -187,8 +193,8 @@ wtf.app.ui.nav.FramebarPainter.prototype.onClickInternal =
  * @override
  */
 wtf.app.ui.nav.FramebarPainter.prototype.getInfoStringInternal = function(
-    x, y, width, height) {
-  var e = this.hitTestFrame_(x, y, width, height);
+    x, y, bounds) {
+  var e = this.hitTestFrame_(x, y, bounds);
   if (e) {
     var duration = e.args['duration'] / 1000;
     return 'frame #' + e.args['number'] + ' (' +
@@ -202,13 +208,14 @@ wtf.app.ui.nav.FramebarPainter.prototype.getInfoStringInternal = function(
  * Finds the frame at the given point.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
- * @param {number} width Width of the paint canvas.
- * @param {number} height Height of the paint canvas.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @return {wtf.analysis.Event} Frame event, if any.
  * @private
  */
 wtf.app.ui.nav.FramebarPainter.prototype.hitTestFrame_ = function(
-    x, y, width, height) {
+    x, y, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 

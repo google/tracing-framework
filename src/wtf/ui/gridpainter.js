@@ -66,7 +66,9 @@ wtf.ui.GridPainter.prototype.setGranularities = function(min, max) {
 /**
  * @override
  */
-wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, width, height) {
+wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var y = this.y_;
   var h = height - y;
 

@@ -70,7 +70,7 @@ wtf.ext.Manifest = function(url, json) {
   if (jsonApp) {
     this.app_ = {
       scripts: jsonApp['scripts'] || [],
-      options: jsonTracing['options'] || [],
+      options: jsonApp['options'] || [],
       triggers: []
     };
     var jsonTriggers = jsonApp['triggers'];
