@@ -27,6 +27,7 @@
 
 
 goog.provide('wtfapi');
+goog.provide('wtfapi.data.EventFlag');
 goog.provide('wtfapi.io.ByteArray');
 goog.provide('wtfapi.trace');
 goog.provide('wtfapi.trace.Flow');
@@ -115,6 +116,60 @@ wtfapi.trace.Scope;
  * @typedef {Object}
  */
 wtfapi.trace.Flow;
+
+
+/**
+ * Event behavior flag bitmask.
+ * Values can be ORed together to indicate different behaviors an event has.
+ * @enum {number}
+ */
+wtfapi.data.EventFlag = {
+  /**
+   * Event is expected to occur at a very high frequency.
+   * High frequency events will be optimized for size more than other event
+   * types.
+   */
+  HIGH_FREQUENCY: (1 << 1),
+
+  /**
+   * Event represents some system event that should not be counted towards user
+   * code. This can include things such as runtime events (GCs/etc) and tracing
+   * framework time (buffer swaps/etc).
+   */
+  SYSTEM_TIME: (1 << 2),
+
+  /**
+   * Event represents some internal system event such as flow control events.
+   * These should not be shown in the UI.
+   */
+  INTERNAL: (1 << 3),
+
+  /**
+   * Event arguments will be appended to the containing scope's arguments,
+   * overwritting any with the same name.
+   *
+   * If this is combined with the INTERNAL flag then the event is assumed to
+   * be a built-in system append event and will have special handling.
+   */
+  APPEND_SCOPE_DATA: (1 << 4),
+
+  /**
+   * Event is a builtin event.
+   * These may receive special handling and enable optimizations. User events
+   * should not have this flag set.
+   */
+  BUILTIN: (1 << 5),
+
+  /**
+   * Event arguments will be appended to the given flow's data, overwritting
+   * any with the same name. The first argument must be a flow ID named
+   * 'id' like 'flowId id'.
+   *
+   * If this is combined with the INTERNAL flag then the event is assumed to
+   * be a built-in system append event and will have special handling.
+   */
+  APPEND_FLOW_DATA: (1 << 6)
+};
 
 
 /**
