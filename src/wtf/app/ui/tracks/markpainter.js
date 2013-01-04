@@ -202,7 +202,6 @@ wtf.app.ui.tracks.MarkPainter.prototype.onClickInternal =
     var commandManager = wtf.events.getCommandManager();
     commandManager.execute('goto_mark', this, null, e);
     if (modifiers & wtf.ui.ModifierKey.SHIFT) {
-      // Select frame time.
       commandManager.execute('select_range', this, null,
           e.time, e.time + e.args['duration']);
     }
@@ -221,7 +220,9 @@ wtf.app.ui.tracks.MarkPainter.prototype.getInfoStringInternal =
     var lines = [
       wtf.util.formatTime(e.args['duration']) + ': ' + e.args['name']
     ];
-    // TODO(benvanik): add arguments
+    wtf.util.addArgumentLines(lines, {
+      'value': e.args['value'] !== null ? e.args['value'] : undefined
+    });
     return lines.join('\n');
   }
   return undefined;

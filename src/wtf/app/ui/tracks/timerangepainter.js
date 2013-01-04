@@ -13,10 +13,13 @@
 
 goog.provide('wtf.app.ui.tracks.TimeRangePainter');
 
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
+goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.RangePainter');
 goog.require('wtf.ui.color.Palette');
+goog.require('wtf.util');
 
 
 
@@ -95,50 +98,42 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
 
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
+  this.timeRangeIndex_.forEachIntersecting(timeLeft, timeRight,
+      function(timeRange) {
+        var beginEvent = timeRange.getBeginEvent();
+        var endEvent = timeRange.getEndEvent();
 
-  // Search left to find the time range active at the start of the visible
-  // range.
-  var firstEvent = this.timeRangeIndex_.search(timeLeft, function(e) {
-    return true;
-  });
-  var searchLeft = firstEvent ? firstEvent.time : timeLeft;
+        // Compute screen size.
+        var startTime = beginEvent.time;
+        var endTime = endEvent.time;
+        var left = wtf.math.remap(startTime, timeLeft, timeRight, 0, width);
+        var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
+        var screenWidth = right - left;
 
-  this.timeRangeIndex_.forEach(searchLeft, timeRight, function(e) {
-    var timeRange = e.value;
-    var beginEvent = timeRange.getBeginEvent();
-    var endEvent = timeRange.getEndEvent();
-    if (e != beginEvent) {
-      return;
-    }
+        // Clip with the screen.
+        var screenLeft = Math.max(0, left);
+        var screenRight = Math.min(width - 0.999, right);
+        if (screenLeft >= screenRight) {
+          return;
+        }
 
-    // Compute screen size.
-    var startTime = beginEvent.time;
-    var endTime = endEvent.time;
-    var left = wtf.math.remap(startTime, timeLeft, timeRight, 0, width);
-    var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
-    var screenWidth = right - left;
+        // Compute color by name.
+        var label = timeRange.getName();
+        if (!label) {
+          return;
+        }
+        var color = palette.getColorForString(label);
 
-    // Clip with the screen.
-    var screenLeft = Math.max(0, left);
-    var screenRight = Math.min(width - 0.999, right);
-    if (screenLeft >= screenRight) {
-      return;
-    }
+        // Draw bar.
+        var level = timeRange.getLevel();
+        this.drawRange(level, screenLeft, screenRight, color, 1);
 
-    // Compute color by name.
-    var label = timeRange.getName();
-    var color = palette.getColorForString(label);
-
-    // Draw bar.
-    var level = timeRange.getLevel();
-    this.drawRange(level, screenLeft, screenRight, color, 1);
-
-    if (screenWidth > 15) {
-      var y = level * wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
-      this.drawRangeLabel(
-          bounds, left, right, screenLeft, screenRight, y, label);
-    }
-  }, this);
+        if (screenWidth > 15) {
+          var y = level * wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+          this.drawRangeLabel(
+              bounds, left, right, screenLeft, screenRight, y, label);
+        }
+      }, this);
 
   // Now blit the nicely rendered ranges onto the screen.
   var y = 0;
@@ -147,60 +142,80 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
 };
 
 
-// /**
-//  * @override
-//  */
-// wtf.app.ui.tracks.TimeRangePainter.prototype.onClickInternal =
-//     function(x, y, modifiers, bounds) {
-//   var e = this.hitTest_(x, y, bounds);
-//   if (e) {
-//     var commandManager = wtf.events.getCommandManager();
-//     commandManager.execute('goto_mark', this, null, e);
-//     if (modifiers & wtf.ui.ModifierKey.SHIFT) {
-//       // Select frame time.
-//       commandManager.execute('select_range', this, null,
-//           e.time, e.time + e.args['duration']);
-//     }
-//   }
-//   return true;
-// };
+/**
+ * @override
+ */
+wtf.app.ui.tracks.TimeRangePainter.prototype.onClickInternal =
+    function(x, y, modifiers, bounds) {
+  var timeRange = this.hitTest_(x, y, bounds);
+  if (!timeRange) {
+    return false;
+  }
+
+  var timeStart = timeRange.getBeginEvent().time;
+  var timeEnd = timeRange.getEndEvent().time;
+
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('goto_range', this, null, timeStart, timeEnd);
+  if (modifiers & wtf.ui.ModifierKey.SHIFT) {
+    commandManager.execute('select_range', this, null, timeStart, timeEnd);
+  }
+
+  return true;
+};
 
 
-// /**
-//  * @override
-//  */
-// wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
-//     function(x, y, bounds) {
-//   var e = this.hitTest_(x, y, bounds);
-//   if (e) {
-//     var lines = [
-//       wtf.util.formatTime(e.args['duration']) + ': ' + e.args['name']
-//     ];
-//     // TODO(benvanik): add arguments
-//     return lines.join('\n');
-//   }
-//   return undefined;
-// };
+/**
+ * @override
+ */
+wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
+    function(x, y, bounds) {
+  var timeRange = this.hitTest_(x, y, bounds);
+  if (!timeRange) {
+    return undefined;
+  }
+
+  var duration = timeRange.getTotalDuration();
+  var lines = [
+    wtf.util.formatTime(duration) + ': ' + timeRange.getName()
+  ];
+  wtf.util.addArgumentLines(lines, timeRange.getData());
+  return lines.join('\n');
+};
 
 
-// /**
-//  * Finds the mark at the given point.
-//  * @param {number} x X coordinate, relative to canvas.
-//  * @param {number} y Y coordinate, relative to canvas.
-//  * @param {!goog.math.Rect} bounds Draw bounds.
-//  * @return {wtf.analysis.Event} Mark or nothing.
-//  * @private
-//  */
-// wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
-//     x, y, bounds) {
-//   var width = bounds.width;
-//   var height = bounds.height;
-//   if (y < this.y_ || y > this.y_ + wtf.app.ui.tracks.TimeRangePainter.HEIGHT) {
-//     return null;
-//   }
+/**
+ * Finds the time range at the given point.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {!goog.math.Rect} bounds Draw bounds.
+ * @return {wtf.analysis.TimeRange} Time range or nothing.
+ * @private
+ */
+wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
+    x, y, bounds) {
+  // HACK(benvanik): remove once layout is implemented.
+  bounds.top = this.y_;
+  bounds.height = 1000;
 
-//   var time = wtf.math.remap(x, 0, width, this.timeLeft, this.timeRight);
-//   return this.markIndex_.search(time, function(e) {
-//     return e.time <= time && time <= e.time + e.args['duration'];
-//   });
-// };
+  var width = bounds.width;
+  var height = bounds.height;
+  if (y < bounds.top || y > bounds.top + bounds.height) {
+    return null;
+  }
+
+  var h = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+  var level = ((y - bounds.top) / h) | 0;
+  var time = wtf.math.remap(x, 0, width, this.timeLeft, this.timeRight);
+  var e = this.timeRangeIndex_.search(time, function(e) {
+    if (e.value.getLevel() == level) {
+      var beginEvent = e.value.getBeginEvent();
+      var endEvent = e.value.getEndEvent();
+      if (e.time <= beginEvent.time && time <= endEvent.time) {
+        return true;
+      }
+    }
+    return false;
+  });
+  return e ? e.value : null;
+};

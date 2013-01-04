@@ -326,9 +326,10 @@ wtf.analysis.db.EventList.prototype.find = function(
  *
  * @param {number} timeStart Start time range.
  * @param {number} timeEnd End time range.
- * @param {!function(!wtf.analysis.Event):(boolean|undefined)} callback
+ * @param {!function(this: T, !wtf.analysis.Event):(boolean|undefined)} callback
  *     Function to call with the event nodes. Return {@code false} to cancel.
- * @param {Object=} opt_scope Scope to call the function in.
+ * @param {T=} opt_scope Scope to call the function in.
+ * @template T
  */
 wtf.analysis.db.EventList.prototype.forEach = function(
     timeStart, timeEnd, callback, opt_scope) {

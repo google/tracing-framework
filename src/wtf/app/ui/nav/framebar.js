@@ -196,8 +196,9 @@ goog.inherits(wtf.app.ui.nav.Framebar, wtf.ui.Control);
  */
 wtf.app.ui.nav.Framebar.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
-  commandManager.unregisterCommand('goto_frame');
+  commandManager.unregisterCommand('goto_range');
   commandManager.unregisterCommand('goto_mark');
+  commandManager.unregisterCommand('goto_frame');
   goog.base(this, 'disposeInternal');
 };
 
@@ -256,6 +257,14 @@ wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
   }, this);
 
   var commandManager = wtf.events.getCommandManager();
+  commandManager.registerSimpleCommand(
+      'goto_range', function(source, target, timeStart, timeEnd) {
+        var firstEventTime = this.db_.getFirstEventTime();
+        var pad = (timeEnd - timeStart) * 0.05;
+        this.viewport_.zoomToBounds(
+            timeStart - firstEventTime - pad, 0,
+            timeEnd - timeStart + pad * 2, 0.001);
+      }, this);
   commandManager.registerSimpleCommand(
       'goto_mark', function(source, target, e) {
         // Go to mark event.

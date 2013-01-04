@@ -50,6 +50,15 @@ wtf.analysis.TimeRange = function() {
    * @private
    */
   this.level_ = 0;
+
+  /**
+   * The number of overlapping time ranges.
+   * This is only used for bookkeeping by the time range index and should not
+   * be trusted.
+   * @type {number}
+   * @private
+   */
+  this.overlap_ = 0;
 };
 
 
@@ -117,11 +126,22 @@ wtf.analysis.TimeRange.prototype.getLevel = function() {
 
 
 /**
+ * Gets the overlap count.
+ * @return {number} Overlap.
+ */
+wtf.analysis.TimeRange.prototype.getOverlap = function() {
+  return this.overlap_;
+};
+
+
+/**
  * Sets the level (depth from the root).
  * @param {number} value Level.
+ * @param {number} overlap Overlap value.
  */
-wtf.analysis.TimeRange.prototype.setLevel = function(value) {
+wtf.analysis.TimeRange.prototype.setLevel = function(value, overlap) {
   this.level_ = value;
+  this.overlap_ = overlap;
 };
 
 

@@ -20,6 +20,7 @@ goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
+goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.RangePainter');
 goog.require('wtf.ui.color.Palette');
 goog.require('wtf.util');
@@ -350,6 +351,10 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
   }
 
   var result = this.hitTest_(x, y, bounds);
+  if (!result) {
+    return false;
+  }
+
   var newFilterString = '';
   if (result instanceof wtf.analysis.Scope) {
     // Single scope clicked.
@@ -376,8 +381,25 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
       newFilterString += '/';
     }
   }
+
   var commandManager = wtf.events.getCommandManager();
-  commandManager.execute('filter_events', this, null, newFilterString);
+  if (modifiers & wtf.ui.ModifierKey.SHIFT) {
+    // Shift-clicking a scope selects it and zooms to fit.
+    if (result instanceof wtf.analysis.Scope) {
+      var enterEvent = result.getEnterEvent();
+      var leaveEvent = result.getLeaveEvent();
+      if (!enterEvent || !leaveEvent) {
+        return false;
+      }
+      var timeStart = enterEvent.time;
+      var timeEnd = leaveEvent.time;
+      commandManager.execute('goto_range', this, null, timeStart, timeEnd);
+      commandManager.execute('select_range', this, null, timeStart, timeEnd);
+    }
+  } else {
+    commandManager.execute('filter_events', this, null, newFilterString);
+  }
+
   return true;
 };
 
@@ -476,10 +498,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
     times + ': ' + eventType.name
   ];
 
-  var data = scope.getData();
-  if (data) {
-    this.addArgumentLines_(data, lines);
-  }
+  wtf.util.addArgumentLines(lines, scope.getData());
 
   return lines.join('\n');
 };
@@ -503,51 +522,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.generateInstancesTooltip_ = function(
     var e = events[n];
     var eventType = e.eventType;
     lines.push(eventType.name);
-    var args = e.getArguments();
-    if (args) {
-      this.addArgumentLines_(args, lines);
-    }
+    wtf.util.addArgumentLines(lines, e.getArguments());
   }
 
   return lines.join('\n');
-};
-
-
-/**
- * Adds event argument lines to the tooltip.
- * @param {!Object} data Argument data object.
- * @param {!Array.<string>} lines List of lines that will be added to.
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.prototype.addArgumentLines_ = function(
-    data, lines) {
-  for (var argName in data) {
-    var argValue = data[argName];
-    if (argValue === undefined) {
-      continue;
-    }
-    if (argValue === null) {
-      argValue = 'null';
-    } else if (goog.isArray(argValue)) {
-      argValue = '[' + argValue + ']';
-    } else if (argValue.buffer && argValue.buffer instanceof ArrayBuffer) {
-      // TODO(benvanik): better display of big data blobs.
-      var argString = '[';
-      var maxCount = 16;
-      for (var n = 0; n < Math.min(argValue.length, maxCount); n++) {
-        if (n) {
-          argString += ',';
-        }
-        argString += argValue[n];
-      }
-      if (argValue.length > maxCount) {
-        argString += ' ...';
-      }
-      argString += ']';
-      argValue = argString;
-    } else if (goog.isObject(argValue)) {
-      argValue = goog.global.JSON.stringify(argValue);
-    }
-    lines.push(argName + ': ' + argValue);
-  }
 };
