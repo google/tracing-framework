@@ -41,6 +41,15 @@ wtf.analysis.TimeRange = function() {
    * @private
    */
   this.endEvent_ = null;
+
+  /**
+   * Level (depth from the root).
+   * This is used to compute the Y offset of the time range when drawing.
+   * It's updated by the index as new overlapping time ranges are added.
+   * @type {number}
+   * @private
+   */
+  this.level_ = 0;
 };
 
 
@@ -99,6 +108,24 @@ wtf.analysis.TimeRange.prototype.setEndEvent = function(e) {
 
 
 /**
+ * Gets the level (depth from the root).
+ * @return {number} Level.
+ */
+wtf.analysis.TimeRange.prototype.getLevel = function() {
+  return this.level_;
+};
+
+
+/**
+ * Sets the level (depth from the root).
+ * @param {number} value Level.
+ */
+wtf.analysis.TimeRange.prototype.setLevel = function(value) {
+  this.level_ = value;
+};
+
+
+/**
  * Gets the tiem range name (if it has been seen).
  * @return {string?} Time range name or null.
  */
@@ -147,6 +174,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.analysis.TimeRange.prototype, 'getEndEvent',
     wtf.analysis.TimeRange.prototype.getEndEvent);
+goog.exportProperty(
+    wtf.analysis.TimeRange.prototype, 'getLevel',
+    wtf.analysis.TimeRange.prototype.getLevel);
 goog.exportProperty(
     wtf.analysis.TimeRange.prototype, 'getName',
     wtf.analysis.TimeRange.prototype.getName);

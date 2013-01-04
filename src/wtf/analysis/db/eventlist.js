@@ -477,7 +477,7 @@ wtf.analysis.db.EventList.prototype.endInserting = function() {
   // Only do expensive logic if any events were inserted.
   if (this.insertedEventCount_) {
     this.insertedEventCount_ = 0;
-    this.invalidate_();
+    this.invalidate();
   }
 };
 
@@ -506,9 +506,9 @@ wtf.analysis.db.EventList.prototype.reconcileChanges_ = function() {
 
 /**
  * Handles invalidation (new events, events loaded, etc).
- * @private
+ * @protected
  */
-wtf.analysis.db.EventList.prototype.invalidate_ = function() {
+wtf.analysis.db.EventList.prototype.invalidate = function() {
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };
 

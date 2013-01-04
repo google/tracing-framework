@@ -52,7 +52,8 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    * @type {!wtf.analysis.db.TimeRangeIndex}
    * @private
    */
-  this.timeRangeIndex_ = new wtf.analysis.db.TimeRangeIndex(this.zone_);
+  this.timeRangeIndex_ = new wtf.analysis.db.TimeRangeIndex(
+      this.traceListener_, this.zone_);
   this.registerDisposable(this.timeRangeIndex_);
 
   /**

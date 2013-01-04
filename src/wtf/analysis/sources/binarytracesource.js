@@ -372,7 +372,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     });
   };
 
-  this.builtinDispatch_['wtf.trace#beginTimeRange'] = function(
+  this.builtinDispatch_['wtf.timeRange#begin'] = function(
       listener, eventType, zone, time, args) {
     var timeRangeId = args['id'];
     var timeRange = this.timeRangeTable_[timeRangeId];
@@ -389,7 +389,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     timeRange.setBeginEvent(e);
     return e;
   };
-  this.builtinDispatch_['wtf.trace#endTimeRange'] = function(
+  this.builtinDispatch_['wtf.timeRange#end'] = function(
       listener, eventType, zone, time, args) {
     var timeRangeId = args['id'];
     var timeRange = this.timeRangeTable_[timeRangeId];
