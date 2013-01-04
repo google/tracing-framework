@@ -278,18 +278,21 @@ wtf.analysis.db.EventList.prototype.findEnclosingScope = function(time) {
  * @param {number} timeStart Start time range.
  * @param {number} timeEnd End time range.
  * @param {wtf.analysis.Scope=} opt_parentScope Scope to restrict results to.
+ * @param {boolean=} opt_includeInternal True to include internal events.
  * @return {Array.<!wtf.analysis.Event>} A list of events or null if none were
  *     found.
  */
 wtf.analysis.db.EventList.prototype.findInstances = function(
-    timeStart, timeEnd, opt_parentScope) {
+    timeStart, timeEnd, opt_parentScope, opt_includeInternal) {
   var searchFunction = opt_parentScope ? function(e) {
     return e.scope == opt_parentScope &&
         e.eventType.eventClass == wtf.data.EventClass.INSTANCE &&
-        !(e.eventType.flags & wtf.data.EventFlag.INTERNAL);
+        (opt_includeInternal ||
+            !(e.eventType.flags & wtf.data.EventFlag.INTERNAL));
   } : function(e) {
     return e.eventType.eventClass == wtf.data.EventClass.INSTANCE &&
-        !(e.eventType.flags & wtf.data.EventFlag.INTERNAL);
+        (opt_includeInternal ||
+            !(e.eventType.flags & wtf.data.EventFlag.INTERNAL));
   };
   return this.find(timeStart, timeEnd, searchFunction);
 };

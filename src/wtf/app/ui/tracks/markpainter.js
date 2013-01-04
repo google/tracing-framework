@@ -152,7 +152,8 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
 
   // Get all of the marks.
   // This should be fixed to create less garbage.
-  var markEvents = markIndex.findInstances(searchLeft, timeRight);
+  var markEvents = markIndex.findInstances(
+      searchLeft, timeRight, undefined, true);
 
   for (var n = 0; n < markEvents.length; n++) {
     var e = markEvents[n];
