@@ -36,7 +36,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.tracks.ZonePainter = function(canvas, db, zoneIndex,
+wtf.app.ui.tracks.ZonePainter = function ZonePainter(canvas, db, zoneIndex,
     selection) {
   goog.base(this, canvas);
   var dom = this.getDom();
@@ -76,15 +76,6 @@ goog.inherits(wtf.app.ui.tracks.ZonePainter, wtf.ui.RangePainter);
 
 
 /**
- * Top of first scope.
- * @const
- * @type {number}
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ = 17 + 25;
-
-
-/**
  * Height of a scope (including border), in px.
  * @const
  * @type {number}
@@ -114,14 +105,21 @@ wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_ = 0.001;
 /**
  * @override
  */
+wtf.app.ui.tracks.ZonePainter.prototype.layoutInternal = function(
+    availableBounds) {
+  var newBounds = availableBounds.clone();
+  var maxDepth = this.zoneIndex_.getMaximumScopeDepth() + 1;
+  var scopeHeight = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  newBounds.height = maxDepth * scopeHeight;
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
     ctx, bounds) {
-  var width = bounds.width;
-  var height = bounds.height;
-
-  // HACK(benvanik): remove once layout is implemented.
-  bounds.top = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_;
-
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -159,8 +157,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
     }
   });
 
-  // Draw time ranges.
-  // TODO(benvanik): draw time ranges
+  // Root time tracker.
+  ctx.fillStyle = 'rgb(200,200,200)';
+  ctx.fillRect(bounds.left, bounds.top, bounds.width, 1);
 
   // Draw scopes first.
   this.drawScopes_(
@@ -189,8 +188,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
 wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     bounds, timeLeft, timeRight, scopeEvents, scopeCount) {
   var palette = this.palette_;
-  var width = bounds.width;
-  var height = bounds.height;
 
   this.beginRenderingRanges(bounds, this.zoneIndex_.getMaximumScopeDepth());
 
@@ -218,13 +215,17 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     }
 
     // Compute screen size.
-    var left = wtf.math.remap(enter.time, timeLeft, timeRight, 0, width);
-    var right = wtf.math.remap(leave.time, timeLeft, timeRight, 0, width);
+    var left = wtf.math.remap(enter.time,
+        timeLeft, timeRight,
+        bounds.left, bounds.left + bounds.width);
+    var right = wtf.math.remap(leave.time,
+        timeLeft, timeRight,
+        bounds.left, bounds.left + bounds.width);
     var screenWidth = right - left;
 
     // Clip with the screen.
-    var screenLeft = Math.max(0, left);
-    var screenRight = Math.min(width - 0.999, right);
+    var screenLeft = Math.max(bounds.left, left);
+    var screenRight = Math.min((bounds.left + bounds.width) - 0.999, right);
     if (screenLeft >= screenRight) {
       continue;
     }
@@ -263,7 +264,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = 0;
+  var y = 1;
   var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
   this.endRenderingRanges(bounds, y, h);
 };
@@ -281,8 +282,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
 wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
     bounds, timeLeft, timeRight, events, eventCount) {
   var palette = this.palette_;
-  var width = bounds.width;
-  var height = bounds.height;
 
   this.beginRenderingRanges(bounds, this.zoneIndex_.getMaximumScopeDepth());
 
@@ -301,14 +300,19 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
     if (e.scope && e.scope.getLeaveEvent()) {
       endTime = Math.min(endTime, e.scope.getLeaveEvent().time);
     }
-    var left = wtf.math.remap(e.time, timeLeft, timeRight, 0, width);
-    var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
+    var left = wtf.math.remap(e.time,
+        timeLeft, timeRight,
+        bounds.left, bounds.left + bounds.width);
+    var right = wtf.math.remap(endTime,
+        timeLeft, timeRight,
+        bounds.left, bounds.left + bounds.width);
+    var screenWidth = right - left;
 
     // Get color in the palette used for filling.
     var color = palette.getColorForString(e.eventType.name);
 
-    var screenLeft = Math.max(0, left);
-    var screenRight = Math.min(width - .999, right);
+    var screenLeft = Math.max(bounds.left, left);
+    var screenRight = Math.min((bounds.left + bounds.width) - 0.999, right);
     if (screenLeft >= screenRight) continue;
 
     var alpha = 1;
@@ -335,7 +339,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  var y = 1 + wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
   var h = wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_;
   this.endRenderingRanges(bounds, y, h);
 };
@@ -346,10 +350,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
  */
 wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
-  if (y < wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_) {
-    return false;
-  }
-
   var result = this.hitTest_(x, y, bounds);
   if (!result) {
     return false;
@@ -430,13 +430,13 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
  */
 wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
     x, y, bounds) {
-  var width = bounds.width;
-  var height = bounds.height;
   var zoneIndex = this.zoneIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 
-  var time = wtf.math.remap(x, 0, width, timeLeft, timeRight);
+  var time = wtf.math.remap(x,
+      bounds.left, bounds.left + bounds.width,
+      timeLeft, timeRight);
 
   var count = 0;
   var scope = zoneIndex.findEnclosingScope(time);
@@ -449,8 +449,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
     var enter = scope.getEnterEvent();
     var leave = scope.getLeaveEvent();
     var scopeHeight = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-    var scopeTop = wtf.app.ui.tracks.ZonePainter.SCOPE_TOP_ +
-        depth * scopeHeight;
+    var scopeTop = bounds.top + 1 + depth * scopeHeight;
     var scopeBottom = scopeTop + scopeHeight;
     if (enter && leave && scopeTop <= y) {
       if (leave.time >= time) {

@@ -25,15 +25,8 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.ui.RulerPainter = function(canvas) {
+wtf.ui.RulerPainter = function RulerPainter(canvas) {
   goog.base(this, canvas);
-
-  /**
-   * Y offset, in pixels.
-   * @type {number}
-   * @private
-   */
-  this.y_ = 0;
 
   /**
    * Minimum granularity.
@@ -89,26 +82,33 @@ wtf.ui.RulerPainter.prototype.setGranularities = function(min, max) {
 /**
  * @override
  */
+wtf.ui.RulerPainter.prototype.layoutInternal = function(availableBounds) {
+  var newBounds = availableBounds.clone();
+  newBounds.height = wtf.ui.RulerPainter.HEIGHT;
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
 wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
   var width = bounds.width;
-  var height = bounds.height;
-  var y = this.y_;
-  var h = wtf.ui.RulerPainter.HEIGHT;
 
   // Hover UI.
   if (this.showHoverTip_ && this.hoverX_) {
     ctx.fillStyle = '#000000';
-    ctx.fillRect(this.hoverX_, this.y_, 1, height);
+    ctx.fillRect(bounds.left + this.hoverX_, bounds.top, 1, bounds.height);
   }
 
   // Clip to extents.
-  this.clip(0, y, width, h);
+  this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Clear gutter.
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, y, width, h);
+  ctx.fillRect(bounds.left, bounds.top, bounds.width, bounds.height);
   ctx.fillStyle = '#000000';
-  ctx.fillRect(0, y + h - 1, width, 1);
+  ctx.fillRect(bounds.left, bounds.top + bounds.height - 1, bounds.width, 1);
 
   // Draw labels.
   var timeLeft = this.timeLeft;
@@ -139,7 +139,7 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
       x = Math.round(x) + 0.5;
       var timeValue = (time / 1000);
       var timeString = (Math.round(timeValue * g) / g) + 's';
-      ctx.fillText(timeString, x, y + 10);
+      ctx.fillText(timeString, bounds.left + x, bounds.top + 11);
     }
 
     granularity /= 10;
@@ -153,9 +153,13 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
     var timeWidth = ctx.measureText(timeString).width;
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(this.hoverX_ - timeWidth / 2 - 3, 0, timeWidth + 6, h - 1);
+    ctx.fillRect(
+        bounds.left + this.hoverX_ - timeWidth / 2 - 3, bounds.top,
+        timeWidth + 6, bounds.height - 1);
     ctx.fillStyle = '#000000';
-    ctx.fillText(timeString, this.hoverX_ - timeWidth / 2, 10);
+    ctx.fillText(
+        timeString,
+        bounds.left + this.hoverX_ - timeWidth / 2, bounds.top + 11);
   }
 };
 

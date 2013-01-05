@@ -31,7 +31,8 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.tracks.TimeRangePainter = function(canvas, db, timeRangeIndex) {
+wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
+    canvas, db, timeRangeIndex) {
   goog.base(this, canvas);
   var dom = this.getDom();
 
@@ -49,14 +50,6 @@ wtf.app.ui.tracks.TimeRangePainter = function(canvas, db, timeRangeIndex) {
    */
   this.timeRangeIndex_ = timeRangeIndex;
 
-  /**
-   * Y offset, in pixels.
-   * @type {number}
-   * @private
-   */
-  this.y_ = 200;
-
-  // TODO(benvanik): a better palette.
   /**
    * Color palette used for drawing marks.
    * @type {!wtf.ui.color.Palette}
@@ -84,17 +77,25 @@ wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_ = 16;
 /**
  * @override
  */
+wtf.app.ui.tracks.TimeRangePainter.prototype.layoutInternal = function(
+    availableBounds) {
+  var newBounds = availableBounds.clone();
+  var maxLevel = this.timeRangeIndex_.getMaximumLevel();
+  var levelHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+  newBounds.height = maxLevel * levelHeight;
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
 
-  // HACK(benvanik): remove once layout is implemented.
-  bounds.top = this.y_;
-
-  var width = bounds.width;
-  var height = bounds.height;
-
-  this.beginRenderingRanges(bounds, this.timeRangeIndex_.getMaximumLevel());
+  var maxLevel = this.timeRangeIndex_.getMaximumLevel();
+  this.beginRenderingRanges(bounds, maxLevel);
 
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -106,13 +107,17 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
         // Compute screen size.
         var startTime = beginEvent.time;
         var endTime = endEvent.time;
-        var left = wtf.math.remap(startTime, timeLeft, timeRight, 0, width);
-        var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
+        var left = wtf.math.remap(startTime,
+            timeLeft, timeRight,
+            bounds.left, bounds.left + bounds.width);
+        var right = wtf.math.remap(endTime,
+            timeLeft, timeRight,
+            bounds.left, bounds.left + bounds.width);
         var screenWidth = right - left;
 
         // Clip with the screen.
-        var screenLeft = Math.max(0, left);
-        var screenRight = Math.min(width - 0.999, right);
+        var screenLeft = Math.max(bounds.left, left);
+        var screenRight = Math.min((bounds.left + bounds.width) - 0.999, right);
         if (screenLeft >= screenRight) {
           return;
         }
@@ -137,7 +142,8 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
 
   // Now blit the nicely rendered ranges onto the screen.
   var y = 0;
-  var h = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+  var h =
+      (maxLevel - 1) * wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
   this.endRenderingRanges(bounds, y, h);
 };
 
@@ -194,19 +200,11 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
  */
 wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
     x, y, bounds) {
-  // HACK(benvanik): remove once layout is implemented.
-  bounds.top = this.y_;
-  bounds.height = 1000;
-
-  var width = bounds.width;
-  var height = bounds.height;
-  if (y < bounds.top || y > bounds.top + bounds.height) {
-    return null;
-  }
-
   var h = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
   var level = ((y - bounds.top) / h) | 0;
-  var time = wtf.math.remap(x, 0, width, this.timeLeft, this.timeRight);
+  var time = wtf.math.remap(x,
+      bounds.left, bounds.left + bounds.width,
+      this.timeLeft, this.timeRight);
   var e = this.timeRangeIndex_.search(time, function(e) {
     if (e.value.getLevel() == level) {
       var beginEvent = e.value.getBeginEvent();

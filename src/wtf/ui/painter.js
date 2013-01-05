@@ -11,16 +11,55 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+goog.provide('wtf.ui.LayoutMode');
 goog.provide('wtf.ui.ModifierKey');
 goog.provide('wtf.ui.Painter');
 
 goog.require('goog.Disposable');
 goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('goog.debug');
 goog.require('goog.dom');
 goog.require('goog.math.Rect');
 goog.require('wtf.timing');
 goog.require('wtf.util.canvas');
+
+
+/**
+ * Bitmask values for input modifier keys.
+ * @enum {number}
+ */
+wtf.ui.ModifierKey = {
+  CTRL: 1 << 1,
+  ALT: 1 << 2,
+  SHIFT: 1 << 3,
+  META: 1 << 4
+};
+
+
+/**
+ * Layout mode.
+ * @enum {number}
+ */
+wtf.ui.LayoutMode = {
+  /**
+   * No layout.
+   * All children get the full parent bounding region.
+   */
+  NONE: 0,
+
+  /**
+   * Horizontal layout.
+   * Children are stacked horizontally.
+   */
+  HORIZONTAL: 1,
+
+  /**
+   * Vertical layout.
+   * Children are stacked vertically.
+   */
+  VERTICAL: 2
+};
 
 
 
@@ -34,6 +73,13 @@ goog.require('wtf.util.canvas');
  */
 wtf.ui.Painter = function(canvas) {
   goog.base(this);
+
+  /**
+   * DOM helper.
+   * @type {!goog.dom.DomHelper}
+   * @private
+   */
+  this.dom_ = goog.dom.getDomHelper(canvas);
 
   /**
    * Target DOM canvas.
@@ -55,6 +101,35 @@ wtf.ui.Painter = function(canvas) {
    * @private
    */
   this.pixelRatio_ = wtf.util.canvas.getCanvasPixelRatio(this.canvasContext2d_);
+
+  /**
+   * Layout mode.
+   * @type {wtf.ui.LayoutMode}
+   * @private
+   */
+  this.layoutMode_ = wtf.ui.LayoutMode.NONE;
+
+  /**
+   * Whether a layout pass is required.
+   * @type {boolean}
+   * @private
+   */
+  this.layoutNeeded_ = true;
+
+  /**
+   * Cached bounds from the previous layout.
+   * @type {!goog.math.Rect}
+   * @private
+   */
+  this.bounds_ = new goog.math.Rect(0, 0, 0, 0);
+
+  /**
+   * Padding for layout.
+   * This value is added to the computed layout bounds.
+   * @type {!goog.math.Rect}
+   * @private
+   */
+  this.padding_ = new goog.math.Rect(0, 0, 0, 0);
 
   /**
    * Parent painter.
@@ -100,6 +175,25 @@ wtf.ui.Painter.prototype.disposeInternal = function() {
 
 
 /**
+ * Whether to draw debug information.
+ * @type {boolean}
+ * @const
+ * @private
+ */
+wtf.ui.Painter.DEBUG_ = false;
+
+
+/**
+ * Gets a dom helper.
+ * @return {!goog.dom.DomHelper} A dom helper for the document containing
+ *     this paint context's canvas.
+ */
+wtf.ui.Painter.prototype.getDom = function() {
+  return this.dom_;
+};
+
+
+/**
  * Gets the target canvas.
  * @return {!HTMLCanvasElement} Target canvas.
  */
@@ -136,23 +230,50 @@ wtf.ui.Painter.prototype.getScaledCanvasHeight = function() {
 
 
 /**
- * Gets the painter bounds.
- * @return {!goog.math.Rect} Painting bounds, in pixels.
+ * Gets the layout mode of the painter.
+ * @return {wtf.ui.LayoutMode} Current layout mode.
  */
-wtf.ui.Painter.prototype.getBounds = function() {
-  var width = this.getScaledCanvasWidth();
-  var height = this.getScaledCanvasHeight();
-  return new goog.math.Rect(0, 0, width, height);
+wtf.ui.Painter.prototype.getLayoutMode = function() {
+  return this.layoutMode_;
 };
 
 
 /**
- * Gets a dom helper.
- * @return {!goog.dom.DomHelper} A dom helper for the document containing
- *     this paint context's canvas.
+ * Sets the layout mode of the painter.
+ * @param {wtf.ui.LayoutMode} value New layout mode.
  */
-wtf.ui.Painter.prototype.getDom = function() {
-  return goog.dom.getDomHelper(this.canvas_);
+wtf.ui.Painter.prototype.setLayoutMode = function(value) {
+  this.layoutMode_ = value;
+};
+
+
+/**
+ * Gets the layout padding.
+ * @return {!goog.math.Rect} Padding.
+ */
+wtf.ui.Painter.prototype.getPadding = function() {
+  return this.padding_;
+};
+
+
+/**
+ * Sets the layout padding.
+ * @param {!goog.math.Rect} value New padding.
+ */
+wtf.ui.Painter.prototype.setPadding = function(value) {
+  this.padding_.left = value.left;
+  this.padding_.top = value.top;
+  this.padding_.width = value.width;
+  this.padding_.height = value.height;
+};
+
+
+/**
+ * Gets the painter bounds.
+ * @return {!goog.math.Rect} Painting bounds, in pixels.
+ */
+wtf.ui.Painter.prototype.getBounds = function() {
+  return this.bounds_;
 };
 
 
@@ -180,6 +301,7 @@ wtf.ui.Painter.prototype.addChildPainter = function(value, opt_before) {
   } else {
     this.childPainters_.push(value);
   }
+  this.requestLayout();
 };
 
 
@@ -190,8 +312,116 @@ wtf.ui.Painter.prototype.addChildPainter = function(value, opt_before) {
 wtf.ui.Painter.prototype.setReady = function(value) {
   this.ready_ = value;
   if (value) {
-    this.requestRepaint();
+    this.requestLayout();
   }
+};
+
+
+/**
+ * Requests a layout (and repaint) of the control on the next rAF.
+ * This should be used instead of laying out inline in JS callbacks to ensure
+ * no redundant layouts occur.
+ * @protected
+ */
+wtf.ui.Painter.prototype.requestLayout = function() {
+  this.layoutNeeded_ = true;
+  this.requestRepaint();
+};
+
+
+/**
+ * Performs layout on the painter and all children.
+ * This is called on the root with the dimensions of the root canvas. Each
+ * child then gets called with the available space in its parent, adjusted
+ * based on the layout mode.
+ *
+ * For example if a painter has two children and a layout mode of HORIZONTAL
+ * the first child will get the entire bounds and the second will get a bounds
+ * with the space the first child used subtracted out.
+ *
+ * @param {!goog.math.Rect} availableBounds Current available bounds in the
+ *     parent.
+ * @return {!goog.math.Rect} The new bounds of this painter.
+ * @protected
+ */
+wtf.ui.Painter.prototype.layout = function(availableBounds) {
+  // Compute self layout.
+  var newBounds = this.layoutInternal(availableBounds);
+
+  // Factor in padding.
+  // The width/height is done in the parent.
+  newBounds.left += this.padding_.left;
+  newBounds.top += this.padding_.top;
+
+  // Remaining bounds is available minus self.
+  var remainingBounds = newBounds.clone();
+  remainingBounds.width =
+      Math.max(0, availableBounds.width - newBounds.left);
+  remainingBounds.height =
+      Math.max(0, availableBounds.height - newBounds.top);
+
+  // Layout children.
+  for (var n = 0; n < this.childPainters_.length; n++) {
+    var childPainter = this.childPainters_[n];
+    var childPadding = childPainter.padding_;
+    var childBounds = childPainter.layout(remainingBounds);
+    if (!childBounds.width || !childBounds.height) {
+      // Skip layout computation for empty painters.
+      continue;
+    }
+    switch (this.layoutMode_) {
+      default:
+      case wtf.ui.LayoutMode.NONE:
+        // No-op.
+        break;
+      case wtf.ui.LayoutMode.HORIZONTAL:
+        // Stack horizontally.
+        newBounds.width += childBounds.width + childPadding.width;
+        remainingBounds.left += childBounds.width + childPadding.width;
+        remainingBounds.width -= childBounds.width - childPadding.width;
+        break;
+      case wtf.ui.LayoutMode.VERTICAL:
+        // Stack vertically.
+        newBounds.height += childBounds.height + childPadding.height;
+        remainingBounds.top += childBounds.height + childPadding.height;
+        remainingBounds.height -= childBounds.height - childPadding.height;
+        break;
+    }
+  }
+
+  this.bounds_ = newBounds;
+  return newBounds.clone();
+};
+
+
+/**
+ * Performs custom layout of the painter.
+ * This will be called with the available bounds in the parent. Subclasses
+ * should override this if they want custom layout logic, such as specifying
+ * a fixed or variable width/height.
+ *
+ * @param {!goog.math.Rect} availableBounds Current available bounds in the
+ *     parent.
+ * @return {!goog.math.Rect} New bounds.
+ * @protected
+ */
+wtf.ui.Painter.prototype.layoutInternal = function(availableBounds) {
+  var newBounds = availableBounds.clone();
+  switch (this.layoutMode_) {
+    default:
+    case wtf.ui.LayoutMode.NONE:
+      // Use entire extents.
+      break;
+    case wtf.ui.LayoutMode.HORIZONTAL:
+      // Stack horizontally, accumulate width.
+      newBounds.width = 0;
+      break;
+    case wtf.ui.LayoutMode.VERTICAL:
+      // Stack vertically, accumulate height.
+      newBounds.height = 0;
+      break;
+  }
+  return newBounds;
 };
 
 
@@ -243,21 +473,61 @@ wtf.ui.Painter.prototype.repaint = function() {
   // Prepare canvas. This should only occur on the root paint context.
   var ctx = this.canvasContext2d_;
   wtf.util.canvas.reset(ctx, this.pixelRatio_);
+  var canvasWidth = this.getScaledCanvasWidth();
+  var canvasHeight = this.getScaledCanvasHeight();
+
+  // TODO(benvanik): set flag if actually resized
+  // TODO(benvanik): don't relayout each paint
+  this.layoutNeeded_ = true;
+
+  // Layout, if needed.
+  var bounds = this.getBounds();
+  if (this.layoutNeeded_) {
+    this.layoutNeeded_ = false;
+    var availableBounds = new goog.math.Rect(0, 0, canvasWidth, canvasHeight);
+    bounds = this.layout(availableBounds);
+  }
 
   // Skip all drawing if too small.
-  var bounds = this.getBounds();
   if (bounds.height <= 1) {
     return;
   }
 
-  ctx.save();
-
   // Clear contents.
   // TODO(benvanik): only if needed
-  this.clear(0, 0, bounds.width, bounds.height);
+  this.clear(0, 0, canvasWidth, canvasHeight);
 
-  var preventChildren = this.repaintInternal(ctx, bounds);
+  // Recursively repaint.
+  this.recursiveRepaint_();
+};
 
+
+/**
+ * Repaints the painter and its children during a repaint phase.
+ * @private
+ */
+wtf.ui.Painter.prototype.recursiveRepaint_ = function() {
+  var ctx = this.canvasContext2d_;
+
+  // Skip if too small.
+  if (!this.bounds_.width ||
+      !this.bounds_.height) {
+    return;
+  }
+
+  // Paint self.
+  ctx.save();
+  var preventChildren = this.repaintInternal(ctx, this.bounds_);
+  if (wtf.ui.Painter.DEBUG_) {
+    ctx.strokeStyle = '#ff0000';
+    ctx.strokeRect(
+        this.bounds_.left, this.bounds_.top,
+        this.bounds_.width, this.bounds_.height);
+    ctx.fillStyle = '#00ff00';
+    ctx.fillText(
+        goog.debug.getFunctionName(this.constructor),
+        this.bounds_.left, this.bounds_.top + 8);
+  }
   ctx.restore();
   if (preventChildren) {
     return;
@@ -266,9 +536,7 @@ wtf.ui.Painter.prototype.repaint = function() {
   // Repaint all children.
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    ctx.save();
-    childContext.repaintInternal(ctx, bounds);
-    ctx.restore();
+    childContext.recursiveRepaint_();
   }
 };
 
@@ -323,14 +591,17 @@ wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
 
 
 /**
- * Bitmask values for input modifier keys.
- * @enum {number}
+ * Detects whether the given point is within the bounds of the painter.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @return {boolean} True if the point is within the bounds.
  */
-wtf.ui.ModifierKey = {
-  CTRL: 1 << 1,
-  ALT: 1 << 2,
-  SHIFT: 1 << 3,
-  META: 1 << 4
+wtf.ui.Painter.prototype.pointInBounds = function(x, y) {
+  var bounds = this.bounds_;
+  return x >= bounds.left &&
+      x <= bounds.left + bounds.width &&
+      y >= bounds.top &&
+      y <= bounds.top + bounds.height;
 };
 
 
@@ -343,7 +614,12 @@ wtf.ui.ModifierKey = {
  * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
-  var bounds = this.getBounds();
+  // Ensure point is inside region.
+  var bounds = this.bounds_;
+  if (!this.pointInBounds(x, y)) {
+    return false;
+  }
+
   if (this.onClickInternal(x, y, modifiers, bounds)) {
     return true;
   }
@@ -379,7 +655,14 @@ wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
  * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onMouseMove = function(x, y, modifiers) {
-  var bounds = this.getBounds();
+  // Ensure point is inside region.
+  var bounds = this.bounds_;
+
+  // TODO(benvanik): some toggle for this behavior? ruler needs to sniff all
+  // if (!this.pointInBounds(x, y)) {
+  //   return false;
+  // }
+
   if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
     return true;
   }
@@ -440,14 +723,24 @@ wtf.ui.Painter.prototype.onMouseOutInternal = goog.nullFunction;
  * @return {string|undefined} Info string or undefined for none.
  */
 wtf.ui.Painter.prototype.getInfoString = function(x, y) {
-  var bounds = this.getBounds();
+  // Ensure point is inside region.
+  var bounds = this.bounds_;
+  if (!this.pointInBounds(x, y)) {
+    return undefined;
+  }
+
+  // Get info string.
   var info = this.getInfoStringInternal(x, y, bounds);
-  if (info) return info;
+  if (info) {
+    return info;
+  }
 
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     info = childContext.getInfoString(x, y);
-    if (info) return info;
+    if (info) {
+      return info;
+    }
   }
 
   return undefined;

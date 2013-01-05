@@ -32,7 +32,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
+wtf.app.ui.tracks.MarkPainter = function MarkPainter(canvas, db) {
   goog.base(this, canvas);
 
   /**
@@ -41,13 +41,6 @@ wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
    * @private
    */
   this.db_ = db;
-
-  /**
-   * Y offset, in pixels.
-   * @type {number}
-   * @private
-   */
-  this.y_ = 16;
 
   // TODO(benvanik): a better palette.
   /**
@@ -141,16 +134,24 @@ wtf.app.ui.tracks.MarkPainter.HEIGHT = 16;
 /**
  * @override
  */
+wtf.app.ui.tracks.MarkPainter.prototype.layoutInternal = function(
+    availableBounds) {
+  var newBounds = availableBounds.clone();
+  if (this.markIndex_ && this.markIndex_.getCount()) {
+    newBounds.height = wtf.app.ui.tracks.MarkPainter.HEIGHT;
+  } else {
+    newBounds.height = 0;
+  }
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
-
-  // HACK(benvanik): remove once layout is implemented.
-  bounds.top = this.y_;
-  bounds.height = wtf.app.ui.tracks.MarkPainter.HEIGHT;
-
-  var width = bounds.width;
-  var height = bounds.height;
 
   // Clip to extents.
   this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
@@ -178,13 +179,17 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     // Compute screen size.
     var startTime = e.time;
     var endTime = e.time + e.args['duration'];
-    var left = wtf.math.remap(startTime, timeLeft, timeRight, 0, width);
-    var right = wtf.math.remap(endTime, timeLeft, timeRight, 0, width);
+    var left = wtf.math.remap(startTime,
+        timeLeft, timeRight,
+        bounds.left, bounds.left + bounds.width);
+    var right = wtf.math.remap(endTime,
+        timeLeft, timeRight,
+        bounds.left, bounds.left + bounds.width);
     var screenWidth = right - left;
 
     // Clip with the screen.
-    var screenLeft = Math.max(0, left);
-    var screenRight = Math.min(width - 0.999, right);
+    var screenLeft = Math.max(bounds.left, left);
+    var screenRight = Math.min((bounds.left + bounds.width) - 0.999, right);
     if (screenLeft >= screenRight) {
       return;
     }
@@ -193,7 +198,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
     if (!e.tag) {
       e.tag = palette.getRandomColor();
     }
-    var color = e.tag;
+    var color = /** @type {!wtf.ui.color.RgbColor} */ (e.tag);
 
     // Draw bar.
     this.drawRange(0, screenLeft, screenRight, color, 1);
@@ -206,7 +211,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
 
   // Now blit the nicely rendered ranges onto the screen.
   var y = 0;
-  var h = wtf.app.ui.tracks.MarkPainter.HEIGHT - 1;
+  var h = bounds.height - 1;
   this.endRenderingRanges(bounds, y, h);
 };
 
@@ -258,13 +263,9 @@ wtf.app.ui.tracks.MarkPainter.prototype.getInfoStringInternal =
  */
 wtf.app.ui.tracks.MarkPainter.prototype.hitTest_ = function(
     x, y, bounds) {
-  var width = bounds.width;
-  var height = bounds.height;
-  if (y < this.y_ || y > this.y_ + wtf.app.ui.tracks.MarkPainter.HEIGHT) {
-    return null;
-  }
-
-  var time = wtf.math.remap(x, 0, width, this.timeLeft, this.timeRight);
+  var time = wtf.math.remap(x,
+      bounds.left, bounds.left + bounds.width,
+      this.timeLeft, this.timeRight);
   return this.markIndex_.search(time, function(e) {
     return e.time <= time && time <= e.time + e.args['duration'];
   });

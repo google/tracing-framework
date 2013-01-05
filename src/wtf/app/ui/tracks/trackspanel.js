@@ -14,8 +14,8 @@
 goog.provide('wtf.app.ui.tracks.TracksPanel');
 
 goog.require('goog.array');
-goog.require('goog.asserts');
 goog.require('goog.dom');
+goog.require('goog.math.Rect');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
@@ -30,6 +30,7 @@ goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.events.EventType');
 goog.require('wtf.timing');
 goog.require('wtf.ui.GridPainter');
+goog.require('wtf.ui.LayoutMode');
 goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.RulerPainter');
@@ -115,9 +116,6 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('canvas')));
 
-  var paintContext = new wtf.ui.Painter(this.trackCanvas_);
-  this.setPaintContext(paintContext);
-
   /**
    * Tooltip.
    * @type {!wtf.ui.Tooltip}
@@ -126,6 +124,9 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.tooltip_ = new wtf.ui.Tooltip(this.getDom());
   this.registerDisposable(this.tooltip_);
   this.setTooltip(this.tooltip_);
+
+  var paintContext = new wtf.ui.Painter(this.trackCanvas_);
+  this.setPaintContext(paintContext);
 
   /**
    * A list of all paint contexts that extend {@see wtf.ui.TimePainter}.
@@ -154,20 +155,29 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.timeRangePainters_.push(this.selectionPainter_);
 
   /**
+   * Vertical stack of painters that make up the main view.
+   * @type {!wtf.ui.Painter}
+   * @private
+   */
+  this.painterStack_ = new wtf.ui.Painter(this.trackCanvas_);
+  paintContext.addChildPainter(this.painterStack_);
+  this.painterStack_.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
+
+  var markPainter = new wtf.app.ui.tracks.MarkPainter(this.trackCanvas_, db);
+  this.painterStack_.addChildPainter(markPainter);
+  this.timeRangePainters_.push(markPainter);
+
+  /**
    * Ruler painter.
    * @type {!wtf.ui.RulerPainter}
    * @private
    */
   this.rulerPainter_ = new wtf.ui.RulerPainter(this.trackCanvas_);
-  paintContext.addChildPainter(this.rulerPainter_);
+  this.painterStack_.addChildPainter(this.rulerPainter_);
   this.rulerPainter_.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timeRangePainters_.push(this.rulerPainter_);
-
-  var markPainter = new wtf.app.ui.tracks.MarkPainter(this.trackCanvas_, db);
-  paintContext.addChildPainter(markPainter);
-  this.timeRangePainters_.push(markPainter);
 
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
@@ -245,17 +255,20 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
  * @private
  */
 wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
-  var paintContext = this.getPaintContext();
-  goog.asserts.assert(paintContext);
+  var zonePainterStack = new wtf.ui.Painter(this.trackCanvas_);
+  this.painterStack_.addChildPainter(zonePainterStack);
+  zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
+  zonePainterStack.setPadding(new goog.math.Rect(0, 5, 0, 5));
+
+  var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
+      this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());
+  zonePainterStack.addChildPainter(timeRangePainter);
+  this.timeRangePainters_.push(timeRangePainter);
+  timeRangePainter.setPadding(new goog.math.Rect(0, 0, 0, 10));
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
       this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
-  paintContext.addChildPainter(zonePainter, this.rulerPainter_);
+  zonePainterStack.addChildPainter(zonePainter);
   this.timeRangePainters_.push(zonePainter);
-
-  var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
-      this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());
-  paintContext.addChildPainter(timeRangePainter, zonePainter);
-  this.timeRangePainters_.push(timeRangePainter);
 };
