@@ -97,8 +97,8 @@ wtf.trace.Flow.branch = function(name, opt_value, opt_parentFlow, opt_time) {
   // Infer parent flow, if needed.
   var parentFlowId = wtf.trace.Flow.INVALID_ID;
   var parentFlow = opt_parentFlow || wtf.trace.Scope.getCurrentFlow();
-  if (parentFlow && !parentFlow.terminated_) {
-    parentFlowId = parentFlow.flowId_;
+  if (parentFlow && parentFlow.terminated_) {
+    parentFlow = null;
   }
 
   // Create flow.
@@ -106,7 +106,7 @@ wtf.trace.Flow.branch = function(name, opt_value, opt_parentFlow, opt_time) {
 
   // Append event.
   wtf.trace.BuiltinEvents.branchFlow(
-      flow.flowId_, parentFlowId, name, opt_value, opt_time);
+      flow, parentFlow, name, opt_value, opt_time);
 
   return flow;
 };
@@ -128,7 +128,7 @@ wtf.trace.Flow.extend = function(flow, name, opt_value, opt_time) {
   wtf.trace.Scope.setCurrentFlow(flow);
 
   // Append event.
-  wtf.trace.BuiltinEvents.extendFlow(flow.flowId_, name, opt_value, opt_time);
+  wtf.trace.BuiltinEvents.extendFlow(flow, name, opt_value, opt_time);
 };
 
 
@@ -145,7 +145,7 @@ wtf.trace.Flow.terminate = function(flow, opt_value, opt_time) {
   flow.terminated_ = true;
 
   // Append event.
-  wtf.trace.BuiltinEvents.terminateFlow(flow.flowId_, opt_value, opt_time);
+  wtf.trace.BuiltinEvents.terminateFlow(flow, opt_value, opt_time);
 };
 
 

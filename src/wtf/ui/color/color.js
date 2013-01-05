@@ -13,7 +13,7 @@
 
 goog.provide('wtf.ui.color.RgbColor');
 
-goog.require('wtf.util');
+goog.require('goog.color');
 
 
 
@@ -48,10 +48,7 @@ wtf.ui.color.RgbColor = function(r, g, b) {
    * @type {string}
    * @private
    */
-  this.string_ = '#' +
-      wtf.util.pad0(r.toString(16), 2) +
-      wtf.util.pad0(g.toString(16), 2) +
-      wtf.util.pad0(b.toString(16), 2);
+  this.string_ = goog.color.rgbToHex(r, g, b);
 };
 
 
@@ -80,10 +77,8 @@ wtf.ui.color.RgbColor.fromRgb = function(value) {
  * @return {!wtf.ui.color.RgbColor} Color value.
  */
 wtf.ui.color.RgbColor.fromString = function(value) {
-  return new wtf.ui.color.RgbColor(
-      parseInt(value.substr(1, 2), 16),
-      parseInt(value.substr(3, 2), 16),
-      parseInt(value.substr(5, 2), 16));
+  var parsed = goog.color.parseRgb(value);
+  return new wtf.ui.color.RgbColor(parsed[0], parsed[1], parsed[2]);
 };
 
 

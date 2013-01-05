@@ -92,7 +92,7 @@ wtf.trace.StreamingSession = function(traceManager, stream, options) {
   // Write trace header at the start of the stream.
   var buffer = this.acquireBuffer(wtf.now(), this.bufferSize);
   goog.asserts.assert(buffer);
-  this.writeTraceHeader(buffer);
+  this.writeTraceHeader(buffer, true);
 
   // Flush immediately to ensure the target knows we are here.
   this.flush();

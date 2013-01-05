@@ -19,6 +19,7 @@ goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.data.ContextInfo');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ZoneType');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
@@ -309,6 +310,14 @@ wtf.trace.TraceManager.prototype.startSession = function(session) {
   this.currentSession_ = session;
   this.currentSessionPtr_[0] = session;
 
+  // Reset all event counts.
+  var registry = wtf.trace.EventRegistry.getShared();
+  var eventTypes = registry.getEventTypes();
+  for (var n = 0; n < eventTypes.length; n++) {
+    var eventType = eventTypes[n];
+    eventType.count = 0;
+  }
+
   // Notify listeners.
   if (this.currentSession_) {
     for (var n = 0; n < this.listeners_.length; n++) {
@@ -360,14 +369,22 @@ wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
  * This header contains all event metadata that can be used for parsing events
  * on the other side.
  * @param {!wtf.io.Buffer} buffer Target buffer.
+ * @param {boolean=} opt_all True to write all events, regardless of use.
  * @return {boolean} True if the header was written successfully.
  */
-wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer) {
+wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer, opt_all) {
   // Write event metadata.
   var registry = wtf.trace.EventRegistry.getShared();
   var eventTypes = registry.getEventTypes();
   for (var n = 0; n < eventTypes.length; n++) {
     var eventType = eventTypes[n];
+
+    // Skip events that haven't been written, unless it's a builtin.
+    if (!opt_all &&
+        !(eventType.flags & wtf.data.EventFlag.BUILTIN) &&
+        !eventType.count) {
+      continue;
+    }
 
     // Append to the header.
     wtf.trace.BuiltinEvents.defineEvent(

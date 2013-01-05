@@ -13,7 +13,9 @@
 
 goog.provide('wtf.ui.color.Palette');
 
+goog.require('goog.asserts');
 goog.require('goog.string');
+goog.require('wtf.ui.color.ColorBrewer');
 goog.require('wtf.ui.color.RgbColor');
 
 
@@ -137,3 +139,21 @@ wtf.ui.color.Palette.SCOPE_COLORS = [
   {r: 180, g: 122, b: 195},
   {r: 203, g: 144, b: 152}
 ];
+
+
+/**
+ * Gets a ColorBrewer palette of the given name and range.
+ *
+ * This requires that third_party/d3/colorbrewer.js be compiled in.
+ *
+ * @param {string} name Palette name, such as 'Greys'.
+ * @param {number} range Palette range, one of 3-11 (for supported ones).
+ * @return {!wtf.ui.color.Palette} New color palette.
+ */
+wtf.ui.color.Palette.createColorBrewerPalette = function(name, range) {
+  var entry = wtf.ui.color.ColorBrewer[name];
+  goog.asserts.assert(entry);
+  var rangeValue = entry[range];
+  goog.asserts.assert(rangeValue);
+  return new wtf.ui.color.Palette(rangeValue);
+};
