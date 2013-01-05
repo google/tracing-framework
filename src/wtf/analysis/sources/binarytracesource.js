@@ -21,6 +21,8 @@ goog.require('wtf.analysis.Flow');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
+goog.require('wtf.analysis.TimeRange');
+goog.require('wtf.analysis.TimeRangeEvent');
 goog.require('wtf.analysis.TraceSource');
 goog.require('wtf.analysis.ZoneEvent');
 goog.require('wtf.data.ContextInfo');
@@ -97,6 +99,16 @@ wtf.analysis.sources.BinaryTraceSource = function(traceListener, readStream) {
    * @private
    */
   this.flowTable_ = {};
+
+  /**
+   * All currently active time ranges indexed by time range ID.
+   * Time ranges are added to this as they are began/ended.
+   * Ended time ranges are removed, but since events may be unmatched this has
+   * the potential to grow forever.
+   * @type {!Object.<number, !wtf.analysis.TimeRange>}
+   * @private
+   */
+  this.timeRangeTable_ = {};
 
   /**
    * A fast dispatch table for BUILTIN events, keyed on event name.
@@ -358,6 +370,41 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
     return new wtf.analysis.Event(jitType, zone, time, {
       'value': args['value']
     });
+  };
+
+  this.builtinDispatch_['wtf.trace#beginTimeRange'] = function(
+      listener, eventType, zone, time, args) {
+    var timeRangeId = args['id'];
+    var timeRange = this.timeRangeTable_[timeRangeId];
+    if (!timeRange) {
+      // First event for this range - create.
+      timeRange = new wtf.analysis.TimeRange();
+      this.timeRangeTable_[timeRangeId] = timeRange;
+    } else {
+      // Last event for an unmatched range - delete.
+      delete this.timeRangeTable_[timeRangeId];
+    }
+    var e = new wtf.analysis.TimeRangeEvent(
+        eventType, zone, time, args, timeRange);
+    timeRange.setBeginEvent(e);
+    return e;
+  };
+  this.builtinDispatch_['wtf.trace#endTimeRange'] = function(
+      listener, eventType, zone, time, args) {
+    var timeRangeId = args['id'];
+    var timeRange = this.timeRangeTable_[timeRangeId];
+    if (!timeRange) {
+      // First event for this range - create.
+      timeRange = new wtf.analysis.TimeRange();
+      this.timeRangeTable_[timeRangeId] = timeRange;
+    } else {
+      // Last event for the range - delete.
+      delete this.timeRangeTable_[timeRangeId];
+    }
+    var e = new wtf.analysis.TimeRangeEvent(
+        eventType, zone, time, args, timeRange);
+    timeRange.setEndEvent(e);
+    return e;
   };
 };
 

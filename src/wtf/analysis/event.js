@@ -14,6 +14,7 @@
 goog.provide('wtf.analysis.Event');
 goog.provide('wtf.analysis.FlowEvent');
 goog.provide('wtf.analysis.ScopeEvent');
+goog.provide('wtf.analysis.TimeRangeEvent');
 goog.provide('wtf.analysis.ZoneEvent');
 
 
@@ -345,3 +346,43 @@ goog.exportSymbol(
 goog.exportProperty(
     wtf.analysis.ZoneEvent.prototype, 'getValue',
     wtf.analysis.ZoneEvent.prototype.getValue);
+
+
+
+/**
+ * Time range event.
+ * @param {!wtf.analysis.EventType} eventType Event information.
+ * @param {wtf.analysis.Zone} zone Zone the event occurred in.
+ * @param {number} time Wall-time of the event.
+ * @param {Object} args Custom event arguments.
+ * @param {!wtf.analysis.TimeRange} timeRange Time range.
+ * @constructor
+ * @extends {wtf.analysis.Event}
+ */
+wtf.analysis.TimeRangeEvent = function(eventType, zone, time, args, timeRange) {
+  goog.base(this, eventType, zone, time, args);
+
+  /**
+   * Time range.
+   * @type {!wtf.analysis.TimeRange}
+   */
+  this.value = timeRange;
+};
+goog.inherits(wtf.analysis.TimeRangeEvent, wtf.analysis.Event);
+
+
+/**
+ * Gets the time range this event pertains to.
+ * @return {!wtf.analysis.TimeRange} Time range.
+ */
+wtf.analysis.TimeRangeEvent.prototype.getValue = function() {
+  return this.value;
+};
+
+
+goog.exportSymbol(
+    'wtf.analysis.TimeRangeEvent',
+    wtf.analysis.TimeRangeEvent);
+goog.exportProperty(
+    wtf.analysis.TimeRangeEvent.prototype, 'getValue',
+    wtf.analysis.TimeRangeEvent.prototype.getValue);
