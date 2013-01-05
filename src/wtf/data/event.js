@@ -87,7 +87,17 @@ wtf.data.EventFlag = {
    * These may receive special handling and enable optimizations. User events
    * should not have this flag set.
    */
-  BUILTIN: (1 << 5)
+  BUILTIN: (1 << 5),
+
+  /**
+   * Event arguments will be appended to the given flow's data, overwritting
+   * any with the same name. The first argument must be a flow ID named
+   * 'id' like 'flowId id'.
+   *
+   * If this is combined with the INTERNAL flag then the event is assumed to
+   * be a built-in system append event and will have special handling.
+   */
+  APPEND_FLOW_DATA: (1 << 6)
 };
 
 
@@ -109,3 +119,6 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.data.EventFlag, 'BUILTIN',
     wtf.data.EventFlag.BUILTIN);
+goog.exportProperty(
+    wtf.data.EventFlag, 'APPEND_FLOW_DATA',
+    wtf.data.EventFlag.APPEND_FLOW_DATA);

@@ -385,13 +385,25 @@ wtf.analysis.sources.BinaryTraceSource.prototype.dispatchEvent_ = function(
   // TODO(benvanik): share more of this in TraceSource
   // TODO(benvanik): something much more efficient for builtins
   var e = null;
-  if (eventType.flags & wtf.data.EventFlag.BUILTIN) {
+  if (eventType.flags & wtf.data.EventFlag.APPEND_FLOW_DATA) {
+    // appendFlowData (or custom types).
+    var flowId = args['id'];
+    var flow = this.flowTable_[flowId];
+    if (!flow) {
+      // Ignore flows where there branch is missing.
+      return;
+    }
+    e = new wtf.analysis.FlowEvent(eventType, zone, time, args, flow);
+    flow.addDataEvent(e);
+  } else if (eventType.flags & wtf.data.EventFlag.BUILTIN) {
+    // Builtin events.
     var dispatchFn = this.builtinDispatch_[eventType.name];
     if (dispatchFn) {
       e = dispatchFn.call(this, listener, eventType, zone, time, args);
     }
   }
   if (!e) {
+    // Normal wrapper.
     switch (eventType.eventClass) {
       case wtf.data.EventClass.SCOPE:
         var newScope = new wtf.analysis.Scope();

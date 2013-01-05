@@ -116,6 +116,14 @@ wtf.trace.BuiltinEvents = {
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
+   * Appends data to the given flow.
+   */
+  appendFlowData: wtf.trace.events.createInstance(
+      'wtf.flow#appendData(flowId id, ascii name, any value)',
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL |
+      wtf.data.EventFlag.APPEND_FLOW_DATA),
+
+  /**
    * Marks a generic event.
    */
   mark: wtf.trace.events.createInstance(

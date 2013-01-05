@@ -172,10 +172,14 @@ wtf.trace.Session.prototype.startInternal = function() {
  * it to ensure that even truncated streams have the decoder ring.
  *
  * @param {!wtf.io.Buffer} buffer Target buffer.
+ * @param {boolean=} opt_all True to write all events, regardless of use.
+ *     Snapshotting sessions may prefer to set this to false to only write
+ *     events seen in the snapshot, where as streaming sessions would want to
+ *     write all of them as the use count doesn't mean anything at startup.
  * @return {boolean} True if the header was written successfully.
  * @protected
  */
-wtf.trace.Session.prototype.writeTraceHeader = function(buffer) {
+wtf.trace.Session.prototype.writeTraceHeader = function(buffer, opt_all) {
   // Write magic number.
   buffer.writeUint32(0xDEADBEEF);
 

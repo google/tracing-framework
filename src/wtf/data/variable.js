@@ -79,7 +79,7 @@ wtf.data.Variable.TYPE_MAP_ = {
   'long': 'int32',
   'uint32': 'uint32',
   'unsigned long': 'uint32',
-  'flowId': 'uint32',
+  'flowId': 'flowId',
   'float32': 'float32',
   'float': 'float32',
   'ascii': 'ascii',

@@ -381,7 +381,7 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
  *
  * @param {string} name Argument name. Must be ASCII.
  * @param {*} value Value. Will be JSON stringified.
- * @param {number=} opt_time Time for the enter; omit to use the current time.
+ * @param {number=} opt_time Time for the event; omit to use the current time.
  */
 wtf.trace.appendScopeData = wtf.trace.BuiltinEvents.appendScopeData;
 
@@ -416,6 +416,20 @@ wtf.trace.extendFlow = wtf.trace.Flow.extend;
  *     time.
  */
 wtf.trace.terminateFlow = wtf.trace.Flow.terminate;
+
+
+/**
+ * Appends a named argument of any type to the given flow.
+ * This is slow and should only be used for very infrequent appends.
+ * Prefer instead to use a custom instance event with the
+ * {@see wtf.data.EventFlag#APPEND_FLOW_DATA} flag set.
+ *
+ * @param {wtf.trace.Flow} flow Flow to append.
+ * @param {string} name Argument name. Must be ASCII.
+ * @param {*} value Value. Will be JSON stringified.
+ * @param {number=} opt_time Time for the event; omit to use the current time.
+ */
+wtf.trace.appendFlowData = wtf.trace.BuiltinEvents.appendFlowData;
 
 
 /**
