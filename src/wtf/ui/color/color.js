@@ -77,7 +77,12 @@ wtf.ui.color.RgbColor.fromRgb = function(value) {
  * @return {!wtf.ui.color.RgbColor} Color value.
  */
 wtf.ui.color.RgbColor.fromString = function(value) {
-  var parsed = goog.color.parseRgb(value);
+  var parsed;
+  if (value[0] == '#') {
+    parsed = goog.color.hexToRgb(value);
+  } else {
+    parsed = goog.color.parseRgb(value);
+  }
   return new wtf.ui.color.RgbColor(parsed[0], parsed[1], parsed[2]);
 };
 

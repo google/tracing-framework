@@ -63,7 +63,7 @@ wtf.app.ui.tracks.TimeRangePainter = function(canvas, db, timeRangeIndex) {
    * @private
    */
   this.palette_ = new wtf.ui.color.Palette(
-      wtf.ui.color.Palette.SCOPE_COLORS);
+      wtf.ui.color.Palette.D3_10);
 
   this.timeRangeIndex_.addListener(wtf.events.EventType.INVALIDATED,
       function() {

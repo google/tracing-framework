@@ -56,7 +56,7 @@ wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
    * @private
    */
   this.palette_ = new wtf.ui.color.Palette(
-      wtf.ui.color.Palette.SCOPE_COLORS);
+      wtf.app.ui.tracks.MarkPainter.MARK_COLORS_);
 
   /**
    * Mark event index.
@@ -88,6 +88,23 @@ wtf.app.ui.tracks.MarkPainter = function(canvas, db) {
       }, this);
 };
 goog.inherits(wtf.app.ui.tracks.MarkPainter, wtf.ui.RangePainter);
+
+
+/**
+ * Colors used for drawing marks.
+ * @type {!Array.<string>}
+ * @private
+ * @const
+ */
+wtf.app.ui.tracks.MarkPainter.MARK_COLORS_ = [
+  'rgb(200,200,200)',
+  'rgb(189,189,189)',
+  'rgb(150,150,150)',
+  'rgb(130,130,130)',
+  'rgb(115,115,115)',
+  'rgb(100,100,100)',
+  'rgb(82,82,82)'
+];
 
 
 /**
@@ -172,16 +189,18 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
       return;
     }
 
-    // Compute color by name.
-    var label = e.args['name'];
-    var color = palette.getColorForString(label);
+    // Pick a random color.
+    if (!e.tag) {
+      e.tag = palette.getRandomColor();
+    }
+    var color = e.tag;
 
     // Draw bar.
     this.drawRange(0, screenLeft, screenRight, color, 1);
 
     if (screenWidth > 15) {
       this.drawRangeLabel(
-          bounds, left, right, screenLeft, screenRight, -1, label);
+          bounds, left, right, screenLeft, screenRight, -1, e.args['name']);
     }
   }, this);
 
