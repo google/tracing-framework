@@ -110,6 +110,7 @@ closure_js_library(
         'third_party:all_closure_js',
         ':wtf_src_js',
         ':all_soy_js',
+        'third_party/d3/colorbrewer.js',
         ],
     compiler_jar=JS_COMPILER_JAR)
 
@@ -143,6 +144,7 @@ WTF_TRACE_WEB_SRCS=[
     ':wtf_src_js',
     ':wtf_ui_soy_js',
     ':wtf_hud_soy_js',
+    'third_party/d3/colorbrewer.js',
     ]
 
 # All uncompiled JS
@@ -301,6 +303,7 @@ WTF_UI_SRCS=[
     ':wtf_src_js',
     ':wtf_ui_soy_js',
     ':wtf_app_soy_js',
+    'third_party/d3/colorbrewer.js',
     ]
 
 # All uncompiled JS
