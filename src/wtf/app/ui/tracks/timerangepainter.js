@@ -36,6 +36,8 @@ wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
   goog.base(this, canvas);
   var dom = this.getDom();
 
+  this.setRangeDrawStyle(wtf.ui.RangePainter.DrawStyle.TIME_SPAN);
+
   /**
    * Database.
    * @type {!wtf.analysis.db.EventDatabase}
@@ -75,12 +77,24 @@ wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_ = 16;
 
 
 /**
+ * Don't draw more levels than this.
+ * This helps to punish those who are misusing time ranges.
+ * @type {number}
+ * @const
+ * @private
+ */
+wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_ = 5;
+
+
+/**
  * @override
  */
 wtf.app.ui.tracks.TimeRangePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
-  var maxLevel = this.timeRangeIndex_.getMaximumLevel();
+  var maxLevel = Math.min(
+      this.timeRangeIndex_.getMaximumLevel(),
+      wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
   var levelHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
   newBounds.height = maxLevel * levelHeight;
   return newBounds;
@@ -94,7 +108,11 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
 
-  var maxLevel = this.timeRangeIndex_.getMaximumLevel();
+  var timeRangeHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+
+  var maxLevel = Math.min(
+      this.timeRangeIndex_.getMaximumLevel(),
+      wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
   this.beginRenderingRanges(bounds, maxLevel);
 
   var timeLeft = this.timeLeft;
@@ -134,7 +152,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
         this.drawRange(level, screenLeft, screenRight, color, 1);
 
         if (screenWidth > 15) {
-          var y = level * wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+          var y = level * timeRangeHeight;
           this.drawRangeLabel(
               bounds, left, right, screenLeft, screenRight, y, label);
         }
@@ -142,8 +160,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
 
   // Now blit the nicely rendered ranges onto the screen.
   var y = 0;
-  var h =
-      (maxLevel - 1) * wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+  var h = (maxLevel - 1) * timeRangeHeight;
   this.endRenderingRanges(bounds, y, h);
 };
 

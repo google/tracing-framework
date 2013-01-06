@@ -24,12 +24,21 @@ goog.require('wtf.ui.TimePainter');
 /**
  * Optimized range renderer painter.
  * @param {!HTMLCanvasElement} canvas Canvas element.
+ * @param {wtf.ui.RangePainter.DrawStyle=} opt_drawStyle Draw style.
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.ui.RangePainter = function(canvas) {
+wtf.ui.RangePainter = function(canvas, opt_drawStyle) {
   goog.base(this, canvas);
   var dom = this.getDom();
+
+  /**
+   * Draw style.
+   * @type {wtf.ui.RangePainter.DrawStyle}
+   * @private
+   */
+  this.drawStyle_ = goog.isDef(opt_drawStyle) ? opt_drawStyle :
+      wtf.ui.RangePainter.DrawStyle.SCOPE;
 
   /**
    * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
@@ -75,6 +84,32 @@ wtf.ui.RangePainter = function(canvas) {
   this.labelsToDraw_ = [];
 };
 goog.inherits(wtf.ui.RangePainter, wtf.ui.TimePainter);
+
+
+/**
+ * Drawing style.
+ * @enum {number}
+ */
+wtf.ui.RangePainter.DrawStyle = {
+  /**
+   * Draw lines as scopes - fat bars that fill all their row.
+   */
+  SCOPE: 0,
+
+  /**
+   * Draw lines as time spans - thin bars.
+   */
+  TIME_SPAN: 1
+};
+
+
+/**
+ * Sets the draw style of the painter.
+ * @param {wtf.ui.RangePainter.DrawStyle} value New draw style.
+ */
+wtf.ui.RangePainter.prototype.setRangeDrawStyle = function(value) {
+  this.drawStyle_ = value;
+};
 
 
 /**
@@ -149,7 +184,9 @@ wtf.ui.RangePainter.prototype.drawRangeLabel = function(
     this.labelsToDraw_.push({
       text: label,
       x: x,
-      y: y + 12,
+      y: y,
+      w: labelWidth,
+      h: 12,
       alpha: labelAlpha
     });
   }
@@ -171,6 +208,18 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
   var currentAlpha = 1;
   ctx.globalAlpha = 1;
 
+  // Setup style information.
+  var insetY = 0;
+  var labelBackground = null;
+  var labelForeground = '#FFFFFF';
+  switch (this.drawStyle_) {
+    case wtf.ui.RangePainter.DrawStyle.TIME_SPAN:
+      insetY = rowHeight / 4;
+      labelBackground = '#FFFFFF';
+      labelForeground = '#000000';
+      break;
+  }
+
   // Draw all ranges.
   var y = top;
   for (var i = 0; i < this.rangeRenderers_.length; i++) {
@@ -178,11 +227,15 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
     this.rangeStamperContext_.putImageData(
         this.rangeStamperImageData_, 0, 0);
     // Draw the ranges for this depth, stretching to height h.
-    ctx.drawImage(this.rangeStamper_, bounds.left, y, bounds.width, rowHeight);
+    ctx.drawImage(
+        this.rangeStamper_,
+        bounds.left, y + insetY,
+        bounds.width, rowHeight - insetY * 2);
     y += rowHeight;
   }
 
   // Draw the designated labels on top.
+  ctx.fillStyle = labelForeground;
   for (var n = 0; n < this.labelsToDraw_.length; n++) {
     var label = this.labelsToDraw_[n];
     if (currentAlpha != label.alpha) {
@@ -190,8 +243,13 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
       ctx.globalAlpha = currentAlpha;
     }
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(label.text, label.x, top + label.y);
+    if (labelBackground) {
+      ctx.fillStyle = labelBackground;
+      ctx.fillRect(label.x - 4, top + label.y - 4, label.w + 8, label.h + 8);
+      ctx.fillStyle = labelForeground;
+    }
+
+    ctx.fillText(label.text, label.x, top + label.y + label.h);
   }
   this.labelsToDraw_.length = 0;
   ctx.globalAlpha = 1;

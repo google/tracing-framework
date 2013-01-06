@@ -264,7 +264,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
       this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());
   zonePainterStack.addChildPainter(timeRangePainter);
   this.timeRangePainters_.push(timeRangePainter);
-  timeRangePainter.setPadding(new goog.math.Rect(0, 0, 0, 10));
+  timeRangePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
