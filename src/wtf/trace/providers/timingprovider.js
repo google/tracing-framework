@@ -300,7 +300,7 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrame_ =
         'wtf.timing#frameStart(uint32 number)',
         wtf.data.EventFlag.INTERNAL),
     frameEnd: wtf.trace.events.createInstance(
-        'wtf.timing#frameEnd(uint32 number, uint32 duration)',
+        'wtf.timing#frameEnd(uint32 number)',
         wtf.data.EventFlag.INTERNAL),
     requestAnimationFrame: wtf.trace.events.createInstance(
         'window#requestAnimationFrame(uint32 handle)'),
@@ -369,8 +369,7 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
         // resetting.
         if (frameRafs[frameRafs.length - 1] == handleRef[0]) {
           now = wtf.now();
-          var duration = ((now - frameStart) * 1000) >>> 0;
-          events.frameEnd(frameNumber, duration, now);
+          events.frameEnd(frameNumber, now);
           frameRafs.length = 0;
         }
 

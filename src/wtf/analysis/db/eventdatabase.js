@@ -332,6 +332,7 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
    */
   this.dirtyTimeEnd_ = 0;
 
+  // TODO(benvanik): cleanup, issue #196.
   /**
    * Cached event types, for performance.
    * @type {!Object.<!wtf.analysis.EventType>}
@@ -434,6 +435,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
   }
   this.insertedEventCount_++;
 
+  // TODO(benvanik): cleanup, issue #196.
   if (!this.eventTypes_.scopeLeave) {
     this.eventTypes_.scopeLeave = this.getEventType('wtf.scope#leave');
   }

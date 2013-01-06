@@ -19,6 +19,7 @@ goog.require('wtf.analysis.db.EventList');
 
 /**
  * An in-memory index of begin/endTimeRange events in a zone.
+ * This index is zone-specific and there may exist several per database.
  *
  * @param {!wtf.analysis.TraceListener} traceListener Trace listener.
  * @param {!wtf.analysis.Zone} zone Zone this index matches.
