@@ -22,6 +22,7 @@ goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.SelectionPainter');
 goog.require('wtf.app.ui.TabPanel');
+goog.require('wtf.app.ui.tracks.FramePainter');
 goog.require('wtf.app.ui.tracks.MarkPainter');
 goog.require('wtf.app.ui.tracks.TimeRangePainter');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
@@ -259,6 +260,12 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
   this.painterStack_.addChildPainter(zonePainterStack);
   zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
   zonePainterStack.setPadding(new goog.math.Rect(0, 5, 0, 5));
+
+  var framePainter = new wtf.app.ui.tracks.FramePainter(
+      this.trackCanvas_, this.db_, zoneIndex.getFrameIndex());
+  zonePainterStack.addChildPainter(framePainter);
+  this.timeRangePainters_.push(framePainter);
+  framePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
 
   var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
       this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());

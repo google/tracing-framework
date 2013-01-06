@@ -205,7 +205,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
 
     if (screenWidth > 15) {
       this.drawRangeLabel(
-          bounds, left, right, screenLeft, screenRight, -1, e.args['name']);
+          bounds, left, right, screenLeft, screenRight, 0, e.args['name']);
     }
   }, this);
 

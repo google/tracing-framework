@@ -126,6 +126,59 @@ wtf.analysis.db.FrameIndex.prototype.insertEvent = function(e) {
 
 
 /**
+ * Gets the frame with the given frame number.
+ * @param {number} value Frame number.
+ * @return {wtf.analysis.Frame} Frame with the given number, if any.
+ */
+wtf.analysis.db.FrameIndex.prototype.getFrame = function(value) {
+  return this.frames_[value] || null;
+};
+
+
+/**
+ * Gets the frame at the given time, if any.
+ * @param {number} time Search time.
+ * @return {wtf.analysis.Frame} Frame at the given time, if any.
+ */
+wtf.analysis.db.FrameIndex.prototype.getFrameAtTime = function(time) {
+  var e = this.search(time, function(e) {
+    var frame = e.value;
+    return frame.getStartTime() <= time && time <= frame.getEndTime();
+  });
+  return e ? e.value : null;
+};
+
+
+/**
+ * Gets the two frames the given time is between.
+ * The result is an array of [previous, next]. Either may be null if there is
+ * no frame before or after.
+ * @param {number} time Search time.
+ * @return {Array.<wtf.analysis.Frame>} Surrounding frames.
+ */
+wtf.analysis.db.FrameIndex.prototype.getIntraFrameAtTime = function(time) {
+  if (!this.getCount()) {
+    return null;
+  }
+
+  // Find the frame to the left of the time.
+  var e = this.search(time, function(e) {
+    return true;
+  });
+  if (!e) {
+    // No frames before, return the first intra-frame time.
+    var firstFrame = -1;
+    while (!this.frames_[++firstFrame]) {}
+    return [null, this.frames_[firstFrame]];
+  }
+
+  var previousNumber = e.value.getNumber();
+  var nextFrame = this.frames_[previousNumber + 1] || null;
+  return [e.value, nextFrame];
+};
+
+
+/**
  * Iterates over the list of frames, returning each one that intersects the
  * given time range in order.
  *

@@ -365,6 +365,10 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
       try {
         cb.apply(this, arguments);
       } finally {
+        delete rafFlows[handleRef[0]];
+        wtf.trace.terminateFlow(flow);
+        wtf.trace.leaveScope(scope);
+
         // If this is the last rAF of the frame, handle frame-end and list
         // resetting.
         if (frameRafs[frameRafs.length - 1] == handleRef[0]) {
@@ -372,10 +376,6 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
           events.frameEnd(frameNumber, now);
           frameRafs.length = 0;
         }
-
-        delete rafFlows[handleRef[0]];
-        wtf.trace.terminateFlow(flow);
-        wtf.trace.leaveScope(scope);
       }
     });
     handleRef[0] = handle;

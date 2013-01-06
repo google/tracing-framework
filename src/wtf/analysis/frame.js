@@ -90,6 +90,24 @@ wtf.analysis.Frame.prototype.setEndEvent = function(e) {
 
 
 /**
+ * Gets the time the frame started at.
+ * @return {number} Start time.
+ */
+wtf.analysis.Frame.prototype.getStartTime = function() {
+  return this.startEvent_ ? this.startEvent_.time : 0;
+};
+
+
+/**
+ * Gets the time the frame ended at.
+ * @return {number} End time.
+ */
+wtf.analysis.Frame.prototype.getEndTime = function() {
+  return this.endEvent_ ? this.endEvent_.time : 0;
+};
+
+
+/**
  * Gets the duration of the frame.
  * If any of the frame events are missing this will return 0.
  * @return {number} Frame duration.

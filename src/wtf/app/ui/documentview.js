@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.DocumentView');
 goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('goog.string');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.EmptyTabPanel');
@@ -136,31 +137,8 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
       this, 'console', 'Console'));
 
-  var keyboard = wtf.events.getWindowKeyboard(dom);
-  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
-  this.registerDisposable(keyboardScope);
-
-  var commandManager = wtf.events.getCommandManager();
-  commandManager.registerSimpleCommand(
-      'select_all', function() {
-        this.selection_.clearTimeRange();
-      }, this);
-  keyboardScope.addShortcut('command+a', function() {
-    commandManager.execute('select_all', this, null);
-  });
-  commandManager.registerSimpleCommand(
-      'select_visible', function() {
-        this.selection_.setTimeRange(
-            this.localView_.getVisibleTimeStart(),
-            this.localView_.getVisibleTimeEnd());
-      }, this);
-  keyboardScope.addShortcut('command+shift+a', function() {
-    commandManager.execute('select_visible', this, null);
-  });
-  commandManager.registerSimpleCommand(
-      'select_range', function(source, target, startTime, endTime) {
-        this.selection_.setTimeRange(startTime, endTime);
-      }, this);
+  this.setupCommands_();
+  this.setupKeyboardShortcuts_();
 
   var db = doc.getDatabase();
   db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
@@ -181,6 +159,9 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   commandManager.unregisterCommand('select_all');
   commandManager.unregisterCommand('select_visible');
   commandManager.unregisterCommand('select_range');
+  commandManager.unregisterCommand('goto_range');
+  commandManager.unregisterCommand('goto_mark');
+  commandManager.unregisterCommand('goto_frame');
   goog.base(this, 'disposeInternal');
 };
 
@@ -191,6 +172,181 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
 wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.documentview.control, undefined, undefined, dom));
+};
+
+
+/**
+ * Sets up global commands.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
+  var db = this.getDatabase();
+  var commandManager = wtf.events.getCommandManager();
+
+  commandManager.registerSimpleCommand(
+      'select_all', function() {
+        this.selection_.clearTimeRange();
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'select_visible', function() {
+        this.selection_.setTimeRange(
+            this.localView_.getVisibleTimeStart(),
+            this.localView_.getVisibleTimeEnd());
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'select_range', function(source, target, startTime, endTime) {
+        this.selection_.setTimeRange(startTime, endTime);
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'goto_range', function(source, target, timeStart, timeEnd) {
+        var viewport = this.viewports_[0];
+
+        var firstEventTime = db.getFirstEventTime();
+        var pad = (timeEnd - timeStart) * 0.05;
+        viewport.zoomToBounds(
+            timeStart - firstEventTime - pad, 0,
+            timeEnd - timeStart + pad * 2, 0.001);
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'goto_mark', function(source, target, e) {
+        var viewport = this.viewports_[0];
+
+        // Go to mark event.
+        var firstEventTime = db.getFirstEventTime();
+        var timeStart = e.time;
+        var timeEnd = e.time + e.args['duration'];
+        var pad = (timeEnd - timeStart) * 0.05;
+        viewport.zoomToBounds(
+            timeStart - firstEventTime - pad, 0,
+            timeEnd - timeStart + pad * 2, 0.001);
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'goto_frame', function(source, target, frameOrNumber) {
+        var viewport = this.viewports_[0];
+
+        var frame = null;
+        if (goog.isNumber(frameOrNumber)) {
+          // Find a frame index. Just use the first.
+          var frameIndex = null;
+          var zoneIndicies = db.getZoneIndices();
+          for (var n = 0; n < zoneIndicies.length; n++) {
+            frameIndex = zoneIndicies[n].getFrameIndex();
+            if (frameIndex.getCount()) {
+              break;
+            }
+          }
+          if (!frameIndex) {
+            return;
+          }
+
+          // Find frame.
+          frame = frameIndex.getFrame(frameOrNumber);
+        } else {
+          frame = /** @type {!wtf.analysis.Frame} */ (frameOrNumber);
+        }
+        if (!frame) {
+          return;
+        }
+
+        // Go to frame.
+        var timeStart = frame.getStartEvent().time;
+        var timeEnd = frame.getEndEvent().time;
+        var firstEventTime = db.getFirstEventTime();
+        var pad = (timeEnd - timeStart) * 0.05;
+        viewport.zoomToBounds(
+            timeStart - firstEventTime - pad, 0,
+            timeEnd - timeStart + pad * 2, 0.001);
+      }, this);
+};
+
+
+/**
+ * Sets up some simple keyboard shortcuts.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
+  var db = this.getDatabase();
+  var dom = this.getDom();
+  var commandManager = wtf.events.getCommandManager();
+  var keyboard = wtf.events.getWindowKeyboard(dom);
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+
+  keyboardScope.addShortcut('space', function() {
+    var viewport = this.viewports_[0];
+    var width = viewport.getScreenWidth();
+    viewport.panDelta((width * 0.8) / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('shift+space', function() {
+    var viewport = this.viewports_[0];
+    var width = viewport.getScreenWidth();
+    viewport.panDelta(-(width * 0.8) / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('left|a', function() {
+    var viewport = this.viewports_[0];
+    viewport.panDelta(-40 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('right|d', function() {
+    var viewport = this.viewports_[0];
+    viewport.panDelta(40 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('shift+left|shift+a', function() {
+    var viewport = this.viewports_[0];
+    viewport.panDelta(-160 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('shift+right|shift+d', function() {
+    var viewport = this.viewports_[0];
+    viewport.panDelta(160 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('up|w', function() {
+    var viewport = this.viewports_[0];
+    viewport.zoomDelta(2.5);
+  }, this);
+  keyboardScope.addShortcut('down|s', function() {
+    var viewport = this.viewports_[0];
+    viewport.zoomDelta(1 / 2.5);
+  }, this);
+  keyboardScope.addShortcut('home', function() {
+    var viewport = this.viewports_[0];
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
+    var pad = (lastEventTime - firstEventTime) * 0.05;
+    viewport.zoomToBounds(
+        -pad, 0, lastEventTime - firstEventTime + pad * 2, 1);
+  }, this);
+
+  keyboardScope.addShortcut('command+a', function() {
+    commandManager.execute('select_all', this, null);
+  });
+  keyboardScope.addShortcut('command+shift+a', function() {
+    commandManager.execute('select_visible', this, null);
+  });
+
+  keyboardScope.addShortcut('command+g', function() {
+    // TODO(benvanik): make this a fancy dialog that allows frame/marker/etc
+    //     selection. window.prompt is prohibited in apps, too.
+    var result;
+    try {
+      keyboard.suspend();
+      result = goog.global.prompt('Frame number:');
+    } finally {
+      keyboard.resume();
+    }
+    if (!result) {
+      return;
+    }
+    result = goog.string.toNumber(result);
+    if (isNaN(result)) {
+      return;
+    }
+
+    commandManager.execute('goto_frame', this, null, result);
+  }, this);
 };
 
 

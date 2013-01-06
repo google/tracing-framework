@@ -90,8 +90,8 @@ wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
 
   var width = bounds.width;
   var height = bounds.height;
-  var h = Math.floor(0.5 * (height - 16));
-  var y = 16 + h;
+  var h = height - 16;
+  var y = 16;
 
   // Background.
   ctx.fillStyle = 'rgba(0,0,0,0.05)';

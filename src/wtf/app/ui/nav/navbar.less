@@ -11,38 +11,38 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@appUiDocumentViewNavbarDefaultHeight: 230px;
-@appUiDocumentViewNavbarTimelineHeight: 40px;
-
 /* Navbar root. */
 .appUiNavbar {
+  @defaultHeight: 130px;
+  @timelineHeight: 40px;
+
   position: relative;
   left: 0;
   right: 0;
   top: 0;
-  height: @appUiDocumentViewNavbarDefaultHeight;
+  height: @defaultHeight;
   overflow: hidden;
   background: white;
-}
 
-.appUiNavbarTimeline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: @appUiDocumentViewNavbarTimelineHeight;
-  overflow: hidden;
-  background-color: white;
-}
+  & .timeline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: @timelineHeight;
+    overflow: hidden;
+    background-color: white;
+  }
 
-.appUiNavbarFramebar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: @appUiDocumentViewNavbarTimelineHeight;
-  bottom: 0;
-  overflow: hidden;
-  background-color: white;
-}
+  & .framebar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: @timelineHeight;
+    bottom: 0;
+    overflow: hidden;
+    background-color: white;
+  }
 
-.appUiNavbarSplitter {}
+  & .navbarSplitter {}
+}

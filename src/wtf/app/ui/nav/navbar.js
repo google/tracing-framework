@@ -32,7 +32,7 @@ goog.require('wtf.ui.ResizableControl');
 wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   goog.base(this,
       wtf.ui.ResizableControl.Orientation.HORIZONTAL,
-      goog.getCssName('appUiNavbarSplitter'),
+      goog.getCssName('navbarSplitter'),
       parentElement, documentView.getDom());
   this.setSplitterLimits(wtf.app.ui.nav.Navbar.MIN_HEIGHT, undefined);
 
@@ -49,7 +49,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
    * @private
    */
   this.timeline_ = new wtf.app.ui.nav.Timeline(documentView,
-      this.getChildElement(goog.getCssName('appUiNavbarTimeline')));
+      this.getChildElement(goog.getCssName('timeline')));
   this.registerDisposable(this.timeline_);
 
   /**
@@ -58,7 +58,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
    * @private
    */
   this.framebar_ = new wtf.app.ui.nav.Framebar(documentView,
-      this.getChildElement(goog.getCssName('appUiNavbarFramebar')));
+      this.getChildElement(goog.getCssName('framebar')));
   this.registerDisposable(this.framebar_);
 };
 goog.inherits(wtf.app.ui.nav.Navbar, wtf.ui.ResizableControl);

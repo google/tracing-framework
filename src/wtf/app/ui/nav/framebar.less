@@ -11,42 +11,43 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@appUiFramebarInfoWidth: 300px;
-
 /* Framebar root. */
 .appUiFramebar {
   .fitParent();
   background: white;
   border-bottom: 1px solid #EBEBEB;
-}
 
-.appUiFramebarOuter {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 100%;
-  margin-right: @appUiFramebarInfoWidth;
-  border-right: 1px solid #ebebeb;
-}
+  @infoWidth: 300px;
 
-.appUiFramebarCanvas {
-  cursor: crosshair;
-}
+  & .outer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 100%;
+    margin-right: @infoWidth;
+    border-right: 1px solid #ebebeb;
+  }
 
-.appUiFramebarInfoOuter {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: @appUiFramebarInfoWidth;
-}
-.appUiFramebarInfo {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  padding: 3px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  & .canvas {
+    cursor: crosshair;
+  }
+
+  & .infoOuter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: @infoWidth;
+
+    & .info {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      padding: 3px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+  }
 }

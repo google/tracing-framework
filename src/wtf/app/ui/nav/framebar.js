@@ -15,15 +15,11 @@ goog.provide('wtf.app.ui.nav.Framebar');
 
 goog.require('goog.dom');
 goog.require('goog.soy');
-goog.require('goog.string');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.Granularity');
-goog.require('wtf.app.ui.nav.FramebarPainter');
 goog.require('wtf.app.ui.nav.HeatmapPainter');
 goog.require('wtf.app.ui.nav.framebar');
-goog.require('wtf.events');
 goog.require('wtf.events.EventType');
-goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.GridPainter');
@@ -69,7 +65,7 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
    * @private
    */
   this.framebarCanvas_ = /** @type {!HTMLCanvasElement} */ (
-      this.getChildElement(goog.getCssName('appUiFramebarCanvas')));
+      this.getChildElement(goog.getCssName('canvas')));
 
   var paintContext = new wtf.ui.Painter(this.framebarCanvas_);
   this.setPaintContext(paintContext);
@@ -98,11 +94,6 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
       wtf.app.ui.nav.Framebar.MIN_GRANULARITY_,
       wtf.app.ui.nav.Framebar.MAX_GRANULARITY_);
   this.timeRangePainters_.push(gridPainter);
-
-  var framebarPainter = new wtf.app.ui.nav.FramebarPainter(
-      this.framebarCanvas_, db);
-  paintContext.addChildPainter(framebarPainter);
-  this.timeRangePainters_.push(framebarPainter);
 
   var heatmapPainter = new wtf.app.ui.nav.HeatmapPainter(
       this.framebarCanvas_, db);
@@ -184,8 +175,6 @@ wtf.app.ui.nav.Framebar = function(documentView, parentElement) {
         }
       }, this);
 
-  this.setupKeyboardShortcuts_();
-
   this.requestRepaint();
 };
 goog.inherits(wtf.app.ui.nav.Framebar, wtf.ui.Control);
@@ -194,127 +183,9 @@ goog.inherits(wtf.app.ui.nav.Framebar, wtf.ui.Control);
 /**
  * @override
  */
-wtf.app.ui.nav.Framebar.prototype.disposeInternal = function() {
-  var commandManager = wtf.events.getCommandManager();
-  commandManager.unregisterCommand('goto_range');
-  commandManager.unregisterCommand('goto_mark');
-  commandManager.unregisterCommand('goto_frame');
-  goog.base(this, 'disposeInternal');
-};
-
-
-/**
- * @override
- */
 wtf.app.ui.nav.Framebar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.nav.framebar.control, undefined, undefined, dom));
-};
-
-
-// TODO(benvanik): move to the document view
-/**
- * Sets up some simple keyboard shortcuts.
- * @private
- */
-wtf.app.ui.nav.Framebar.prototype.setupKeyboardShortcuts_ = function() {
-  var dom = this.getDom();
-  var keyboard = wtf.events.getWindowKeyboard(dom);
-  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
-  this.registerDisposable(keyboardScope);
-  keyboardScope.addShortcut('space', function() {
-    var width = this.viewport_.getScreenWidth();
-    this.viewport_.panDelta((width * 0.8) / this.viewport_.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('shift+space', function() {
-    var width = this.viewport_.getScreenWidth();
-    this.viewport_.panDelta(-(width * 0.8) / this.viewport_.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('left|a', function() {
-    this.viewport_.panDelta(-40 / this.viewport_.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('right|d', function() {
-    this.viewport_.panDelta(40 / this.viewport_.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('shift+left|shift+a', function() {
-    this.viewport_.panDelta(-160 / this.viewport_.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('shift+right|shift+d', function() {
-    this.viewport_.panDelta(160 / this.viewport_.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('up|w', function() {
-    this.viewport_.zoomDelta(2.5);
-  }, this);
-  keyboardScope.addShortcut('down|s', function() {
-    this.viewport_.zoomDelta(1 / 2.5);
-  }, this);
-  keyboardScope.addShortcut('home', function() {
-    var firstEventTime = this.db_.getFirstEventTime();
-    var lastEventTime = this.db_.getLastEventTime();
-    var pad = (lastEventTime - firstEventTime) * 0.05;
-    this.viewport_.zoomToBounds(
-        -pad, 0, lastEventTime - firstEventTime + pad * 2, 1);
-  }, this);
-
-  var commandManager = wtf.events.getCommandManager();
-  commandManager.registerSimpleCommand(
-      'goto_range', function(source, target, timeStart, timeEnd) {
-        var firstEventTime = this.db_.getFirstEventTime();
-        var pad = (timeEnd - timeStart) * 0.05;
-        this.viewport_.zoomToBounds(
-            timeStart - firstEventTime - pad, 0,
-            timeEnd - timeStart + pad * 2, 0.001);
-      }, this);
-  commandManager.registerSimpleCommand(
-      'goto_mark', function(source, target, e) {
-        // Go to mark event.
-        var firstEventTime = this.db_.getFirstEventTime();
-        var timeStart = e.time;
-        var timeEnd = e.time + e.args['duration'];
-        var pad = (timeEnd - timeStart) * 0.05;
-        this.viewport_.zoomToBounds(
-            timeStart - firstEventTime - pad, 0,
-            timeEnd - timeStart + pad * 2, 0.001);
-      }, this);
-  commandManager.registerSimpleCommand(
-      'goto_frame', function(source, target, frameNumber) {
-        // Go to frame.
-        // TODO(benvanik): move to document view?
-        var frameIndex = this.db_.getEventIndex('wtf.timing#frameEnd');
-        if (frameIndex) {
-          frameIndex.forEach(0, Number.MAX_VALUE, function(e) {
-            if (e.args['number'] == frameNumber) {
-              var firstEventTime = this.db_.getFirstEventTime();
-              var timeStart = e.time - e.args['duration'] / 1000;
-              var timeEnd = e.time;
-              var pad = (timeEnd - timeStart) * 0.05;
-              this.viewport_.zoomToBounds(
-                  timeStart - firstEventTime - pad, 0,
-                  timeEnd - timeStart + pad * 2, 0.001);
-            }
-          }, this);
-        }
-      }, this);
-  keyboardScope.addShortcut('command+g', function() {
-    // TODO(benvanik): make this a fancy dialog that allows frame/marker/etc
-    //     selection. window.prompt is prohibited in apps, too.
-    var result;
-    try {
-      keyboard.suspend();
-      result = goog.global.prompt('Frame number:');
-    } finally {
-      keyboard.resume();
-    }
-    if (!result) {
-      return;
-    }
-    result = goog.string.toNumber(result);
-    if (isNaN(result)) {
-      return;
-    }
-
-    commandManager.execute('goto_frame', this, null, result);
-  }, this);
 };
 
 
