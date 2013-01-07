@@ -654,15 +654,17 @@ wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
     return false;
   }
 
-  if (this.onClickInternal(x, y, modifiers, bounds)) {
-    return true;
-  }
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     if (childContext.onClick(x, y, modifiers)) {
       return true;
     }
   }
+
+  if (this.onClickInternal(x, y, modifiers, bounds)) {
+    return true;
+  }
+
   return false;
 };
 
@@ -697,15 +699,17 @@ wtf.ui.Painter.prototype.onMouseMove = function(x, y, modifiers) {
   //   return false;
   // }
 
-  if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
-    return true;
-  }
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     if (childContext.onMouseMove(x, y, modifiers)) {
       return true;
     }
   }
+
+  if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
+    return true;
+  }
+
   return false;
 };
 
@@ -725,25 +729,18 @@ wtf.ui.Painter.prototype.onMouseMoveInternal = goog.nullFunction;
 
 /**
  * Handles mouse leave events at the given pixel.
- * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onMouseOut = function() {
-  if (this.onMouseOutInternal()) {
-    return true;
-  }
+  this.onMouseOutInternal();
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    if (childContext.onMouseOut()) {
-      return true;
-    }
+    childContext.onMouseOut();
   }
-  return false;
 };
 
 
 /**
  * Handles mouse leave events at the given pixel.
- * @return {boolean|undefined} True if the event was handled.
  * @protected
  */
 wtf.ui.Painter.prototype.onMouseOutInternal = goog.nullFunction;
