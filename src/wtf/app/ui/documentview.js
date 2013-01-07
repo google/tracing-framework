@@ -34,7 +34,6 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
-goog.require('wtf.ui.zoom.Viewport');
 
 
 
@@ -72,14 +71,6 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    */
   this.selection_ = new wtf.app.ui.Selection(doc.getDatabase());
   this.registerDisposable(this.selection_);
-
-  // HACK(benvanik): replace with shared camera
-  /**
-   * All viewports that have been created, for linking.
-   * @type {!Array.<!wtf.ui.zoom.Viewport>}
-   * @private
-   */
-  this.viewports_ = [];
 
   /**
    * Toolbar.
@@ -140,6 +131,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   this.setupCommands_();
   this.setupKeyboardShortcuts_();
 
+  // Show error dialogs.
   var db = doc.getDatabase();
   db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
       function(message, opt_detail) {
@@ -147,6 +139,14 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
         wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
         _gaq.push(['_trackEvent', 'app', 'source_error', message]);
       }, this);
+
+  // Zoom to fit when the database changes.
+  // This should be changed to track the most recent events if streaming.
+  db.addListener(wtf.events.EventType.INVALIDATED, function() {
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
+    this.localView_.setVisibleRange(firstEventTime, lastEventTime, true);
+  }, this);
 };
 goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
 
@@ -181,65 +181,52 @@ wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
  */
 wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
   var db = this.getDatabase();
+  var view = this.localView_;
+  var selection = this.selection_;
+
   var commandManager = wtf.events.getCommandManager();
 
   commandManager.registerSimpleCommand(
       'select_all', function() {
-        this.selection_.clearTimeRange();
+        selection.clearTimeRange();
       }, this);
 
   commandManager.registerSimpleCommand(
       'select_visible', function() {
-        this.selection_.setTimeRange(
+        selection.setTimeRange(
             this.localView_.getVisibleTimeStart(),
             this.localView_.getVisibleTimeEnd());
       }, this);
 
   commandManager.registerSimpleCommand(
       'select_range', function(source, target, startTime, endTime) {
-        this.selection_.setTimeRange(startTime, endTime);
+        selection.setTimeRange(startTime, endTime);
       }, this);
 
   commandManager.registerSimpleCommand(
       'goto_range', function(source, target, timeStart, timeEnd) {
-        var viewport = this.viewports_[0];
-
         var firstEventTime = db.getFirstEventTime();
         var pad = (timeEnd - timeStart) * 0.05;
-        viewport.zoomToBounds(
-            timeStart - firstEventTime - pad, 0,
-            timeEnd - timeStart + pad * 2, 0.001);
+        view.setVisibleRange(
+            timeStart - pad,
+            timeEnd + pad);
       }, this);
 
   commandManager.registerSimpleCommand(
       'goto_mark', function(source, target, e) {
-        var viewport = this.viewports_[0];
-
         // Go to mark event.
-        var firstEventTime = db.getFirstEventTime();
         var timeStart = e.time;
         var timeEnd = e.time + e.args['duration'];
-        var pad = (timeEnd - timeStart) * 0.05;
-        viewport.zoomToBounds(
-            timeStart - firstEventTime - pad, 0,
-            timeEnd - timeStart + pad * 2, 0.001);
+        commandManager.execute('goto_range', this, null,
+            timeStart, timeEnd);
       }, this);
 
   commandManager.registerSimpleCommand(
       'goto_frame', function(source, target, frameOrNumber) {
-        var viewport = this.viewports_[0];
-
         var frame = null;
         if (goog.isNumber(frameOrNumber)) {
-          // Find a frame index. Just use the first.
-          var frameIndex = null;
-          var zoneIndicies = db.getZoneIndices();
-          for (var n = 0; n < zoneIndicies.length; n++) {
-            frameIndex = zoneIndicies[n].getFrameIndex();
-            if (frameIndex.getCount()) {
-              break;
-            }
-          }
+          // Find a frame index.
+          var frameIndex = db.getFirstFrameIndex();
           if (!frameIndex) {
             return;
           }
@@ -256,11 +243,8 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
         // Go to frame.
         var timeStart = frame.getStartEvent().time;
         var timeEnd = frame.getEndEvent().time;
-        var firstEventTime = db.getFirstEventTime();
-        var pad = (timeEnd - timeStart) * 0.05;
-        viewport.zoomToBounds(
-            timeStart - firstEventTime - pad, 0,
-            timeEnd - timeStart + pad * 2, 0.001);
+        commandManager.execute('goto_range', this, null,
+            timeStart, timeEnd);
       }, this);
 };
 
@@ -271,53 +255,20 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
  */
 wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
   var db = this.getDatabase();
+  var view = this.localView_;
+  var selection = this.selection_;
+
   var dom = this.getDom();
   var commandManager = wtf.events.getCommandManager();
   var keyboard = wtf.events.getWindowKeyboard(dom);
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
 
-  keyboardScope.addShortcut('space', function() {
-    var viewport = this.viewports_[0];
-    var width = viewport.getScreenWidth();
-    viewport.panDelta((width * 0.8) / viewport.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('shift+space', function() {
-    var viewport = this.viewports_[0];
-    var width = viewport.getScreenWidth();
-    viewport.panDelta(-(width * 0.8) / viewport.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('left|a', function() {
-    var viewport = this.viewports_[0];
-    viewport.panDelta(-40 / viewport.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('right|d', function() {
-    var viewport = this.viewports_[0];
-    viewport.panDelta(40 / viewport.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('shift+left|shift+a', function() {
-    var viewport = this.viewports_[0];
-    viewport.panDelta(-160 / viewport.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('shift+right|shift+d', function() {
-    var viewport = this.viewports_[0];
-    viewport.panDelta(160 / viewport.getScale(), 0);
-  }, this);
-  keyboardScope.addShortcut('up|w', function() {
-    var viewport = this.viewports_[0];
-    viewport.zoomDelta(2.5);
-  }, this);
-  keyboardScope.addShortcut('down|s', function() {
-    var viewport = this.viewports_[0];
-    viewport.zoomDelta(1 / 2.5);
-  }, this);
   keyboardScope.addShortcut('home', function() {
-    var viewport = this.viewports_[0];
     var firstEventTime = db.getFirstEventTime();
     var lastEventTime = db.getLastEventTime();
-    var pad = (lastEventTime - firstEventTime) * 0.05;
-    viewport.zoomToBounds(
-        -pad, 0, lastEventTime - firstEventTime + pad * 2, 1);
+    commandManager.execute('goto_range', this, null,
+        firstEventTime, lastEventTime);
   }, this);
 
   keyboardScope.addShortcut('command+a', function() {
@@ -396,25 +347,6 @@ wtf.app.ui.DocumentView.prototype.getTabbar = function() {
 
 
 /**
- * Registers a viewport for linking.
- * @param {!wtf.ui.zoom.Viewport} viewport Viewport.
- */
-wtf.app.ui.DocumentView.prototype.registerViewport = function(viewport) {
-  for (var n = 0; n < this.viewports_.length; n++) {
-    wtf.ui.zoom.Viewport.link(
-        this.viewports_[n],
-        viewport);
-  }
-  this.viewports_.push(viewport);
-
-  var db = this.getDatabase();
-  db.addListener(wtf.events.EventType.INVALIDATED, function() {
-    viewport.invalidate();
-  });
-};
-
-
-/**
  * @override
  */
 wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
@@ -459,12 +391,12 @@ wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
     return;
   }
 
-  if (!this.viewports_.length) {
-    return;
-  }
-  var viewport = this.viewports_[0];
-  var width = viewport.getScreenWidth();
-  viewport.set(-1000, 0, width / (lastEventTime - firstEventTime + 2000));
+  // if (!this.viewports_.length) {
+  //   return;
+  // }
+  // var viewport = this.viewports_[0];
+  // var width = viewport.getScreenWidth();
+  // viewport.set(-1000, 0, width / (lastEventTime - firstEventTime + 2000));
 
   // TODO(benvanik): bind viewports to the local view correctly - right now they
   //     are inverted and this doesn't work as it should.
