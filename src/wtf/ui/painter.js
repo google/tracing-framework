@@ -591,6 +591,40 @@ wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
 
 
 /**
+ * Draws a standard label to the given region.
+ * @param {string} label Label.
+ * @param {number=} opt_y Inset into the painter bounds.
+ * @param {number=} opt_height Height override for the painter bounds.
+ */
+wtf.ui.Painter.prototype.drawLabel = function(label, opt_y, opt_height) {
+  var ctx = this.canvasContext2d_;
+
+  var bounds = this.bounds_;
+  var y = goog.isDef(opt_y) ? opt_y : 0;
+  var height = goog.isDef(opt_height) ? opt_height : bounds.height;
+
+  var nameHeight = 12;
+  if (height > nameHeight) {
+    ctx.font = nameHeight + 'px bold verdana, sans-serif';
+    var textSize = ctx.measureText(label);
+
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(
+        bounds.left, bounds.top + y + (height + nameHeight) / 2 - nameHeight,
+        textSize.width + 8, nameHeight + 2);
+
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#000000';
+    ctx.fillText(
+        label,
+        bounds.left + 4, bounds.top + y + (height + nameHeight) / 2 - 1);
+  }
+  ctx.globalAlpha = 1;
+};
+
+
+/**
  * Detects whether the given point is within the bounds of the painter.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.

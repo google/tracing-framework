@@ -162,6 +162,9 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
   var y = 0;
   var h = (maxLevel - 1) * timeRangeHeight;
   this.endRenderingRanges(bounds, y, h);
+
+  // Draw label on the left.
+  this.drawLabel('time ranges');
 };
 
 

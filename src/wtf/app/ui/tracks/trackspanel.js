@@ -20,10 +20,10 @@ goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
+goog.require('wtf.app.ui.FramePainter');
+goog.require('wtf.app.ui.MarkPainter');
 goog.require('wtf.app.ui.SelectionPainter');
 goog.require('wtf.app.ui.TabPanel');
-goog.require('wtf.app.ui.tracks.FramePainter');
-goog.require('wtf.app.ui.tracks.MarkPainter');
 goog.require('wtf.app.ui.tracks.TimeRangePainter');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
@@ -95,11 +95,11 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
         // Update the main view.
         // TODO(benvanik): better data flow
-        // var localView = documentView.getLocalView();
-        // localView.setVisibleRange(timeLeft, timeRight);
+        var localView = documentView.getLocalView();
+        localView.setVisibleRange(timeLeft, timeRight);
 
-        for (var n = 0; n < this.timeRangePainters_.length; n++) {
-          var painter = this.timeRangePainters_[n];
+        for (var n = 0; n < this.timePainters_.length; n++) {
+          var painter = this.timePainters_[n];
           painter.setTimeRange(timeLeft, timeRight);
         }
 
@@ -108,6 +108,18 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
   documentView.registerViewport(this.viewport_);
+
+  // HACK(benvanik): zoom to fit on change - this should follow other behavior
+  function zoomToBounds() {
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
+    var width = this.viewport_.getScreenWidth();
+    if (lastEventTime) {
+      this.viewport_.set(
+          -1000, 0, width / (lastEventTime - firstEventTime + 2000));
+    }
+  };
+  db.addListener(wtf.events.EventType.INVALIDATED, zoomToBounds, this);
 
   /**
    * Track canvas.
@@ -136,14 +148,14 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @type {!Array.<!wtf.ui.TimePainter>}
    * @private
    */
-  this.timeRangePainters_ = [];
+  this.timePainters_ = [];
 
   var gridPainter = new wtf.ui.GridPainter(this.trackCanvas_);
   paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.timeRangePainters_.push(gridPainter);
+  this.timePainters_.push(gridPainter);
 
   /**
    * Selection painter.
@@ -153,7 +165,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.selectionPainter_ = new wtf.app.ui.SelectionPainter(
       this.trackCanvas_, documentView.getSelection(), this.viewport_);
   paintContext.addChildPainter(this.selectionPainter_);
-  this.timeRangePainters_.push(this.selectionPainter_);
+  this.timePainters_.push(this.selectionPainter_);
 
   /**
    * Vertical stack of painters that make up the main view.
@@ -163,10 +175,6 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.painterStack_ = new wtf.ui.Painter(this.trackCanvas_);
   paintContext.addChildPainter(this.painterStack_);
   this.painterStack_.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
-
-  var markPainter = new wtf.app.ui.tracks.MarkPainter(this.trackCanvas_, db);
-  this.painterStack_.addChildPainter(markPainter);
-  this.timeRangePainters_.push(markPainter);
 
   /**
    * Ruler painter.
@@ -178,7 +186,11 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.rulerPainter_.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.timeRangePainters_.push(this.rulerPainter_);
+  this.timePainters_.push(this.rulerPainter_);
+
+  var markPainter = new wtf.app.ui.MarkPainter(this.trackCanvas_, db);
+  this.painterStack_.addChildPainter(markPainter);
+  this.timePainters_.push(markPainter);
 
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
@@ -261,21 +273,21 @@ wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
   zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
   zonePainterStack.setPadding(new goog.math.Rect(0, 5, 0, 5));
 
-  var framePainter = new wtf.app.ui.tracks.FramePainter(
+  var framePainter = new wtf.app.ui.FramePainter(
       this.trackCanvas_, this.db_, zoneIndex.getFrameIndex());
   zonePainterStack.addChildPainter(framePainter);
-  this.timeRangePainters_.push(framePainter);
+  this.timePainters_.push(framePainter);
   framePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
 
   var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
       this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());
   zonePainterStack.addChildPainter(timeRangePainter);
-  this.timeRangePainters_.push(timeRangePainter);
+  this.timePainters_.push(timeRangePainter);
   timeRangePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
       this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
   zonePainterStack.addChildPainter(zonePainter);
-  this.timeRangePainters_.push(zonePainter);
+  this.timePainters_.push(zonePainter);
 };

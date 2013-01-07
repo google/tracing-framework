@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.FramePainter');
+goog.provide('wtf.app.ui.FramePainter');
 
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -31,7 +31,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.tracks.FramePainter = function FramePainter(canvas, db, frameIndex) {
+wtf.app.ui.FramePainter = function FramePainter(canvas, db, frameIndex) {
   goog.base(this, canvas);
 
   /**
@@ -50,7 +50,7 @@ wtf.app.ui.tracks.FramePainter = function FramePainter(canvas, db, frameIndex) {
   this.frameIndex_.addListener(wtf.events.EventType.INVALIDATED,
       this.requestRepaint, this);
 };
-goog.inherits(wtf.app.ui.tracks.FramePainter, wtf.ui.RangePainter);
+goog.inherits(wtf.app.ui.FramePainter, wtf.ui.RangePainter);
 
 
 /**
@@ -59,7 +59,7 @@ goog.inherits(wtf.app.ui.tracks.FramePainter, wtf.ui.RangePainter);
  * @private
  * @const
  */
-wtf.app.ui.tracks.FramePainter.FRAME_COLORS_ = [
+wtf.app.ui.FramePainter.FRAME_COLORS_ = [
   new wtf.ui.color.RgbColor(26, 152, 80),
   new wtf.ui.color.RgbColor(206, 215, 39),
   new wtf.ui.color.RgbColor(215, 48, 39)
@@ -71,17 +71,17 @@ wtf.app.ui.tracks.FramePainter.FRAME_COLORS_ = [
  * @type {number}
  * @const
  */
-wtf.app.ui.tracks.FramePainter.HEIGHT = 26;
+wtf.app.ui.FramePainter.HEIGHT = 26;
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.FramePainter.prototype.layoutInternal = function(
+wtf.app.ui.FramePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   if (this.frameIndex_.getCount()) {
-    newBounds.height = wtf.app.ui.tracks.FramePainter.HEIGHT;
+    newBounds.height = wtf.app.ui.FramePainter.HEIGHT;
   } else {
     newBounds.height = 0;
   }
@@ -92,9 +92,9 @@ wtf.app.ui.tracks.FramePainter.prototype.layoutInternal = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.FramePainter.prototype.repaintInternal = function(
+wtf.app.ui.FramePainter.prototype.repaintInternal = function(
     ctx, bounds) {
-  var colors = wtf.app.ui.tracks.FramePainter.FRAME_COLORS_;
+  var colors = wtf.app.ui.FramePainter.FRAME_COLORS_;
 
   // Clip to extents.
   this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
@@ -149,15 +149,18 @@ wtf.app.ui.tracks.FramePainter.prototype.repaintInternal = function(
 
   // Now blit the nicely rendered ranges onto the screen.
   var y = 0;
-  var h = bounds.height - 1;
+  var h = bounds.height;
   this.endRenderingRanges(bounds, y, h);
+
+  // Draw label on the left.
+  this.drawLabel('frames');
 };
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.FramePainter.prototype.onClickInternal =
+wtf.app.ui.FramePainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
   var hit = this.hitTest_(x, y, bounds);
   if (!hit) {
@@ -192,7 +195,7 @@ wtf.app.ui.tracks.FramePainter.prototype.onClickInternal =
 /**
  * @override
  */
-wtf.app.ui.tracks.FramePainter.prototype.getInfoStringInternal =
+wtf.app.ui.FramePainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
   var hit = this.hitTest_(x, y, bounds);
   if (!hit) {
@@ -234,7 +237,7 @@ wtf.app.ui.tracks.FramePainter.prototype.getInfoStringInternal =
  *     containing the two frames on either side of the time.
  * @private
  */
-wtf.app.ui.tracks.FramePainter.prototype.hitTest_ = function(
+wtf.app.ui.FramePainter.prototype.hitTest_ = function(
     x, y, bounds) {
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,
