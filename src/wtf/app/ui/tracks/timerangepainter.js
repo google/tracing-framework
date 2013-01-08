@@ -228,7 +228,8 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
     if (e.value.getLevel() == level) {
       var beginEvent = e.value.getBeginEvent();
       var endEvent = e.value.getEndEvent();
-      if (e.time <= beginEvent.time && time <= endEvent.time) {
+      if (beginEvent && endEvent &&
+          e.time <= beginEvent.time && time <= endEvent.time) {
         return true;
       }
     }
