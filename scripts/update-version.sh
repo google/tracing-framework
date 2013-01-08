@@ -28,8 +28,8 @@ fi
 ver_commit=`git rev-parse HEAD`
 
 ver_major=`date +%Y`
-ver_minor=`date +%m`
-ver_patch=`date +%d`
+ver_minor=`date +%-m`
+ver_patch=`date +%-d`
 ver_tag=$GIVEN_TAG
 ver_string="$ver_major.$ver_minor.$ver_patch-$ver_tag"
 if [ $is_bsd -eq 1 ]; then
