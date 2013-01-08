@@ -5102,13 +5102,13 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 // Input 54
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13576356E5
+  return 13576392E5
 };
 wtf.version.getCommit = function() {
-  return"549f0a286d9f7e412473c95e9ff9a49a999a1215"
+  return"f1bff9bfe76105e506e8e6326e940a31edae9429"
 };
 wtf.version.toString = function() {
-  return"2013.1.8-1"
+  return"2013.1.8-2"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
