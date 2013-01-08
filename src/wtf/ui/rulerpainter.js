@@ -14,7 +14,7 @@
 goog.provide('wtf.ui.RulerPainter');
 
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 goog.require('wtf.util');
 
 
@@ -23,17 +23,10 @@ goog.require('wtf.util');
  * Paints a ruler into the view.
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
-wtf.ui.RulerPainter = function(canvas) {
+wtf.ui.RulerPainter = function RulerPainter(canvas) {
   goog.base(this, canvas);
-
-  /**
-   * Y offset, in pixels.
-   * @type {number}
-   * @private
-   */
-  this.y_ = 0;
 
   /**
    * Minimum granularity.
@@ -64,7 +57,7 @@ wtf.ui.RulerPainter = function(canvas) {
    */
   this.hoverX_ = 0;
 };
-goog.inherits(wtf.ui.RulerPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.ui.RulerPainter, wtf.ui.TimePainter);
 
 
 /**
@@ -89,24 +82,37 @@ wtf.ui.RulerPainter.prototype.setGranularities = function(min, max) {
 /**
  * @override
  */
-wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
-  var y = this.y_;
-  var h = wtf.ui.RulerPainter.HEIGHT;
+wtf.ui.RulerPainter.prototype.layoutInternal = function(availableBounds) {
+  var newBounds = availableBounds.clone();
+  newBounds.height = wtf.ui.RulerPainter.HEIGHT;
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
+wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
+  var width = bounds.width;
 
   // Hover UI.
+  // TODO(benvanik): this displays under other painters - it should be moved to
+  //     its own painter.
   if (this.showHoverTip_ && this.hoverX_) {
     ctx.fillStyle = '#000000';
-    ctx.fillRect(this.hoverX_, this.y_, 1, height);
+    ctx.fillRect(
+        bounds.left + this.hoverX_, bounds.top,
+        1, this.getScaledCanvasHeight() - bounds.top);
   }
 
   // Clip to extents.
-  this.clip(0, y, width, h);
+  this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Clear gutter.
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, y, width, h);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(bounds.left, bounds.top, bounds.width, bounds.height);
   ctx.fillStyle = '#000000';
-  ctx.fillRect(0, y + h - 1, width, 1);
+  ctx.fillRect(bounds.left, bounds.top + bounds.height - 1, bounds.width, 1);
 
   // Draw labels.
   var timeLeft = this.timeLeft;
@@ -137,7 +143,7 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
       x = Math.round(x) + 0.5;
       var timeValue = (time / 1000);
       var timeString = (Math.round(timeValue * g) / g) + 's';
-      ctx.fillText(timeString, x, y + 10);
+      ctx.fillText(timeString, bounds.left + x, bounds.top + 11);
     }
 
     granularity /= 10;
@@ -150,10 +156,14 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
     var timeString = wtf.util.formatTime(time);
     var timeWidth = ctx.measureText(timeString).width;
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(this.hoverX_ - timeWidth / 2 - 3, 0, timeWidth + 6, h - 1);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(
+        bounds.left + this.hoverX_ - timeWidth / 2 - 3, bounds.top,
+        timeWidth + 6, bounds.height - 1);
     ctx.fillStyle = '#000000';
-    ctx.fillText(timeString, this.hoverX_ - timeWidth / 2, 10);
+    ctx.fillText(
+        timeString,
+        bounds.left + this.hoverX_ - timeWidth / 2, bounds.top + 11);
   }
 };
 
@@ -162,7 +172,7 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, width, height) {
  * @override
  */
 wtf.ui.RulerPainter.prototype.onMouseMoveInternal =
-    function(x, y, width, height) {
+    function(x, y, modifiers, bounds) {
   if (!this.showHoverTip_) {
     return;
   }

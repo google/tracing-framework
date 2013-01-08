@@ -32,6 +32,7 @@ goog.provide('wtfapi.io.ByteArray');
 goog.provide('wtfapi.trace');
 goog.provide('wtfapi.trace.Flow');
 goog.provide('wtfapi.trace.Scope');
+goog.provide('wtfapi.trace.TimeRange');
 goog.provide('wtfapi.trace.Zone');
 goog.provide('wtfapi.trace.events');
 
@@ -116,6 +117,12 @@ wtfapi.trace.Scope;
  * @typedef {Object}
  */
 wtfapi.trace.Flow;
+
+
+/**
+ * @typedef {Object}
+ */
+wtfapi.trace.TimeRange;
 
 
 /**
@@ -433,6 +440,28 @@ wtfapi.trace.mark = wtfapi.PRESENT ?
  */
 wtfapi.trace.timeStamp = wtfapi.PRESENT ?
     goog.global['wtf']['trace']['timeStamp'] : goog.nullFunction;
+
+
+/**
+ * Begins a time range.
+ * Time ranges can overlap and will be displayed in the UI on top of the zone
+ * they were created in.
+ * @param {string} name Time range name.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
+ * @return {wtfapi.trace.TimeRange} Time range handle.
+ */
+wtfapi.trace.beginTimeRange = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['beginTimeRange'] : goog.nullFunction;
+
+
+/**
+ * Ends a time range.
+ * @param {wtfapi.trace.TimeRange} timeRange Time range handle.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
+ */
+wtfapi.trace.endTimeRange = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['endTimeRange'] : goog.nullFunction;
 
 
 /**

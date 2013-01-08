@@ -14,6 +14,7 @@
  */
 
 goog.provide('wtf.trace');
+goog.provide('wtf.trace.TimeRange');
 
 goog.require('goog.asserts');
 goog.require('goog.string');
@@ -468,6 +469,44 @@ wtf.trace.mark = wtf.trace.BuiltinEvents.mark;
  * @param {number=} opt_time Time for the stamp; omit to use the current time.
  */
 wtf.trace.timeStamp = wtf.trace.BuiltinEvents.timeStamp;
+
+
+/**
+ * @typedef {Object}
+ */
+wtf.trace.TimeRange;
+
+
+/**
+ * Next time range ID.
+ * @type {number}
+ * @private
+ */
+wtf.trace.nextTimeRange_ = 0;
+
+
+/**
+ * Begins a time range.
+ * Time ranges can overlap and will be displayed in the UI on top of the zone
+ * they were created in.
+ * @param {string} name Time range name.
+ * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
+ * @return {wtf.trace.TimeRange} Time range handle.
+ */
+wtf.trace.beginTimeRange = function(name, opt_value, opt_time) {
+  var timeRange = wtf.trace.nextTimeRange_++;
+  wtf.trace.BuiltinEvents.beginTimeRange(timeRange, name, opt_value, opt_time);
+  return /** @type {wtf.trace.TimeRange} */ (timeRange);
+};
+
+
+/**
+ * Ends a time range.
+ * @param {wtf.trace.TimeRange} timeRange Time range handle.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
+ */
+wtf.trace.endTimeRange = wtf.trace.BuiltinEvents.endTimeRange;
 
 
 /**

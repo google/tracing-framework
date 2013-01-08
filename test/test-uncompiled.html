@@ -34,7 +34,9 @@
   <a id="testRoundTripLink" href="">Round-trip!</a>
   <div style="height: 2000px"></div>
   <script>
+    wtf.trace.mark('body load');
     window.onload = function() {
+      wtf.trace.mark('onload');
       var arrayEvent = wtf.trace.events.createInstance('arrayEvent(uint8[] v)');
       var appendFlowData = wtf.trace.events.createInstance(
           'customAppendFlowData(flowId id, int32 a)',
@@ -42,6 +44,10 @@
       var someLink = document.getElementById('someLink');
       someLink.addEventListener('click', function(e) {
         e.preventDefault();
+        wtf.trace.mark('click');
+
+        var rangeA = wtf.trace.beginTimeRange('a');
+        var rangeB = wtf.trace.beginTimeRange('b', 'some value');
 
         // Enter scope
         var scope = wtf.trace.enterScope('onclick');
@@ -51,7 +57,7 @@
         arrayEvent(new Uint8Array([1, 2, 3]));
 
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'test-uncompiled.html?random=' + Math.random());
+        xhr.open('GET', 'test-uncompiled.html?random=' + Math.random(), true);
         xhr.onreadystatechange = function() {
           console.log('xhr', xhr.readyState);
         };
@@ -63,6 +69,8 @@
         wtf.trace.appendFlowData(flow, 'x', 123);
         appendFlowData(flow, 456);
         window.setTimeout(function() {
+          wtf.trace.endTimeRange(rangeA);
+
           // Enter scope, resume flow
           var scope = wtf.trace.enterScope('setTimeout callback');
           wtf.trace.extendFlow(flow, 'timeout');
@@ -80,6 +88,9 @@
 
           wtf.trace.terminateFlow(flow);
           wtf.trace.leaveScope(scope);
+
+          wtf.trace.endTimeRange(rangeB);
+          wtf.trace.mark('click done');
         }, 0);
 
         wtf.trace.leaveScope(scope);

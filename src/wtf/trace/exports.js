@@ -140,6 +140,14 @@ if (wtf.trace.exports.ENABLE_EXPORTS) {
       'wtf.trace.timeStamp',
       wtf.trace.timeStamp);
 
+    // wtf.trace time range operations
+  goog.exportSymbol(
+      'wtf.trace.beginTimeRange',
+      wtf.trace.beginTimeRange);
+  goog.exportSymbol(
+      'wtf.trace.endTimeRange',
+      wtf.trace.endTimeRange);
+
   // wtf.trace utilities
   goog.exportSymbol(
       'wtf.trace.ignoreListener',

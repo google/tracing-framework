@@ -47,21 +47,22 @@ wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ =
     return;
   }
 
-  // Track all timers to open scopes.
+  // Track all timers to open time ranges.
   // It's very sad we have to do this, but console.time is a flawed API.
-  var scopeMap = {};
+  var timeRangeMap = {};
 
   // console.time
   var originalTime = console['time'];
   this.injectFunction(console, 'time', function time(timerName) {
-    scopeMap[timerName] = wtf.trace.enterScope(timerName);
+    timeRangeMap[timerName] = wtf.trace.beginTimeRange(timerName);
   });
 
   // console.timeEnd
   var originalTimeEnd = console['timeEnd'];
   this.injectFunction(console, 'timeEnd', function timeEnd(timerName) {
-    var scope = scopeMap[timerName];
-    wtf.trace.leaveScope(scope);
+    var timeRange = timeRangeMap[timerName];
+    delete timeRangeMap[timerName];
+    wtf.trace.endTimeRange(timeRange);
   });
 
   // console.timeStamp

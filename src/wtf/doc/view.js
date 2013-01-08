@@ -67,20 +67,24 @@ wtf.doc.View.prototype.getVisibleTimeEnd = function() {
  * Sets the visible time range.
  * @param {number} timeStart Start time.
  * @param {number} timeEnd End time.
+ * @param {boolean=} opt_immediate Immediately set the range - don't animate.
  */
-wtf.doc.View.prototype.setVisibleRange = function(timeStart, timeEnd) {
+wtf.doc.View.prototype.setVisibleRange = function(timeStart, timeEnd,
+    opt_immediate) {
   if (this.timeStart_ == timeStart && this.timeEnd_ == timeEnd) {
     return;
   }
   this.timeStart_ = timeStart;
   this.timeEnd_ = timeEnd;
-  this.invalidate();
+
+  this.invalidate(opt_immediate);
 };
 
 
 /**
  * Notifies the view that events in its range have been modified.
+ * @param {boolean=} opt_immediate Immediately set the range - don't animate.
  */
-wtf.doc.View.prototype.invalidate = function() {
-  this.emitEvent(wtf.events.EventType.INVALIDATED);
+wtf.doc.View.prototype.invalidate = function(opt_immediate) {
+  this.emitEvent(wtf.events.EventType.INVALIDATED, opt_immediate || false);
 };

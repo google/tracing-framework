@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.ui.TimeRangePainter');
+goog.provide('wtf.ui.TimePainter');
 
 goog.require('wtf.ui.Painter');
 
@@ -23,7 +23,7 @@ goog.require('wtf.ui.Painter');
  * @constructor
  * @extends {wtf.ui.Painter}
  */
-wtf.ui.TimeRangePainter = function(canvas) {
+wtf.ui.TimePainter = function(canvas) {
   goog.base(this, canvas);
 
   /**
@@ -40,7 +40,7 @@ wtf.ui.TimeRangePainter = function(canvas) {
    */
   this.timeRight = 0;
 };
-goog.inherits(wtf.ui.TimeRangePainter, wtf.ui.Painter);
+goog.inherits(wtf.ui.TimePainter, wtf.ui.Painter);
 
 
 /**
@@ -48,7 +48,7 @@ goog.inherits(wtf.ui.TimeRangePainter, wtf.ui.Painter);
  * @param {number} timeLeft Left-most visible time.
  * @param {number} timeRight Right-most visible time.
  */
-wtf.ui.TimeRangePainter.prototype.setTimeRange = function(timeLeft, timeRight) {
+wtf.ui.TimePainter.prototype.setTimeRange = function(timeLeft, timeRight) {
   this.timeLeft = timeLeft;
   this.timeRight = timeRight;
 };
