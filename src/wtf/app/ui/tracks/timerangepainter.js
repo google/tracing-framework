@@ -118,6 +118,12 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
   var timeRight = this.timeRight;
   this.timeRangeIndex_.forEachIntersecting(timeLeft, timeRight,
       function(timeRange) {
+        // Skip if excluded.
+        var level = timeRange.getLevel();
+        if (level > wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_) {
+          return;
+        }
+
         var beginEvent = timeRange.getBeginEvent();
         var endEvent = timeRange.getEndEvent();
 
@@ -147,7 +153,6 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
         var color = palette.getColorForString(label);
 
         // Draw bar.
-        var level = timeRange.getLevel();
         this.drawRange(level, screenLeft, screenRight, color, 1);
 
         if (screenWidth > 15) {

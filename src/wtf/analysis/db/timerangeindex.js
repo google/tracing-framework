@@ -78,8 +78,6 @@ wtf.analysis.db.TimeRangeIndex.prototype.getMaximumLevel = function() {
 wtf.analysis.db.TimeRangeIndex.prototype.computeLevels_ = function() {
   var beginTimeRangeEvent =
       this.traceListener_.getEventType('wtf.timeRange#begin');
-  var endTimeRangeEvent =
-      this.traceListener_.getEventType('wtf.timeRange#end');
 
   var levels = [];
   var overlap = 0;
