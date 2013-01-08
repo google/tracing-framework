@@ -56,7 +56,8 @@ wtf.data.EventFlag = {
   /**
    * Event is expected to occur at a very high frequency.
    * High frequency events will be optimized for size more than other event
-   * types.
+   * types. Event arguments may also receive more preprocessing when being
+   * recorded, such as string interning/etc.
    */
   HIGH_FREQUENCY: (1 << 1),
 
@@ -69,7 +70,9 @@ wtf.data.EventFlag = {
 
   /**
    * Event represents some internal system event such as flow control events.
-   * These should not be shown in the UI.
+   * If an event has this flag then it will never be shown in the UI and most
+   * parts of the system will ignore it. For some special events they will be
+   * handled at load-time and never even delivered to the database.
    */
   INTERNAL: (1 << 3),
 
@@ -84,8 +87,8 @@ wtf.data.EventFlag = {
 
   /**
    * Event is a builtin event.
-   * These may receive special handling and enable optimizations. User events
-   * should not have this flag set.
+   * Only events defined by the tracing framework should set this bit. User
+   * events should not have this flag set and may be ignored if they do.
    */
   BUILTIN: (1 << 5),
 
