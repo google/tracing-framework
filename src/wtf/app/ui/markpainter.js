@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.MarkPainter');
+goog.provide('wtf.app.ui.MarkPainter');
 
 goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
@@ -32,7 +32,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.tracks.MarkPainter = function MarkPainter(canvas, db) {
+wtf.app.ui.MarkPainter = function MarkPainter(canvas, db) {
   goog.base(this, canvas);
 
   /**
@@ -49,7 +49,7 @@ wtf.app.ui.tracks.MarkPainter = function MarkPainter(canvas, db) {
    * @private
    */
   this.palette_ = new wtf.ui.color.Palette(
-      wtf.app.ui.tracks.MarkPainter.MARK_COLORS_);
+      wtf.app.ui.MarkPainter.MARK_COLORS_);
 
   /**
    * Mark event index.
@@ -80,7 +80,7 @@ wtf.app.ui.tracks.MarkPainter = function MarkPainter(canvas, db) {
         // Failued to create indices.
       }, this);
 };
-goog.inherits(wtf.app.ui.tracks.MarkPainter, wtf.ui.RangePainter);
+goog.inherits(wtf.app.ui.MarkPainter, wtf.ui.RangePainter);
 
 
 /**
@@ -89,7 +89,7 @@ goog.inherits(wtf.app.ui.tracks.MarkPainter, wtf.ui.RangePainter);
  * @private
  * @const
  */
-wtf.app.ui.tracks.MarkPainter.MARK_COLORS_ = [
+wtf.app.ui.MarkPainter.MARK_COLORS_ = [
   'rgb(200,200,200)',
   'rgb(189,189,189)',
   'rgb(150,150,150)',
@@ -104,7 +104,7 @@ wtf.app.ui.tracks.MarkPainter.MARK_COLORS_ = [
  * Handles invalidations of the mark index.
  * @private
  */
-wtf.app.ui.tracks.MarkPainter.prototype.markIndexInvalidated_ = function() {
+wtf.app.ui.MarkPainter.prototype.markIndexInvalidated_ = function() {
   // Iterate and fixup all mark events.
   // TODO(benvanik): move to a dedicated mark navigation structure
   var previousMark = null;
@@ -128,17 +128,17 @@ wtf.app.ui.tracks.MarkPainter.prototype.markIndexInvalidated_ = function() {
  * @type {number}
  * @const
  */
-wtf.app.ui.tracks.MarkPainter.HEIGHT = 16;
+wtf.app.ui.MarkPainter.HEIGHT = 16;
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.MarkPainter.prototype.layoutInternal = function(
+wtf.app.ui.MarkPainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   if (this.markIndex_ && this.markIndex_.getCount()) {
-    newBounds.height = wtf.app.ui.tracks.MarkPainter.HEIGHT;
+    newBounds.height = wtf.app.ui.MarkPainter.HEIGHT;
   } else {
     newBounds.height = 0;
   }
@@ -149,7 +149,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.layoutInternal = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
+wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
 
@@ -205,7 +205,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
 
     if (screenWidth > 15) {
       this.drawRangeLabel(
-          bounds, left, right, screenLeft, screenRight, -1, e.args['name']);
+          bounds, left, right, screenLeft, screenRight, 0, e.args['name']);
     }
   }, this);
 
@@ -219,7 +219,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.repaintInternal = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.MarkPainter.prototype.onClickInternal =
+wtf.app.ui.MarkPainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
   var e = this.hitTest_(x, y, bounds);
   if (e) {
@@ -237,7 +237,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.onClickInternal =
 /**
  * @override
  */
-wtf.app.ui.tracks.MarkPainter.prototype.getInfoStringInternal =
+wtf.app.ui.MarkPainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
   var e = this.hitTest_(x, y, bounds);
   if (e) {
@@ -261,7 +261,7 @@ wtf.app.ui.tracks.MarkPainter.prototype.getInfoStringInternal =
  * @return {wtf.analysis.Event} Mark or nothing.
  * @private
  */
-wtf.app.ui.tracks.MarkPainter.prototype.hitTest_ = function(
+wtf.app.ui.MarkPainter.prototype.hitTest_ = function(
     x, y, bounds) {
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,

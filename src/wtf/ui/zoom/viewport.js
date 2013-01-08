@@ -909,9 +909,9 @@ wtf.ui.zoom.Viewport.prototype.mouseMove = function(x, y) {
 wtf.ui.zoom.Viewport.prototype.mouseWheel = function(x, y, z) {
   var newScale = this.cameraScale_.current;
   if (z > 0) {
-    newScale *= 2.5;
+    newScale *= 1.7;
   } else {
-    newScale /= 4.0;
+    newScale /= 1.7 * 2;
   }
   this.zoomAboutCoordinate(x, y, newScale);
   return true;

@@ -96,16 +96,20 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
   var width = bounds.width;
 
   // Hover UI.
+  // TODO(benvanik): this displays under other painters - it should be moved to
+  //     its own painter.
   if (this.showHoverTip_ && this.hoverX_) {
     ctx.fillStyle = '#000000';
-    ctx.fillRect(bounds.left + this.hoverX_, bounds.top, 1, bounds.height);
+    ctx.fillRect(
+        bounds.left + this.hoverX_, bounds.top,
+        1, this.getScaledCanvasHeight() - bounds.top);
   }
 
   // Clip to extents.
   this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Clear gutter.
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(bounds.left, bounds.top, bounds.width, bounds.height);
   ctx.fillStyle = '#000000';
   ctx.fillRect(bounds.left, bounds.top + bounds.height - 1, bounds.width, 1);
@@ -152,7 +156,7 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
     var timeString = wtf.util.formatTime(time);
     var timeWidth = ctx.measureText(timeString).width;
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(
         bounds.left + this.hoverX_ - timeWidth / 2 - 3, bounds.top,
         timeWidth + 6, bounds.height - 1);

@@ -186,7 +186,6 @@ wtf.ui.RangePainter.prototype.drawRangeLabel = function(
       x: x,
       y: y,
       w: labelWidth,
-      h: 12,
       alpha: labelAlpha
     });
   }
@@ -243,13 +242,16 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
       ctx.globalAlpha = currentAlpha;
     }
 
+    var labelHeight = 2 / 3 * rowHeight;
+
     if (labelBackground) {
       ctx.fillStyle = labelBackground;
-      ctx.fillRect(label.x - 4, top + label.y - 4, label.w + 8, label.h + 8);
+      ctx.fillRect(
+          label.x - 4, top + label.y - 4, label.w + 8, labelHeight + 8);
       ctx.fillStyle = labelForeground;
     }
 
-    ctx.fillText(label.text, label.x, top + label.y + label.h);
+    ctx.fillText(label.text, label.x, top + label.y + labelHeight);
   }
   this.labelsToDraw_.length = 0;
   ctx.globalAlpha = 1;
