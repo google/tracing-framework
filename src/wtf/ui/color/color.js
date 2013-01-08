@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.color.RgbColor');
 
 goog.require('goog.color');
+goog.require('goog.math');
 
 
 
@@ -84,6 +85,26 @@ wtf.ui.color.RgbColor.fromString = function(value) {
     parsed = goog.color.parseRgb(value);
   }
   return new wtf.ui.color.RgbColor(parsed[0], parsed[1], parsed[2]);
+};
+
+
+/**
+ * Linearly interpolates between two colors.
+ * @param {!wtf.ui.color.RgbColor} a Color A.
+ * @param {!wtf.ui.color.RgbColor} b Color B.
+ * @param {number} x The proportion between a and b.
+ * @return {!wtf.ui.color.RgbColor} Interpolated color.
+ */
+wtf.ui.color.RgbColor.lerp = function(a, b, x) {
+  if (x <= 0) {
+    return a;
+  } else if (x >= 1) {
+    return b;
+  }
+  return new wtf.ui.color.RgbColor(
+      goog.math.lerp(a.r, b.r, x),
+      goog.math.lerp(a.g, b.g, x),
+      goog.math.lerp(a.b, b.b, x));
 };
 
 

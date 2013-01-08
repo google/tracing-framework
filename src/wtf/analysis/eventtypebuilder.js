@@ -453,6 +453,22 @@ wtf.analysis.EventTypeBuilder.READ_FLOWID_ = {
 
 
 /**
+ * @type {wtf.analysis.EventTypeBuilder.Reader_}
+ * @private
+ */
+wtf.analysis.EventTypeBuilder.READ_TIME32_ = {
+  read: function(buffer) {
+    return buffer.readUint32() / 1000;
+  },
+  readSource: function(a, bufferNames) {
+    return [
+      'value["' + a + '"] = buffer.' + bufferNames.readUint32 + '() / 1000;'
+    ];
+  }
+};
+
+
+/**
  * Reader information for supported types.
  * @type {!Object.<!wtf.analysis.EventTypeBuilder.Reader_>}
  * @private
@@ -475,5 +491,6 @@ wtf.analysis.EventTypeBuilder.READERS_ = {
   'ascii': wtf.analysis.EventTypeBuilder.READ_ASCII_,
   'utf8': wtf.analysis.EventTypeBuilder.READ_UTF8_,
   'any': wtf.analysis.EventTypeBuilder.READ_ANY_,
-  'flowId': wtf.analysis.EventTypeBuilder.READ_FLOWID_
+  'flowId': wtf.analysis.EventTypeBuilder.READ_FLOWID_,
+  'time32': wtf.analysis.EventTypeBuilder.READ_TIME32_
 };
