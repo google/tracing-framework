@@ -36,8 +36,6 @@ wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
   goog.base(this, canvas);
   var dom = this.getDom();
 
-  this.setRangeDrawStyle(wtf.ui.RangePainter.DrawStyle.TIME_SPAN);
-
   /**
    * Database.
    * @type {!wtf.analysis.db.EventDatabase}
@@ -113,7 +111,8 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
   var maxLevel = Math.min(
       this.timeRangeIndex_.getMaximumLevel(),
       wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
-  this.beginRenderingRanges(bounds, maxLevel);
+  this.beginRenderingRanges(bounds, maxLevel,
+      wtf.ui.RangePainter.DrawStyle.TIME_SPAN);
 
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;

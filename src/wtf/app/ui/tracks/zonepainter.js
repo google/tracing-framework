@@ -85,12 +85,13 @@ wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ = 18;
 
 
 /**
- * Height of an instance event (including border), in px.
+ * Y offset of an instance event from its scope, in px.
  * @const
  * @type {number}
  * @private
  */
-wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_ = 9;
+wtf.app.ui.tracks.ZonePainter.INSTANCE_OFFSET_ =
+    wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ / 3;
 
 
 /**
@@ -283,7 +284,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
     bounds, timeLeft, timeRight, events, eventCount) {
   var palette = this.palette_;
 
-  this.beginRenderingRanges(bounds, this.zoneIndex_.getMaximumScopeDepth());
+  this.beginRenderingRanges(bounds, this.zoneIndex_.getMaximumScopeDepth(),
+      wtf.ui.RangePainter.DrawStyle.INSTANCE);
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
@@ -339,8 +341,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
   }
 
   // Now blit the nicely rendered ranges onto the screen.
-  var y = 1 + wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-  var h = wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_;
+  var y = 1;
+  var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
   this.endRenderingRanges(bounds, y, h);
 };
 
@@ -452,21 +454,20 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
     var scopeTop = bounds.top + 1 + depth * scopeHeight;
     var scopeBottom = scopeTop + scopeHeight;
     if (enter && leave && scopeTop <= y) {
-      if (leave.time >= time) {
-        if (y <= scopeBottom) {
-          // Fully within the scope.
-          return scope;
-        } else {
-          // Underneath the scope. Check instances.
-          if (y <= scopeBottom +
-              wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_) {
-            time -= wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
-            var endTime = Math.min(
-                time + wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_,
-                leave.time);
-            return zoneIndex.findInstances(time, endTime, scope);
+      if (leave.time >= time && y <= scopeBottom) {
+        if (y >= scopeTop + wtf.app.ui.tracks.ZonePainter.INSTANCE_OFFSET_) {
+          // Maybe in an instance - check.
+          var startTime =
+              time - wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
+          var endTime = Math.min(
+              startTime + wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_,
+              leave.time);
+          var instances = zoneIndex.findInstances(startTime, endTime, scope);
+          if (instances && instances.length) {
+            return instances;
           }
         }
+        return scope;
       }
       break;
     }

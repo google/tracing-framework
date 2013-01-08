@@ -33,14 +33,6 @@ wtf.ui.RangePainter = function(canvas, opt_drawStyle) {
   var dom = this.getDom();
 
   /**
-   * Draw style.
-   * @type {wtf.ui.RangePainter.DrawStyle}
-   * @private
-   */
-  this.drawStyle_ = goog.isDef(opt_drawStyle) ? opt_drawStyle :
-      wtf.ui.RangePainter.DrawStyle.SCOPE;
-
-  /**
    * Each RangeRenderer rasterizes one scope depth. Indexed by depth.
    * @type {!Array.<!wtf.ui.RangeRenderer>}
    * @private
@@ -77,6 +69,13 @@ wtf.ui.RangePainter = function(canvas, opt_drawStyle) {
       this.rangeStamperContext_.createImageData(this.rangeStamper_.width, 1);
 
   /**
+   * Draw style of the current draw block.
+   * @type {wtf.ui.RangePainter.DrawStyle}
+   * @private
+   */
+  this.drawStyle_ = wtf.ui.RangePainter.DrawStyle.SCOPE;
+
+  /**
    * A list of labels to be drawn after the ranges have been blitted.
    * @type {!Array.<!Object>}
    * @private
@@ -97,18 +96,14 @@ wtf.ui.RangePainter.DrawStyle = {
   SCOPE: 0,
 
   /**
+   * Draw lines as instances - smaller vertically aligned bars.
+   */
+  INSTANCE: 1,
+
+  /**
    * Draw lines as time spans - thin bars.
    */
-  TIME_SPAN: 1
-};
-
-
-/**
- * Sets the draw style of the painter.
- * @param {wtf.ui.RangePainter.DrawStyle} value New draw style.
- */
-wtf.ui.RangePainter.prototype.setRangeDrawStyle = function(value) {
-  this.drawStyle_ = value;
+  TIME_SPAN: 2
 };
 
 
@@ -116,10 +111,14 @@ wtf.ui.RangePainter.prototype.setRangeDrawStyle = function(value) {
  * Resets range renderer caches and prepares for drawing.
  * @param {!goog.math.Rect} bounds Draw bounds.
  * @param {number} count Renderer count.
+ * @param {wtf.ui.RangePainter.DrawStyle=} opt_drawStyle Draw style.
  * @protected
  */
 wtf.ui.RangePainter.prototype.beginRenderingRanges = function(
-    bounds, count) {
+    bounds, count, opt_drawStyle) {
+  this.drawStyle_ = goog.isDef(opt_drawStyle) ?
+      opt_drawStyle : wtf.ui.RangePainter.DrawStyle.SCOPE;
+
   if (this.rangeRenderers_.length > count) {
     this.rangeRenderers_.length = count;
   }
@@ -209,11 +208,15 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
 
   // Setup style information.
   var insetY = 0;
+  var insetH = 0;
   var labelBackground = null;
   var labelForeground = '#FFFFFF';
   switch (this.drawStyle_) {
+    case wtf.ui.RangePainter.DrawStyle.INSTANCE:
+      insetY = rowHeight * 0.3;
+      break;
     case wtf.ui.RangePainter.DrawStyle.TIME_SPAN:
-      insetY = rowHeight / 4;
+      insetY = insetH = rowHeight / 4;
       labelBackground = '#FFFFFF';
       labelForeground = '#000000';
       break;
@@ -229,7 +232,7 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
     ctx.drawImage(
         this.rangeStamper_,
         bounds.left, y + insetY,
-        bounds.width, rowHeight - insetY * 2);
+        bounds.width, rowHeight - insetY - insetH);
     y += rowHeight;
   }
 
