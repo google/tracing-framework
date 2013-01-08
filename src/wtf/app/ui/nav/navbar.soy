@@ -19,8 +19,17 @@
  */
 {template .control}
   <div class="{css appUiNavbar}">
-    <div class="{css timeline}"></div>
-    <div class="{css framebar}"></div>
+    <div class="{css outer}">
+      <canvas class="{css canvas}" width="1" height="1"></canvas>
+      <div class="{css canvasOverlay}"></div>
+      <div class="{css kScrollShadowBottom}"></div>
+    </div>
+    <div class="{css infoOuter}">
+      <div class="{css kSrollBarInner} {css info}">
+        [TODO: frame stats/etc]<br/>
+        [TODO: app stats/etc]
+      </div>
+    </div>
     <div class="{css navbarSplitter}"></div>
   </div>
 {/template}

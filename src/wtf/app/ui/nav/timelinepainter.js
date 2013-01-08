@@ -13,96 +13,46 @@
 
 goog.provide('wtf.app.ui.nav.TimelinePainter');
 
-goog.require('goog.asserts');
-goog.require('goog.async.DeferredList');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimePainter');
-goog.require('wtf.ui.color.Palette');
 
 
 
 /**
  * Timeline painter.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.app.ui.DocumentView} documentView Document view.
+ * @param {!wtf.analysis.db.EventDatabase} db Database.
+ * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.app.ui.nav.TimelinePainter = function(canvas, documentView) {
+wtf.app.ui.nav.TimelinePainter = function TimelinePainter(
+    canvas, db, zoneIndex) {
   goog.base(this, canvas);
-
-  /**
-   * Document view.
-   * @type {!wtf.app.ui.DocumentView}
-   * @private
-   */
-  this.documentView_ = documentView;
-
-  // TODO(benvanik): a better palette.
-  /**
-   * Color palette used for drawing marks.
-   * @type {!wtf.ui.color.Palette}
-   * @private
-   */
-  this.markPalette_ = new wtf.ui.color.Palette(
-      wtf.ui.color.Palette.SCOPE_COLORS);
 
   /**
    * Database.
    * @type {!wtf.analysis.db.EventDatabase}
    * @private
    */
-  this.db_ = documentView.getDocument().getDatabase();
+  this.db_ = db;
+
+  /**
+   * Zone index.
+   * @type {!wtf.analysis.db.ZoneIndex}
+   * @private
+   */
+  this.zoneIndex_ = zoneIndex;
 
   /**
    * Frame event index.
-   * Each event should indicate the start of a new frame.
-   * Only valid once it has been created and the control readied.
-   * @type {wtf.analysis.db.EventIndex}
+   * @type {wtf.analysis.db.FrameIndex}
    * @private
    */
-  this.frameIndex_ = null;
-
-  /**
-   * Mark event index.
-   * Only valid once it has been created and the control readied.
-   * @type {wtf.analysis.db.EventIndex}
-   * @private
-   */
-  this.markIndex_ = null;
-
-  var deferreds = [];
-  deferreds.push(this.db_.createEventIndex('wtf.timing#frameEnd'));
-  deferreds.push(this.db_.createEventIndex('wtf.trace#mark'));
-
-  this.setReady(false);
-  new goog.async.DeferredList(deferreds).addCallbacks(
-      function() {
-        // Grab indicies.
-        var frameIndex = this.db_.getEventIndex('wtf.timing#frameEnd');
-        goog.asserts.assert(frameIndex);
-        this.frameIndex_ = frameIndex;
-        this.frameIndex_.addListener(wtf.events.EventType.INVALIDATED,
-            function() {
-              var timeLeft = this.frameIndex_.getFirstEventTime();
-              var timeRight = this.frameIndex_.getLastEventTime();
-              this.setTimeRange(timeLeft, timeRight);
-              this.requestRepaint();
-            }, this);
-
-        var markIndex = this.db_.getEventIndex('wtf.trace#mark');
-        goog.asserts.assert(markIndex);
-        this.markIndex_ = markIndex;
-        this.markIndex_.addListener(wtf.events.EventType.INVALIDATED,
-            this.requestRepaint, this);
-
-        // Ready and redraw.
-        this.setReady(true);
-      },
-      function(arg) {
-        // Failued to create indices.
-      }, this);
+  this.frameIndex_ = zoneIndex.getFrameIndex();
+  this.frameIndex_.addListener(wtf.events.EventType.INVALIDATED,
+      this.requestRepaint, this);
 };
 goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
 
@@ -110,13 +60,29 @@ goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
 /**
  * @override
  */
+wtf.app.ui.nav.TimelinePainter.prototype.layoutInternal = function(
+    availableBounds) {
+  var newBounds = availableBounds.clone();
+  if (this.frameIndex_.getCount()) {
+    newBounds.height = 45;
+  } else {
+    newBounds.height = 0;
+  }
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
     ctx, bounds) {
-  var width = bounds.width;
-  var height = bounds.height;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
-  var timeScale = 1 / wtf.math.remap(45, 0, height, 0, 1);
+  var timeScale = 1 / wtf.math.remap(45, 0, bounds.height, 0, 1);
+
+  // Clip to extents.
+  this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Draw frames.
   // TODO(benvanik): only redraw if needed (data has changed)
@@ -124,109 +90,68 @@ wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
   //     frame time, but the single-color-per-path API of canvas makes that
   //     difficult.
   ctx.fillStyle = '#444444';
-  var pixelStep = (timeRight - timeLeft) / width;
+  var pixelStep = (timeRight - timeLeft) / bounds.width;
   var pixelStart = 0;
   var pixelAccumulator = 0;
-  var pixelCount = 0;
+  var lastX = 0;
   ctx.beginPath();
-  ctx.moveTo(0, height);
-  var previousEvent = null;
-  this.frameIndex_.forEach(timeLeft, timeRight, function(e) {
+  ctx.moveTo(bounds.left, bounds.top + bounds.height);
+  this.frameIndex_.forEachIntersecting(timeLeft, timeRight, function(frame) {
     // Compute time of frame based on previous time.
+    var previousFrame = this.frameIndex_.getPreviousFrame(frame);
     var frameTime = 0;
-    if (previousEvent) {
-      frameTime = e.time - previousEvent.time;
+    if (previousFrame) {
+      frameTime = frame.getEndTime() - previousFrame.getEndTime();
     }
-    previousEvent = e;
     if (!frameTime) {
       return;
     }
 
-    if (e.time > pixelStart + pixelStep) {
-      var x = wtf.math.remap(pixelStart, timeLeft, timeRight, 0, width);
-      var value = pixelAccumulator / pixelCount;
-      var fy = Math.max(height - value * timeScale, 0);
-      ctx.lineTo(x, fy);
+    var endTime = frame.getEndTime();
+    pixelAccumulator = Math.max(pixelAccumulator, frameTime);
+    if (endTime > pixelStart + pixelStep) {
+      var x = wtf.math.remap(pixelStart, timeLeft, timeRight, 0, bounds.width);
+      lastX = x;
+      var value = pixelAccumulator;
+      var fy = Math.max(bounds.height - value * timeScale, 0);
+      ctx.lineTo(bounds.left + x, bounds.top + fy);
       // Create a gap if the time is too large.
-      var gapSize = e.time - pixelStart;
-      pixelStart = e.time - (e.time % pixelStep);
-      if (gapSize > pixelStep * 2) {
-        var xr = wtf.math.remap(e.time, timeLeft, timeRight, 0, width);
-        ctx.lineTo(xr, fy);
-        ctx.lineTo(xr, height);
+      var gapSize = endTime - pixelStart;
+      pixelStart = endTime - (endTime % pixelStep);
+      if (gapSize > 33) {
+        var xr = wtf.math.remap(endTime, timeLeft, timeRight, 0, bounds.width);
+        ctx.lineTo(bounds.left + xr, bounds.top + fy);
+        ctx.lineTo(bounds.left + xr, bounds.top + bounds.height);
         ctx.fill();
         ctx.fillStyle = '#FF0000';
-        ctx.fillRect(x, 0, 1, height);
+        ctx.fillRect(bounds.left + x, bounds.top, 1, bounds.height);
         ctx.fillStyle = '#444444';
         ctx.beginPath();
-        ctx.moveTo(
-            wtf.math.remap(pixelStart, timeLeft, timeRight, 0, width),
-            height);
+        ctx.moveTo(bounds.left + wtf.math.remap(pixelStart,
+            timeLeft, timeRight, 0, bounds.width), bounds.top + bounds.height);
       }
       pixelAccumulator = 0;
-      pixelCount = 0;
     }
-    pixelAccumulator += frameTime;
-    pixelCount++;
-  });
-  ctx.lineTo(width, height);
-  ctx.lineTo(0, height);
+  }, this);
+  ctx.lineTo(bounds.left + lastX, bounds.top + bounds.height);
+  ctx.lineTo(bounds.left, bounds.top + bounds.height);
   ctx.fill();
 
   // Draw frame time limits.
   ctx.fillStyle = '#DD4B39';
-  ctx.fillRect(0, Math.floor(height - 17 * timeScale), width, 1);
-  ctx.fillRect(0, Math.floor(height - 33 * timeScale), width, 1);
+  ctx.fillRect(
+      bounds.left, bounds.top + Math.floor(bounds.height - 17 * timeScale),
+      bounds.width, 1);
+  ctx.fillRect(
+      bounds.left, bounds.top + Math.floor(bounds.height - 33 * timeScale),
+      bounds.width, 1);
 
-  // Draw marks.
-  var markPalette = this.markPalette_;
-  var ew = 3;
-  this.markIndex_.forEach(timeLeft, timeRight, function(e) {
-    var color = markPalette.getColorForString(e.args['name']);
-    ctx.fillStyle = color.toString();
-    var ex = wtf.math.remap(e.time, timeLeft, timeRight, 0, width) - 1;
-    ctx.fillRect(ex, 0, ew, height);
-  });
+  // Draw borders.
+  ctx.fillStyle = 'rgb(200,200,200)';
+  ctx.fillRect(
+      bounds.left, bounds.top + bounds.height - 1,
+      bounds.width, 1);
 
-  // Draw visible ranges for each view.
-  var localView = this.documentView_.getLocalView();
-  var doc = this.documentView_.getDocument();
-  var viewList = doc.getViewList();
-  viewList.forEach(function(view) {
-    // Draw the local view last.
-    if (view != localView) {
-      this.drawVisibleRegion_(
-          ctx, width, height, timeLeft, timeRight, view);
-    }
-  }, this);
-  this.drawVisibleRegion_(
-      ctx, width, height, timeLeft, timeRight, localView);
-};
-
-
-/**
- * Draws a view's visible selection range on the timeline.
- * @param {!CanvasRenderingContext2D} ctx Render context.
- * @param {number} width Canvas width.
- * @param {number} height Canvas height.
- * @param {number} timeLeft Left-most time visible.
- * @param {number} timeRight Right-most time visible.
- * @param {!wtf.doc.View} view View to draw.
- * @private
- */
-wtf.app.ui.nav.TimelinePainter.prototype.drawVisibleRegion_ = function(
-    ctx, width, height, timeLeft, timeRight, view) {
-  var viewTimeLeft = view.getVisibleTimeStart();
-  var viewTimeRight = view.getVisibleTimeEnd();
-  var left = wtf.math.remap(viewTimeLeft, timeLeft, timeRight, 0, width);
-  var right = wtf.math.remap(viewTimeRight, timeLeft, timeRight, 0, width);
-  left = Math.floor(left) + 0.5;
-  right = Math.floor(right) + 0.5;
-
-  // TODO(benvanik): color based on user
-
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-  ctx.fillRect(left, 0, right - left, height);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.strokeRect(left, -5, right - left, height + 10);
+  // Draw label on the left.
+  this.drawLabel('frame time');
 };

@@ -136,6 +136,26 @@ wtf.analysis.db.FrameIndex.prototype.getFrame = function(value) {
 
 
 /**
+ * Gets the frame preceeding the given frame, if any.
+ * @param {!wtf.analysis.Frame} value Base frame.
+ * @return {wtf.analysis.Frame} Previous frame, if any.
+ */
+wtf.analysis.db.FrameIndex.prototype.getPreviousFrame = function(value) {
+  return this.frames_[value.getNumber() - 1] || null;
+};
+
+
+/**
+ * Gets the frame following the given frame, if any.
+ * @param {!wtf.analysis.Frame} value Base frame.
+ * @return {wtf.analysis.Frame} Next frame, if any.
+ */
+wtf.analysis.db.FrameIndex.prototype.getNextFrame = function(value) {
+  return this.frames_[value.getNumber() + 1] || null;
+};
+
+
+/**
  * Gets the frame at the given time, if any.
  * @param {number} time Search time.
  * @return {wtf.analysis.Frame} Frame at the given time, if any.
@@ -213,6 +233,21 @@ wtf.analysis.db.FrameIndex.prototype.forEachIntersecting = function(
 goog.exportProperty(
     wtf.analysis.db.FrameIndex.prototype, 'getZone',
     wtf.analysis.db.FrameIndex.prototype.getZone);
+goog.exportProperty(
+    wtf.analysis.db.FrameIndex.prototype, 'getFrame',
+    wtf.analysis.db.FrameIndex.prototype.getFrame);
+goog.exportProperty(
+    wtf.analysis.db.FrameIndex.prototype, 'getPreviousFrame',
+    wtf.analysis.db.FrameIndex.prototype.getPreviousFrame);
+goog.exportProperty(
+    wtf.analysis.db.FrameIndex.prototype, 'getNextFrame',
+    wtf.analysis.db.FrameIndex.prototype.getNextFrame);
+goog.exportProperty(
+    wtf.analysis.db.FrameIndex.prototype, 'getFrameAtTime',
+    wtf.analysis.db.FrameIndex.prototype.getFrameAtTime);
+goog.exportProperty(
+    wtf.analysis.db.FrameIndex.prototype, 'getIntraFrameAtTime',
+    wtf.analysis.db.FrameIndex.prototype.getIntraFrameAtTime);
 goog.exportProperty(
     wtf.analysis.db.FrameIndex.prototype, 'forEachIntersecting',
     wtf.analysis.db.FrameIndex.prototype.forEachIntersecting);
