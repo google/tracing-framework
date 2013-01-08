@@ -235,6 +235,13 @@ wtf.events.KeyboardScope = function(keyboard) {
    * @private
    */
   this.listeners_ = [];
+
+  /**
+   * Whether the shortcuts for this scope are enabled.
+   * @type {boolean}
+   * @private
+   */
+  this.enabled_ = true;
 };
 goog.inherits(wtf.events.KeyboardScope, goog.Disposable);
 
@@ -243,11 +250,37 @@ goog.inherits(wtf.events.KeyboardScope, goog.Disposable);
  * @override
  */
 wtf.events.KeyboardScope.prototype.disposeInternal = function() {
+  this.setEnabled(false);
+  goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * Gets a value indicating whether the keyboard scope is enabled.
+ * @return {boolean} True if the shortcuts are enabled.
+ */
+wtf.events.KeyboardScope.prototype.isEnabled = function() {
+  return this.enabled_;
+};
+
+
+/**
+ * Sets the enabled state of the shortucts in the scope.
+ * @param {boolean} value True to enable the shortcuts.
+ */
+wtf.events.KeyboardScope.prototype.setEnabled = function(value) {
+  if (this.enabled_ == value) {
+    return;
+  }
+  this.enabled_ = value;
   for (var n = 0; n < this.listeners_.length; n++) {
     var listener = this.listeners_[n];
-    this.keyboard_.removeShortcut_(listener[0], listener[1], listener[2]);
+    if (value) {
+      this.keyboard_.addShortcut_(listener[0], listener[1], listener[2]);
+    } else {
+      this.keyboard_.removeShortcut_(listener[0], listener[1], listener[2]);
+    }
   }
-  goog.base(this, 'disposeInternal');
 };
 
 
@@ -261,7 +294,9 @@ wtf.events.KeyboardScope.prototype.disposeInternal = function() {
 wtf.events.KeyboardScope.prototype.addShortcut = function(
     shortcut, callback, opt_scope) {
   this.listeners_.push([shortcut, callback, opt_scope]);
-  this.keyboard_.addShortcut_(shortcut, callback, opt_scope);
+  if (this.enabled_) {
+    this.keyboard_.addShortcut_(shortcut, callback, opt_scope);
+  }
 };
 
 
@@ -279,5 +314,7 @@ wtf.events.KeyboardScope.prototype.addCommandShortcut = function(
     }
   };
   this.listeners_.push([shortcut, callback, this]);
-  this.keyboard_.addShortcut_(shortcut, callback, this);
+  if (this.enabled_) {
+    this.keyboard_.addShortcut_(shortcut, callback, this);
+  }
 };

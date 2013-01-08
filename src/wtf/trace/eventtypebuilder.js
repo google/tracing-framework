@@ -471,6 +471,25 @@ wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
 
 
 /**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
+wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {
+  size: 4,
+  prepare: null,
+  write: function(a, bufferNames) {
+    return [
+      'var ' + a + '_ = (' + a + ' * 1000) >>> 0;',
+      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
+      'd[o++] = ' + a + '_ & 0xFF;'
+    ];
+  }
+};
+
+
+/**
  * Writer information for supported types.
  * @type {!Object.<!wtf.trace.EventTypeBuilder.Writer_>}
  * @private
@@ -493,5 +512,6 @@ wtf.trace.EventTypeBuilder.WRITERS_ = {
   'ascii': wtf.trace.EventTypeBuilder.WRITE_ASCII_,
   'utf8': wtf.trace.EventTypeBuilder.WRITE_UTF8_,
   'any': wtf.trace.EventTypeBuilder.WRITE_ANY_,
-  'flowId': wtf.trace.EventTypeBuilder.WRITE_FLOWID_
+  'flowId': wtf.trace.EventTypeBuilder.WRITE_FLOWID_,
+  'time32': wtf.trace.EventTypeBuilder.WRITE_TIME32_
 };
