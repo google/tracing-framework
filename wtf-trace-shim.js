@@ -578,7 +578,7 @@ wtfapi.trace.instrumentTypeSimple = wtfapi.PRESENT ?
  *
  * Enabling this should have no side effects in compiled code.
  */
-wtfapi.REPLACE_GOOG_BASE = false;
+wtfapi.REPLACE_GOOG_BASE = true;
 
 
 // Replace goog.base in debug mode.
