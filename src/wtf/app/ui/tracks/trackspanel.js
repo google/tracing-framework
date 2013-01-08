@@ -113,6 +113,8 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
           painter.setTimeRange(timeLeft, timeRight);
         }
 
+        wtf.ui.Tooltip.hideAll();
+
         this.requestRepaint();
         reentry--;
       }, this);

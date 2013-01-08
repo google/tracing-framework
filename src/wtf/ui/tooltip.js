@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.Tooltip');
 
 goog.require('goog.Disposable');
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
@@ -58,6 +59,7 @@ goog.inherits(wtf.ui.Tooltip, goog.Disposable);
  * @override
  */
 wtf.ui.Tooltip.prototype.disposeInternal = function() {
+  goog.array.remove(wtf.ui.Tooltip.allVisibleTooltips_, this);
   this.dom_.removeNode(this.rootElement_);
   goog.base(this, 'disposeInternal');
 };
@@ -91,6 +93,8 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
     'top': y + 10 + 'px'
   });
   goog.style.showElement(el, true);
+
+  wtf.ui.Tooltip.allVisibleTooltips_.push(this);
 };
 
 
@@ -98,5 +102,26 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
  * Hides the tooltip.
  */
 wtf.ui.Tooltip.prototype.hide = function() {
+  goog.array.remove(wtf.ui.Tooltip.allVisibleTooltips_, this);
   goog.style.showElement(this.rootElement_, false);
+};
+
+
+/**
+ * All tooltips that are currently visible.
+ * @type {!Array.<!wtf.ui.Tooltip>}
+ * @private
+ */
+wtf.ui.Tooltip.allVisibleTooltips_ = [];
+
+
+/**
+ * Hide all tooltips.
+ */
+wtf.ui.Tooltip.hideAll = function() {
+  var allVisible = wtf.ui.Tooltip.allVisibleTooltips_;
+  wtf.ui.Tooltip.allVisibleTooltips_ = [];
+  for (var n = 0; n < allVisible.length; n++) {
+    allVisible[n].hide();
+  }
 };

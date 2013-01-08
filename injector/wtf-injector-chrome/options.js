@@ -300,7 +300,7 @@ Options.prototype.getDefaultPageOptions = function(url) {
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
     'wtf.extensions': extensions,
-    'wtf.trace.provider.javascript': true
+    'wtf.trace.provider.browser': true
   };
 
   // TODO(benvanik): make a different page action setting?

@@ -34,6 +34,7 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
+goog.require('wtf.ui.Tooltip');
 
 
 
@@ -210,6 +211,8 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
         view.setVisibleRange(
             timeStart - pad,
             timeEnd + pad);
+
+        wtf.ui.Tooltip.hideAll();
       }, this);
 
   commandManager.registerSimpleCommand(

@@ -96,6 +96,22 @@ wtf.analysis.EventTypeBuilder.Reader_;
  * @type {wtf.analysis.EventTypeBuilder.Reader_}
  * @private
  */
+wtf.analysis.EventTypeBuilder.READ_BOOL_ = {
+  read: function(buffer) {
+    return !!buffer.readInt8();
+  },
+  readSource: function(a, bufferNames) {
+    return [
+      'value["' + a + '"] = !!buffer.' + bufferNames.readInt8 + '();'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.analysis.EventTypeBuilder.Reader_}
+ * @private
+ */
 wtf.analysis.EventTypeBuilder.READ_INT8_ = {
   read: function(buffer) {
     return buffer.readInt8();
@@ -474,6 +490,7 @@ wtf.analysis.EventTypeBuilder.READ_TIME32_ = {
  * @private
  */
 wtf.analysis.EventTypeBuilder.READERS_ = {
+  'bool': wtf.analysis.EventTypeBuilder.READ_BOOL_,
   'int8': wtf.analysis.EventTypeBuilder.READ_INT8_,
   'int8[]': wtf.analysis.EventTypeBuilder.READ_INT8ARRAY_,
   'uint8': wtf.analysis.EventTypeBuilder.READ_UINT8_,
