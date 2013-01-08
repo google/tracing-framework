@@ -78,6 +78,50 @@ wtf.util.formatWallTime = function(value) {
 };
 
 
+// TODO(benvanik): replace with fancy tooltip formatting.
+/**
+ * Adds event argument lines to the line list.
+ * @param {!Array.<string>} lines List of lines that will be added to.
+ * @param {Object} data Argument data object.
+ */
+wtf.util.addArgumentLines = function(lines, data) {
+  if (!data) {
+    return;
+  }
+
+  for (var argName in data) {
+    var argValue = data[argName];
+    if (argValue === undefined) {
+      continue;
+    }
+    if (argValue === null) {
+      argValue = 'null';
+    } else if (goog.isArray(argValue)) {
+      argValue = '[' + argValue + ']';
+    } else if (argValue.buffer && argValue.buffer instanceof ArrayBuffer) {
+      // TODO(benvanik): better display of big data blobs.
+      var argString = '[';
+      var maxCount = 16;
+      for (var n = 0; n < Math.min(argValue.length, maxCount); n++) {
+        if (n) {
+          argString += ',';
+        }
+        argString += argValue[n];
+      }
+      if (argValue.length > maxCount) {
+        argString += ' ...';
+      }
+      argString += ']';
+      argValue = argString;
+    } else if (goog.isObject(argValue)) {
+      // TODO(benvanik): prettier object printing.
+      argValue = goog.global.JSON.stringify(argValue);
+    }
+    lines.push(argName + ': ' + argValue);
+  }
+};
+
+
 /**
  * Gets the compiled name of a member on an object.
  * This looks up by member value, so only use with known-good values.

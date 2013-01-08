@@ -141,9 +141,9 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
       'd[o++] = ' + ((eventType.wireId >> 8) & 0xFF) + ';',
       'd[o++] = ' + (eventType.wireId & 0xFF) + ';',
       'var itime = (time * 1000) >>> 0;',
-      'd[o++] = (itime >> 24) & 0xFF;',
-      'd[o++] = (itime >> 16) & 0xFF;',
-      'd[o++] = (itime >> 8) & 0xFF;',
+      'd[o++] = (itime >>> 24) & 0xFF;',
+      'd[o++] = (itime >>> 16) & 0xFF;',
+      'd[o++] = (itime >>> 8) & 0xFF;',
       'd[o++] = itime & 0xFF;');
 
   // Append arguments.
@@ -214,9 +214,9 @@ wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
   write: function(a, bufferNames) {
     return [
       'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >> 24) & 0xFF;',
-      '  d[o++] = (t >> 16) & 0xFF;',
-      '  d[o++] = (t >> 8) & 0xFF;',
+      '  d[o++] = (t >>> 24) & 0xFF;',
+      '  d[o++] = (t >>> 16) & 0xFF;',
+      '  d[o++] = (t >>> 8) & 0xFF;',
       '  d[o++] = t & 0xFF;',
       '  for (var n = 0; n < t; n++, o++) {',
       '    d[o] = ' + a + '[n];',
@@ -259,9 +259,9 @@ wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
   write: function(a, bufferNames) {
     return [
       'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >> 24) & 0xFF;',
-      '  d[o++] = (t >> 16) & 0xFF;',
-      '  d[o++] = (t >> 8) & 0xFF;',
+      '  d[o++] = (t >>> 24) & 0xFF;',
+      '  d[o++] = (t >>> 16) & 0xFF;',
+      '  d[o++] = (t >>> 8) & 0xFF;',
       '  d[o++] = t & 0xFF;',
       '  for (var n = 0; n < t; n++, o += 2) {',
       '    var v = ' + a + '[n];',
@@ -286,9 +286,9 @@ wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
   write: function(a, bufferNames) {
     return [
       'var ' + a + '_ = ' + a + ' >>> 0;',
-      'd[o++] = (' + a + '_ >> 24) & 0xFF;',
-      'd[o++] = (' + a + '_ >> 16) & 0xFF;',
-      'd[o++] = (' + a + '_ >> 8) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
       'd[o++] = ' + a + '_ & 0xFF;'
     ];
   }
@@ -309,15 +309,15 @@ wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
   write: function(a, bufferNames) {
     return [
       'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >> 24) & 0xFF;',
-      '  d[o++] = (t >> 16) & 0xFF;',
-      '  d[o++] = (t >> 8) & 0xFF;',
+      '  d[o++] = (t >>> 24) & 0xFF;',
+      '  d[o++] = (t >>> 16) & 0xFF;',
+      '  d[o++] = (t >>> 8) & 0xFF;',
       '  d[o++] = t & 0xFF;',
       '  for (var n = 0; n < t; n++, o += 4) {',
       '    var v = ' + a + '[n] >>> 0;',
-      '    d[o] = (v >> 24) & 0xFF;',
-      '    d[o + 1] = (v >> 16) & 0xFF;',
-      '    d[o + 2] = (v >> 8) & 0xFF;',
+      '    d[o] = (v >>> 24) & 0xFF;',
+      '    d[o + 1] = (v >>> 16) & 0xFF;',
+      '    d[o + 2] = (v >>> 8) & 0xFF;',
       '    d[o + 3] = v & 0xFF;',
       '  }',
       '} else {',
@@ -357,9 +357,9 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
   write: function(a, bufferNames) {
     return [
       'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >> 24) & 0xFF;',
-      '  d[o++] = (t >> 16) & 0xFF;',
-      '  d[o++] = (t >> 8) & 0xFF;',
+      '  d[o++] = (t >>> 24) & 0xFF;',
+      '  d[o++] = (t >>> 16) & 0xFF;',
+      '  d[o++] = (t >>> 8) & 0xFF;',
       '  d[o++] = t & 0xFF;',
       '  for (var n = 0; n < t; n++, o += 4) {',
       '    writeFloat32(' + a + '[n], d, o);',
@@ -461,9 +461,28 @@ wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
   write: function(a, bufferNames) {
     return [
       'var ' + a + '_ = ' + a + ' ? (' + a + '.getId() >>> 0) : 0;',
-      'd[o++] = (' + a + '_ >> 24) & 0xFF;',
-      'd[o++] = (' + a + '_ >> 16) & 0xFF;',
-      'd[o++] = (' + a + '_ >> 8) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
+      'd[o++] = ' + a + '_ & 0xFF;'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
+wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {
+  size: 4,
+  prepare: null,
+  write: function(a, bufferNames) {
+    return [
+      'var ' + a + '_ = (' + a + ' * 1000) >>> 0;',
+      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
+      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
       'd[o++] = ' + a + '_ & 0xFF;'
     ];
   }
@@ -493,5 +512,6 @@ wtf.trace.EventTypeBuilder.WRITERS_ = {
   'ascii': wtf.trace.EventTypeBuilder.WRITE_ASCII_,
   'utf8': wtf.trace.EventTypeBuilder.WRITE_UTF8_,
   'any': wtf.trace.EventTypeBuilder.WRITE_ANY_,
-  'flowId': wtf.trace.EventTypeBuilder.WRITE_FLOWID_
+  'flowId': wtf.trace.EventTypeBuilder.WRITE_FLOWID_,
+  'time32': wtf.trace.EventTypeBuilder.WRITE_TIME32_
 };

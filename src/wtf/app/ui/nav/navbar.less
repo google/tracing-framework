@@ -11,38 +11,66 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-@appUiDocumentViewNavbarDefaultHeight: 230px;
-@appUiDocumentViewNavbarTimelineHeight: 40px;
-
 /* Navbar root. */
 .appUiNavbar {
+  @defaultHeight: 140px;
+  @infoWidth: 300px;
+
   position: relative;
   left: 0;
   right: 0;
   top: 0;
-  height: @appUiDocumentViewNavbarDefaultHeight;
+  height: @defaultHeight;
   overflow: hidden;
   background: white;
-}
 
-.appUiNavbarTimeline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: @appUiDocumentViewNavbarTimelineHeight;
-  overflow: hidden;
-  background-color: white;
-}
+  & .outer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 100%;
+    margin-right: @infoWidth;
+    border-right: 1px solid #ebebeb;
 
-.appUiNavbarFramebar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: @appUiDocumentViewNavbarTimelineHeight;
-  bottom: 0;
-  overflow: hidden;
-  background-color: white;
-}
+    & .canvas {
+      cursor: crosshair;
+    }
 
-.appUiNavbarSplitter {}
+    & .canvasOverlay {
+      .fitParent();
+      pointer-events: none;
+      overflow: hidden;
+      margin-top: 16px;
+
+      & .view {
+        position: absolute;
+        bottom: 0;
+        top: 0;
+        background-color: rgba(0,0,0,0.1);
+        border-left: 1px solid #DDDDDD;
+        border-right: 1px solid #DDDDDD;
+      }
+    }
+  }
+
+  & .infoOuter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: @infoWidth;
+
+    & .info {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      padding: 3px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+  }
+
+  & .navbarSplitter {}
+}
