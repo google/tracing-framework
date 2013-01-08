@@ -71,7 +71,7 @@ var ExtendedInfo = function(tabId, port, pageOptions) {
   // Listen for disconnects.
   port.onDisconnect.addListener(this.eventHandlers_.onDisconnect);
 
-  if (pageOptions['wtf.trace.provider.javascript']) {
+  if (pageOptions['wtf.trace.provider.browser']) {
     this.debugger_ = new Debugger(this.tabId_, this.queueData.bind(this));
   }
 };

@@ -67,6 +67,7 @@ wtf.data.Variable = function(name, typeName, opt_flags) {
  * @private
  */
 wtf.data.Variable.TYPE_MAP_ = {
+  'bool': 'bool',
   'int8': 'int8',
   'byte': 'int8',
   'uint8': 'uint8',

@@ -80,12 +80,13 @@ flushing.
 Each event provider can be toggled here to allow for the choice of which kind
 of events to include in the stream or the fidelity of the events added.
 
-#### wtf.trace.provider.javascript
+#### wtf.trace.provider.browser
 
-Set `wtf.trace.provider.javascript` to 1+ to enable the events. This will
+Set `wtf.trace.provider.browser` to 1+ to enable the events. This will
 use a variety of means to attempt to gather javascript runtime events, such as
 garbage collections, JIT activity, etc. This functionality relies on the
-injector extension or custom builds of Chromium.
+injector extension or custom builds of Chromium. It introduces some overhead,
+such as an additional 0.1ms per XHR open/send.
 
 ## HUD
 
