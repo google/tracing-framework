@@ -189,6 +189,21 @@ wtf.trace.EventTypeBuilder.Writer_;
  * @type {wtf.trace.EventTypeBuilder.Writer_}
  * @private
  */
+wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
+  size: 1,
+  prepare: null,
+  write: function(a, bufferNames) {
+    return [
+      'd[o++] = a ? 1 : 0;'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
 wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
   size: 1,
   prepare: null,
@@ -495,6 +510,7 @@ wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITERS_ = {
+  'bool': wtf.trace.EventTypeBuilder.WRITE_BOOL_,
   'int8': wtf.trace.EventTypeBuilder.WRITE_INT8_,
   'int8[]': wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_,
   'uint8': wtf.trace.EventTypeBuilder.WRITE_INT8_,

@@ -33,18 +33,12 @@ wtf.trace.providers.ExtendedInfoProvider = function() {
   goog.base(this);
 
   /**
-   * Custom event types.
-   * @type {!Object.<!Function>}
+   * Dispatch table for each event type that comes from the extension.
+   * @type {!Object.<function(!Object)>}
    * @private
    */
-  this.events_ = {
-    gc: wtf.trace.events.createScope(
-        'javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
-        wtf.data.EventFlag.SYSTEM_TIME),
-    evalScript: wtf.trace.events.createScope(
-        'javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
-        wtf.data.EventFlag.SYSTEM_TIME)
-  };
+  this.timelineDispatch_ = {};
+  this.setupTimelineDispatch_();
 
   /**
    * DOM channel, if supported.
@@ -81,13 +75,164 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.getSettingsSectionConfigs =
       'widgets': [
         {
           'type': 'checkbox',
-          'key': 'wtf.trace.provider.javascript',
-          'title': 'Javascript GCs',
+          'key': 'wtf.trace.provider.browser',
+          'title': 'GCs/paints/layouts/etc',
           'default': false
         }
       ]
     }
   ];
+};
+
+
+/**
+ * Sets up the record dispatch table.
+ * @private
+ */
+wtf.trace.providers.ExtendedInfoProvider.prototype.setupTimelineDispatch_ =
+    function() {
+  // This table should match the one in injector/wtf-injector-chrome/debugger.js
+  var timebase = wtf.timebase();
+
+  // GCEvent: garbage collections.
+  var gcEvent = wtf.trace.events.createScope(
+      'javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['GCEvent'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = gcEvent(
+        data['usedHeapSize'],
+        data['usedHeapSizeDelta'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // EvaluateScript: script runtime/parsing/etc.
+  var evalScriptEvent = wtf.trace.events.createScope(
+      'javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['EvaluateScript'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = evalScriptEvent(
+        data['usedHeapSize'],
+        data['usedHeapSizeDelta'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // ParseHTML: parsing of HTML in a page.
+  var parseHtmlEvent = wtf.trace.events.createScope(
+      'browser#parseHtml(uint32 contentLength)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['ParseHTML'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = parseHtmlEvent(
+        data['length'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // ScheduleStyleRecalculation: a style has been invalidated - expect a
+  // RecalculateStyles.
+  var invalidateStylesEvent = wtf.trace.events.createInstance(
+      'browser#invalidateStyles()');
+  this.timelineDispatch_['ScheduleStyleRecalculation'] = function(data) {
+    var startTime = data['time'] - timebase;
+    invalidateStylesEvent(startTime);
+  };
+
+  // RecalculateStyles: style recalculation is occurring.
+  var recalculateStylesEvent = wtf.trace.events.createScope(
+      'browser#recalculateStyles()',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['ParseHTML'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = recalculateStylesEvent(
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // InvalidateLayout: DOM layout was invalidated - expect a Layout.
+  var invalidateLayoutEvent = wtf.trace.events.createInstance(
+      'browser#invalidateLayout()');
+  this.timelineDispatch_['InvalidateLayout'] = function(data) {
+    var startTime = data['time'] - timebase;
+    invalidateLayoutEvent(startTime);
+  };
+
+  // Layout: DOM layout.
+  var layoutEvent = wtf.trace.events.createScope(
+      'browser#layout(int32 x, int32 y, int32 width, int32 height)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['Layout'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = layoutEvent(
+        data['x'],
+        data['y'],
+        data['width'],
+        data['height'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // Paint: DOM element painting.
+  var paintEvent = wtf.trace.events.createScope(
+      'browser#paint(int32 x, int32 y, int32 width, int32 height)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['Paint'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = paintEvent(
+        data['x'],
+        data['y'],
+        data['width'],
+        data['height'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // CompositeLayers: the compositor ran and composited the page.
+  var compositeLayersEvent = wtf.trace.events.createScope(
+      'browser#compositeLayers()',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['CompositeLayers'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = compositeLayersEvent(
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // DecodeImage: a compressed image was decoded.
+  var decodeImageEvent = wtf.trace.events.createScope(
+      'browser#decodeImage(ascii imageType)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['DecodeImage'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = decodeImageEvent(
+        data['imageType'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // ResizeImage: a resized version of a decoded image was required.
+  var resizeImageEvent = wtf.trace.events.createScope(
+      'browser#resizeImage(bool cached)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['ResizeImage'] = function(data) {
+    var startTime = data['startTime'] - timebase;
+    var endTime = data['endTime'] - timebase;
+    var scope = resizeImageEvent(
+        data['cached'],
+        startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
 };
 
 
@@ -103,50 +248,11 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.extensionMessage_ =
       var contents = data['contents'];
       for (var n = 0; n < contents.length; n++) {
         var eventData = contents[n];
-        switch (eventData['type']) {
-          case 'GCEvent':
-            this.traceGc_(eventData);
-            break;
-          case 'EvaluateScript':
-            this.traceScript_(eventData);
-            break;
+        var dispatch = this.timelineDispatch_[eventData['type']];
+        if (dispatch) {
+          dispatch(eventData);
         }
       }
       break;
   }
 };
-
-
-/**
- * Traces a GC event.
- * @param {!Object} data GC event data.
- * @private
- */
-wtf.trace.providers.ExtendedInfoProvider.prototype.traceGc_ = function(data) {
-  var timebase = wtf.timebase();
-  var startTime = data['startTime'] - timebase;
-  var endTime = data['endTime'] - timebase;
-  var usedHeapSize = data['usedHeapSize'];
-  var usedHeapSizeDelta = data['usedHeapSizeDelta'];
-  var scope = this.events_.gc(usedHeapSize, usedHeapSizeDelta, startTime);
-  wtf.trace.leaveScope(scope, undefined, endTime);
-};
-
-
-/**
- * Traces a script eval event.
- * @param {!Object} data Script eval event data.
- * @private
- */
-wtf.trace.providers.ExtendedInfoProvider.prototype.traceScript_ =
-    function(data) {
-  var timebase = wtf.timebase();
-  var startTime = data['startTime'] - timebase;
-  var endTime = data['endTime'] - timebase;
-  var usedHeapSize = data['usedHeapSize'];
-  var usedHeapSizeDelta = data['usedHeapSizeDelta'];
-  var scope =
-      this.events_.evalScript(usedHeapSize, usedHeapSizeDelta, startTime);
-  wtf.trace.leaveScope(scope, undefined, endTime);
-};
-

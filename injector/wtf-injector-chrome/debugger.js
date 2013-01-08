@@ -47,6 +47,14 @@ var Debugger = function(tabId, queueData) {
   this.queueData_ = queueData;
 
   /**
+   * Dispatch for records, keyed by record type.
+   * @type {!Object.<function(!Object):Object>}
+   * @private
+   */
+  this.timelineDispatch_ = {};
+  this.setupTimelineDispatch_();
+
+  /**
    * Whether this debugger is attached.
    * @type {boolean}
    */
@@ -122,6 +130,138 @@ Debugger.prototype.beginListening_ = function() {
 
 
 /**
+ * Sets up the dispatch table for the timeline.
+ * @private
+ */
+Debugger.prototype.setupTimelineDispatch_ = function() {
+  // The table of available record types can be found here:
+  // http://trac.webkit.org/browser/trunk/Source/WebCore/inspector/front-end/TimelinePresentationModel.js#L70
+
+  // GCEvent: garbage collections.
+  this.timelineDispatch_['GCEvent'] = function(record) {
+    return {
+      'type': 'GCEvent',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      //'stackTrace': record.stackTrace,
+      'usedHeapSize': record.usedHeapSize,
+      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
+    };
+  };
+
+  // EvaluateScript: script runtime/parsing/etc.
+  this.timelineDispatch_['EvaluateScript'] = function(record) {
+    return {
+      'type': 'EvaluateScript',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'usedHeapSize': record.usedHeapSize,
+      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
+    };
+  };
+
+  // ParseHTML: parsing of HTML in a page.
+  this.timelineDispatch_['ParseHTML'] = function(record) {
+    return {
+      'type': 'ParseHTML',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'length': record.data.length
+    };
+  };
+
+  // ScheduleStyleRecalculation: a style has been invalidated - expect a
+  // RecalculateStyles.
+  this.timelineDispatch_['ScheduleStyleRecalculation'] = function(record) {
+    return {
+      'type': 'ScheduleStyleRecalculation',
+      'time': record.startTime
+    };
+  };
+
+  // RecalculateStyles: style recalculation is occurring.
+  this.timelineDispatch_['RecalculateStyles'] = function(record) {
+    return {
+      'type': 'RecalculateStyles',
+      'startTime': record.startTime,
+      'endTime': record.endTime
+    };
+  };
+
+  // InvalidateLayout: DOM layout was invalidated - expect a Layout.
+  this.timelineDispatch_['InvalidateLayout'] = function(record) {
+    return {
+      'type': 'InvalidateLayout',
+      'time': record.startTime
+    };
+  };
+
+  // Layout: DOM layout.
+  this.timelineDispatch_['Layout'] = function(record) {
+    return {
+      'type': 'Layout',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'x': record.data.x,
+      'y': record.data.y,
+      'width': record.data.width,
+      'height': record.data.height,
+    };
+  };
+
+  // Paint: DOM element painting.
+  this.timelineDispatch_['Paint'] = function(record) {
+    return {
+      'type': 'Paint',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'x': record.data.x,
+      'y': record.data.y,
+      'width': record.data.width,
+      'height': record.data.height,
+    };
+  };
+
+  // CompositeLayers: the compositor ran and composited the page.
+  this.timelineDispatch_['CompositeLayers'] = function(record) {
+    return {
+      'type': 'CompositeLayers',
+      'startTime': record.startTime,
+      'endTime': record.endTime
+    };
+  };
+
+  // DecodeImage: a compressed image was decoded.
+  this.timelineDispatch_['DecodeImage'] = function(record) {
+    return {
+      'type': 'DecodeImage',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'imageType': record.data.imageType
+    };
+  };
+
+  // ResizeImage: a resized version of a decoded image was required.
+  this.timelineDispatch_['ResizeImage'] = function(record) {
+    return {
+      'type': 'ResizeImage',
+      'startTime': record.startTime,
+      'endTime': record.endTime,
+      'cached': record.data.cached
+    };
+  };
+
+  // TODO(benvanik): explore adding the other types:
+  // ResourceSendRequest
+  // ResourceReceiveResponse
+  // ResourceFinish
+  // ResourceReceivedData
+  // ScrollLayer
+  // Program (may be good to show as a heatmap?)
+};
+
+
+/**
  * Handles incoming debugger events.
  * @param {!{tabId: number}} source Source tab.
  * @param {string} method Remote debugger method name.
@@ -159,26 +299,13 @@ Debugger.prototype.onEvent_ = function(source, method, params) {
  * @private
  */
 Debugger.prototype.processTimelineRecord_ = function(record) {
-  // Extract GCs.
-  if (record.type == 'GCEvent') {
-    var data = {
-      'type': 'GCEvent',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      //'stackTrace': record.stackTrace,
-      'usedHeapSize': record.usedHeapSize,
-      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
-    };
-    this.queueData_(data);
-  } else if (record.type == 'EvaluateScript') {
-    var data = {
-      'type': 'EvaluateScript',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'usedHeapSize': record.usedHeapSize,
-      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
-    };
-    this.queueData_(data);
+  // Handle the record.
+  var dispatch = this.timelineDispatch_[record.type];
+  if (dispatch) {
+    var data = dispatch(record);
+    if (data) {
+      this.queueData_(data);
+    }
   }
 
   // Recursively check children.
