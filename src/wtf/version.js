@@ -45,7 +45,7 @@ wtf.version.getCommit = function() {
  */
 wtf.version.toString = function() {
   // Set via update-version.sh
-  return '2013.01.07-1'; // string
+  return '2013.1.7-1'; // string
 };
 
 
