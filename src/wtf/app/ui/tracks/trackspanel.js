@@ -14,25 +14,31 @@
 goog.provide('wtf.app.ui.tracks.TracksPanel');
 
 goog.require('goog.array');
-goog.require('goog.asserts');
 goog.require('goog.dom');
+goog.require('goog.math.Rect');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.Granularity');
+goog.require('wtf.app.ui.FramePainter');
+goog.require('wtf.app.ui.MarkPainter');
 goog.require('wtf.app.ui.SelectionPainter');
 goog.require('wtf.app.ui.TabPanel');
-goog.require('wtf.app.ui.tracks.MarkPainter');
+goog.require('wtf.app.ui.tracks.TimeRangePainter');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.timing');
 goog.require('wtf.ui.GridPainter');
+goog.require('wtf.ui.LayoutMode');
 goog.require('wtf.ui.Painter');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.RulerPainter');
 goog.require('wtf.ui.Tooltip');
+goog.require('wtf.ui.zoom.TransitionMode');
 goog.require('wtf.ui.zoom.Viewport');
 
 
@@ -45,6 +51,7 @@ goog.require('wtf.ui.zoom.Viewport');
  */
 wtf.app.ui.tracks.TracksPanel = function(documentView) {
   goog.base(this, documentView, 'tracks', 'Tracks');
+  var dom = this.getDom();
 
   var doc = documentView.getDocument();
   var db = doc.getDatabase();
@@ -78,9 +85,15 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.viewport_.setAllowedScales(
       1000 / wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       1000 / wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
+  var reentry = 0;
   this.viewport_.addListener(
       wtf.events.EventType.INVALIDATED,
       function() {
+        if (reentry) {
+          return;
+        }
+        reentry++;
+
         var firstEventTime = db.getFirstEventTime();
 
         // Update from viewport.
@@ -91,20 +104,46 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
         timeRight += firstEventTime;
 
         // Update the main view.
-        // TODO(benvanik): better data flow
-        // var localView = documentView.getLocalView();
-        // localView.setVisibleRange(timeLeft, timeRight);
+        // This will be ignored if our invalidation came from the view.
+        var localView = documentView.getLocalView();
+        localView.setVisibleRange(timeLeft, timeRight);
 
-        for (var n = 0; n < this.timeRangePainters_.length; n++) {
-          var painter = this.timeRangePainters_[n];
+        for (var n = 0; n < this.timePainters_.length; n++) {
+          var painter = this.timePainters_[n];
           painter.setTimeRange(timeLeft, timeRight);
         }
 
         this.requestRepaint();
+        reentry--;
       }, this);
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
-  documentView.registerViewport(this.viewport_);
+
+  // Watch for view changes and update.
+  var localView = documentView.getLocalView();
+  localView.addListener(wtf.events.EventType.INVALIDATED, function(immediate) {
+    if (reentry) {
+      return;
+    }
+
+    var firstEventTime = db.getFirstEventTime();
+    var startTime = localView.getVisibleTimeStart() - firstEventTime;
+    var endTime = localView.getVisibleTimeEnd() - firstEventTime - startTime;
+    this.viewport_.zoomToBounds(
+        startTime, 0, endTime, 0.001,
+        immediate ? wtf.ui.zoom.TransitionMode.IMMEDIATE : undefined);
+  }, this);
+
+  // Setup keyboard hooks. These are only valid when the panel is active.
+  var keyboard = wtf.events.getWindowKeyboard(dom);
+  /**
+   * Keyboard scope.
+   * @type {!wtf.events.KeyboardScope}
+   * @private
+   */
+  this.keyboardScope_ = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(this.keyboardScope_);
+  this.setupKeyboardShortcuts_();
 
   /**
    * Track canvas.
@@ -113,9 +152,6 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    */
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('canvas')));
-
-  var paintContext = new wtf.ui.Painter(this.trackCanvas_);
-  this.setPaintContext(paintContext);
 
   /**
    * Tooltip.
@@ -126,21 +162,30 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.registerDisposable(this.tooltip_);
   this.setTooltip(this.tooltip_);
 
+  var paintContext = new wtf.ui.Painter(this.trackCanvas_);
+  this.setPaintContext(paintContext);
+
+  // Clicking on non-handled space will clear the filter.
+  var commandManager = wtf.events.getCommandManager();
+  paintContext.onClickInternal = goog.bind(function(x, y, modifiers, bounds) {
+    commandManager.execute('filter_events', this, null, '');
+  }, this);
+
   /**
-   * A list of all paint contexts that extend {@see wtf.ui.TimeRangePainter}.
+   * A list of all paint contexts that extend {@see wtf.ui.TimePainter}.
    * This is used to update all of the painters when the current time range
    * changes.
-   * @type {!Array.<!wtf.ui.TimeRangePainter>}
+   * @type {!Array.<!wtf.ui.TimePainter>}
    * @private
    */
-  this.timeRangePainters_ = [];
+  this.timePainters_ = [];
 
   var gridPainter = new wtf.ui.GridPainter(this.trackCanvas_);
   paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.timeRangePainters_.push(gridPainter);
+  this.timePainters_.push(gridPainter);
 
   /**
    * Selection painter.
@@ -150,7 +195,16 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.selectionPainter_ = new wtf.app.ui.SelectionPainter(
       this.trackCanvas_, documentView.getSelection(), this.viewport_);
   paintContext.addChildPainter(this.selectionPainter_);
-  this.timeRangePainters_.push(this.selectionPainter_);
+  this.timePainters_.push(this.selectionPainter_);
+
+  /**
+   * Vertical stack of painters that make up the main view.
+   * @type {!wtf.ui.Painter}
+   * @private
+   */
+  this.painterStack_ = new wtf.ui.Painter(this.trackCanvas_);
+  paintContext.addChildPainter(this.painterStack_);
+  this.painterStack_.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
 
   /**
    * Ruler painter.
@@ -158,15 +212,15 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.rulerPainter_ = new wtf.ui.RulerPainter(this.trackCanvas_);
-  paintContext.addChildPainter(this.rulerPainter_);
+  this.painterStack_.addChildPainter(this.rulerPainter_);
   this.rulerPainter_.setGranularities(
       wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
-  this.timeRangePainters_.push(this.rulerPainter_);
+  this.timePainters_.push(this.rulerPainter_);
 
-  var markPainter = new wtf.app.ui.tracks.MarkPainter(this.trackCanvas_, db);
-  paintContext.addChildPainter(markPainter);
-  this.timeRangePainters_.push(markPainter);
+  var markPainter = new wtf.app.ui.MarkPainter(this.trackCanvas_, db);
+  this.painterStack_.addChildPainter(markPainter);
+  this.timePainters_.push(markPainter);
 
   // Watch for zones and add as needed.
   db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
@@ -195,6 +249,115 @@ wtf.app.ui.tracks.TracksPanel.prototype.createDom = function(dom) {
 
 
 /**
+ * Sets up some simple keyboard shortcuts.
+ * @private
+ */
+wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
+  var db = this.db_;
+  var viewport = this.viewport_;
+
+  var commandManager = wtf.events.getCommandManager();
+  var keyboardScope = this.keyboardScope_;
+
+  keyboardScope.addShortcut('space', function() {
+    var width = viewport.getScreenWidth();
+    viewport.panDelta((width * 0.8) / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('shift+space', function() {
+    var width = viewport.getScreenWidth();
+    viewport.panDelta(-(width * 0.8) / viewport.getScale(), 0);
+  }, this);
+
+  function moveFrames(delta, framesOnly) {
+    // Find a frame index.
+    var frameIndex = db.getFirstFrameIndex();
+    if (!frameIndex) {
+      return;
+    }
+
+    // Find center time.
+    var time = viewport.screenToScene(viewport.getScreenWidth() / 2, 0).x;
+    time += db.getFirstEventTime();
+
+    // Find the frame at the center of the viewport.
+    var hit = frameIndex.getFrameAtTime(time);
+    if (hit) {
+      // Frame, move to adjacent intra-frame space or frame.
+      if (framesOnly) {
+        var newFrame;
+        if (delta < 0) {
+          newFrame = frameIndex.getPreviousFrame(hit);
+        } else {
+          newFrame = frameIndex.getNextFrame(hit);
+        }
+        commandManager.execute('goto_frame', this, null, newFrame);
+      } else {
+        var startTime;
+        var endTime;
+        if (delta < 0) {
+          var otherFrame = frameIndex.getPreviousFrame(hit);
+          startTime = otherFrame ?
+              otherFrame.getEndTime() : db.getFirstEventTime();
+          endTime = hit.getStartTime();
+        } else {
+          var otherFrame = frameIndex.getNextFrame(hit);
+          startTime = hit.getEndTime();
+          endTime = otherFrame ?
+              otherFrame.getStartTime() : db.getLastEventTime();
+        }
+        commandManager.execute('goto_range', this, null, startTime, endTime);
+      }
+    } else {
+      // If in a intra-frame space, move to a frame.
+      hit = frameIndex.getIntraFrameAtTime(time);
+      if (hit) {
+        var newFrame = delta < 0 ? hit[0] : hit[1];
+        commandManager.execute('goto_frame', this, null, newFrame);
+      }
+    }
+  };
+  keyboardScope.addShortcut('z', function() {
+    moveFrames(-1, true);
+  }, this);
+  keyboardScope.addShortcut('x', function() {
+    moveFrames(1, true);
+  }, this);
+  keyboardScope.addShortcut('shift+z', function() {
+    moveFrames(-1, false);
+  }, this);
+  keyboardScope.addShortcut('shift+x', function() {
+    moveFrames(1, false);
+  }, this);
+
+  keyboardScope.addShortcut('left|a', function() {
+    viewport.panDelta(-160 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('right|d', function() {
+    viewport.panDelta(160 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('shift+left|shift+a', function() {
+    viewport.panDelta(-160 * 3 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('shift+right|shift+d', function() {
+    viewport.panDelta(160 * 3 / viewport.getScale(), 0);
+  }, this);
+  keyboardScope.addShortcut('up|w', function() {
+    viewport.zoomDelta(2.5);
+  }, this);
+  keyboardScope.addShortcut('down|s', function() {
+    viewport.zoomDelta(1 / 2.5);
+  }, this);
+
+  keyboardScope.addShortcut('home', function() {
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
+    commandManager.execute('goto_range', this, null,
+        firstEventTime, lastEventTime);
+  }, this);
+};
+
+
+/**
  * Minimum granularity, in ms.
  * @const
  * @type {number}
@@ -212,6 +375,15 @@ wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_ =
  */
 wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_ =
     0.001;
+
+
+/**
+ * @override
+ */
+wtf.app.ui.tracks.TracksPanel.prototype.setVisible = function(value) {
+  goog.base(this, 'setVisible', value);
+  this.keyboardScope_.setEnabled(value);
+};
 
 
 /**
@@ -244,12 +416,26 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
  * @private
  */
 wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
-  var paintContext = this.getPaintContext();
-  goog.asserts.assert(paintContext);
+  var zonePainterStack = new wtf.ui.Painter(this.trackCanvas_);
+  this.painterStack_.addChildPainter(zonePainterStack);
+  zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
+  zonePainterStack.setPadding(new goog.math.Rect(0, 5, 0, 5));
+
+  var framePainter = new wtf.app.ui.FramePainter(
+      this.trackCanvas_, this.db_, zoneIndex.getFrameIndex());
+  zonePainterStack.addChildPainter(framePainter);
+  this.timePainters_.push(framePainter);
+  framePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
+
+  var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
+      this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());
+  zonePainterStack.addChildPainter(timeRangePainter);
+  this.timePainters_.push(timeRangePainter);
+  timeRangePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
       this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
-  paintContext.addChildPainter(zonePainter, this.rulerPainter_);
-  this.timeRangePainters_.push(zonePainter);
+  zonePainterStack.addChildPainter(zonePainter);
+  this.timePainters_.push(zonePainter);
 };

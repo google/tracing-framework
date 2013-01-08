@@ -19,7 +19,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.fx.Dragger');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 
 
 
@@ -28,7 +28,7 @@ goog.require('wtf.ui.TimeRangePainter');
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.app.ui.Selection} selection Selection.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
 wtf.app.ui.SelectionPainter = function(canvas, selection, viewport) {
   goog.base(this, canvas);
@@ -77,6 +77,7 @@ wtf.app.ui.SelectionPainter = function(canvas, selection, viewport) {
     viewport.setEnabled(true);
   }, false);
 
+  // TODO(benvanik): move to painter onClick API.
   eh.listen(canvas, goog.events.EventType.MOUSEDOWN, function(e) {
     if (e.shiftKey) {
       viewport.setEnabled(false);
@@ -87,14 +88,16 @@ wtf.app.ui.SelectionPainter = function(canvas, selection, viewport) {
     }
   });
 };
-goog.inherits(wtf.app.ui.SelectionPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.app.ui.SelectionPainter, wtf.ui.TimePainter);
 
 
 /**
  * @override
  */
 wtf.app.ui.SelectionPainter.prototype.repaintInternal = function(
-    ctx, width, height) {
+    ctx, bounds) {
+  var width = bounds.width;
+  var height = bounds.height;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 
