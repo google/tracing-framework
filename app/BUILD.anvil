@@ -69,7 +69,7 @@ file_set(
         'maindisplay.html',
         'scripts/release-maindisplay.js',
         ':third_party_js',
-        ],
+        ] + glob('icons/**/*'),
     src_exclude_filter='*-deps.js')
 
 file_set(
