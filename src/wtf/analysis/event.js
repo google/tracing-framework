@@ -13,6 +13,7 @@
 
 goog.provide('wtf.analysis.Event');
 goog.provide('wtf.analysis.FlowEvent');
+goog.provide('wtf.analysis.FrameEvent');
 goog.provide('wtf.analysis.ScopeEvent');
 goog.provide('wtf.analysis.TimeRangeEvent');
 goog.provide('wtf.analysis.ZoneEvent');
@@ -386,3 +387,43 @@ goog.exportSymbol(
 goog.exportProperty(
     wtf.analysis.TimeRangeEvent.prototype, 'getValue',
     wtf.analysis.TimeRangeEvent.prototype.getValue);
+
+
+
+/**
+ * Frame event.
+ * @param {!wtf.analysis.EventType} eventType Event information.
+ * @param {wtf.analysis.Zone} zone Zone the event occurred in.
+ * @param {number} time Wall-time of the event.
+ * @param {Object} args Custom event arguments.
+ * @param {!wtf.analysis.Frame} frame Frame.
+ * @constructor
+ * @extends {wtf.analysis.Event}
+ */
+wtf.analysis.FrameEvent = function(eventType, zone, time, args, frame) {
+  goog.base(this, eventType, zone, time, args);
+
+  /**
+   * Frame.
+   * @type {!wtf.analysis.Frame}
+   */
+  this.value = frame;
+};
+goog.inherits(wtf.analysis.FrameEvent, wtf.analysis.Event);
+
+
+/**
+ * Gets the frame this event pertains to.
+ * @return {!wtf.analysis.Frame} Frame.
+ */
+wtf.analysis.FrameEvent.prototype.getValue = function() {
+  return this.value;
+};
+
+
+goog.exportSymbol(
+    'wtf.analysis.FrameEvent',
+    wtf.analysis.FrameEvent);
+goog.exportProperty(
+    wtf.analysis.FrameEvent.prototype, 'getValue',
+    wtf.analysis.FrameEvent.prototype.getValue);

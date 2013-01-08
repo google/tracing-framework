@@ -16,6 +16,7 @@ goog.provide('wtf.analysis.db.ZoneIndex');
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.TimeRangeEvent');
 goog.require('wtf.analysis.db.EventList');
+goog.require('wtf.analysis.db.FrameIndex');
 goog.require('wtf.analysis.db.TimeRangeIndex');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
@@ -57,6 +58,16 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
   this.registerDisposable(this.timeRangeIndex_);
 
   /**
+   * A frame index.
+   * This is always initialized even if there are no frames.
+   * @type {!wtf.analysis.db.FrameIndex}
+   * @private
+   */
+  this.frameIndex_ = new wtf.analysis.db.FrameIndex(
+      this.traceListener_, this.zone_);
+  this.registerDisposable(this.frameIndex_);
+
+  /**
    * Accumulated total time in root scopes in this zone.
    * @type {number}
    * @private
@@ -77,15 +88,16 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    */
   this.maxScopeDepth_ = 0;
 
-  // Hacky, but stash the well-known event types that we will be comparing
-  // with to dramatically improve performance.
+  // TODO(benvanik): cleanup, issue #196.
   /**
    * Lookup for common event types.
    * @type {!Object.<wtf.analysis.EventType>}
    * @private
    */
   this.eventTypes_ = {
-    scopeLeave: null
+    scopeLeave: null,
+    frameStart: null,
+    frameEnd: null
   };
 
   /**
@@ -144,6 +156,15 @@ wtf.analysis.db.ZoneIndex.prototype.getTimeRangeIndex = function() {
 
 
 /**
+ * Gets the frame index for this zone.
+ * @return {!wtf.analysis.db.FrameIndex} Frame index.
+ */
+wtf.analysis.db.ZoneIndex.prototype.getFrameIndex = function() {
+  return this.frameIndex_;
+};
+
+
+/**
  * Gets the total amount of time spent in any scope in this zone, including
  * system time.
  * @return {number} Total time.
@@ -181,6 +202,7 @@ wtf.analysis.db.ZoneIndex.prototype.beginInserting = function() {
   this.lastAddEventTime_ = this.getLastEventTime();
 
   this.timeRangeIndex_.beginInserting();
+  this.frameIndex_.beginInserting();
 };
 
 
@@ -192,14 +214,27 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
     return;
   }
 
+  // TODO(benvanik): cleanup, issue #196.
   if (!this.eventTypes_.scopeLeave) {
     this.eventTypes_.scopeLeave =
         this.traceListener_.getEventType('wtf.scope#leave');
+    this.eventTypes_.frameStart =
+        this.traceListener_.getEventType('wtf.timing#frameStart');
+    this.eventTypes_.frameEnd =
+        this.traceListener_.getEventType('wtf.timing#frameEnd');
   }
 
   // Delegate to the time range index if needed.
   if (e instanceof wtf.analysis.TimeRangeEvent) {
     this.timeRangeIndex_.insertEvent(e);
+    return;
+  }
+
+  // Delegate to frame index if needed.
+  var eventType = e.eventType;
+  if (eventType == this.eventTypes_.frameStart ||
+      eventType == this.eventTypes_.frameEnd) {
+    this.frameIndex_.insertEvent(e);
     return;
   }
 
@@ -211,7 +246,6 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
     // Event is out of order - add to the pending list.
     this.pendingOutOfOrderEvents_.push(e);
   } else {
-    var eventType = e.eventType;
     this.lastAddEventTime_ = e.time;
     if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
       // Scope enter event.
@@ -328,6 +362,7 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
   }, this);
 
   this.timeRangeIndex_.endInserting();
+  this.frameIndex_.endInserting();
 };
 
 
@@ -337,6 +372,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.analysis.db.ZoneIndex.prototype, 'getTimeRangeIndex',
     wtf.analysis.db.ZoneIndex.prototype.getTimeRangeIndex);
+goog.exportProperty(
+    wtf.analysis.db.ZoneIndex.prototype, 'getFrameIndex',
+    wtf.analysis.db.ZoneIndex.prototype.getFrameIndex);
 goog.exportProperty(
     wtf.analysis.db.ZoneIndex.prototype, 'getRootTotalTime',
     wtf.analysis.db.ZoneIndex.prototype.getRootTotalTime);

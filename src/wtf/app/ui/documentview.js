@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.DocumentView');
 goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('goog.string');
 goog.require('goog.style');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.EmptyTabPanel');
@@ -33,7 +34,6 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
-goog.require('wtf.ui.zoom.Viewport');
 
 
 
@@ -71,14 +71,6 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    */
   this.selection_ = new wtf.app.ui.Selection(doc.getDatabase());
   this.registerDisposable(this.selection_);
-
-  // HACK(benvanik): replace with shared camera
-  /**
-   * All viewports that have been created, for linking.
-   * @type {!Array.<!wtf.ui.zoom.Viewport>}
-   * @private
-   */
-  this.viewports_ = [];
 
   /**
    * Toolbar.
@@ -136,32 +128,10 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
       this, 'console', 'Console'));
 
-  var keyboard = wtf.events.getWindowKeyboard(dom);
-  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
-  this.registerDisposable(keyboardScope);
+  this.setupCommands_();
+  this.setupKeyboardShortcuts_();
 
-  var commandManager = wtf.events.getCommandManager();
-  commandManager.registerSimpleCommand(
-      'select_all', function() {
-        this.selection_.clearTimeRange();
-      }, this);
-  keyboardScope.addShortcut('command+a', function() {
-    commandManager.execute('select_all', this, null);
-  });
-  commandManager.registerSimpleCommand(
-      'select_visible', function() {
-        this.selection_.setTimeRange(
-            this.localView_.getVisibleTimeStart(),
-            this.localView_.getVisibleTimeEnd());
-      }, this);
-  keyboardScope.addShortcut('command+shift+a', function() {
-    commandManager.execute('select_visible', this, null);
-  });
-  commandManager.registerSimpleCommand(
-      'select_range', function(source, target, startTime, endTime) {
-        this.selection_.setTimeRange(startTime, endTime);
-      }, this);
-
+  // Show error dialogs.
   var db = doc.getDatabase();
   db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
       function(message, opt_detail) {
@@ -169,6 +139,14 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
         wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
         _gaq.push(['_trackEvent', 'app', 'source_error', message]);
       }, this);
+
+  // Zoom to fit when the database changes.
+  // This should be changed to track the most recent events if streaming.
+  db.addListener(wtf.events.EventType.INVALIDATED, function() {
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
+    this.localView_.setVisibleRange(firstEventTime, lastEventTime, true);
+  }, this);
 };
 goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
 
@@ -181,6 +159,9 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   commandManager.unregisterCommand('select_all');
   commandManager.unregisterCommand('select_visible');
   commandManager.unregisterCommand('select_range');
+  commandManager.unregisterCommand('goto_range');
+  commandManager.unregisterCommand('goto_mark');
+  commandManager.unregisterCommand('goto_frame');
   goog.base(this, 'disposeInternal');
 };
 
@@ -191,6 +172,132 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
 wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.documentview.control, undefined, undefined, dom));
+};
+
+
+/**
+ * Sets up global commands.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
+  var db = this.getDatabase();
+  var view = this.localView_;
+  var selection = this.selection_;
+
+  var commandManager = wtf.events.getCommandManager();
+
+  commandManager.registerSimpleCommand(
+      'select_all', function() {
+        selection.clearTimeRange();
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'select_visible', function() {
+        selection.setTimeRange(
+            this.localView_.getVisibleTimeStart(),
+            this.localView_.getVisibleTimeEnd());
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'select_range', function(source, target, startTime, endTime) {
+        selection.setTimeRange(startTime, endTime);
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'goto_range', function(source, target, timeStart, timeEnd) {
+        var firstEventTime = db.getFirstEventTime();
+        var pad = (timeEnd - timeStart) * 0.05;
+        view.setVisibleRange(
+            timeStart - pad,
+            timeEnd + pad);
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'goto_mark', function(source, target, e) {
+        // Go to mark event.
+        var timeStart = e.time;
+        var timeEnd = e.time + e.args['duration'];
+        commandManager.execute('goto_range', this, null,
+            timeStart, timeEnd);
+      }, this);
+
+  commandManager.registerSimpleCommand(
+      'goto_frame', function(source, target, frameOrNumber) {
+        var frame = null;
+        if (goog.isNumber(frameOrNumber)) {
+          // Find a frame index.
+          var frameIndex = db.getFirstFrameIndex();
+          if (!frameIndex) {
+            return;
+          }
+
+          // Find frame.
+          frame = frameIndex.getFrame(frameOrNumber);
+        } else {
+          frame = /** @type {!wtf.analysis.Frame} */ (frameOrNumber);
+        }
+        if (!frame) {
+          return;
+        }
+
+        // Go to frame.
+        var timeStart = frame.getStartEvent().time;
+        var timeEnd = frame.getEndEvent().time;
+        commandManager.execute('goto_range', this, null,
+            timeStart, timeEnd);
+      }, this);
+};
+
+
+/**
+ * Sets up some simple keyboard shortcuts.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
+  var db = this.getDatabase();
+  var view = this.localView_;
+  var selection = this.selection_;
+
+  var dom = this.getDom();
+  var commandManager = wtf.events.getCommandManager();
+  var keyboard = wtf.events.getWindowKeyboard(dom);
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+
+  keyboardScope.addShortcut('home', function() {
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
+    commandManager.execute('goto_range', this, null,
+        firstEventTime, lastEventTime);
+  }, this);
+
+  keyboardScope.addShortcut('command+a', function() {
+    commandManager.execute('select_all', this, null);
+  });
+  keyboardScope.addShortcut('command+shift+a', function() {
+    commandManager.execute('select_visible', this, null);
+  });
+
+  keyboardScope.addShortcut('command+g', function() {
+    // TODO(benvanik): make this a fancy dialog that allows frame/marker/etc
+    //     selection. window.prompt is prohibited in apps, too.
+    var result;
+    try {
+      keyboard.suspend();
+      result = goog.global.prompt('Frame number:');
+    } finally {
+      keyboard.resume();
+    }
+    if (!result) {
+      return;
+    }
+    result = goog.string.toNumber(result);
+    if (isNaN(result)) {
+      return;
+    }
+
+    commandManager.execute('goto_frame', this, null, result);
+  }, this);
 };
 
 
@@ -240,25 +347,6 @@ wtf.app.ui.DocumentView.prototype.getTabbar = function() {
 
 
 /**
- * Registers a viewport for linking.
- * @param {!wtf.ui.zoom.Viewport} viewport Viewport.
- */
-wtf.app.ui.DocumentView.prototype.registerViewport = function(viewport) {
-  for (var n = 0; n < this.viewports_.length; n++) {
-    wtf.ui.zoom.Viewport.link(
-        this.viewports_[n],
-        viewport);
-  }
-  this.viewports_.push(viewport);
-
-  var db = this.getDatabase();
-  db.addListener(wtf.events.EventType.INVALIDATED, function() {
-    viewport.invalidate();
-  });
-};
-
-
-/**
  * @override
  */
 wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
@@ -303,12 +391,12 @@ wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
     return;
   }
 
-  if (!this.viewports_.length) {
-    return;
-  }
-  var viewport = this.viewports_[0];
-  var width = viewport.getScreenWidth();
-  viewport.set(-1000, 0, width / (lastEventTime - firstEventTime + 2000));
+  // if (!this.viewports_.length) {
+  //   return;
+  // }
+  // var viewport = this.viewports_[0];
+  // var width = viewport.getScreenWidth();
+  // viewport.set(-1000, 0, width / (lastEventTime - firstEventTime + 2000));
 
   // TODO(benvanik): bind viewports to the local view correctly - right now they
   //     are inverted and this doesn't work as it should.

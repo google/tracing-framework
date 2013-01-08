@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.color.Palette');
 
 goog.require('goog.asserts');
+goog.require('goog.math');
 goog.require('goog.string');
 goog.require('wtf.ui.color.ColorBrewer');
 goog.require('wtf.ui.color.RgbColor');
@@ -99,7 +100,37 @@ wtf.ui.color.Palette.prototype.getColorForString = function(value) {
 };
 
 
-// TODO(benvanik): interpolation/etc for linear/pow scales
+/**
+ * Gets a color for the given value.
+ * The expected input range is clamped to [0-1].
+ * @param {number} value Input value.
+ * @return {!wtf.ui.color.RgbColor} A color.
+ */
+wtf.ui.color.Palette.prototype.getColorForValue = function(value) {
+  value = goog.math.clamp(value, 0, 1);
+  var index = Math.round((this.colors_.length - 1) * value);
+  return this.colors_[index];
+};
+
+
+/**
+ * Gets an interpolated color for the given value.
+ * The expected input range is clamped to [0-1].
+ * @param {number} value Input value.
+ * @return {!wtf.ui.color.RgbColor} A color.
+ */
+wtf.ui.color.Palette.prototype.getInterpolatedColorForValue = function(value) {
+  value = goog.math.clamp(value, 0, 1);
+  var index = (this.colors_.length - 1) * value;
+  var alpha = index - (index | 0);
+  index |= 0;
+  if (index == this.colors_.length - 1) {
+    return this.colors_[index];
+  } else {
+    return wtf.ui.color.RgbColor.lerp(
+        this.colors_[index], this.colors_[index + 1], alpha);
+  }
+};
 
 
 /**
@@ -146,8 +177,8 @@ wtf.ui.color.Palette.SCOPE_COLORS = [
  * @type {!Array.<string>}
  */
 wtf.ui.color.Palette.D3_10 =
-  ('#1f77b4 #ff7f0e #2ca02c #d62728 #9467bd #8c564b #e377c2 #7f7f7f #bcbd22 ' +
-  '#17becf').split(' ');
+    ('#1f77b4 #ff7f0e #2ca02c #d62728 #9467bd #8c564b #e377c2 #7f7f7f ' +
+    '#bcbd22 #17becf').split(' ');
 
 
 /**
@@ -155,9 +186,9 @@ wtf.ui.color.Palette.D3_10 =
  * @type {!Array.<string>}
  */
 wtf.ui.color.Palette.D3_20 =
-  ('#1f77b4 #aec7e8 #ff7f0e #ffbb78 #2ca02c #98df8a #d62728 #ff9896 #9467bd ' +
-  '#c5b0d5 #8c564b #c49c94 #e377c2 #f7b6d2 #7f7f7f #c7c7c7 #bcbd22 #dbdb8d ' +
-  '#17becf #9edae5').split(' ');
+    ('#1f77b4 #aec7e8 #ff7f0e #ffbb78 #2ca02c #98df8a #d62728 #ff9896 ' +
+    '#9467bd #c5b0d5 #8c564b #c49c94 #e377c2 #f7b6d2 #7f7f7f #c7c7c7 #bcbd22 ' +
+    '#dbdb8d #17becf #9edae5').split(' ');
 
 
 /**
