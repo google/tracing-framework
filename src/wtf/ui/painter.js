@@ -591,6 +591,40 @@ wtf.ui.Painter.prototype.clear = function(x, y, w, h, opt_color) {
 
 
 /**
+ * Draws a standard label to the given region.
+ * @param {string} label Label.
+ * @param {number=} opt_y Inset into the painter bounds.
+ * @param {number=} opt_height Height override for the painter bounds.
+ */
+wtf.ui.Painter.prototype.drawLabel = function(label, opt_y, opt_height) {
+  var ctx = this.canvasContext2d_;
+
+  var bounds = this.bounds_;
+  var y = goog.isDef(opt_y) ? opt_y : 0;
+  var height = goog.isDef(opt_height) ? opt_height : bounds.height;
+
+  var nameHeight = 12;
+  if (height > nameHeight) {
+    ctx.font = nameHeight + 'px bold verdana, sans-serif';
+    var textSize = ctx.measureText(label);
+
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(
+        bounds.left, bounds.top + y + (height + nameHeight) / 2 - nameHeight,
+        textSize.width + 8, nameHeight + 2);
+
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#000000';
+    ctx.fillText(
+        label,
+        bounds.left + 4, bounds.top + y + (height + nameHeight) / 2 - 1);
+  }
+  ctx.globalAlpha = 1;
+};
+
+
+/**
  * Detects whether the given point is within the bounds of the painter.
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
@@ -620,15 +654,17 @@ wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
     return false;
   }
 
-  if (this.onClickInternal(x, y, modifiers, bounds)) {
-    return true;
-  }
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     if (childContext.onClick(x, y, modifiers)) {
       return true;
     }
   }
+
+  if (this.onClickInternal(x, y, modifiers, bounds)) {
+    return true;
+  }
+
   return false;
 };
 
@@ -663,15 +699,17 @@ wtf.ui.Painter.prototype.onMouseMove = function(x, y, modifiers) {
   //   return false;
   // }
 
-  if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
-    return true;
-  }
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
     if (childContext.onMouseMove(x, y, modifiers)) {
       return true;
     }
   }
+
+  if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
+    return true;
+  }
+
   return false;
 };
 
@@ -691,25 +729,18 @@ wtf.ui.Painter.prototype.onMouseMoveInternal = goog.nullFunction;
 
 /**
  * Handles mouse leave events at the given pixel.
- * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onMouseOut = function() {
-  if (this.onMouseOutInternal()) {
-    return true;
-  }
+  this.onMouseOutInternal();
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childContext = this.childPainters_[n];
-    if (childContext.onMouseOut()) {
-      return true;
-    }
+    childContext.onMouseOut();
   }
-  return false;
 };
 
 
 /**
  * Handles mouse leave events at the given pixel.
- * @return {boolean|undefined} True if the event was handled.
  * @protected
  */
 wtf.ui.Painter.prototype.onMouseOutInternal = goog.nullFunction;

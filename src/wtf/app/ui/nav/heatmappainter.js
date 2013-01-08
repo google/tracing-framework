@@ -28,7 +28,7 @@ goog.require('wtf.ui.TimePainter');
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.app.ui.nav.HeatmapPainter = function(canvas, db) {
+wtf.app.ui.nav.HeatmapPainter = function HeatmapPainter(canvas, db) {
   goog.base(this, canvas);
 
   /**
@@ -48,19 +48,20 @@ wtf.app.ui.nav.HeatmapPainter = function(canvas, db) {
   this.bars_ = [];
 
   // TODO(benvanik): pull from profile
-  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'scopes', [
-    'wtf.scope#leave'
-  ]));
-  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'branches', [
+  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'flows', [
     'wtf.flow#branch'
   ]));
-  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(db, 'GCs', [
+  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'GCs', [
     'javascript#gc'
+  ]));
+  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'compiles', [
+    'javascript#evalscript'
   ]));
 
   var deferreds = [];
   for (var n = 0; n < this.bars_.length; n++) {
-    var color = wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n];
+    var color = wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[
+        n % wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_.length];
     deferreds.push(this.bars_[n].prepare(color));
   }
 
@@ -80,6 +81,16 @@ goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimePainter);
 /**
  * @override
  */
+wtf.app.ui.nav.HeatmapPainter.prototype.layoutInternal = function(
+    availableBounds) {
+  var newBounds = availableBounds.clone();
+  return newBounds;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var timeLeft = this.timeLeft;
@@ -88,22 +99,30 @@ wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
     return;
   }
 
-  var width = bounds.width;
-  var height = bounds.height;
-  var h = height - 16;
-  var y = 16;
+  // Clip to extents.
+  this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Background.
   ctx.fillStyle = 'rgba(0,0,0,0.05)';
-  ctx.fillRect(0, y, width, h);
+  ctx.fillRect(bounds.left, bounds.top, bounds.width, bounds.height);
 
   // Draw heatmap bars.
-  var barY = y;
-  var barHeight = h / this.bars_.length;
+  var barY = 0;
+  var barHeight = bounds.height / this.bars_.length;
   for (var n = 0; n < this.bars_.length; n++) {
     var bar = this.bars_[n];
     bar.draw(
-        ctx, width, height, barY, barHeight, timeLeft, timeRight);
+        ctx, bounds, barY, barHeight, timeLeft, timeRight);
+
+    // Border.
+    ctx.fillStyle = 'rgb(200,200,200)';
+    ctx.fillRect(
+        bounds.left, bounds.top + barY,
+        bounds.width, 1);
+    ctx.fillRect(
+        bounds.left, bounds.top + barY + barHeight,
+        bounds.width, 1);
+
     barY += barHeight;
   }
 };
@@ -117,10 +136,10 @@ wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
  */
 wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_ = [
   // TODO(benvanik): prettier colors - these are from chrome://tracing
-  'rgb(138,113,152)',
-  'rgb(175,112,133)',
+  'rgb(49,130,189)',
+  'rgb(117,107,177)',
   'rgb(127,135,225)',
-  'rgb(93,81,137)',
+  'rgb(230,85,13)',
   'rgb(116,143,119)',
   'rgb(178,214,122)'
 ];
@@ -129,13 +148,21 @@ wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_ = [
 
 /**
  * Heatmap painter event bar.
+ * @param {!wtf.ui.Painter} painter Parent painter.
  * @param {!wtf.analysis.db.EventDatabase} db Database.
  * @param {string} name Bar name, used in the overlay.
  * @param {!Array.<string>} eventTypes List of event type names.
  * @constructor
  * @private
  */
-wtf.app.ui.nav.HeatmapPainter.Bar_ = function(db, name, eventTypes) {
+wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes) {
+  /**
+   * Parent painter.
+   * @type {!wtf.ui.Painter}
+   * @private
+   */
+  this.painter_ = painter;
+
   /**
    * Database.
    * @type {!wtf.analysis.db.EventDatabase}
@@ -216,22 +243,21 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.prepare = function(color) {
 /**
  * Draws the bar.
  * @param {!CanvasRenderingContext2D} ctx Target canvas context.
- * @param {number} width Canvas width, in pixels.
- * @param {number} height Canvas height, in pixels.
+ * @param {!goog.math.Rect} bounds Draw bounds.
  * @param {number} y Bar Y offset, in pixels.
  * @param {number} h Bar height, in pixels.
  * @param {number} timeLeft Left-most time.
  * @param {number} timeRight Right-most time.
  */
 wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
-    ctx, width, height, y, h, timeLeft, timeRight) {
+    ctx, bounds, y, h, timeLeft, timeRight) {
   // We use a bucket size that is an integral power of 2 in ms. So .5ms, 1ms,
   // 8ms, etc. We choose the power of 2 such that the screen size width of a
   // bucket is between 6 and 12 pixels. With this scheme we get relatively
   // smooth transitions during zoom since buckets cleanly split or join by
   // factors 2 instead having data slide between neighboring buckets (which
   // can flicker).
-  var pixelsPerMs = width / (timeRight - timeLeft);
+  var pixelsPerMs = bounds.width / (timeRight - timeLeft);
   var minBucketWidthPx = 6;
   // This is the bucket duration we would use for exactly 6px bucket
   // width.
@@ -242,7 +268,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
   var bucketWidth = bucketDuration * pixelsPerMs;
 
   var buckets = this.cachedBuckets_;
-  var bucketCount = Math.ceil(width / bucketWidth) + 1;
+  var bucketCount = Math.ceil(bounds.width / bucketWidth) + 1;
   if (buckets.length != bucketCount) {
     buckets = this.cachedBuckets_ = new Uint32Array(bucketCount);
   } else {
@@ -254,7 +280,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
   var bucketTimeLeft = timeLeft - timeLeft % bucketDuration;
   var bucketTimeRight = bucketTimeLeft + bucketDuration * bucketCount;
   var bucketLeft = wtf.math.remap(
-      bucketTimeLeft, timeLeft, timeRight, 0, width);
+      bucketTimeLeft, timeLeft, timeRight, 0, bounds.width);
   var bucketMax = 0;
 
   for (var n = 0; n < this.indicies_.length; n++) {
@@ -277,22 +303,16 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
   for (var n = 0; n < buckets.length; n++) {
     var value = buckets[n] / bucketMax;
     if (value) {
-      var bx = wtf.math.remap(bucketTime, timeLeft, timeRight, 0, width);
+      var bx = wtf.math.remap(bucketTime, timeLeft, timeRight, 0, bounds.width);
       ctx.globalAlpha = value;
-      ctx.fillRect(bx, y, bucketWidth, h);
+      ctx.fillRect(bounds.left + bx, bounds.top + y, bucketWidth, h);
     }
 
     bucketTime += bucketDuration;
   }
 
-  var nameHeight = 16;
-  if (h > nameHeight + 4) {
-    ctx.globalAlpha = 0.4;
-    ctx.font = nameHeight + 'px bold verdana, sans-serif';
-    var textSize = ctx.measureText(this.name_);
-    ctx.fillStyle = '#000000';
-    ctx.fillText(this.name_, 4, y + h - 4);
-  }
+  // Draw label on the left.
+  this.painter_.drawLabel(this.name_, y, h);
 
   ctx.globalAlpha = 1;
 };
