@@ -20,6 +20,7 @@ goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
 goog.require('goog.style');
 goog.require('wtf.events.EventEmitter');
+goog.require('wtf.ui.ModifierKey');
 /** @suppress {extraRequire} */
 goog.require('wtf.ui.Tooltip');
 goog.require('wtf.util.canvas');
@@ -239,6 +240,23 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
   var lastX = 0;
   var lastY = 0;
 
+  function getEventModifiers(e) {
+    var modifiers = 0;
+    if (e.ctrlKey) {
+      modifiers |= wtf.ui.ModifierKey.CTRL;
+    }
+    if (e.altKey) {
+      modifiers |= wtf.ui.ModifierKey.ALT;
+    }
+    if (e.shiftKey) {
+      modifiers |= wtf.ui.ModifierKey.SHIFT;
+    }
+    if (e.meltaKey) {
+      modifiers |= wtf.ui.ModifierKey.META;
+    }
+    return modifiers;
+  };
+
   eh.listen(
       canvas,
       goog.events.EventType.MOUSEDOWN,
@@ -252,8 +270,9 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
       function(e) {
         var x = e.offsetX;
         var y = e.offsetY;
+        var modifiers = getEventModifiers(e);
         delta += Math.abs(lastX - x) + Math.abs(lastY - y);
-        if (!this.paintContext_.onMouseMove(x, y) &&
+        if (!this.paintContext_.onMouseMove(x, y, modifiers) &&
             this.tooltip_) {
           var infoString = this.paintContext_.getInfoString(x, y);
           if (infoString) {
@@ -270,8 +289,9 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
       function(e) {
         var x = e.offsetX;
         var y = e.offsetY;
-        if (!e.shiftKey && delta < 4) {
-          this.paintContext_.onClick(x, y);
+        var modifiers = getEventModifiers(e);
+        if (delta < 4) {
+          this.paintContext_.onClick(x, y, modifiers);
         }
         lastX = lastY = delta = 0;
       });

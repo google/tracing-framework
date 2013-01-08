@@ -200,6 +200,21 @@ wtf.analysis.db.EventDatabase.prototype.getZoneIndices = function() {
 
 
 /**
+ * Gets the first valid frame index.
+ * @return {wtf.analysis.db.FrameIndex} Frame index, if any.
+ */
+wtf.analysis.db.EventDatabase.prototype.getFirstFrameIndex = function() {
+  for (var n = 0; n < this.zoneIndices_.length; n++) {
+    var frameIndex = this.zoneIndices_[n].getFrameIndex();
+    if (frameIndex.getCount()) {
+      return frameIndex;
+    }
+  }
+  return null;
+};
+
+
+/**
  * Creates a new event index in the database.
  * This may take some time to complete if the database already contains data.
  *
@@ -332,6 +347,7 @@ wtf.analysis.db.EventDatabase.Listener_ = function(db) {
    */
   this.dirtyTimeEnd_ = 0;
 
+  // TODO(benvanik): cleanup, issue #196.
   /**
    * Cached event types, for performance.
    * @type {!Object.<!wtf.analysis.EventType>}
@@ -434,6 +450,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
   }
   this.insertedEventCount_++;
 
+  // TODO(benvanik): cleanup, issue #196.
   if (!this.eventTypes_.scopeLeave) {
     this.eventTypes_.scopeLeave = this.getEventType('wtf.scope#leave');
   }

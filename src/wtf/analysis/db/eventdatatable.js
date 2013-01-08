@@ -45,8 +45,7 @@ wtf.analysis.db.EventDataTable = function(db, opt_filter) {
    */
   this.db_ = db;
 
-  // Hacky, but stash the well-known event types that we will be comparing
-  // with to dramatically improve performance.
+  // TODO(benvanik): cleanup, issue #196.
   var traceListener = db.getTraceListener();
   /**
    * Lookup for common event types.
@@ -117,6 +116,7 @@ wtf.analysis.db.EventDataTable.prototype.rebuild = function(
     evaluator = opt_filter || null;
   }
 
+  // TODO(benvanik): cleanup, issue #196.
   if (!this.eventTypes_.scopeLeave) {
     this.eventTypes_.scopeLeave =
         this.db_.getTraceListener().getEventType('wtf.scope#leave');

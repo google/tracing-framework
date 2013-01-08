@@ -326,9 +326,10 @@ wtf.analysis.db.EventList.prototype.find = function(
  *
  * @param {number} timeStart Start time range.
  * @param {number} timeEnd End time range.
- * @param {!function(!wtf.analysis.Event):(boolean|undefined)} callback
+ * @param {!function(this: T, !wtf.analysis.Event):(boolean|undefined)} callback
  *     Function to call with the event nodes. Return {@code false} to cancel.
- * @param {Object=} opt_scope Scope to call the function in.
+ * @param {T=} opt_scope Scope to call the function in.
+ * @template T
  */
 wtf.analysis.db.EventList.prototype.forEach = function(
     timeStart, timeEnd, callback, opt_scope) {
@@ -477,7 +478,7 @@ wtf.analysis.db.EventList.prototype.endInserting = function() {
   // Only do expensive logic if any events were inserted.
   if (this.insertedEventCount_) {
     this.insertedEventCount_ = 0;
-    this.invalidate_();
+    this.invalidate();
   }
 };
 
@@ -506,9 +507,9 @@ wtf.analysis.db.EventList.prototype.reconcileChanges_ = function() {
 
 /**
  * Handles invalidation (new events, events loaded, etc).
- * @private
+ * @protected
  */
-wtf.analysis.db.EventList.prototype.invalidate_ = function() {
+wtf.analysis.db.EventList.prototype.invalidate = function() {
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };
 

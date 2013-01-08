@@ -14,26 +14,18 @@
 goog.provide('wtf.ui.GridPainter');
 
 goog.require('wtf.math');
-goog.require('wtf.ui.TimeRangePainter');
+goog.require('wtf.ui.TimePainter');
 
 
 
 /**
  * Paints a grid into the view.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {number=} opt_y Y offset, in pixels.
  * @constructor
- * @extends {wtf.ui.TimeRangePainter}
+ * @extends {wtf.ui.TimePainter}
  */
-wtf.ui.GridPainter = function(canvas, opt_y) {
+wtf.ui.GridPainter = function(canvas) {
   goog.base(this, canvas);
-
-  /**
-   * Y offset, in pixels.
-   * @type {number}
-   * @private
-   */
-  this.y_ = opt_y || 0;
 
   /**
    * Minimum granularity.
@@ -49,7 +41,7 @@ wtf.ui.GridPainter = function(canvas, opt_y) {
    */
   this.maxGranularity_ = 0;
 };
-goog.inherits(wtf.ui.GridPainter, wtf.ui.TimeRangePainter);
+goog.inherits(wtf.ui.GridPainter, wtf.ui.TimePainter);
 
 
 /**
@@ -66,12 +58,9 @@ wtf.ui.GridPainter.prototype.setGranularities = function(min, max) {
 /**
  * @override
  */
-wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, width, height) {
-  var y = this.y_;
-  var h = height - y;
-
+wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, bounds) {
   // Clip to extents.
-  this.clip(0, y, width, h);
+  this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -81,7 +70,7 @@ wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, width, height) {
   ctx.strokeStyle = '#000000';
   while (granularity >= this.maxGranularity_ / 100) {
     var lineCount = duration / granularity;
-    var lineSpacing = granularity / duration * width;
+    var lineSpacing = granularity / duration * bounds.width;
     if (lineSpacing < 5) {
       break;
     }
@@ -95,11 +84,13 @@ wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, width, height) {
       if (n && time % (granularity * 10) == 0) {
         continue;
       }
-      var x = wtf.math.remap(time, timeLeft, timeRight, 0, width);
+      var x = wtf.math.remap(time,
+          timeLeft, timeRight,
+          bounds.left, bounds.left + bounds.width);
       x = Math.round(x) + 0.5;
       if (x >= 0) {
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, height);
+        ctx.moveTo(x, bounds.top);
+        ctx.lineTo(x, bounds.height);
       }
     }
     ctx.stroke();
