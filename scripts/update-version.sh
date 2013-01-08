@@ -84,7 +84,6 @@ echo ""
 echo "Committing changes..."
 
 git commit -o -m "Updating version to $ver_string." \
-    --dry-run \
     package.json \
     injector/wtf-injector-chrome/manifest.json \
     src/wtf/version.js
