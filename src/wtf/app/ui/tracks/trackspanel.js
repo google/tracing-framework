@@ -108,12 +108,14 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
         var localView = documentView.getLocalView();
         localView.setVisibleRange(timeLeft, timeRight);
 
+        // Reset painter time ranges.
         for (var n = 0; n < this.timePainters_.length; n++) {
           var painter = this.timePainters_[n];
           painter.setTimeRange(timeLeft, timeRight);
         }
 
-        wtf.ui.Tooltip.hideAll();
+        // Update the tooltip, if it's visible.
+        this.updateTooltip();
 
         this.requestRepaint();
         reentry--;
@@ -155,14 +157,9 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('canvas')));
 
-  /**
-   * Tooltip.
-   * @type {!wtf.ui.Tooltip}
-   * @private
-   */
-  this.tooltip_ = new wtf.ui.Tooltip(this.getDom());
-  this.registerDisposable(this.tooltip_);
-  this.setTooltip(this.tooltip_);
+  var tooltip = new wtf.ui.Tooltip(this.getDom());
+  this.registerDisposable(tooltip);
+  this.setTooltip(tooltip);
 
   var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);
