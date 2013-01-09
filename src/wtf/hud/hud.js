@@ -16,8 +16,8 @@ goog.provide('wtf.hud');
 goog.require('wtf.hud.Overlay');
 goog.require('wtf.trace');
 goog.require('wtf.trace.ISessionListener');
+goog.require('wtf.trace.prepare');
 goog.require('wtf.util');
-goog.require('wtf.util.Options');
 
 
 /**
@@ -33,21 +33,22 @@ wtf.hud.overlay_ = null;
  * Prepares the HUD and shows it on the given page.
  * The current tracing session will be used to source data for the HUD.
  *
+ * This will call {@see wtf.trace#prepare} if it has not already been called.
+ *
  * @param {Object=} opt_options Options overrides.
  * @param {Element=} opt_parentElement Element to display in.
  */
 wtf.hud.prepare = function(opt_options, opt_parentElement) {
-  // Always call tracing prepare to ensure it's ready before we run.
-  wtf.trace.prepare();
+  // Call prepare just in case.
+  wtf.trace.prepare(opt_options);
+  var traceManager = wtf.trace.getTraceManager();
 
   // Only one HUD per page.
   goog.dispose(wtf.hud.overlay_);
   wtf.hud.overlay_ = null;
 
-  // Get options; global with local overriding.
-  var options = new wtf.util.Options();
-  options.mixin(opt_options);
-  options.mixin(goog.global['wtf_hud_options']);
+  // Get combined options.
+  var options = traceManager.getOptions(opt_options);
 
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(function() {

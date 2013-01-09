@@ -21,19 +21,46 @@ goog.require('wtf.trace.eventtarget');
 /**
  * Provides Image API events.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.ImageProvider = function() {
-  goog.base(this);
+wtf.trace.providers.ImageProvider = function(options) {
+  goog.base(this, options);
 
   if (!goog.global['Image']) {
+    return;
+  }
+
+  var level = options.getNumber('wtf.trace.provider.image', 1);
+  if (!level) {
     return;
   }
 
   this.injectImage_();
 };
 goog.inherits(wtf.trace.providers.ImageProvider, wtf.trace.Provider);
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.ImageProvider.prototype.getSettingsSectionConfigs =
+    function() {
+  return [
+    {
+      'title': 'Images',
+      'widgets': [
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.image',
+          'title': 'Enabled',
+          'default': true
+        }
+      ]
+    }
+  ];
+};
 
 
 /**

@@ -20,6 +20,7 @@ Add the appropriate `<script>` tags to the HTML page:
         <!-- This MUST be the first script on the page! -->
         <script src="wtf_trace_web_js_compiled.js"></script>
         <script>
+          wtf.trace.prepare(/* optional options */);
           wtf.trace.start({
             'wtf.trace.mode': 'snapshotting',
             'wtf.trace.target': 'file://test'

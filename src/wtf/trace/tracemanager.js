@@ -24,6 +24,7 @@ goog.require('wtf.data.ZoneType');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
 goog.require('wtf.trace.Zone');
+goog.require('wtf.util.Options');
 
 
 
@@ -53,11 +54,24 @@ wtf.trace.ISessionListener.prototype.sessionStopped = goog.nullFunction;
  * Trace manager.
  * Manages trace sessions.
  *
+ * @param {Object=} opt_options Options overrides.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.trace.TraceManager = function() {
+wtf.trace.TraceManager = function(opt_options) {
   goog.base(this);
+
+  var options = new wtf.util.Options();
+  options.mixin(opt_options);
+  options.mixin(goog.global['wtf_trace_options']);
+  options.mixin(goog.global['wtf_hud_options']);
+
+  /**
+   * Global options.
+   * @type {!wtf.util.Options}
+   * @private
+   */
+  this.options_ = options;
 
   /**
    * Session event listeners.
@@ -142,6 +156,19 @@ wtf.trace.TraceManager.prototype.disposeInternal = function() {
   this.providers_.length = 0;
 
   goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * Gets the global options, optionally combined with options overrides.
+ * @param {Object=} opt_options Options overrides.
+ * @return {!wtf.util.Options} Options.
+ */
+wtf.trace.TraceManager.prototype.getOptions = function(opt_options) {
+  // TODO(benvanik): chaining of options objects? would be nice to have events.
+  var options = this.options_.clone();
+  options.mixin(opt_options);
+  return options;
 };
 
 
@@ -398,4 +425,32 @@ wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer, opt_all) {
   }
 
   return true;
+};
+
+
+/**
+ * Global shared trace manager instance.
+ * @type {wtf.trace.TraceManager}
+ * @private
+ */
+wtf.trace.TraceManager.sharedInstance_ = null;
+
+
+/**
+ * Gets the current shared instance value, if any.
+ * @return {wtf.trace.TraceManager} Shared instance.
+ */
+wtf.trace.TraceManager.getSharedInstance = function() {
+  return wtf.trace.TraceManager.sharedInstance_;
+};
+
+
+/**
+ * Sets a new shared instance value.
+ * The previous value is discarded but not disposed and must be disposed by the
+ * caller.
+ * @param {wtf.trace.TraceManager} value New value, if any.
+ */
+wtf.trace.TraceManager.setSharedInstance = function(value) {
+  wtf.trace.TraceManager.sharedInstance_ = value;
 };

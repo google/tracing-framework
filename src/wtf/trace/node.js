@@ -16,6 +16,7 @@ goog.provide('wtf.trace.node');
 
 goog.require('wtf');
 goog.require('wtf.trace');
+goog.require('wtf.trace.prepare');
 
 
 if (wtf.NODE) {
@@ -24,6 +25,10 @@ if (wtf.NODE) {
    * @param {Object=} opt_options Options overrides.
    */
   wtf.trace.node.start = function(opt_options) {
+    // To make life easier we call prepare here.
+    wtf.trace.prepare(opt_options);
+
+    // Start tracing.
     wtf.trace.start(opt_options);
 
     // Setup process shutdown hook to snapshot/flush.

@@ -34,7 +34,6 @@ goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
 goog.require('wtf.trace.eventtarget');
 goog.require('wtf.trace.util');
-goog.require('wtf.util.Options');
 
 
 /**
@@ -48,46 +47,16 @@ wtf.trace.API_VERSION = 2;
 
 
 /**
- * Trace manager setup by {@see wtf.trace#prepare}.
- * @type {wtf.trace.TraceManager}
- * @private
- */
-wtf.trace.traceManager_ = null;
-
-
-/**
  * Gets the current trace manager.
- * If one does not exist it will be created.
  * @return {!wtf.trace.TraceManager} Trace manager.
  */
 wtf.trace.getTraceManager = function() {
-  if (wtf.trace.traceManager_) {
-    return wtf.trace.traceManager_;
+  var traceManager = wtf.trace.TraceManager.getSharedInstance();
+  goog.asserts.assert(traceManager);
+  if (!traceManager) {
+    throw 'wtf.trace.prepare not called';
   }
-
-  // Setup.
-  var traceManager = new wtf.trace.TraceManager();
-  wtf.trace.traceManager_ = traceManager;
-
-  // Add providers.
-  // TODO(benvanik): query providers somehow
-
   return traceManager;
-};
-
-
-/**
- * Main entry point for the tracing API.
- * This must be called as soon as possible and preferably before any application
- * code is executed (or even included on the page).
- *
- * This method does not setup a tracing session, but prepares the environment
- * for one. It should only ever be called once.
- *
- * @return {*} Ignored.
- */
-wtf.trace.prepare = function() {
-  return wtf.trace.getTraceManager();
 };
 
 
@@ -95,8 +64,8 @@ wtf.trace.prepare = function() {
  * Shuts down the tracing system.
  */
 wtf.trace.shutdown = function() {
-  goog.asserts.assert(wtf.trace.traceManager_);
-  if (!wtf.trace.traceManager_) {
+  var traceManager = wtf.trace.TraceManager.getSharedInstance();
+  if (!traceManager) {
     return;
   }
 
@@ -104,8 +73,8 @@ wtf.trace.shutdown = function() {
   wtf.trace.stop();
 
   // Cleanup shared state.
-  goog.dispose(wtf.trace.traceManager_);
-  wtf.trace.traceManager_ = null;
+  goog.dispose(traceManager);
+  wtf.trace.TraceManager.setSharedInstance(null);
 };
 
 
@@ -117,20 +86,6 @@ wtf.trace.shutdown = function() {
 wtf.trace.addSessionListener = function(listener) {
   var traceManager = wtf.trace.getTraceManager();
   traceManager.addListener(listener);
-};
-
-
-/**
- * Gets an initialized options object.
- * @param {Object=} opt_options Raw options overrides.
- * @return {!wtf.util.Options} Options object.
- * @private
- */
-wtf.trace.getOptions_ = function(opt_options) {
-  var options = new wtf.util.Options();
-  options.mixin(opt_options);
-  options.mixin(goog.global['wtf_trace_options']);
-  return options;
 };
 
 
@@ -221,13 +176,18 @@ wtf.trace.createStream_ = function(options, opt_targetValue) {
  * The session mode is determined by the options provided, defaulting to
  * snapshotting. See {@code wtf.trace.mode} and {@code wtf.trace.target} for
  * more information.
+ *
+ * {@see wtf.trace#prepare} must have been called prior to calling this
+ * function.
+ *
  * @param {Object=} opt_options Options overrides.
  */
 wtf.trace.start = function(opt_options) {
+  // Note that prepare must have been called before.
   var traceManager = wtf.trace.getTraceManager();
 
   // Get combined options.
-  var options = wtf.trace.getOptions_(opt_options);
+  var options = traceManager.getOptions(opt_options);
 
   // Stop any existing sessions.
   traceManager.stopSession();
