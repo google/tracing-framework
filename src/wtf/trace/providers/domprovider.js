@@ -21,13 +21,19 @@ goog.require('wtf.trace.eventtarget');
 /**
  * Provides DOM events for common DOM types.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.DomProvider = function() {
-  goog.base(this);
+wtf.trace.providers.DomProvider = function(options) {
+  goog.base(this, options);
 
   if (!goog.global['document']) {
+    return;
+  }
+
+  var level = options.getNumber('wtf.trace.provider.dom', 1);
+  if (!level) {
     return;
   }
 
@@ -52,6 +58,27 @@ wtf.trace.providers.DomProvider = function() {
   }
 };
 goog.inherits(wtf.trace.providers.DomProvider, wtf.trace.Provider);
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.DomProvider.prototype.getSettingsSectionConfigs =
+    function() {
+  return [
+    {
+      'title': 'DOM',
+      'widgets': [
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.dom',
+          'title': 'Enabled',
+          'default': true
+        }
+      ]
+    }
+  ];
+};
 
 
 /**

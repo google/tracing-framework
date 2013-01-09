@@ -31,11 +31,7 @@ goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
 goog.require('wtf.trace.instrument');
 goog.require('wtf.trace.instrumentType');
-goog.require('wtf.trace.providers');
-
-
-// This is a hack, but required to get things registered without cycles.
-wtf.trace.providers.setup();
+goog.require('wtf.trace.prepare');
 
 
 /**

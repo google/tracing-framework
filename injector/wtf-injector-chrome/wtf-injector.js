@@ -38,16 +38,17 @@ function main() {
     window.WTF_TRACE_SCRIPT_URL = traceScriptUrl;
   }, [traceScriptUrl]);
   injectScriptFile(traceScriptUrl);
-  injectScriptFunction(function() {
-    wtf.trace.prepare();
-  });
+  injectScriptFunction(function(options) {
+    wtf.trace.prepare(options);
+  }, [
+    options
+  ]);
 
   // Inject extensions, if required.
   var extensions = injectExtensions(options['wtf.extensions'] || []);
 
   // Inject preparation code to start tracing with the desired options.
   injectScriptFunction(startTracing, [
-    options,
     extensions
   ]);
 
@@ -158,11 +159,9 @@ function injectExtensions(manifestUrls) {
  * This function is stringified and passed to the page, so expect no closure
  * variables and all arguments must be serializable.
  *
- * @param {string|undefined} appEndpoint App endpoint in 'host:port' form.
- * @param {string} filePrefix Trace filename prefix.
  * @param {!Object.<!Object>} extensions A map of URL to extension JSON.
  */
-function startTracing(options, extensions) {
+function startTracing(extensions) {
   // NOTE: this code is injected by string and cannot access any closure
   //     variables!
   // Register extensions.
@@ -175,10 +174,10 @@ function startTracing(options, extensions) {
   }
 
   // Show HUD.
-  wtf.hud.prepare(options);
+  wtf.hud.prepare();
 
   // Start recording.
-  wtf.trace.start(options);
+  wtf.trace.start();
 };
 
 

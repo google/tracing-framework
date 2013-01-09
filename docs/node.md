@@ -37,9 +37,10 @@ Manual control:
     var wtf = require('tracing-framework');
 
     // Begin recording a trace...
-    wtf.trace.start({
+    wtf.trace.prepare({
       // Options
     });
+    wtf.trace.start();
 
     // Perform a snapshot.
     wtf.trace.snapshot();

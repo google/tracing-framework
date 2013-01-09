@@ -88,6 +88,32 @@ garbage collections, JIT activity, etc. This functionality relies on the
 injector extension or custom builds of Chromium. It introduces some overhead,
 such as an additional 0.1ms per XHR open/send.
 
+#### wtf.trace.provider.dom
+
+Set `wtf.trace.provider.dom` to 1+ to enable DOM instrumentation. This will
+add event handlers and other DOM hooks that may decrease performance slightly.
+
+Use `wtf.trace.initializeDomEventProperties(el, opt_recursive)` to setup the
+event hooks on new DOM elements added after the document has loaded. If this is
+not called on new DOM sub trees their events may not be tracked in all browsers.
+
+Use `wtf.trace.ignoreDomTree(el)` to ignore all of the events from a DOM tree.
+This is useful for hiding tracing/debug UI from the traces.
+
+#### wtf.trace.provider.image
+
+Set `wtf.trace.provider.image` to 1+ to enable Image/HTMLImageElement events.
+
+#### wtf.trace.provider.webworker
+
+Set `wtf.trace.provider.webworker` to 1+ to enable automatically instrumenting
+web workers as they are created and messages between workers.
+
+#### wtf.trace.provider.xhr
+
+Set `wtf.trace.provider.xhr` to 1+ to enable XHR events.
+This may incur additional overhead in event processing.
+
 ## HUD
 
 HUD options pertain only to the overlay used in browser-based injected runs.

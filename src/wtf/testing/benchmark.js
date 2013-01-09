@@ -139,10 +139,12 @@
       })(entry);
     }
 
-    wtf.trace.start({
+    var options = {
       'wtf.trace.mode': 'snapshotting',
       'wtf.trace.target': 'file://'
-    });
+    };
+    wtf.trace.prepare(options);
+    wtf.trace.start();
 
     suite.run({
       //'async': true,

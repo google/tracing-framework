@@ -20,11 +20,19 @@ goog.require('goog.Disposable');
 /**
  * Abstract provider type for extensions to add events to the stream.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.trace.Provider = function() {
+wtf.trace.Provider = function(options) {
   goog.base(this);
+
+  /**
+   * Shared trace options.
+   * @type {!wtf.util.Options}
+   * @protected
+   */
+  this.options = options;
 
   /**
    * A list of injections performed by this provider.

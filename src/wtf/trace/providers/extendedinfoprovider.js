@@ -26,11 +26,17 @@ goog.require('wtf.trace.events');
 /**
  * Inserts data from the extension extended information proxy.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.ExtendedInfoProvider = function() {
-  goog.base(this);
+wtf.trace.providers.ExtendedInfoProvider = function(options) {
+  goog.base(this, options);
+
+  var level = options.getNumber('wtf.trace.provider.browser', 1);
+  if (!level) {
+    return;
+  }
 
   /**
    * Dispatch table for each event type that comes from the extension.
@@ -71,7 +77,7 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.getSettingsSectionConfigs =
     function() {
   return [
     {
-      'title': 'System Events',
+      'title': 'Browser Events',
       'widgets': [
         {
           'type': 'checkbox',

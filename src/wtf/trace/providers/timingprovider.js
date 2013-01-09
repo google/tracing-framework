@@ -26,11 +26,12 @@ goog.require('wtf.trace.events');
  * Provides the timing events common between browsers and node.js, such as
  * timers, rAF, etc.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.TimingProvider = function() {
-  goog.base(this);
+wtf.trace.providers.TimingProvider = function(options) {
+  goog.base(this, options);
 
   this.injectTimeouts_();
   this.injectSetImmediate_();

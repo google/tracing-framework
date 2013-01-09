@@ -117,6 +117,17 @@ wtf.util.Options.prototype.clear = function() {
 
 
 /**
+ * Clones this options object and all values.
+ * @return {!wtf.util.Options} New clone.
+ */
+wtf.util.Options.prototype.clone = function() {
+  var clone = new wtf.util.Options();
+  clone.mixin(this.obj_);
+  return clone;
+};
+
+
+/**
  * Gets a clone of the options map.
  * @return {!Object} Options map clone.
  */

@@ -91,7 +91,8 @@ also manually embed the extension scripts and register their manifests:
 
     <script src="wtf_trace_web_js_compiled.js"></script>
     <script>
-      wtf.trace.prepare();
+      var options = {...};
+      wtf.trace.prepare(options);
     </script>
     <script src="my/extension1/fileA.js"></script>
     <script src="my/extension1/fileB.js"></script>
@@ -99,9 +100,8 @@ also manually embed the extension scripts and register their manifests:
       wtf.ext.registerExtension('my/extension1/extension1.json');
     </script>
     <script>
-      var options = {...};
-      wtf.hud.prepare(options);
-      wtf.trace.start(options);
+      wtf.hud.prepare();
+      wtf.trace.start();
     </script>
 
 Note that `registerExtension` will only accept URLs that are either on the same
@@ -110,7 +110,8 @@ you can also pass the JSON object directly to `registerExtension`:
 
     <script src="wtf_trace_web_js_compiled.js"></script>
     <script>
-      wtf.trace.prepare();
+      var options = {...};
+      wtf.trace.prepare(options);
     </script>
     <script src="my/extension1/fileA.js"></script>
     <script src="my/extension1/fileB.js"></script>
@@ -121,9 +122,8 @@ you can also pass the JSON object directly to `registerExtension`:
       });
     </script>
     <script>
-      var options = {...};
-      wtf.hud.prepare(options);
-      wtf.trace.start(options);
+      wtf.hud.prepare();
+      wtf.trace.start();
     </script>
 
 ### Scripts

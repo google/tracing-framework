@@ -28,11 +28,17 @@ goog.require('wtf.trace.util');
 /**
  * Provides Web Worker API events.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.WebWorkerProvider = function() {
-  goog.base(this);
+wtf.trace.providers.WebWorkerProvider = function(options) {
+  goog.base(this, options);
+
+  var level = options.getNumber('wtf.trace.provider.webworker', 1);
+  if (!level) {
+    return;
+  }
 
   // TODO(benvanik): use weak references (WeakMap) when supported.
   /**
@@ -79,8 +85,14 @@ wtf.trace.providers.WebWorkerProvider.prototype.getSettingsSectionConfigs =
       'widgets': [
         {
           'type': 'checkbox',
+          'key': 'wtf.trace.provider.webworker',
+          'title': 'Enabled',
+          'default': true
+        },
+        {
+          'type': 'checkbox',
           'key': 'wtf.trace.provider.webworker.inject',
-          'title': 'Auto Inject',
+          'title': 'Auto Inject in to Workers',
           'default': true
         }
       ]
@@ -144,8 +156,9 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
       'this.WTF_WORKER_ID = ' + this.workerId_ + ';',
       'this.WTF_WORKER_BASE_URI = "' + goog.global.location.href + '";',
       'importScripts("' + wtfUrl + '");',
-      'wtf.trace.start({',
+      'wtf.trace.prepare({',
       '});',
+      'wtf.trace.start();',
       'importScripts("' + resolvedScriptUrl + '");'
     ].join('\n');
     var shimBlob = new Blob([shimScript], {
