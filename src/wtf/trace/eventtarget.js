@@ -216,24 +216,23 @@ wtf.trace.eventtarget.mixin = function(descriptor, target) {
        * @this {!Object}
        */
       function(type, listener, opt_capture) {
+    var self = this || goog.global;
     var eventType = descriptor.eventMap[type];
-    if (!eventType ||
-            this['__wtf_ignore__'] ||
-            listener['__wtf_ignore__']) {
+    if (!eventType || self['__wtf_ignore__'] || listener['__wtf_ignore__']) {
       // Ignored - do a normal add.
-      originalAddEventListener.call(this, type, listener, opt_capture);
+      originalAddEventListener.call(self, type, listener, opt_capture);
       return;
     }
 
     var wrappedEventListener = function wrappedEventListener(e) {
-      var scope = this['__wtf_ignore__'] ? null : eventType();
+      var scope = self['__wtf_ignore__'] ? null : eventType();
       try {
         if (listener['handleEvent']) {
           // Listener is an EventListener.
           listener.handleEvent(e);
         } else {
           // Listener is a function.
-          return listener.apply(this, arguments);
+          return listener.apply(self, arguments);
         }
       } finally {
         wtf.trace.Scope.leave(scope);
@@ -241,15 +240,16 @@ wtf.trace.eventtarget.mixin = function(descriptor, target) {
     };
     listener['__wrapped__'] = wrappedEventListener;
     originalAddEventListener.call(
-        this, type, wrappedEventListener, opt_capture);
+        self, type, wrappedEventListener, opt_capture);
   };
 
   var originalRemoveEventListener = target['removeEventListener'];
   target['removeEventListener'] = function(type, listener, opt_capture) {
+    var self = this || goog.global;
     if (listener && listener['__wrapped__']) {
       listener = listener['__wrapped__'];
     }
-    originalRemoveEventListener.call(this, type, listener, opt_capture);
+    originalRemoveEventListener.call(self, type, listener, opt_capture);
   };
 
   // TODO(benvanik): instrument dispatchEvent for flows?

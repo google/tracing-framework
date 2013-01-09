@@ -251,12 +251,12 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
       header, value) {
     var props = this.props_;
     props['headers'][header] = value;
-    this.handle_.setRequestHeader(header, value);
+    return this.handle_.setRequestHeader.apply(this.handle_, arguments);
   };
   ProxyXMLHttpRequest.prototype['overrideMimeType'] = function(mime) {
     var props = this.props_;
     props['overrideMimeType'] = mime;
-    this.handle_.overrideMimeType(mime);
+    return this.handle_.overrideMimeType.apply(this.handle_, arguments);
   };
 
   var openEvent = wtf.trace.events.createScope(
@@ -275,14 +275,14 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     var scope = openEvent(props['method'], props['url'], props);
 
     try {
-      return this.handle_.open(method, url, opt_async, opt_user, opt_password);
+      return this.handle_.open.apply(this.handle_, arguments);
     } finally {
       wtf.trace.Scope.leave(scope);
     }
   };
 
   var sendEvent = wtf.trace.events.createScope(
-      'XMLHttpRequest#send(ascii method, ascii url, any props)');
+      'XMLHttpRequest#send(ascii method, ascii url)');
   ProxyXMLHttpRequest.prototype['send'] = function(opt_data) {
     var flow = this.flow_;
     var props = this.props_;
@@ -293,7 +293,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
       // TODO(benvanik): append props to flow
     }
 
-    var scope = sendEvent(props['method'], props['url'], props);
+    var scope = sendEvent(props['method'], props['url']);
 
     // TODO(benvanik): find a way to do this - may need an option.
     // Right now this breaks cross-origin XHRs. The server would need to
@@ -301,7 +301,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     //originalSetRequestHeader.call(this, 'X-WTF-XHR-FlowID', flow.getId());
 
     try {
-      this.handle_.send(opt_data);
+      return this.handle_.send.apply(this.handle_, arguments);
     } finally {
       wtf.trace.Scope.leave(scope);
     }
@@ -319,7 +319,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     }
 
     try {
-      this.handle_.abort();
+      return this.handle_.abort.apply(this.handle_, arguments);
     } finally {
       wtf.trace.Scope.leave(scope);
     }
@@ -332,10 +332,10 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   setupProxyProperty('responseText');
   setupProxyProperty('responseXML');
   ProxyXMLHttpRequest.prototype['getResponseHeader'] = function(header) {
-    return this.handle_.getResponseHeader(header);
+    return this.handle_.getResponseHeader.apply(this.handle_, arguments);
   };
   ProxyXMLHttpRequest.prototype['getAllResponseHeaders'] = function() {
-    return this.handle_.getAllResponseHeaders();
+    return this.handle_.getAllResponseHeaders.apply(this.handle_, arguments);
   };
 
   this.injectFunction(goog.global, 'XMLHttpRequest', ProxyXMLHttpRequest);
