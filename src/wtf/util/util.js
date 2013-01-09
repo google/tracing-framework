@@ -115,7 +115,7 @@ wtf.util.addArgumentLines = function(lines, data) {
       argValue = argString;
     } else if (goog.isObject(argValue)) {
       // TODO(benvanik): prettier object printing.
-      argValue = goog.global.JSON.stringify(argValue);
+      argValue = goog.global.JSON.stringify(argValue, undefined, 2);
     }
     lines.push(argName + ': ' + argValue);
   }
