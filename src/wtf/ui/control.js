@@ -91,6 +91,13 @@ wtf.ui.Control = function(parentElement, opt_dom) {
   this.tooltip_ = null;
 
   /**
+   * Last X,Y coordinate used for getting the tooltip info.
+   * @type {!Array.<number>}
+   * @private
+   */
+  this.lastTooltipCoords_ = [0, 0];
+
+  /**
    * Root paint context, if created.
    * @type {wtf.ui.Painter}
    * @private
@@ -272,13 +279,18 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
         var y = e.offsetY;
         var modifiers = getEventModifiers(e);
         delta += Math.abs(lastX - x) + Math.abs(lastY - y);
-        if (!this.paintContext_.onMouseMove(x, y, modifiers) &&
-            this.tooltip_) {
-          var infoString = this.paintContext_.getInfoString(x, y);
-          if (infoString) {
-            this.tooltip_.show(e.clientX, e.clientY, infoString);
-          } else {
-            this.tooltip_.hide();
+        lastX = x;
+        lastY = y;
+        this.lastTooltipCoords_[0] = x;
+        this.lastTooltipCoords_[1] = y;
+        if (!this.paintContext_.onMouseMove(x, y, modifiers)) {
+          if (this.tooltip_) {
+            var infoString = this.paintContext_.getInfoString(x, y);
+            if (infoString) {
+              this.tooltip_.show(e.clientX, e.clientY, infoString);
+            } else {
+              this.tooltip_.hide();
+            }
           }
         }
       });
@@ -328,6 +340,27 @@ wtf.ui.Control.prototype.setTooltip = function(value) {
   }
   goog.dispose(this.tooltip_);
   this.tooltip_ = value;
+};
+
+
+/**
+ * Updates the tooltip, if it's visible.
+ * This should be called if the content underneath the tooltip changes or
+ * scrolls.
+ */
+wtf.ui.Control.prototype.updateTooltip = function() {
+  if (this.paintContext_ && !this.tooltip_ && !this.tooltip_.isVisible()) {
+    return;
+  }
+
+  var x = this.lastTooltipCoords_[0];
+  var y = this.lastTooltipCoords_[1];
+  var infoString = this.paintContext_.getInfoString(x, y);
+  if (infoString) {
+    this.tooltip_.update(infoString);
+  } else {
+    this.tooltip_.hide();
+  }
 };
 
 
