@@ -21,11 +21,12 @@ goog.require('wtf.trace.Provider');
 /**
  * Provides the console API events.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.ConsoleProvider = function() {
-  goog.base(this);
+wtf.trace.providers.ConsoleProvider = function(options) {
+  goog.base(this, options);
 
   this.injectConsoleProfiling_();
 };

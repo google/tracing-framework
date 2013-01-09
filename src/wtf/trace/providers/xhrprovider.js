@@ -26,19 +26,46 @@ goog.require('wtf.trace.eventtarget.BaseEventTarget');
 /**
  * Provides XMLHttpRequest API events.
  *
+ * @param {!wtf.util.Options} options Options.
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.XhrProvider = function() {
-  goog.base(this);
+wtf.trace.providers.XhrProvider = function(options) {
+  goog.base(this, options);
 
   if (!goog.global['XMLHttpRequest']) {
+    return;
+  }
+
+  var level = options.getNumber('wtf.trace.provider.xhr', 1);
+  if (!level) {
     return;
   }
 
   this.injectXhr_();
 };
 goog.inherits(wtf.trace.providers.XhrProvider, wtf.trace.Provider);
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.XhrProvider.prototype.getSettingsSectionConfigs =
+    function() {
+  return [
+    {
+      'title': 'XMLHttpRequest',
+      'widgets': [
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.xhr',
+          'title': 'Enabled',
+          'default': true
+        }
+      ]
+    }
+  ];
+};
 
 
 /**
