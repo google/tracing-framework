@@ -154,8 +154,7 @@ wtf.util.getCompiledMemberName = function(obj, memberValue) {
  */
 wtf.util.callWhenDomReady = function(callback, opt_scope) {
   // TODO(benvanik): prevent leaking these events.
-  if (document.readyState == 'complete' ||
-      document.readyState == 'interactive') {
+  if (document.readyState == 'complete') {
     callback.call(opt_scope);
   } else {
     if (document.addEventListener) {

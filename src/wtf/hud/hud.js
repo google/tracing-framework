@@ -17,6 +17,7 @@ goog.require('wtf.hud.Overlay');
 goog.require('wtf.trace');
 goog.require('wtf.trace.ISessionListener');
 goog.require('wtf.trace.prepare');
+goog.require('wtf.trace.util');
 goog.require('wtf.util');
 
 
@@ -51,10 +52,10 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
   var options = traceManager.getOptions(opt_options);
 
   // Add to DOM when it is ready.
-  wtf.util.callWhenDomReady(function() {
+  wtf.util.callWhenDomReady(wtf.trace.util.ignoreListener(function() {
     var listener = new wtf.hud.SessionListener_(options, opt_parentElement);
     wtf.trace.addSessionListener(listener);
-  });
+  }));
 };
 
 
