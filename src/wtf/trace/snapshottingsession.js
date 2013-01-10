@@ -133,16 +133,18 @@ wtf.trace.SnapshottingSession.prototype.reset = function() {
 
 /**
  * Writes a snapshot of the current state.
- * @param {!function():!wtf.io.WriteStream} streamCreator Factory function for
- *     streams. This is only called if a snapshot is going to be created. After
- *     the snapshot is written the stream is disposed.
- * @param {Object=} opt_scope Scope for the creation function.
+ * @param {!function(this:T):!wtf.io.WriteStream} streamCreator Factory function
+ *     for streams. This is only called if a snapshot is going to be created.
+ *     After the snapshot is written the stream is disposed.
+ * @param {T=} opt_scope Scope for the creation function.
+ * @return {boolean} True if a snapshot was written.
+ * @template T
  */
 wtf.trace.SnapshottingSession.prototype.snapshot = function(
     streamCreator, opt_scope) {
   // TODO(benvanik): something smarter when there are overlapping writes?
   if (this.pendingWrites_) {
-    return;
+    return false;
   }
 
   // TODO(benvanik): write a snapshot event?
@@ -201,6 +203,8 @@ wtf.trace.SnapshottingSession.prototype.snapshot = function(
     // Pending writes - normal acquire path.
     this.currentBuffer = this.nextBuffer();
   }
+
+  return !!stream;
 };
 
 

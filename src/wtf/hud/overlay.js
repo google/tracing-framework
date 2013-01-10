@@ -598,44 +598,43 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
   // Capture snapshot into memory buffers.
   // Sending may take a bit, so doing this now ensures we get the snapshot
   // immediately when requested.
-  var buffers = [];
-  wtf.trace.snapshot(buffers);
+  wtf.trace.snapshotAll(function(buffers) {
+    // Get the page URL.
+    var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
 
-  // Get the page URL.
-  var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
+    // TODO(benvanik): if the extension is attached always show snapshot through
+    // it - this would ensure the UI runs in a different process.
+    if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
+      // Opening in an extension window, need to marshal through the content
+      // script to get it open.
 
-  // TODO(benvanik): if the extension is attached always show snapshot through
-  // it - this would ensure the UI runs in a different process.
-  if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
-    // Opening in an extension window, need to marshal through the content
-    // script to get it open.
+      // Since extension channels cannot take the typed arrays we convert to
+      // a string to make it flow faster through the system.
+      var stringBuffers = [];
+      for (var n = 0; n < buffers.length; n++) {
+        stringBuffers.push(wtf.io.byteArrayToString(buffers[n]));
+      }
 
-    // Since extension channels cannot take the typed arrays we convert to
-    // a string to make it flow faster through the system.
-    var stringBuffers = [];
-    for (var n = 0; n < buffers.length; n++) {
-      stringBuffers.push(wtf.io.byteArrayToString(buffers[n]));
-    }
-
-    this.extensionChannel_.postMessage({
-      'command': 'show_snapshot',
-      'page_url': endpoint,
-      'content_type': 'application/x-extension-wtf-trace',
-      'contents': stringBuffers
-    });
-  } else {
-    // Create window and show.
-    var target = window.open(endpoint, 'wtf_ui');
-
-    // Wait for the child to connect.
-    wtf.ipc.waitForChildWindow(function(channel) {
-      channel.postMessage({
-        'command': 'snapshot',
+      this.extensionChannel_.postMessage({
+        'command': 'show_snapshot',
+        'page_url': endpoint,
         'content_type': 'application/x-extension-wtf-trace',
-        'contents': buffers
-      }, buffers);
-    }, this);
-  }
+        'contents': stringBuffers
+      });
+    } else {
+      // Create window and show.
+      var target = window.open(endpoint, 'wtf_ui');
+
+      // Wait for the child to connect.
+      wtf.ipc.waitForChildWindow(function(channel) {
+        channel.postMessage({
+          'command': 'snapshot',
+          'content_type': 'application/x-extension-wtf-trace',
+          'contents': buffers
+        }, buffers);
+      }, this);
+    }
+  }, this);
 };
 
 

@@ -46,7 +46,7 @@ wtf.hasHighResolutionTimes =
 
 
 /**
- * Create a high performance time function from window.performance, if present.
+ * Creates a high performance time function from window.performance, if present.
  * @return {number} A time, in ms.
  * @private
  */
@@ -82,7 +82,7 @@ wtf.performanceNow_ = (function() {
  *     performance.now.
  * @private
  */
-wtf.computeHighPrecissionTimebase_ = function() {
+wtf.computeHighPrecisionTimebase_ = function() {
   var initialDateNow = Date.now();
   var syncedDateNow;
   var syncedPerfNow;
@@ -120,7 +120,7 @@ wtf.timebase = (function() {
     }
   } else {
     if (wtf.performanceNow_) {
-      timebase = wtf.computeHighPrecissionTimebase_();
+      timebase = wtf.computeHighPrecisionTimebase_();
     } else {
       timebase = Date.now();
     }
@@ -167,13 +167,10 @@ wtf.now = (function() {
     return wtf.performanceNow_;
   } else {
     var timebase = wtf.timebase();
-    if (!Date.now) {
-      return function wtfNowDate() {
-        return Date.now() - timebase;
-      };
-    } else {
-      return Date.now;
-    }
+    var now = Date.now;
+    return function wtfNowDate() {
+      return now() - timebase;
+    };
   }
 })();
 

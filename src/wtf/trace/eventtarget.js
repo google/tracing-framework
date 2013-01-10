@@ -497,6 +497,11 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.setEventHook = function(
  * @param {Event} e Event.
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype['dispatchEvent'] = function(e) {
+  // Ignore events marked by implementations as being WTF-specific.
+  if (e['__wtf_ignore__']) {
+    return;
+  }
+
   var onListener = this.onListeners_[e.type];
   if (onListener) {
     this.dispatchToListener(e, onListener);

@@ -22,11 +22,12 @@ goog.require('wtf.io.WriteStream');
  * Memory write stream.
  * Clones all buffers and keeps them around forever.
  *
- * @param {!Array.<!wtf.io.ByteArray>} resultArray Array to fill with results.
+ * @param {Array.<!wtf.io.ByteArray>=} opt_resultArray Array to fill with
+ *     results.
  * @constructor
  * @extends {wtf.io.WriteStream}
  */
-wtf.io.MemoryWriteStream = function(resultArray) {
+wtf.io.MemoryWriteStream = function(opt_resultArray) {
   goog.base(this);
 
   /**
@@ -34,7 +35,7 @@ wtf.io.MemoryWriteStream = function(resultArray) {
    * @type {!Array.<!wtf.io.ByteArray>}
    * @private
    */
-  this.resultArray_ = resultArray;
+  this.resultArray_ = opt_resultArray || [];
 
   /**
    * Cloned memory buffers.

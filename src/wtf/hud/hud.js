@@ -113,6 +113,12 @@ wtf.hud.SessionListener_.prototype.sessionStopped = function(session) {
 
 
 /**
+ * @override
+ */
+wtf.hud.SessionListener_.prototype.requestSnapshots = goog.nullFunction;
+
+
+/**
  * Shows the HUD, if it is hidden.
  */
 wtf.hud.show = function() {
