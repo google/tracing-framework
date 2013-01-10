@@ -338,5 +338,6 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     return this.handle_.getAllResponseHeaders.apply(this.handle_, arguments);
   };
 
+  ProxyXMLHttpRequest['raw'] = originalXhr;
   this.injectFunction(goog.global, 'XMLHttpRequest', ProxyXMLHttpRequest);
 };

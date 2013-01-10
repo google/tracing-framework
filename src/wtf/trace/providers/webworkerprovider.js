@@ -16,6 +16,7 @@ goog.provide('wtf.trace.providers.WebWorkerProvider');
 goog.require('goog.Uri');
 goog.require('goog.array');
 goog.require('goog.result.SimpleResult');
+goog.require('goog.string');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
@@ -150,18 +151,38 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
      */
     this.workerId_ = nextWorkerId++;
 
-    var resolvedScriptUrl = goog.Uri.resolve(baseUri, scriptUrl).toString();
+    // Hacky handling for blob URLs.
+    // Unfortunately Chrome doesn't like importScript on blobs inside of the
+    // workers, so we need to embed it.
+    var resolvedScriptUrl = null;
+    var scriptContents = null;
+    if (goog.string.startsWith(scriptUrl, 'blob:')) {
+      var xhr = new (goog.global['XMLHttpRequest']['raw'] || XMLHttpRequest)();
+      xhr.open('GET', scriptUrl, false);
+      xhr.send();
+      scriptContents = xhr.response;
+    } else {
+      resolvedScriptUrl = goog.Uri.resolve(baseUri, scriptUrl).toString();
+    }
 
-    var shimScript = [
+    var shimScriptLines = [
       'this.WTF_WORKER_ID = ' + this.workerId_ + ';',
       'this.WTF_WORKER_BASE_URI = "' + goog.global.location.href + '";',
       'importScripts("' + wtfUrl + '");',
       'wtf.trace.prepare({',
       '});',
-      'wtf.trace.start();',
-      'importScripts("' + resolvedScriptUrl + '");'
-    ].join('\n');
-    var shimBlob = new Blob([shimScript], {
+      'wtf.trace.start();'
+    ];
+
+    // Add the script import or directly embed the contents.
+    if (resolvedScriptUrl) {
+      shimScriptLines.push('importScripts("' + resolvedScriptUrl + '");');
+    } else if (scriptContents) {
+      shimScriptLines.push('// Embedded: ' + scriptUrl);
+      shimScriptLines.push(scriptContents);
+    }
+
+    var shimBlob = new Blob([shimScriptLines.join('\n')], {
       'type': 'text/javascript'
     });
     var shimScriptUrl = goog.global['URL'] ?
@@ -269,11 +290,25 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
   ProxyWorker.prototype['postMessage'] = function(message, opt_transfer) {
     var scope = postMessageEvent(this.workerId_);
     try {
-      this.handle_.postMessage(message, opt_transfer);
+      return this.handle_.postMessage.apply(this.handle_, arguments);
     } finally {
       wtf.trace.leaveScope(scope);
     }
   };
+
+  if (originalWorker['webkitPostMessage']) {
+    var webkitPostMessageEvent = wtf.trace.events.createScope(
+        'Worker#webkitPostMessage(uint32 id)');
+    ProxyWorker.prototype['webkitPostMessage'] = function(
+        message, opt_transfer) {
+      var scope = webkitPostMessageEvent(this.workerId_);
+      try {
+        return this.handle_.webkitPostMessage.apply(this.handle_, arguments);
+      } finally {
+        wtf.trace.leaveScope(scope);
+      }
+    };
+  }
 
   var terminateEvent = wtf.trace.events.createInstance(
       'Worker#terminate(uint32 id)');
@@ -282,7 +317,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     goog.array.remove(provider.childWorkers_, this);
 
     terminateEvent(this.workerId_);
-    this.handle_.terminate();
+    return this.handle_.terminate.apply(this.handle_, arguments);
   };
 
   var pendingSnapshots = {};
@@ -353,7 +388,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
   this.injectFunction(goog.global, 'close', function() {
     closeEvent();
     sendMessage('close');
-    originalClose.call(goog.global);
+    return originalClose.apply(goog.global, arguments);
   });
 
   // TODO(benvanik): onerror - ErrorEvent
@@ -375,11 +410,26 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
       message, opt_transfer) {
         var scope = postMessageEvent();
         try {
-          originalPostMessage.call(goog.global, message, opt_transfer);
+          return originalPostMessage.apply(goog.global, arguments);
         } finally {
           wtf.trace.leaveScope(scope);
         }
       });
+
+  var originalWebkitPostMessage = goog.global['webkitPostMessage'];
+  if (originalWebkitPostMessage) {
+    var webkitPostMessageEvent = wtf.trace.events.createScope(
+        'DedicatedWorkerGlobalScope#webkitPostMessage()');
+    this.injectFunction(goog.global, 'webkitPostMessage', function(
+        message, opt_transfer) {
+          var scope = webkitPostMessageEvent();
+          try {
+            return originalWebkitPostMessage.apply(goog.global, arguments);
+          } finally {
+            wtf.trace.leaveScope(scope);
+          }
+        });
+  }
 
   // TODO(benvanik): DedicatedWorkerGlobalScope#onmessage - MessageEvent
   // interface MessageEvent : Event {
