@@ -15,9 +15,13 @@ goog.provide('wtf.trace.providers.WebWorkerProvider');
 
 goog.require('goog.Uri');
 goog.require('goog.array');
+goog.require('goog.object');
+goog.require('goog.result');
+goog.require('goog.result.Result');
 goog.require('goog.result.SimpleResult');
 goog.require('goog.string');
 goog.require('wtf.trace');
+goog.require('wtf.trace.ISessionListener');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
 goog.require('wtf.trace.eventtarget');
@@ -29,17 +33,27 @@ goog.require('wtf.trace.util');
 /**
  * Provides Web Worker API events.
  *
+ * @param {!wtf.trace.TraceManager} traceManager Trace manager.
  * @param {!wtf.util.Options} options Options.
  * @constructor
+ * @implements {wtf.trace.ISessionListener}
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.WebWorkerProvider = function(options) {
+wtf.trace.providers.WebWorkerProvider = function(traceManager, options) {
   goog.base(this, options);
 
   var level = options.getNumber('wtf.trace.provider.webworker', 1);
   if (!level) {
     return;
   }
+
+  /**
+   * Whether WTF will be injected into workers.
+   * @type {boolean}
+   * @private
+   */
+  this.injecting_ = options.getBoolean(
+      'wtf.trace.provider.webworker.inject', false);
 
   // TODO(benvanik): use weak references (WeakMap) when supported.
   /**
@@ -48,9 +62,6 @@ wtf.trace.providers.WebWorkerProvider = function(options) {
    * @private
    */
   this.childWorkers_ = [];
-
-  // TODO(benvanik): read wtf.trace.provider.webworker.inject to choose
-  //     injection behavior.
 
   // Since workers will eventually be available within workers we test for them.
   if (typeof goog.global['Worker'] == 'function') {
@@ -62,15 +73,8 @@ wtf.trace.providers.WebWorkerProvider = function(options) {
     this.injectProxyWorker_();
   }
 
-  // TODO(benvanik): async snapshot API
-  // goog.global['snapshotworkers'] = goog.bind(function() {
-  //   var results = [];
-  //   for (var n = 0; n < this.childWorkers_.length; n++) {
-  //     var worker = this.childWorkers_[n];
-  //     results.push(worker.requestSnapshot());
-  //   }
-  //   return goog.result.combine.apply(null, results);
-  // }, this);
+  // Listen for snapshots and such.
+  traceManager.addListener(this);
 };
 goog.inherits(wtf.trace.providers.WebWorkerProvider, wtf.trace.Provider);
 
@@ -93,12 +97,52 @@ wtf.trace.providers.WebWorkerProvider.prototype.getSettingsSectionConfigs =
         {
           'type': 'checkbox',
           'key': 'wtf.trace.provider.webworker.inject',
-          'title': 'Auto Inject in to Workers',
-          'default': true
+          'title': 'Inject WTF into Workers',
+          'default': false
         }
       ]
     }
   ];
+};
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.WebWorkerProvider.prototype.sessionStarted =
+    goog.nullFunction;
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.WebWorkerProvider.prototype.sessionStopped =
+    goog.nullFunction;
+
+
+/**
+ * @override
+ */
+wtf.trace.providers.WebWorkerProvider.prototype.requestSnapshots = function(
+    session, callback, opt_scope) {
+  // If not injecting, abort.
+  if (!this.injecting_) {
+    return;
+  }
+
+  this.childWorkers_.forEach(function(worker) {
+    goog.result.wait(worker.requestSnapshot(), function(result) {
+      var buffers = /** @type {Array.<wtf.io.ByteArray>} */ (result.getValue());
+      if (!buffers || !buffers.length ||
+          result.getState() == goog.result.Result.State.ERROR) {
+        // Failed!
+        callback.call(opt_scope, null);
+      } else {
+        callback.call(opt_scope, buffers[0]);
+      }
+    });
+  });
+  return this.childWorkers_.length;
 };
 
 
@@ -109,6 +153,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.getSettingsSectionConfigs =
 wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     function() {
   var provider = this;
+  var injecting = this.injecting_;
 
   // TODO(benvanik): add flow ID tracking code
 
@@ -127,6 +172,54 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
   var nextWorkerId = 0;
   var workerCtorEvent = wtf.trace.events.createScope(
       'Worker(ascii scriptUrl, uint32 id)');
+
+  /**
+   * Creates a shim script that injects WTF.
+   * @param {string} scriptUrl Source script URL.
+   * @param {number} workerId Unique worker ID.
+   * @return {string} Shim script URL.
+   */
+  function createInjectionShim(scriptUrl, workerId) {
+    // Hacky handling for blob URLs.
+    // Unfortunately Chrome doesn't like importScript on blobs inside of the
+    // workers, so we need to embed it.
+    var resolvedScriptUrl = null;
+    var scriptContents = null;
+    if (goog.string.startsWith(scriptUrl, 'blob:')) {
+      var xhr = new (goog.global['XMLHttpRequest']['raw'] || XMLHttpRequest)();
+      xhr.open('GET', scriptUrl, false);
+      xhr.send();
+      scriptContents = xhr.response;
+    } else {
+      resolvedScriptUrl = goog.Uri.resolve(baseUri, scriptUrl).toString();
+    }
+
+    var shimScriptLines = [
+      'this.WTF_WORKER_ID = ' + workerId + ';',
+      'this.WTF_WORKER_BASE_URI = "' + goog.global.location.href + '";',
+      'importScripts("' + wtfUrl + '");',
+      'wtf.trace.prepare({',
+      '});',
+      'wtf.trace.start();'
+    ];
+
+    // Add the script import or directly embed the contents.
+    if (resolvedScriptUrl) {
+      shimScriptLines.push('importScripts("' + resolvedScriptUrl + '");');
+    } else if (scriptContents) {
+      shimScriptLines.push('// Embedded: ' + scriptUrl);
+      shimScriptLines.push(scriptContents);
+    }
+
+    var shimBlob = new Blob([shimScriptLines.join('\n')], {
+      'type': 'text/javascript'
+    });
+    var shimScriptUrl = goog.global['URL'] ?
+        goog.global['URL'].createObjectURL(shimBlob) :
+        goog.global['webkitURL'].createObjectURL(shimBlob);
+
+    return shimScriptUrl;
+  };
 
   /**
    * Worker shim.
@@ -151,48 +244,16 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
      */
     this.workerId_ = nextWorkerId++;
 
-    // Hacky handling for blob URLs.
-    // Unfortunately Chrome doesn't like importScript on blobs inside of the
-    // workers, so we need to embed it.
-    var resolvedScriptUrl = null;
-    var scriptContents = null;
-    if (goog.string.startsWith(scriptUrl, 'blob:')) {
-      var xhr = new (goog.global['XMLHttpRequest']['raw'] || XMLHttpRequest)();
-      xhr.open('GET', scriptUrl, false);
-      xhr.send();
-      scriptContents = xhr.response;
-    } else {
-      resolvedScriptUrl = goog.Uri.resolve(baseUri, scriptUrl).toString();
+    // Create the child worker.
+    // If we are injecting generate a shim script and use that.
+    var newScriptUrl = scriptUrl;
+    if (injecting) {
+      newScriptUrl = createInjectionShim(scriptUrl, this.workerId_);
     }
-
-    var shimScriptLines = [
-      'this.WTF_WORKER_ID = ' + this.workerId_ + ';',
-      'this.WTF_WORKER_BASE_URI = "' + goog.global.location.href + '";',
-      'importScripts("' + wtfUrl + '");',
-      'wtf.trace.prepare({',
-      '});',
-      'wtf.trace.start();'
-    ];
-
-    // Add the script import or directly embed the contents.
-    if (resolvedScriptUrl) {
-      shimScriptLines.push('importScripts("' + resolvedScriptUrl + '");');
-    } else if (scriptContents) {
-      shimScriptLines.push('// Embedded: ' + scriptUrl);
-      shimScriptLines.push(scriptContents);
-    }
-
-    var shimBlob = new Blob([shimScriptLines.join('\n')], {
-      'type': 'text/javascript'
-    });
-    var shimScriptUrl = goog.global['URL'] ?
-        goog.global['URL'].createObjectURL(shimBlob) :
-        goog.global['webkitURL'].createObjectURL(shimBlob);
-
     var scope = workerCtorEvent(scriptUrl, this.workerId_);
     var handle;
     try {
-      handle = new originalWorker(shimScriptUrl);
+      handle = new originalWorker(newScriptUrl);
     } finally {
       wtf.trace.leaveScope(scope);
     }
@@ -223,21 +284,23 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     var self = this;
     this.handle_.addEventListener('message', function(e) {
       // Sniff provider messages.
-      if (e.data['__wtf_worker_msg__']) {
-        var value = e.data['value'];
-        switch (e.data['command']) {
-          case 'snapshot':
-            var result = pendingSnapshots[value['id']];
-            delete pendingSnapshots[value['id']];
-            if (!result.getError()) {
-              result.setValue(value['data']);
-            }
-            break;
-          case 'close':
-            goog.array.remove(provider.childWorkers_, self);
-            break;
-        }
+      if (!e.data['__wtf_worker_msg__']) {
         return;
+      }
+      e['__wtf_ignore__'] = true;
+
+      var value = e.data['value'];
+      switch (e.data['command']) {
+        case 'snapshot':
+          var result = pendingSnapshots[value['id']];
+          delete pendingSnapshots[value['id']];
+          if (!result.getError()) {
+            result.setValue(value['data']);
+          }
+          break;
+        case 'close':
+          goog.array.remove(provider.childWorkers_, self);
+          break;
       }
     }, false);
 
@@ -442,23 +505,28 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
   // TODO(benvanik): fully override the event dispatch.
   goog.global.addEventListener('message', function(e) {
     // Sniff provider messages.
-    if (e.data['__wtf_worker_msg__']) {
-      var value = e.data['value'];
-      switch (e.data['command']) {
-        case 'snapshot':
-          var data = [];
-          wtf.trace.snapshot(data);
-          sendMessage('snapshot', {
-            'id': value['id'],
-            'data': data
-          }, data[0]);
-          break;
-      }
-      // This won't be required once we hook dispatch.
-      delete e.data['__wtf_worker_msg__'];
-      delete e.data['command'];
-      delete e.data['value'];
+    if (!e.data['__wtf_worker_msg__']) {
+      return;
     }
+
+    var value = e.data['value'];
+    switch (e.data['command']) {
+      case 'snapshot':
+        // TODO(benvanik): use wtf.trace.snapshotAll
+        var data = [];
+        wtf.trace.snapshot(data);
+        sendMessage('snapshot', {
+          'id': value['id'],
+          'data': data
+        }, data[0]);
+        break;
+    }
+
+    // Clean the data and hope the event gets handled correctly downstream.
+    e['__wtf_ignore__'] = true;
+    goog.object.clear(e.data);
+    e.returnValue = false;
+    return false;
   }, false);
 
   /**
