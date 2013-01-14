@@ -44,7 +44,7 @@ wtf.trace.providers.setup = function(traceManager) {
     traceManager.addProvider(
         new wtf.trace.providers.XhrProvider(options));
     traceManager.addProvider(
-        new wtf.trace.providers.WebWorkerProvider(options));
+        new wtf.trace.providers.WebWorkerProvider(traceManager, options));
     traceManager.addProvider(
         new wtf.trace.providers.ExtendedInfoProvider(options));
   }

@@ -21,8 +21,11 @@ goog.require('wtf');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ZoneType');
+goog.require('wtf.io.MemoryWriteStream');
+goog.require('wtf.timing');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
+goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.Zone');
 goog.require('wtf.util.Options');
 
@@ -47,6 +50,19 @@ wtf.trace.ISessionListener.prototype.sessionStarted = goog.nullFunction;
  * @param {!wtf.trace.Session} session Trace session.
  */
 wtf.trace.ISessionListener.prototype.sessionStopped = goog.nullFunction;
+
+
+/**
+ * Fired when a snapshot has been requested.
+ * @param {!wtf.trace.Session} session Trace session.
+ * @param {function(this:T, wtf.io.ByteArray)} callback Function called one for
+ *     each snapshot buffer. When the buffer is null it means the last buffer
+ *     has been reached.
+ * @param {T=} opt_scope Callback scope.
+ * @return {number|undefined} The number of expected callbacks.
+ * @template T
+ */
+wtf.trace.ISessionListener.prototype.requestSnapshots = goog.nullFunction;
 
 
 
@@ -369,6 +385,69 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
   goog.dispose(this.currentSession_);
   this.currentSession_ = null;
   this.currentSessionPtr_[0] = null;
+};
+
+
+/**
+ * Asynchronously snapshots all contexts.
+ * This will take a snapshot of the current context as well as any dependent
+ * ones such as servers or worker threads. The results are sent to the callback
+ * when they have all been returned.
+ * If the call is going to be ignored (no active session) or fails the callback
+ * will fire on the next javascript tick with a null value.
+ *
+ * @param {function(this:T, Array.<!wtf.io.ByteArray>)} callback Function called
+ *     when all buffers are available. The value will be null if an error
+ *     occurred.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.trace.TraceManager.prototype.requestSnapshots = function(
+    callback, opt_scope) {
+  var session = this.currentSession_;
+  if (!session || !(session instanceof wtf.trace.SnapshottingSession)) {
+    wtf.timing.setImmediate(function() {
+      callback.call(opt_scope, null);
+    });
+    return;
+  }
+
+  var allBuffers = [];
+
+  // Snapshot self.
+  session.snapshot(function() {
+    return new wtf.io.MemoryWriteStream(allBuffers);
+  });
+
+  // Snapshot others.
+  var pendingSnapshots = 0;
+  function listenerCallback(buffer) {
+    if (!pendingSnapshots) {
+      return;
+    }
+    if (buffer) {
+      allBuffers.push(buffer);
+    }
+
+    // End chain when done.
+    pendingSnapshots--;
+    if (!pendingSnapshots) {
+      callback.call(opt_scope, allBuffers.length ? allBuffers : null);
+    }
+  };
+  for (var n = 0; n < this.listeners_.length; n++) {
+    var requested = this.listeners_[n].requestSnapshots(
+        session, listenerCallback);
+    if (requested !== undefined) {
+      pendingSnapshots += requested;
+    }
+  }
+  if (!pendingSnapshots) {
+    // No pending async snapshots - end next tick.
+    wtf.timing.setImmediate(function() {
+      callback.call(opt_scope, allBuffers.length ? allBuffers : null);
+    });
+  }
 };
 
 

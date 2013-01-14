@@ -225,6 +225,24 @@ wtfapi.trace.snapshot = wtfapi.PRESENT ?
 
 
 /**
+ * Asynchronously snapshots all contexts.
+ * This will take a snapshot of the current context as well as any dependent
+ * ones such as servers or worker threads. The results are sent to the callback
+ * when they have all been returned.
+ * If the call is going to be ignored (no active session) or fails the callback
+ * will fire on the next javascript tick with a null value.
+ *
+ * @param {function(this:T, Array.<!wtf.io.ByteArray>)} callback Function called
+ *     when all buffers are available. The value will be null if an error
+ *     occurred.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtfapi.trace.snapshotAll = wtfapi.PRESENT ?
+    goog.global['wtf']['trace']['snapshotAll'] : goog.nullFunction;
+
+
+/**
  * Clears all data in the current session by resetting all buffers.
  * This is only valid in snapshotting sessions.
  */

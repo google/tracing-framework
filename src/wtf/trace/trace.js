@@ -222,15 +222,37 @@ wtf.trace.start = function(opt_options) {
 wtf.trace.snapshot = function(opt_targetValue) {
   var traceManager = wtf.trace.getTraceManager();
   var session = traceManager.getCurrentSession();
-  if (session instanceof wtf.trace.SnapshottingSession) {
-    if (goog.isFunction(opt_targetValue)) {
-      session.snapshot(opt_targetValue);
-    } else {
-      session.snapshot(function() {
-        return wtf.trace.createStream_(session.getOptions(), opt_targetValue);
-      });
-    }
+  if (!session || !(session instanceof wtf.trace.SnapshottingSession)) {
+    return;
   }
+
+  if (goog.isFunction(opt_targetValue)) {
+    session.snapshot(opt_targetValue);
+  } else {
+    session.snapshot(function() {
+      return wtf.trace.createStream_(session.getOptions(), opt_targetValue);
+    });
+  }
+};
+
+
+/**
+ * Asynchronously snapshots all contexts.
+ * This will take a snapshot of the current context as well as any dependent
+ * ones such as servers or worker threads. The results are sent to the callback
+ * when they have all been returned.
+ * If the call is going to be ignored (no active session) or fails the callback
+ * will fire on the next javascript tick with a null value.
+ *
+ * @param {function(this:T, Array.<!wtf.io.ByteArray>)} callback Function called
+ *     when all buffers are available. The value will be null if an error
+ *     occurred.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.trace.snapshotAll = function(callback, opt_scope) {
+  var traceManager = wtf.trace.getTraceManager();
+  traceManager.requestSnapshots(callback, opt_scope);
 };
 
 
