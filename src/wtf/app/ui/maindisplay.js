@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui.MainDisplay');
 
+goog.require('goog.Uri');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
@@ -27,15 +28,13 @@ goog.require('goog.net.XhrIo');
 goog.require('goog.result');
 goog.require('goog.soy');
 goog.require('goog.string');
-goog.require('goog.style');
-goog.require('wtf');
 goog.require('wtf.app.ui.DocumentView');
 goog.require('wtf.app.ui.HelpDialog');
+goog.require('wtf.app.ui.SplashDialog');
 goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events');
 goog.require('wtf.events.CommandManager');
-goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ext');
 goog.require('wtf.io');
@@ -142,21 +141,42 @@ wtf.app.ui.MainDisplay = function(
   keyboardScope.addCommandShortcut('command+s', 'save_trace');
   keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
 
-  if (!wtf.CHROME_EXTENSION) {
+  if (wtf.io.drive.isSupported()) {
     wtf.io.drive.prepare();
   }
   this.setupDragDropLoading_();
 
-  // Use the query string as a URL.
-  // TODO(benvanik): use goog.Uri to parse the query string args and pull off
-  //     the URL.
-  var queryString = dom.getWindow().location.search;
-  if (queryString) {
-    var urls = queryString.replace(/\?url=/, '');
-    if (urls.length) {
+  // Look for launch arguments.
+  var startupLoad = false;
+  var launchUri = goog.Uri.parse(dom.getWindow().location.toString());
+  var queryData = launchUri.getQueryData();
+  if (queryData.containsKey('url')) {
+    // ?url=a.wtf.trace,b.wtf-trace
+    // A list of URLs to open via XHR.
+    var urls = queryData.get('url');
+    if (urls && urls.length) {
       _gaq.push(['_trackEvent', 'app', 'open_querystring_files']);
       this.loadNetworkTraces(urls.split(','));
+      startupLoad = true;
     }
+  } else if (queryData.containsKey('expect_data')) {
+    // ?expect_data
+    // Indicates that a snapshot is incoming and the UI should be ready for it.
+    // Strip this off and reset the URL so that if the user reloads/etc it
+    // doesn't mess things up.
+    queryData.remove('expect_data');
+    startupLoad = true;
+  }
+
+  // Replace URL with a sanitized version.
+  if (goog.global.history && goog.global.history.replaceState) {
+    goog.global.history.replaceState(null, dom.getDocument().title || '',
+        launchUri.toString());
+  }
+
+  // Show the splash screen only if we aren't expecting data.
+  if (!startupLoad) {
+    this.showSplashDialog_(true);
   }
 };
 goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
@@ -184,7 +204,6 @@ wtf.app.ui.MainDisplay.prototype.disposeInternal = function() {
 wtf.app.ui.MainDisplay.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.maindisplay.control, {
-        system_key: wtf.events.Keyboard.SYSTEM_KEY
       }, undefined, dom));
 };
 
@@ -238,9 +257,8 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
   goog.dispose(this.documentView_);
   this.documentView_ = null;
 
-  goog.style.showElement(
-      this.getChildElement(goog.getCssName('appUiMainEmpty')),
-      !documentView);
+  // Show the splash dialog if needed.
+  this.showSplashDialog_(!documentView);
 
   if (documentView) {
     // TODO(benvanik): notify of change?
@@ -487,12 +505,19 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
  * Requests a file load from Google Drive.
  */
 wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
+  // Hide the splash dialog if it's up.
+  this.showSplashDialog_(false);
+
   goog.result.wait(wtf.io.drive.showFilePicker({
     title: 'Select a trace file'
   }), function(filesResult) {
     var files = filesResult.getValue();
     if (!files || !files.length) {
       // Cancelled.
+      // If nothing is displayed, show the splash dialog.
+      if (!this.documentView_) {
+        this.showSplashDialog_(true);
+      }
       return;
     }
 
@@ -714,4 +739,43 @@ wtf.app.ui.MainDisplay.prototype.toggleHelpDialog_ = function() {
   }, this);
 
   _gaq.push(['_trackEvent', 'app', 'show_help']);
+};
+
+
+/**
+ * Toggles the display of the splash overlay.
+ * @param {boolean} visible True to show.
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.showSplashDialog_ = function(visible) {
+  if (this.activeDialog_) {
+    if (this.activeDialog_ instanceof wtf.app.ui.SplashDialog) {
+      if (visible) {
+        // No-op - already visible.
+        return;
+      } else {
+        // Hide.
+        goog.dispose(this.activeDialog_);
+        this.activeDialog_ = null;
+      }
+    } else {
+      // Another kind of dialog is up - ignore.
+      return;
+    }
+  }
+
+  if (!visible) {
+    // Already hidden, ignore.
+    return;
+  }
+
+  // Show splash dialog.
+  var body = this.getDom().getDocument().body;
+  goog.asserts.assert(body);
+  this.activeDialog_ = new wtf.app.ui.SplashDialog(
+      body,
+      this.getDom());
+  this.activeDialog_.addListener(wtf.ui.Dialog.EventType.CLOSED, function() {
+    this.activeDialog_ = null;
+  }, this);
 };
