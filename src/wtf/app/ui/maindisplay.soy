@@ -16,14 +16,10 @@
 
 /**
  * Root control UI.
- * @param system_key System command key string (like 'ctrl').
  */
 {template .control}
   <div class="{css appUiMainDisplay}">
     <div class="{css appUiMainDocumentView}">
-      <div class="{css appUiMainCenteredBlock} {css appUiMainEmpty}">
-        Drag/drop a file in or {$system_key|noAutoescape}-o to load.
-      </div>
     </div>
   </div>
 {/template}

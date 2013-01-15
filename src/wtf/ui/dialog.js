@@ -17,6 +17,7 @@ goog.provide('wtf.ui.DialogOptions');
 goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
+goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.dom.classes');
 goog.require('goog.events');
 goog.require('goog.events.EventHandler');
@@ -30,7 +31,8 @@ goog.require('wtf.ui.Control');
 
 /**
  * @typedef {{
- *   modal: (boolean|undefined)
+ *   modal: (boolean|undefined),
+ *   clickToClose: (boolean|undefined)
  * }}
  */
 wtf.ui.DialogOptions;
@@ -59,7 +61,9 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
 
   if (options.modal) {
     // Add shield.
-    var shield = new wtf.ui.Dialog.Shield_(this);
+    var clickToClose = goog.isDef(options.clickToClose) ?
+        options.clickToClose : true;
+    var shield = new wtf.ui.Dialog.Shield_(this, clickToClose);
     this.registerDisposable(shield);
   }
 };
@@ -85,10 +89,6 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('k'));
   goog.dom.classes.add(el, goog.getCssName('uiDialog'));
-  goog.style.setStyle(el, {
-    'left': '50%',
-    'top': '50%'
-  });
 
   // Wrap root element in dialog DOM.
   var rootElement = this.getRootElement();
@@ -97,20 +97,23 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   // Add dialog DOM to parent element instead of root user element.
   dom.appendChild(parentElement, el);
 
-  // Offset by size after layout occurs.
-  wtf.timing.setImmediate(function() {
+  function recenter() {
+    var viewportSize = dom.getViewportSize();
     var size = goog.style.getSize(rootElement);
     goog.style.setStyle(el, {
-      'margin-left': -(size.width / 2) + 'px',
-      'margin-top': -(size.height / 2) + 'px'
+      'left': Math.floor(viewportSize.width / 2) + 'px',
+      'top': Math.floor(viewportSize.height / 2) + 'px',
+      'margin-left': -Math.floor(size.width / 2) + 'px',
+      'margin-top': -Math.floor(size.height / 2) + 'px'
     });
-    // Kick off animations. This nested delay is required because of the CSS
-    // injection.
-    // TODO(benvanik): remove all of this once CSS is properly added
-    wtf.timing.setImmediate(function() {
-      goog.dom.classes.add(el, goog.getCssName('uiDialogPoppedIn'));
-    }, this);
-  }, this);
+  };
+  var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
+  this.getHandler().listen(
+      vsm, goog.events.EventType.RESIZE, recenter, false);
+  recenter();
+
+  // Add after layout to prevent sliding.
+  goog.dom.classes.add(el, goog.getCssName('uiDialogPoppedIn'));
 };
 
 
@@ -137,11 +140,12 @@ wtf.ui.Dialog.prototype.close = function() {
 /**
  * Modal dialog shield wrapper.
  * @param {!wtf.ui.Dialog} dialog Parent dialog.
+ * @param {boolean} clickToClose True to close when the shield is clicked.
  * @constructor
  * @extends {goog.Disposable}
  * @private
  */
-wtf.ui.Dialog.Shield_ = function(dialog) {
+wtf.ui.Dialog.Shield_ = function(dialog, clickToClose) {
   goog.base(this);
 
   var dom = dialog.getDom();
@@ -167,9 +171,11 @@ wtf.ui.Dialog.Shield_ = function(dialog) {
   this.eh_ = new goog.events.EventHandler(this);
   this.registerDisposable(this.eh_);
 
-  this.eh_.listen(this.el_, goog.events.EventType.MOUSEDOWN, function(e) {
-    dialog.close();
-  });
+  if (clickToClose) {
+    this.eh_.listen(this.el_, goog.events.EventType.MOUSEDOWN, function(e) {
+      dialog.close();
+    });
+  }
 
   // Add to document.
   var doc = dom.getDocument();

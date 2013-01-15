@@ -623,7 +623,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
       });
     } else {
       // Create window and show.
-      var target = window.open(endpoint, 'wtf_ui');
+      var target = window.open(endpoint + '?expect_data', 'wtf_ui');
 
       // Wait for the child to connect.
       wtf.ipc.waitForChildWindow(function(channel) {

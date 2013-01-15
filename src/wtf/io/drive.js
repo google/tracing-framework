@@ -66,6 +66,15 @@ wtf.io.drive.OAUTH_SCOPES_ = [
 
 
 /**
+ * Gets a value indicating whether the drive API is usable.
+ * @return {boolean} True if the drive API can be used.
+ */
+wtf.io.drive.isSupported = function() {
+  return !wtf.CHROME_EXTENSION;
+};
+
+
+/**
  * Gets the OAuth client ID.
  * @return {string} Client ID.
  * @private
@@ -87,6 +96,11 @@ wtf.io.drive.getClientId_ = function() {
  * {@see #authenticate}.
  */
 wtf.io.drive.prepare = function() {
+  // Ignore if not supported.
+  if (!wtf.io.drive.isSupported()) {
+    return;
+  }
+
   var dom = goog.dom.getDomHelper();
   var body = dom.getDocument().body;
   goog.asserts.assert(body);
