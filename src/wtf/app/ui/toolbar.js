@@ -16,12 +16,12 @@ goog.provide('wtf.app.ui.Toolbar');
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
-goog.require('wtf');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.Keyboard');
+goog.require('wtf.io.drive');
 goog.require('wtf.ui.Control');
 
 
@@ -73,7 +73,7 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
 
   this.toggleButton(goog.getCssName('appUiToolbarButtonOpen'), true);
   this.toggleButton(goog.getCssName('appUiToolbarButtonOpenDrive'),
-      !wtf.CHROME_EXTENSION);
+      wtf.io.drive.isSupported());
   this.toggleButton(goog.getCssName('appUiToolbarButtonShare'), false);
   this.toggleButton(goog.getCssName('appUiToolbarButtonSave'), true);
   this.toggleButton(goog.getCssName('appUiToolbarButtonSettings'), true);

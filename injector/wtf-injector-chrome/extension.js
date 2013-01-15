@@ -566,6 +566,12 @@ Extension.prototype.showUi_ = function(options, opt_callback, opt_scope) {
   var sourceTab = options ? options.sourceTab : null;
   var targetTab = options ? options.targetTab : null;
 
+  // If we have a callback it means we're likely going to be controlling the UI,
+  // so prevent the splash screen.
+  if (opt_callback) {
+    pageUrl += '?expect_data';
+  }
+
   // TODO(benvanik): generalize this into an IPC channel
   var waiter = function(e) {
     // This is a packet from the wtf.ipc.MessageChannel type.
