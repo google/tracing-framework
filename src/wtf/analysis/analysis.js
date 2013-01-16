@@ -92,13 +92,32 @@ wtf.analysis.run = function(traceListener, input) {
 
 /**
  * Creates and loads a database from the given input.
+ *
+ * Options allow for additional setup to occur before the database is returned.
+ * <code>
+ * {
+ *   // Creates event indices with the given names. Retrieve them later with
+ *   // {@see wtf.analysis.db.EventDatabase#getEventIndex}.
+ *   'eventIndices': ['someEvent', 'otherEvent']
+ * }
+ * </code>
+ *
  * @param {string|!wtf.io.ByteArray|!Object} input Input data.
  *     This can be a filename (if in node.js) or a byte buffer.
+ * @param {Object=} opt_options Options.
  * @return {wtf.analysis.db.EventDatabase} Event database, if it could be
  *     loaded. It should be disposed when no longer needed.
  */
-wtf.analysis.loadDatabase = function(input) {
+wtf.analysis.loadDatabase = function(input, opt_options) {
   var db = new wtf.analysis.db.EventDatabase();
+  if (opt_options) {
+    var eventIndices = opt_options['eventIndices'];
+    if (eventIndices) {
+      for (var n = 0; n < eventIndices.length; n++) {
+        db.createEventIndex(eventIndices[n]);
+      }
+    }
+  }
   if (!wtf.analysis.run(db.getTraceListener(), input)) {
     goog.dispose(db);
     return null;

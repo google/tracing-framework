@@ -58,10 +58,14 @@ function runTool(platform, args) {
       util.logEvent(e, e.value.getId(), e.args);
     },
     'wtf.flow#extend': function(e) {
-      util.logEvent(e, e.value.getId(), e.args);
+      if (e.value) {
+        util.logEvent(e, e.value.getId(), e.args);
+      }
     },
     'wtf.flow#terminate': function(e) {
-      util.logEvent(e, e.value.getId(), e.args);
+      if (e.value) {
+        util.logEvent(e, e.value.getId(), e.args);
+      }
     },
 
     'wtf.trace#mark': function(e) {
