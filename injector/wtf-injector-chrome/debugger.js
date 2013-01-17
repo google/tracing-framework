@@ -18,11 +18,12 @@
  * out events from the page.
  *
  * @param {number} tabId Tab ID.
+ * @param {!Object} pageOptions Page options.
  * @param {!function(!Object)} queueData A function that queues event data for
  *     sending to the target tab.
  * @constructor
  */
-var Debugger = function(tabId, queueData) {
+var Debugger = function(tabId, pageOptions, queueData) {
   /**
    * Target tab ID.
    * @type {number}
@@ -38,6 +39,13 @@ var Debugger = function(tabId, queueData) {
   this.debugee_ = {
     tabId: this.tabId_
   };
+
+  /**
+   * Page options.
+   * @type {!Object}
+   * @private
+   */
+  this.pageOptions_ = pageOptions;
 
   /**
    * A function that queues event data for sending.
@@ -70,6 +78,13 @@ var Debugger = function(tabId, queueData) {
     onDetach: this.onDetach_.bind(this)
   };
 
+  /**
+   * Interval ID used for polling memory statistics.
+   * @type {number|null}
+   * @private
+   */
+  this.memoryPollIntervalId_ = null;
+
   // Attach to the target tab.
   chrome.debugger.attach(this.debugee_, '1.0', (function() {
     this.attached_ = true;
@@ -89,6 +104,11 @@ var Debugger = function(tabId, queueData) {
  * Detaches the debugger from the tab.
  */
 Debugger.prototype.dispose = function() {
+  if (this.memoryPollIntervalId_ !== null) {
+    window.clearInterval(this.memoryPollIntervalId_);
+    this.memoryPollIntervalId_ = null;
+  }
+
   if (this.attached_) {
     this.attached_ = false;
     chrome.debugger.detach(this.debugee_);
@@ -121,11 +141,48 @@ Debugger.prototype.onDetach_ = function(source) {
  * @private
  */
 Debugger.prototype.beginListening_ = function() {
-  chrome.debugger.sendCommand(this.debugee_, 'Timeline.start', {
-    // Limit call stack depth to keep messages small - if we ever need this
-    // data this can be increased.
-    'maxCallStackDepth': 1
-  });
+  if (this.pageOptions_['wtf.trace.provider.browser.timeline']) {
+    chrome.debugger.sendCommand(this.debugee_, 'Timeline.start', {
+      // Limit call stack depth to keep messages small - if we ever need this
+      // data this can be increased.
+      'maxCallStackDepth': 1
+    });
+  }
+
+  if (this.pageOptions_['wtf.trace.provider.browser.memoryInfo']) {
+    this.startMemoryPoll_();
+  }
+};
+
+
+/**
+ * Starts polling for memory information.
+ * @private
+ */
+Debugger.prototype.startMemoryPoll_ = function() {
+  function printTree(entry, depth) {
+    var pad = '';
+    for (var n = 0; n < depth; n++) {
+      pad += '  ';
+    }
+    console.log(pad + entry.name + ' (' + entry.size + 'b)');
+    if (entry.children) {
+      for (var n = 0; n < entry.children.length; n++) {
+        printTree(entry.children[n], depth + 1);
+      }
+    }
+  }
+
+  this.memoryPollIntervalId_ = window.setInterval((function() {
+    chrome.debugger.sendCommand(this.debugee_,
+        'Memory.getProcessMemoryDistribution', {
+          'reportGraph': false
+        }, function(results) {
+          if (results && results.distribution) {
+            printTree(results.distribution, 0);
+          }
+        });
+  }).bind(this), 1000);
 };
 
 

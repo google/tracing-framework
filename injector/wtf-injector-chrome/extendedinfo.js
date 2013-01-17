@@ -72,7 +72,11 @@ var ExtendedInfo = function(tabId, port, pageOptions) {
   port.onDisconnect.addListener(this.eventHandlers_.onDisconnect);
 
   if (pageOptions['wtf.trace.provider.browser']) {
-    this.debugger_ = new Debugger(this.tabId_, this.queueData.bind(this));
+    if (pageOptions['wtf.trace.provider.browser.timeline'] ||
+        pageOptions['wtf.trace.provider.browser.memoryInfo']) {
+      this.debugger_ = new Debugger(
+          this.tabId_, pageOptions, this.queueData.bind(this));
+    }
   }
 };
 

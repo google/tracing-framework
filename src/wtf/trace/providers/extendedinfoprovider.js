@@ -82,7 +82,19 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.getSettingsSectionConfigs =
         {
           'type': 'checkbox',
           'key': 'wtf.trace.provider.browser',
+          'title': 'Enabled',
+          'default': false
+        },
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.browser.timeline',
           'title': 'GCs/paints/layouts/etc',
+          'default': true
+        },
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.browser.memoryInfo',
+          'title': 'Memory information (todo)',
           'default': false
         }
       ]
