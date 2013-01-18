@@ -302,6 +302,7 @@ wtf.analysis.sources.BinaryTraceSource.prototype.setupDispatchTable_ =
   this.builtinDispatch_['wtf.zone#set'] = function(
       listener, eventType, zone, time, args) {
     this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
+    return null;
   };
 
   this.builtinDispatch_['wtf.flow#branch'] = function(

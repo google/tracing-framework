@@ -12,6 +12,7 @@
  */
 
 
+
 /**
  * Debugger data proxy.
  * This connects to a tab and sets up a debug session that is used for reading
@@ -65,6 +66,7 @@ var Debugger = function(tabId, pageOptions, queueData) {
   /**
    * Whether this debugger is attached.
    * @type {boolean}
+   * @private
    */
   this.attached_ = false;
 

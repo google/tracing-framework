@@ -271,7 +271,7 @@ wtf.trace.TraceManager.prototype.deleteZone = function(zone) {
 
 
 /**
- * Appends all zones to the given.
+ * Appends all zones to the given buffer.
  * @param {!wtf.io.Buffer} buffer Buffer to write to.
  */
 wtf.trace.TraceManager.prototype.appendAllZones = function(buffer) {
