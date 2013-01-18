@@ -176,6 +176,11 @@ wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
 
   // Draw all visible marks.
   markIndex.forEach(searchLeft, timeRight, function(e) {
+    // Ignore empty marks.
+    if (!e.args['name'] || !e.args['name'].length) {
+      return;
+    }
+
     // Compute screen size.
     var startTime = e.time;
     var endTime = e.time + e.args['duration'];
@@ -267,6 +272,7 @@ wtf.app.ui.MarkPainter.prototype.hitTest_ = function(
       bounds.left, bounds.left + bounds.width,
       this.timeLeft, this.timeRight);
   return this.markIndex_.search(time, function(e) {
-    return e.time <= time && time <= e.time + e.args['duration'];
+    return e.time <= time && time <= e.time + e.args['duration'] &&
+        e.args['name'] && e.args['name'].length;
   });
 };

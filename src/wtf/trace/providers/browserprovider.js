@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.trace.providers.ExtendedInfoProvider');
+goog.provide('wtf.trace.providers.BrowserProvider');
 
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
@@ -30,8 +30,15 @@ goog.require('wtf.trace.events');
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.ExtendedInfoProvider = function(options) {
+wtf.trace.providers.BrowserProvider = function(options) {
   goog.base(this, options);
+
+  /**
+   * Whether the extension is available.
+   * @type {boolean}
+   * @private
+   */
+  this.available_ = false;
 
   var level = options.getNumber('wtf.trace.provider.browser', 1);
   if (!level) {
@@ -45,6 +52,13 @@ wtf.trace.providers.ExtendedInfoProvider = function(options) {
    */
   this.timelineDispatch_ = {};
   this.setupTimelineDispatch_();
+
+  /**
+   * Waiting callback (and scope) for chrome:tracing data.
+   * @type {Array}
+   * @private
+   */
+  this.chromeTracingDataWaiter_ = null;
 
   /**
    * DOM channel, if supported.
@@ -66,14 +80,25 @@ wtf.trace.providers.ExtendedInfoProvider = function(options) {
     this.extensionChannel_.addListener(
         wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this);
   }
+
+  this.available_ = !!this.extensionChannel_;
 };
-goog.inherits(wtf.trace.providers.ExtendedInfoProvider, wtf.trace.Provider);
+goog.inherits(wtf.trace.providers.BrowserProvider, wtf.trace.Provider);
+
+
+/**
+ * Gets a value indicating whether the extension is available for use.
+ * @return {boolean} True if the extension is available.
+ */
+wtf.trace.providers.BrowserProvider.prototype.isAvailable = function() {
+  return this.available_;
+};
 
 
 /**
  * @override
  */
-wtf.trace.providers.ExtendedInfoProvider.prototype.getSettingsSectionConfigs =
+wtf.trace.providers.BrowserProvider.prototype.getSettingsSectionConfigs =
     function() {
   return [
     {
@@ -107,7 +132,7 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.getSettingsSectionConfigs =
  * Sets up the record dispatch table.
  * @private
  */
-wtf.trace.providers.ExtendedInfoProvider.prototype.setupTimelineDispatch_ =
+wtf.trace.providers.BrowserProvider.prototype.setupTimelineDispatch_ =
     function() {
   // This table should match the one in injector/wtf-injector-chrome/debugger.js
   var timebase = wtf.timebase();
@@ -259,7 +284,7 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.setupTimelineDispatch_ =
  * @param {!Object} data Message data.
  * @private
  */
-wtf.trace.providers.ExtendedInfoProvider.prototype.extensionMessage_ =
+wtf.trace.providers.BrowserProvider.prototype.extensionMessage_ =
     function(data) {
   switch (data['command']) {
     case 'trace_events':
@@ -272,5 +297,66 @@ wtf.trace.providers.ExtendedInfoProvider.prototype.extensionMessage_ =
         }
       }
       break;
+
+    case 'chrome_tracing_data':
+      if (this.chromeTracingDataWaiter_) {
+        var waiter = this.chromeTracingDataWaiter_;
+        this.chromeTracingDataWaiter_ = null;
+        waiter[0].call(waiter[1], data['contents'][0]);
+      }
+      break;
   }
+};
+
+
+/**
+ * Sends a message to the extension.
+ * @param {!Object} data Message data.
+ * @private
+ */
+wtf.trace.providers.BrowserProvider.prototype.sendMessage_ = function(data) {
+  if (!this.extensionChannel_) {
+    return;
+  }
+  this.extensionChannel_.postMessage(data);
+};
+
+
+/**
+ * Gets a value indicating whether chrome:tracing functionality is available.
+ * @return {boolean} True if chrome:tracing can be used.
+ */
+wtf.trace.providers.BrowserProvider.prototype.hasChromeTracing = function() {
+  return this.isAvailable() &&
+      this.options.getBoolean('wtf.trace.chromeTracing.available', false);
+};
+
+
+/**
+ * Starts capturing chrome:tracing data.
+ * Only call this method if {@see #checkChromeTracingAvailable} has returned
+ * true.
+ */
+wtf.trace.providers.BrowserProvider.prototype.startChromeTracing = function() {
+  this.sendMessage_({
+    'command': 'start_chrome_tracing'
+  });
+};
+
+
+/**
+ * Stops capturing chrome:tracing data and asynchronously returns the result.
+ * Only call this method if {@see #checkChromeTracingAvailable} has returned
+ * true.
+ * @param {function(this:T, string)} callback Callback. Receives the tracing
+ *     data JSON as an unparsed string.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.trace.providers.BrowserProvider.prototype.stopChromeTracing = function(
+    callback, opt_scope) {
+  this.sendMessage_({
+    'command': 'stop_chrome_tracing'
+  });
+  this.chromeTracingDataWaiter_ = [callback, opt_scope];
 };

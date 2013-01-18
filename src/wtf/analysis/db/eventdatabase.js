@@ -470,10 +470,21 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
   if (e.eventType == this.eventTypes_.zoneCreate) {
     // Create a new zone index.
     var newZone = e.value;
-    var zoneIndex = new wtf.analysis.db.ZoneIndex(this, newZone);
-    this.db_.zoneIndices_.push(zoneIndex);
-    this.eventTargets_.push(zoneIndex);
-    zoneIndex.beginInserting();
+    // Check to see if the zone is already created - we'll get double creates
+    // for zones created while the trace was running.
+    var present = false;
+    for (var n = 0; n < this.db_.zoneIndices_.length; n++) {
+      if (this.db_.zoneIndices_[n].getZone() == newZone) {
+        present = true;
+        break;
+      }
+    }
+    if (!present) {
+      var zoneIndex = new wtf.analysis.db.ZoneIndex(this, newZone);
+      this.db_.zoneIndices_.push(zoneIndex);
+      this.eventTargets_.push(zoneIndex);
+      zoneIndex.beginInserting();
+    }
   }
 
   // Dispatch to targets.

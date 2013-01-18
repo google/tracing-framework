@@ -215,6 +215,7 @@ function setupCommunications() {
   port.onMessage.addListener(function(data, port) {
     switch (data['command']) {
       case 'trace_events':
+      case 'chrome_tracing_data':
         sendMessage(data);
         break;
     }
@@ -254,6 +255,16 @@ function setupCommunications() {
           'page_url': data['page_url'],
           'content_type': data['content_type'],
           'contents': data['contents']
+        });
+        break;
+      case 'start_chrome_tracing':
+        port.postMessage({
+          'command': 'start_chrome_tracing'
+        });
+        break;
+      case 'stop_chrome_tracing':
+        port.postMessage({
+          'command': 'stop_chrome_tracing'
         });
         break;
     }
@@ -353,11 +364,6 @@ function injectScriptTag(script) {
  * @param {Array=} opt_args Arguments array. All must be string serializable.
  */
 function injectScriptFunction(fn, opt_args) {
-  // Header to let users know what's up.
-  var header = [
-    '/* Web Tracing Framework injected function: ' + fn.name + ' */'
-  ].join('\n');
-
   // Format args as strings that can go in the source.
   var args = opt_args || [];
   for (var n = 0; n < args.length; n++) {
@@ -375,12 +381,15 @@ function injectScriptFunction(fn, opt_args) {
   args = args.join(',');
 
   // TODO(benvanik): escape fn source
-  var source = String(fn);
+  var source = [
+    '(' + String(fn) + ')(' + args + ');',
+    '// Web Tracing Framework injected function: ' + fn.name,
+    '//@ sourceURL=x://wtf-injector/' + fn.name
+  ].join('\n');
 
   // Create script tag.
   var script = document.createElement('script');
-  script.appendChild(
-      document.createTextNode(header + '\n\n(' + source + ')(' + args + ');'));
+  script.appendChild(document.createTextNode(source));
 
   // Add to page.
   injectScriptTag(script);
@@ -395,21 +404,28 @@ function injectScriptFunction(fn, opt_args) {
  * @return {boolean} Whether the source file was found.
  */
 function injectScriptFile(url) {
-  // Header to let users know what's up.
-  var header = [
-    '/* Web Tracing Framework injected content: ' + url + ' */'
-  ].join('\n');
-
   // Synchronous read of the source.
   var rawText = getUrl(url);
   if (!rawText) {
     return false;
   }
 
+  var filename = url;
+  var lastSlash = url.lastIndexOf('/');
+  if (lastSlash != -1) {
+    filename = url.substr(lastSlash + 1);
+  }
+
+  var source = [
+    '(function() {' + rawText + '})();',
+    '// Web Tracing Framework injected file: ' + url,
+    '//@ sourceURL=x://wtf-injector/' + filename
+  ].join('\n');
+
   // Setup script tag with the raw source.
   var script = document.createElement('script');
   script.type = 'text/javascript';
-  script.text = header + '\n\n(function() {\n' + rawText + '\n})();';
+  script.text = source;
 
   // Add to page.
   injectScriptTag(script);
