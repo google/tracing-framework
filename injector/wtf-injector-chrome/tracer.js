@@ -57,10 +57,17 @@ var Tracer = function() {
 
   /**
    * Pending get requests.
-   * @type {!Object.<number, {callback: function(Object), scope: Object}>}
+   * @type {!Array.<{callback: function(Object), scope: Object}>}
    * @private
    */
-  this.pendingGets_ = {};
+  this.pendingGets_ = [];
+
+  /**
+   * Data buffer.
+   * @type {!Array.<string>}
+   * @private
+   */
+  this.dataBuffer_ = [];
 
   /**
    * Web socket connected to the browser debug channel.
@@ -73,17 +80,15 @@ var Tracer = function() {
     this.available_ = true;
   }).bind(this);
   this.socket_.onmessage = (function(e) {
-    // TODO(benvanik): use regex instead?
     var data = JSON.parse(e.data);
-    var id = data['id'];
-    var pendingGet = this.pendingGets_[id];
-    if (pendingGet) {
-      delete this.pendingGets_[id];
-      var result = null;
-      if (!data['error']) {
-        result = data['response']['result'];
+    if (data['method'] == 'Tracing.dataCollected') {
+      this.dataBuffer_.push(data['params']['value']);
+    } else if (data['method'] == 'Tracing.tracingComplete') {
+      var pendingGet = this.pendingGets_.shift();
+      if (pendingGet) {
+        pendingGet.callback.call(pendingGet.scope, this.dataBuffer_);
       }
-      pendingGet.callback.call(pendingGet.scope, result);
+      this.dataBuffer_ = [];
     }
   }).bind(this);
   this.socket_.onerror = (function(e) {
@@ -169,14 +174,10 @@ Tracer.prototype.stop = function(opt_callback, opt_scope) {
   }));
 
   if (opt_callback) {
-    this.pendingGets_[this.nextRequestId_] = {
+    this.pendingGets_.push({
       callback: opt_callback,
       scope: opt_scope || null
-    };
-    this.socket_.send(JSON.stringify({
-      'id': this.nextRequestId_++,
-      'method': 'Tracing.getTraceAndReset'
-    }));
+    });
   }
 };
 

@@ -60,12 +60,20 @@ wtf.analysis.sources.JsonTraceSource = function(traceListener, sourceData) {
    */
   this.currentZone_ = traceListener.getDefaultZone();
 
-  // If the input is a string it needs to be parsed (and maybe fixed up).
-  if (goog.isString(sourceData)) {
-    sourceData = this.parseJson_(sourceData);
-  }
-  if (goog.isObject(sourceData) && !goog.isArray(sourceData)) {
-    sourceData = /** @type {!Array} */ (sourceData['events']);
+  try {
+    // If the input is a string it needs to be parsed (and maybe fixed up).
+    if (goog.isString(sourceData)) {
+      sourceData = this.parseJson_(sourceData);
+    }
+    if (goog.isObject(sourceData) && !goog.isArray(sourceData)) {
+      sourceData = /** @type {!Array} */ (sourceData['events']);
+    }
+  } catch (e) {
+    traceListener.sourceError(
+        'Error parsing data',
+        'The file could not be parsed as JSON. Perhaps ' +
+        'it\'s corrupted?\n' + e);
+    return;
   }
 
   if (goog.isArray(sourceData)) {
