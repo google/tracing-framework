@@ -27,6 +27,20 @@ var Extension = function() {
   this.options_ = new Options();
 
   /**
+   * Injected tabs, mapped by tab ID.
+   * @type {!Object.<!InjectedTab>}
+   * @private
+   */
+  this.injectedTabs_ = {};
+
+  /**
+   * Tracer.
+   * @type {Tracer}
+   * @private
+   */
+  this.tracer_ = null;
+
+  /**
    * All popup window tab IDs mapped by opener tab ID.
    * @type {!Object.<number, number>}
    * @private
@@ -46,6 +60,11 @@ var Extension = function() {
         break;
       }
     }
+    if (tabId in this.injectedTabs_) {
+      var injectedTab = this.injectedTabs_[tabId];
+      this.injectedTabs_[tabId] = null;
+      injectedTab.dispose();
+    }
   }).bind(this));
 
   // Listen for commands from content scripts.
@@ -58,10 +77,9 @@ var Extension = function() {
       var tab = port.sender.tab;
       var pageUrl = URI.canonicalize(tab.url);
       var pageOptions = options.getPageOptions(pageUrl);
-      var extendedInfo = new ExtendedInfo(tab.id, port, pageOptions);
 
-      // Listen for messages from the page.
-      port.onMessage.addListener(this.pageMessageReceived_.bind(this));
+      var injectedTab = new InjectedTab(this, tab, pageOptions, port);
+      this.injectedTabs_[tab.id] = injectedTab;
     } else if (port.name == 'popup') {
       // Get info about the selected tab and send back.
       // Note: port.sender is the popup tab, not the current tab.
@@ -95,20 +113,18 @@ var Extension = function() {
     for (var n = 0; n < whitelist.length; n++) {
       whitelistMap[whitelist[n]] = true;
     }
-    chrome.tabs.query({}, function(tabs) {
+    chrome.tabs.query({}, (function(tabs) {
       var tabsReloaded = 0;
       for (var n = 0; n < tabs.length; n++) {
         var pageUrl = URI.canonicalize(tabs[n].url);
         if (whitelistMap[pageUrl]) {
           tabsReloaded++;
-          chrome.tabs.reload(tabs[n].id, {
-            bypassCache: true
-          });
+          this.reloadTab(tabs[n].id, tabs[n].url);
         }
       }
       _gaq.push(['_trackEvent', 'extension', 'tabs_reloaded',
           null, tabsReloaded]);
-    });
+    }).bind(this));
   }, this);
 
   // This hacky thing lets people open wtf from the omnibox.
@@ -206,6 +222,18 @@ Extension.prototype.setOptions = function(value) {
 
 
 /**
+ * Gets the shared tracer, if available.
+ * @return {Tracer} Tracer.
+ */
+Extension.prototype.getTracer = function() {
+  if (this.tracer_ && this.tracer_.isAvailable()) {
+    return this.tracer_;
+  }
+  return null;
+};
+
+
+/**
  * Sets up the extension in the browser.
  * This will add the (optional) page actions and browser actions.
  */
@@ -220,6 +248,10 @@ Extension.prototype.setup = function() {
   // Bind for devtools events.
   if (options.showDevPanel) {
   }
+
+  // Setup tracing.
+  // This may fail and immediately kill itself.
+  this.tracer_ = new Tracer();
 };
 
 
@@ -229,6 +261,36 @@ Extension.prototype.setup = function() {
 Extension.prototype.cleanup = function() {
   // Remove all context menu items.
   chrome.contextMenus.removeAll();
+
+  // Stop tracing.
+  if (this.tracer_) {
+    this.tracer_.dispose();
+    this.tracer_ = null;
+  }
+};
+
+
+/**
+ * Removes an injected tab from the list.
+ * This does not dispose the tab. It should only be used by the InjectedTab
+ * dispose call.
+ * @param {number} tabId Tab ID.
+ */
+Extension.prototype.removeInjectedTab = function(tabId) {
+  delete this.injectedTabs_[tabId];
+};
+
+
+/**
+ * Reloads the given tab.
+ * @param {number} tabId Tab ID.
+ * @param {string} tabUrl Target tab URL.
+ */
+Extension.prototype.reloadTab = function(tabId, tabUrl) {
+  this.updatePageState_(tabId, tabUrl);
+  chrome.tabs.reload(tabId, {
+    bypassCache: true
+  });
 };
 
 
@@ -269,6 +331,9 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
   // Get tab toggle status.
   var status = options.getPageStatus(pageUrl);
   var pageOptions = options.getPageOptions(pageUrl);
+
+  // Set availablility overrides.
+  pageOptions['wtf.trace.chromeTracing.available'] = !!this.getTracer();
 
   // Create an exported blob URL that the content script can access.
   // To save on cookie space send only the UUID.
@@ -500,52 +565,6 @@ Extension.prototype.convertUint8ArraysToArrays_ = function(sources) {
 
 
 /**
- * Handles incoming messages from injector content scripts.
- * @param {!Object} data Message.
- * @param {!Port} port Port the message was received on.
- * @private
- */
-Extension.prototype.pageMessageReceived_ = function(data, port) {
-  var tab = port.sender.tab;
-  if (!tab) {
-    return;
-  }
-
-  var options = this.getOptions();
-  var pageUrl = URI.canonicalize(tab.url);
-
-  switch (data['command']) {
-    case 'reload':
-      this.updatePageState_(tab.id, tab.url);
-      chrome.tabs.reload(tab.id, {
-        bypassCache: true
-      });
-      break;
-    case 'save_settings':
-      _gaq.push(['_trackEvent', 'extension', 'page_settings_updated']);
-      options.setPageOptions(
-          pageUrl,
-          JSON.parse(data['content']));
-      break;
-    case 'show_snapshot':
-      var contentsLength = 0;
-      var dataContents = data['contents'];
-      for (var n = 0; n < dataContents.length; n++) {
-        contentsLength += dataContents[n].length;
-      }
-      _gaq.push(['_trackEvent', 'extension', 'show_snapshot',
-          null, contentsLength]);
-      this.showSnapshot_(
-          tab,
-          data['page_url'],
-          data['content_type'],
-          data['contents']);
-      break;
-  }
-};
-
-
-/**
  * @typedef {{
  *   pageUrl: string|null,
  *   sourceTab: Tab|undefined,
@@ -675,7 +694,7 @@ Extension.prototype.showFileInUi_ = function(options, url) {
  * @param {!Array.<!Uint8Array>} contents Data.
  * @private
  */
-Extension.prototype.showSnapshot_ = function(
+Extension.prototype.showSnapshot = function(
     sourceTab, pageUrl, contentType, contents) {
   this.showUi_({
     pageUrl: pageUrl,

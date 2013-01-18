@@ -50,7 +50,8 @@
       "uri.js",
       "options.js",
       "debugger.js",
-      "extendedinfo.js",
+      "tracer.js",
+      "injectedtab.js",
       "extension.js",
       "background.js"
     ]
