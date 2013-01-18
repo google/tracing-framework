@@ -132,6 +132,15 @@ wtf.analysis.Scope.prototype.setEnterEvent = function(e) {
 
 
 /**
+ * Gets the time the scope was entered, if it was.
+ * @return {number} Time of enter or 0.
+ */
+wtf.analysis.Scope.prototype.getEnterTime = function() {
+  return this.enterEvent_ ? this.enterEvent_.time : 0;
+};
+
+
+/**
  * Gets the leave event for the scope.
  * @return {wtf.analysis.Event} Leave event, if any.
  */
@@ -146,6 +155,15 @@ wtf.analysis.Scope.prototype.getLeaveEvent = function() {
  */
 wtf.analysis.Scope.prototype.setLeaveEvent = function(e) {
   this.leaveEvent_ = e;
+};
+
+
+/**
+ * Gets the time the scope was left, if it was.
+ * @return {number} Time of leave or 0.
+ */
+wtf.analysis.Scope.prototype.getLeaveTime = function() {
+  return this.leaveEvent_ ? this.leaveEvent_.time : 0;
 };
 
 

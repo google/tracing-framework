@@ -13,6 +13,7 @@
 
 goog.provide('wtf.analysis.db.ZoneIndex');
 
+goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.TimeRangeEvent');
 goog.require('wtf.analysis.db.EventList');
@@ -101,30 +102,12 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
   };
 
   /**
-   * The current open scope inside of an insertion block.
-   * This is used to quickly append scopes while streaming in-order.
-   * It is cleared when the scope depth reaches zero or a batch ends. If it is
-   * not set then an event insert should search to find the right scope (it may
-   * be out of order).
-   * @type {wtf.analysis.Scope}
-   * @private
-   */
-  this.currentScope_ = null;
-
-  /**
-   * The time of the last event added in-order.
-   * @type {number}
-   * @private
-   */
-  this.lastAddEventTime_ = 0;
-
-  /**
-   * A list of out-of-order adds in the current batch.
-   * This will have their scopes set properly at batch end.
+   * A list of all pending scope inserts in the current batch.
+   * They will be processed at the end of the batch after a sort.
    * @type {!Array.<!wtf.analysis.Event>}
    * @private
    */
-  this.pendingOutOfOrderEvents_ = [];
+  this.pendingEvents_ = [];
 
   /**
    * Scopes that have the system flag set in the current batch.
@@ -198,8 +181,6 @@ wtf.analysis.db.ZoneIndex.prototype.getMaximumScopeDepth = function() {
  */
 wtf.analysis.db.ZoneIndex.prototype.beginInserting = function() {
   wtf.analysis.db.EventList.prototype.beginInserting.call(this);
-  this.currentScope_ = null;
-  this.lastAddEventTime_ = this.getLastEventTime();
 
   this.timeRangeIndex_.beginInserting();
   this.frameIndex_.beginInserting();
@@ -239,52 +220,10 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
   }
 
   // Here be dragons...
-  // This attempts to insert scopes fast (by looking at the current scope)
-  // while also supported out-of-order adds to existing scopes by queuing them
-  // for later.
-  if (e.time < this.lastAddEventTime_) {
-    // Event is out of order - add to the pending list.
-    this.pendingOutOfOrderEvents_.push(e);
-  } else {
-    this.lastAddEventTime_ = e.time;
-    if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
-      // Scope enter event.
-      if (this.currentScope_) {
-        this.currentScope_.addChild(
-            /** @type {!wtf.analysis.Scope} */ (e.scope));
-        if (e.scope.getDepth() > this.maxScopeDepth_) {
-          this.maxScopeDepth_ = e.scope.getDepth();
-        }
-      }
-      this.currentScope_ = e.scope;
-      if (eventType.flags & wtf.data.EventFlag.SYSTEM_TIME) {
-        this.pendingSystemScopes_.push(e.scope);
-      }
-    } else if (eventType == this.eventTypes_.scopeLeave) {
-      // Scope leave event.
-      // Leaves the current scope, if any. Unmatched leaves are ignored.
-      var scope = this.currentScope_;
-      e.setScope(scope);
-      if (scope) {
-        scope.setLeaveEvent(e);
-        this.currentScope_ = scope.getParent();
-      }
-    } else if (eventType.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA) {
-      if (this.currentScope_) {
-        this.currentScope_.addDataEvent(e);
-      }
-    } else {
-      // Attach the event to the current scope.
-      if (this.currentScope_) {
-        e.setScope(this.currentScope_);
-      }
-    }
-  }
-
-  // We manually call base method instead of using goog.base because this
-  // method is called often enough to have a major impact on load time
-  // in debug mode.
-  wtf.analysis.db.EventList.prototype.insertEvent.call(this, e);
+  // Because scope inserts must be ordered and so many sources do it out of
+  // order, we queue up all events to be sorted and processed in the
+  // {@see #endInserting} call.
+  this.pendingEvents_.push(e);
 };
 
 
@@ -292,24 +231,16 @@ wtf.analysis.db.ZoneIndex.prototype.insertEvent = function(e) {
  * @override
  */
 wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
-  this.currentScope_ = null;
-
-  if (!this.eventTypes_.scopeLeave) {
-    this.eventTypes_.scopeLeave =
-        this.traceListener_.getEventType('wtf.scope#leave');
-  }
-
   // Process out-of-order events.
-  // TODO(benvanik): a more generalized solution that handles reverse lists.
+  this.pendingEvents_.sort(wtf.analysis.Event.comparer);
   var currentScope = null;
-  for (var n = 0; n < this.pendingOutOfOrderEvents_.length; n++) {
-    var e = this.pendingOutOfOrderEvents_[n];
+  for (var n = 0; n < this.pendingEvents_.length; n++) {
+    var e = this.pendingEvents_[n];
     var eventType = e.eventType;
     if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
-      var parentScope = this.findEnclosingScope(e.time);
-      if (parentScope) {
-        parentScope.addChild(
-            /** @type {!wtf.analysis.Scope} */ (e.scope));
+      currentScope = currentScope || this.findEnclosingScope(e.time);
+      if (currentScope) {
+        currentScope.addChild(/** @type {!wtf.analysis.Scope} */ (e.scope));
         if (e.scope.getDepth() > this.maxScopeDepth_) {
           this.maxScopeDepth_ = e.scope.getDepth();
         }
@@ -322,7 +253,13 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
       e.setScope(currentScope);
       if (currentScope) {
         currentScope.setLeaveEvent(e);
-        currentScope = null;
+        currentScope = currentScope.getParent();
+        if (currentScope) {
+          var leaveTime = currentScope.getLeaveTime();
+          if (leaveTime && leaveTime <= e.time) {
+            currentScope = null;
+          }
+        }
       }
     } else if (eventType.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA) {
       if (currentScope) {
@@ -331,8 +268,9 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
     } else {
       e.setScope(currentScope);
     }
+    wtf.analysis.db.EventList.prototype.insertEvent.call(this, e);
   }
-  this.pendingOutOfOrderEvents_.length = 0;
+  this.pendingEvents_.length = 0;
 
   // Reconcile pending system time scopes by subtracing their duration from
   // their ancestors.

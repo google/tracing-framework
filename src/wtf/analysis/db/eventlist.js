@@ -243,7 +243,7 @@ wtf.analysis.db.EventList.prototype.search = function(time, filter) {
  * @private
  */
 wtf.analysis.db.EventList.findEventWithScope_ = function(e) {
-  return !!e.scope && !!e.scope.getEnterEvent() && !!e.scope.getLeaveEvent();
+  return !!e.scope && !!e.scope.getEnterEvent();
 };
 
 
@@ -263,7 +263,7 @@ wtf.analysis.db.EventList.prototype.findEnclosingScope = function(time) {
     var enter = scope.getEnterEvent();
     var leave = scope.getLeaveEvent();
     if (enter && enter.time <= time &&
-        leave && leave.time >= time) {
+        (!leave || leave.time >= time)) {
       return scope;
     }
   }
