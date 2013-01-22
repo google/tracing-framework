@@ -5,6 +5,10 @@ if (!available) {
   return;
 }
 
+// TODO(benvanik): find a way to get this - either via the extension APIs
+//     or asking the user for it.
+var currentThreadId = 10406;
+
 var active = false;
 var syncIntervalId = undefined;
 
@@ -18,6 +22,7 @@ function showProgress(message) {
     progressDiv.style.backgroundColor = 'white';
     progressDiv.style.border = '1px solid black';
     progressDiv.style.color = 'black';
+    progressDiv.style.zIndex = 9999999;
     document.body.appendChild(progressDiv);
   }
   progressDiv.innerHTML = message;
@@ -71,19 +76,18 @@ wtf.hud.addButton({
 });
 
 function processTraceData(data) {
-  // TODO(benvanik): find a way to get this - either via the extension APIs
-  //     or asking the user for it.
-  var currentThreadId = 3221;
-
   var threads = {};
   var timeDelta = 0;
 
-  data = JSON.parse('[' + data + ']');
+  data = JSON.parse('[' + data.join(',') + ']');
 
   // First we need to walk the data to find the threads by __metadata.
   // Unfortunately these come out of order.
   for (var n = 0; n < data.length; n++) {
     var e = data[n];
+    if (!e) {
+      continue;
+    }
 
     var thread = threads[e.tid];
     if (!thread) {
