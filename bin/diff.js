@@ -66,10 +66,12 @@ function runTool(platform, args) {
   allScopeEntryNames.sort(function(nameA, nameB) {
     var entryA1 = table1.getEventTypeEntry(nameA);
     var entryA2 = table2.getEventTypeEntry(nameA);
-    var diffA = Math.abs(entryA1.getMeanTime() - entryA2.getMeanTime());
+    var diffA = Math.abs((entryA1 ? entryA1.getMeanTime() : 0) -
+                         (entryA2 ? entryA2.getMeanTime() : 0));
     var entryB1 = table1.getEventTypeEntry(nameB);
     var entryB2 = table2.getEventTypeEntry(nameB);
-    var diffB = Math.abs(entryB1.getMeanTime() - entryB2.getMeanTime());
+    var diffB = Math.abs((entryB1 ? entryB1.getMeanTime() : 0) -
+                         (entryB2 ? entryB2.getMeanTime() : 0));
     return diffA - diffB;
   });
   for (var n = 0; n < allScopeEntryNames.length; n++) {
