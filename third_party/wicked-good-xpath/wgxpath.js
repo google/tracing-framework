@@ -20,7 +20,6 @@
 goog.provide('wgxpath');
 
 goog.require('wgxpath.Context');
-goog.require('wgxpath.IEAttrWrapper');
 goog.require('wgxpath.Lexer');
 goog.require('wgxpath.NodeSet');
 goog.require('wgxpath.Parser');
@@ -128,8 +127,7 @@ wgxpath.XPathResult_ = function(value, type) {
       var iter = value.iterator();
       nodes = [];
       for (var node = iter.next(); node; node = iter.next()) {
-        nodes.push(node instanceof wgxpath.IEAttrWrapper ?
-            node.getNode() : node);
+        nodes.push(node);
       }
       this['snapshotLength'] = value.getLength();
       this['invalidIteratorState'] = false;

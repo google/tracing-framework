@@ -13,7 +13,6 @@ goog.require('goog.string');
 goog.require('wgxpath.Expr');
 goog.require('wgxpath.Node');
 goog.require('wgxpath.NodeSet');
-goog.require('wgxpath.userAgent');
 
 
 
@@ -314,21 +313,7 @@ wgxpath.FunctionCall.Func = {
         return ns;
 
         function idSingle(id) {
-          if (wgxpath.userAgent.IE_DOC_PRE_9) {
-            var allId = doc.all[id];
-            if (allId) {
-              if (allId.nodeType && id == allId.id) {
-                return allId;
-              } else if (allId.length) {
-                return goog.array.find(allId, function(elem) {
-                  return id == elem.id;
-                });
-              }
-            }
-            return null;
-          } else {
-            return doc.getElementById(id);
-          }
+          return doc.getElementById(id);
         }
       }, 1),
   LANG: wgxpath.FunctionCall.createFunc_('lang',

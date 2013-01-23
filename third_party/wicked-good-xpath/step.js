@@ -6,7 +6,6 @@ goog.require('wgxpath.Expr');
 goog.require('wgxpath.KindTest');
 goog.require('wgxpath.Node');
 goog.require('wgxpath.Predicates');
-goog.require('wgxpath.userAgent');
 
 
 
@@ -58,8 +57,6 @@ wgxpath.Step = function(axis, test, opt_predicates, opt_descendants) {
   var quickAttrInfo = this.predicates_.getQuickAttr();
   if (axis.supportsQuickAttr_ && quickAttrInfo) {
     var attrName = quickAttrInfo.name;
-    attrName = wgxpath.userAgent.IE_DOC_PRE_9 ?
-        attrName.toLowerCase() : attrName;
     var attrValueExpr = quickAttrInfo.valueExpr;
     this.setQuickAttr({
       name: attrName,
@@ -328,40 +325,18 @@ wgxpath.Step.Axis = {
       function(test, node) {
         var nodeset = new wgxpath.NodeSet();
         var testName = test.getName();
-        // IE8 doesn't allow access to the style attribute using getNamedItem.
-        // It returns an object with nodeValue = null.
-        if (testName == 'style' && node.style &&
-            wgxpath.userAgent.IE_DOC_PRE_9) {
-          nodeset.add(wgxpath.IEAttrWrapper.forStyleOf(
-              /** @type {!Node} */ (node), node.sourceIndex));
-          return nodeset;
-        }
         var attrs = node.attributes;
         if (attrs) {
           if ((test instanceof wgxpath.KindTest &&
               goog.isNull(test.getType())) || testName == '*') {
             var sourceIndex = node.sourceIndex;
             for (var i = 0, attr; attr = attrs[i]; i++) {
-              if (wgxpath.userAgent.IE_DOC_PRE_9) {
-                if (attr.nodeValue) {
-                  nodeset.add(wgxpath.IEAttrWrapper.forAttrOf(
-                      /** @type {!Node} */ (node), attr, sourceIndex));
-                }
-              } else {
-                nodeset.add(attr);
-              }
+              nodeset.add(attr);
             }
           } else {
             var attr = attrs.getNamedItem(testName);
             if (attr) {
-              if (wgxpath.userAgent.IE_DOC_PRE_9) {
-                if (attr.nodeValue) {
-                  nodeset.add(wgxpath.IEAttrWrapper.forAttrOf(
-                      /** @type {!Node} */ (node), attr, node.sourceIndex));
-                }
-              } else {
-                nodeset.add(attr);
-              }
+              nodeset.add(attr);
             }
           }
         }

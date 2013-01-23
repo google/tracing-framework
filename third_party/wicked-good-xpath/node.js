@@ -9,11 +9,9 @@ goog.provide('wgxpath.Node');
 goog.require('goog.array');
 goog.require('goog.dom.NodeType');
 goog.require('goog.userAgent');
-goog.require('wgxpath.IEAttrWrapper');
-goog.require('wgxpath.userAgent');
 
 
-/** @typedef {!(Node|wgxpath.IEAttrWrapper)} */
+/** @typedef {!(Node)} */
 wgxpath.Node = {};
 
 
@@ -25,9 +23,7 @@ wgxpath.Node = {};
  * @return {boolean} Whether the nodes are equal.
  */
 wgxpath.Node.equal = function(a, b) {
-  return (a == b) || (a instanceof wgxpath.IEAttrWrapper &&
-      b instanceof wgxpath.IEAttrWrapper && a.getNode() ==
-      b.getNode());
+  return (a == b);
 };
 
 
@@ -39,11 +35,6 @@ wgxpath.Node.equal = function(a, b) {
  */
 wgxpath.Node.getValueAsString = function(node) {
   var t = null, type = node.nodeType;
-  // Old IE title problem.
-  var needTitleFix = function(node) {
-    return wgxpath.userAgent.IE_DOC_PRE_9 &&
-        node.nodeName.toLowerCase() == 'title';
-  };
   // goog.dom.getTextContent doesn't seem to work
   if (type == goog.dom.NodeType.ELEMENT) {
     t = node.textContent;
@@ -51,9 +42,7 @@ wgxpath.Node.getValueAsString = function(node) {
     t = (t == undefined || t == null) ? '' : t;
   }
   if (typeof t != 'string') {
-    if (needTitleFix(node) && type == goog.dom.NodeType.ELEMENT) {
-      t = node.text;
-    } else if (type == goog.dom.NodeType.DOCUMENT ||
+    if (type == goog.dom.NodeType.DOCUMENT ||
         type == goog.dom.NodeType.ELEMENT) {
       node = (type == goog.dom.NodeType.DOCUMENT) ?
           node.documentElement : node.firstChild;
@@ -62,9 +51,6 @@ wgxpath.Node.getValueAsString = function(node) {
         do {
           if (node.nodeType != goog.dom.NodeType.ELEMENT) {
             t += node.nodeValue;
-          }
-          if (needTitleFix(node)) {
-            t += node.text;
           }
           stack[i++] = node; // push
         } while (node = node.firstChild);
@@ -122,9 +108,6 @@ wgxpath.Node.attrMatches = function(node, name, value) {
   } catch (e) {
     return false;
   }
-  if (wgxpath.userAgent.IE_DOC_PRE_8 && name == 'class') {
-    name = 'className';
-  }
   return value == null ? !!node.getAttribute(name) :
       (node.getAttribute(name, 2) == value);
 };
@@ -143,67 +126,10 @@ wgxpath.Node.attrMatches = function(node, name, value) {
 wgxpath.Node.getDescendantNodes = function(test, node, opt_attrName,
     opt_attrValue, opt_nodeset) {
   var nodeset = opt_nodeset || new wgxpath.NodeSet();
-  var func = wgxpath.userAgent.IE_DOC_PRE_9 ?
-      wgxpath.Node.getDescendantNodesIEPre9_ :
-      wgxpath.Node.getDescendantNodesGeneric_;
   var attrName = goog.isString(opt_attrName) ? opt_attrName : null;
   var attrValue = goog.isString(opt_attrValue) ? opt_attrValue : null;
-  return func.call(null, test, node, attrName, attrValue, nodeset);
-};
-
-
-/**
- * Returns the descendants of a node for IE.
- *
- * @private
- * @param {!wgxpath.NodeTest} test A NodeTest for matching nodes.
- * @param {!wgxpath.Node} node The node to get descendants from.
- * @param {?string} attrName The attribute name to match, if any.
- * @param {?string} attrValue The attribute value to match, if any.
- * @param {!wgxpath.NodeSet} nodeset The node set to add descendants to.
- * @return {!wgxpath.NodeSet} The nodeset with descendants.
- */
-wgxpath.Node.getDescendantNodesIEPre9_ = function(test, node, attrName,
-    attrValue, nodeset) {
-  if (wgxpath.Node.doesNeedSpecialHandlingIEPre9_(test, attrName)) {
-    var descendants = node.all;
-    if (!descendants) {
-      return nodeset;
-    }
-    var name = wgxpath.Node.getNameFromTestIEPre9_(test);
-    // all.tags not working.
-    if (name != '*') {
-      descendants = node.getElementsByTagName(name);
-      if (!descendants) {
-        return nodeset;
-      }
-    }
-    if (attrName) {
-      /**
-       * The length property of the "all" collection is overwritten
-       * if there exists an element with id="length", therefore we
-       * have to iterate without knowing the length.
-       */
-      var result = [];
-      var i = 0;
-      while (node = descendants[i++]) {
-        if (wgxpath.Node.attrMatches(node, attrName, attrValue)) {
-          result.push(node);
-        }
-      }
-      descendants = result;
-    }
-    var i = 0;
-    while (node = descendants[i++]) {
-      if (name != '*' || node.tagName != '!') {
-        nodeset.add(node);
-      }
-    }
-    return nodeset;
-  }
-  wgxpath.Node.doRecursiveAttrMatch_(test, node, attrName,
-      attrValue, nodeset);
-  return nodeset;
+  return wgxpath.Node.getDescendantNodesIEPre9_(
+      test, node, attrName, attrValue, nodeset);
 };
 
 
@@ -263,56 +189,10 @@ wgxpath.Node.getDescendantNodesGeneric_ = function(test, node,
 wgxpath.Node.getChildNodes = function(test, node,
     opt_attrName, opt_attrValue, opt_nodeset) {
   var nodeset = opt_nodeset || new wgxpath.NodeSet();
-  var func = wgxpath.userAgent.IE_DOC_PRE_9 ?
-      wgxpath.Node.getChildNodesIEPre9_ : wgxpath.Node.getChildNodesGeneric_;
   var attrName = goog.isString(opt_attrName) ? opt_attrName : null;
   var attrValue = goog.isString(opt_attrValue) ? opt_attrValue : null;
-  return func.call(null, test, node, attrName, attrValue, nodeset);
-};
-
-
-/**
- * Returns the child nodes of a node for IE browsers.
- *
- * @private
- * @param {!wgxpath.NodeTest} test A NodeTest for matching nodes.
- * @param {!wgxpath.Node} node The node to get child nodes from.
- * @param {?string} attrName The attribute name to match, if any.
- * @param {?string} attrValue The attribute value to match, if any.
- * @param {!wgxpath.NodeSet} nodeset The node set to add child nodes to.
- * @return {!wgxpath.NodeSet} The nodeset with child nodes.
- */
-wgxpath.Node.getChildNodesIEPre9_ = function(test, node,
-    attrName, attrValue, nodeset) {
-  var children;
-  if (wgxpath.Node.doesNeedSpecialHandlingIEPre9_(test, attrName) &&
-      (children = node.childNodes)) { // node.children seems buggy.
-    var name = wgxpath.Node.getNameFromTestIEPre9_(test);
-    if (name != '*') {
-      //children = children.tags(name); // children.tags seems buggy.
-      children = goog.array.filter(children, function(child) {
-        return child.tagName && child.tagName.toLowerCase() == name;
-      });
-      if (!children) {
-        return nodeset;
-      }
-    }
-    if (attrName) {
-      // TODO(user): See if an optimization is possible.
-      children = goog.array.filter(children, function(n) {
-        return wgxpath.Node.attrMatches(n, attrName, attrValue);
-      });
-    }
-    goog.array.forEach(children, function(node) {
-      if (name != '*' || node.tagName != '!' &&
-          !(name == '*' && node.nodeType != goog.dom.NodeType.ELEMENT)) {
-        nodeset.add(node);
-      }
-    });
-    return nodeset;
-  }
-  return wgxpath.Node.getChildNodesGeneric_(test, node, attrName,
-      attrValue, nodeset);
+  return wgxpath.Node.getChildNodesGeneric_(
+      test, node, attrName, attrValue, nodeset);
 };
 
 

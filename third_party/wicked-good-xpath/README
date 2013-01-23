@@ -21,3 +21,4 @@ Removed files:
 - *_deps.js
 - test/
 - *_test.html
+- ieAttrWrapper.js
