@@ -114,7 +114,9 @@ exports.launch = function(toolFn) {
 
   // Execute the tool, potentially async.
   var returnValue = toolFn(platform, args);
-  if (typeof returnValue == 'number') {
+  if (returnValue === undefined) {
+    // Tool will return whenever it wants.
+  } else if (typeof returnValue == 'number') {
     process.exit(returnValue);
   } else if (typeof returnValue == 'function') {
     returnValue(function(opt_arg) {

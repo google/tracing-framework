@@ -13,6 +13,8 @@
 
 goog.provide('wtf.analysis.Scope');
 
+goog.require('goog.asserts');
+goog.require('wgxpath.Node');
 goog.require('wtf.data.EventFlag');
 
 
@@ -21,14 +23,36 @@ goog.require('wtf.data.EventFlag');
  * Scope tracking utility.
  * A stateful object that is used to help tracking scopes.
  * @constructor
+ * @implements {wgxpath.Node}
  */
 wtf.analysis.Scope = function() {
+  // TODO(benvanik): set owner document
+  /**
+   * @type {wgxpath.Node}
+   */
+  this.rootNode = null;
+
+  // TODO(benvanik): set source index
+  /**
+   * Position in parent scope.
+   * @type {number}
+   * @private
+   */
+  this.position_ = 0;
+
   /**
    * Analysis-session-unique ID.
    * @type {number}
    * @private
    */
   this.id_ = wtf.analysis.Scope.nextId_++;
+
+  /**
+   * Name, populated from enter event when set.
+   * @type {string}
+   * @private
+   */
+  this.name_ = '';
 
   /**
    * Enter event for the scope.
@@ -50,6 +74,22 @@ wtf.analysis.Scope = function() {
    * @private
    */
   this.dataEvents_ = null;
+
+  /**
+   * Cached attributes list.
+   * Generated on demand by {@see #cacheAttributes_}.
+   * @type {Array.<!wgxpath.Attr>}
+   * @private
+   */
+  this.attrs_ = null;
+
+  /**
+   * Cached attributes mapped by name.
+   * Generated on demand by {@see #cacheAttributes_}.
+   * @type {Object.<!wgxpath.Attr>}
+   * @private
+   */
+  this.attrsByName_ = null;
 
   /**
    * Parent scope, if this is not a root.
@@ -105,11 +145,28 @@ wtf.analysis.Scope.nextId_ = 0;
 
 
 /**
+ * @override
+ */
+wtf.analysis.Scope.prototype.toString = function() {
+  return this.name_;
+};
+
+
+/**
  * Gets an ID that can be used to track the scope during the analysis session.
  * @return {number} Analysis session unique ID.
  */
 wtf.analysis.Scope.prototype.getId = function() {
   return this.id_;
+};
+
+
+/**
+ * Gets the scope event type name.
+ * @return {string} Event type name.
+ */
+wtf.analysis.Scope.prototype.getName = function() {
+  return this.name_;
 };
 
 
@@ -127,6 +184,11 @@ wtf.analysis.Scope.prototype.getEnterEvent = function() {
  * @param {!wtf.analysis.ScopeEvent} e Event.
  */
 wtf.analysis.Scope.prototype.setEnterEvent = function(e) {
+  this.name_ = e.eventType.name;
+
+  this.attrs_ = null;
+  this.attrsByName_ = null;
+
   this.enterEvent_ = e;
 };
 
@@ -154,6 +216,9 @@ wtf.analysis.Scope.prototype.getLeaveEvent = function() {
  * @param {!wtf.analysis.Event} e Event.
  */
 wtf.analysis.Scope.prototype.setLeaveEvent = function(e) {
+  this.attrs_ = null;
+  this.attrsByName_ = null;
+
   this.leaveEvent_ = e;
 };
 
@@ -173,6 +238,9 @@ wtf.analysis.Scope.prototype.getLeaveTime = function() {
  * @param {!wtf.analysis.Event} e Event to add.
  */
 wtf.analysis.Scope.prototype.addDataEvent = function(e) {
+  this.attrs_ = null;
+  this.attrsByName_ = null;
+
   if (!this.dataEvents_) {
     this.dataEvents_ = [e];
   } else {
@@ -187,28 +255,15 @@ wtf.analysis.Scope.prototype.addDataEvent = function(e) {
  * @return {Object} Scope arguments/data, if any.
  */
 wtf.analysis.Scope.prototype.getData = function() {
-  var data = {};
-  if (this.enterEvent_) {
-    var argTypes = this.enterEvent_.eventType.args;
-    for (var n = 0; n < argTypes.length; n++) {
-      var arg = argTypes[n];
-      data[arg.name] = this.enterEvent_.args[arg.name];
-    }
+  // TODO(benvanik): cache this object separately?
+  this.cacheAttributes_();
+  if (!this.attrs_) {
+    return null;
   }
-  if (this.dataEvents_) {
-    for (var n = 0; n < this.dataEvents_.length; n++) {
-      var e = this.dataEvents_[n];
-      if (e.eventType.flags & wtf.data.EventFlag.INTERNAL) {
-        // name-value pair from the builtin appending functions.
-        data[e.args['name']] = e.args['value'];
-      } else {
-        // Custom appender, use args.
-        for (var m = 0; m < e.eventType.args.length; m++) {
-          var arg = e.eventType.args[m];
-          data[arg.name] = e.args[arg.name];
-        }
-      }
-    }
+  var data = {};
+  for (var n = 0; n < this.attrs_.length; n++) {
+    var attr = this.attrs_[n];
+    data[attr.getNodeName()] = attr.getNodeValue();
   }
   return data;
 };
@@ -295,6 +350,9 @@ wtf.analysis.Scope.prototype.getChildren = function() {
  * This should be called whenever any children are added.
  */
 wtf.analysis.Scope.prototype.computeTimes = function() {
+  this.attrs_ = null;
+  this.attrsByName_ = null;
+
   this.totalChildTime_ = 0;
   for (var n = 0; n < this.children_.length; n++) {
     this.totalChildTime_ += this.children_[n].getTotalDuration();
@@ -308,6 +366,9 @@ wtf.analysis.Scope.prototype.computeTimes = function() {
  * than their total time.
  */
 wtf.analysis.Scope.prototype.adjustSystemTime = function() {
+  this.attrs_ = null;
+  this.attrsByName_ = null;
+
   var duration = this.getTotalDuration();
   this.totalChildSystemTime_ = duration;
   var scope = this.parent_;
@@ -333,6 +394,206 @@ wtf.analysis.Scope.prototype.getRenderData = function() {
  */
 wtf.analysis.Scope.prototype.setRenderData = function(value) {
   this.renderData_ = value;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getNodeType = function() {
+  return wgxpath.NodeType.SCOPE;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getNodePosition = function() {
+  return this.position_;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getNodeName = function() {
+  // TODO(benvanik): cache lowercase name
+  return this.name_.toLowerCase();
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getNodeValue = function() {
+  // TODO(benvanik): something meaningful?
+  return '';
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getRootNode = function() {
+  goog.asserts.assert(this.rootNode);
+  return this.rootNode;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getParentNode = function() {
+  return this.parent_;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getPreviousSiblingNode = function() {
+  goog.asserts.fail('not implemented');
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getNextSiblingNode = function() {
+  goog.asserts.fail('not implemented');
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.gatherChildNodes = function(
+    nodeset, opt_test, opt_attrName, opt_attrValue) {
+  for (var n = 0; n < this.children_.length; n++) {
+    // TODO(benvanik): add instance events
+    var child = this.children_[n];
+    if (!opt_test || opt_test.matches(child)) {
+      if (!opt_attrName ||
+          wgxpath.Node.attrMatches(child, opt_attrName, opt_attrValue)) {
+        nodeset.add(child);
+      }
+    }
+  }
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.gatherDescendantNodes = function(
+    nodeset, opt_test, opt_attrName, opt_attrValue) {
+  // TODO(benvanik): find a way to get instances in here!
+  function recurse(scope) {
+    for (var n = 0; n < scope.children_.length; n++) {
+      var child = scope.children_[n];
+      if (!opt_test || opt_test.matches(child)) {
+        if (!opt_attrName ||
+            wgxpath.Node.attrMatches(child, opt_attrName, opt_attrValue)) {
+          nodeset.add(child);
+        }
+      }
+      if (child.children_ && child.children_.length) {
+        recurse(child);
+      }
+    }
+  };
+  recurse(this);
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getAttributes = function() {
+  this.cacheAttributes_();
+  return this.attrs_;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.Scope.prototype.getAttribute = function(name) {
+  this.cacheAttributes_();
+  return this.attrsByName_[name];
+};
+
+
+/**
+ * Caches attributes onto the scope.
+ * No-op when already cached.
+ * @private
+ */
+wtf.analysis.Scope.prototype.cacheAttributes_ = function() {
+  if (this.attrsByName_) {
+    return;
+  }
+
+  var attrs = [];
+  var attrsByName = {};
+  var attr;
+
+  // Common attributes for scopes.
+  // Ideally we'd have these as implicit values, or use functions instead.
+  attr = new wgxpath.Attr(this, attrs.length,
+      'time', this.getEnterTime());
+  attrs.push(attr);
+  attrsByName[attr.getNodeName().toLowerCase()] = attr;
+  attr = new wgxpath.Attr(this, attrs.length,
+      'timeEnd', this.getLeaveTime());
+  attrs.push(attr);
+  attrsByName[attr.getNodeName().toLowerCase()] = attr;
+  attr = new wgxpath.Attr(this, attrs.length,
+      'totalTime', this.getTotalDuration());
+  attrs.push(attr);
+  attrsByName[attr.getNodeName().toLowerCase()] = attr;
+  attr = new wgxpath.Attr(this, attrs.length,
+      'ownTime', this.getOwnDuration());
+  attrs.push(attr);
+  attrsByName[attr.getNodeName().toLowerCase()] = attr;
+
+  if (this.enterEvent_) {
+    var argTypes = this.enterEvent_.eventType.args;
+    for (var n = 0; n < argTypes.length; n++) {
+      var arg = argTypes[n];
+      attr = new wgxpath.Attr(this, attrs.length,
+          arg.name, this.enterEvent_.args[arg.name]);
+      attrs.push(attr);
+      attrsByName[attr.getNodeName().toLowerCase()] = attr;
+    }
+  }
+
+  if (this.dataEvents_) {
+    for (var n = 0; n < this.dataEvents_.length; n++) {
+      var e = this.dataEvents_[n];
+      if (e.eventType.flags & wtf.data.EventFlag.INTERNAL) {
+        // name-value pair from the builtin appending functions.
+        attr = new wgxpath.Attr(this, attrs.length,
+            e.args['name'], e.args['value']);
+        attrs.push(attr);
+        attrsByName[attr.getNodeName().toLowerCase()] = attr;
+      } else {
+        // Custom appender, use args.
+        for (var m = 0; m < e.eventType.args.length; m++) {
+          var arg = e.eventType.args[m];
+          attr = new wgxpath.Attr(this, attrs.length,
+              arg.name, e.args[arg.name]);
+          attrs.push(attr);
+          attrsByName[attr.getNodeName().toLowerCase()] = attr;
+        }
+      }
+    }
+  }
+
+  this.attrs_ = attrs.length ? attrs : null;
+  this.attrsByName_ = attrsByName;
 };
 
 

@@ -77,6 +77,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
    */
   this.searchControl_ = new wtf.ui.SearchControl(headerEl, dom);
   this.registerDisposable(this.searchControl_);
+  this.searchControl_.setPlaceholderText('Partial name or /regex/');
 
   /**
    * Current sort mode.

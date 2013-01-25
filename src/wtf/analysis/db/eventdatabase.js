@@ -16,8 +16,10 @@ goog.provide('wtf.analysis.db.EventDatabase');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.events');
+goog.require('wtf');
 goog.require('wtf.analysis.TraceListener');
 goog.require('wtf.analysis.db.EventIndex');
+goog.require('wtf.analysis.db.QueryResult');
 goog.require('wtf.analysis.db.SummaryIndex');
 goog.require('wtf.analysis.db.ZoneIndex');
 goog.require('wtf.data.EventFlag');
@@ -47,6 +49,7 @@ goog.require('wtf.events.EventType');
  *
  * @constructor
  * @extends {wtf.events.EventEmitter}
+ * @implements {wgxpath.Node}
  */
 wtf.analysis.db.EventDatabase = function() {
   goog.base(this);
@@ -129,6 +132,14 @@ wtf.analysis.db.EventDatabase.EventType = {
    * One or more zones was added. Args include a list of the added zones.
    */
   ZONES_ADDED: goog.events.getUniqueId('zones_added')
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.toString = function() {
+  return 'db';
 };
 
 
@@ -278,6 +289,142 @@ wtf.analysis.db.EventDatabase.prototype.getTraceListener = function() {
  */
 wtf.analysis.db.EventDatabase.prototype.invalidate_ = function() {
   this.emitEvent(wtf.events.EventType.INVALIDATED);
+};
+
+
+/**
+ * Queries the database.
+ * Throws errors if the expression could not be parsed.
+ * @param {string} expr Query string.
+ * @return {wtf.analysis.db.QueryResult} Result.
+ */
+wtf.analysis.db.EventDatabase.prototype.query = function(expr) {
+  // TODO(benvanik): better error handling around this?
+  var xexpr = new wgxpath.XPathExpression(expr || '.');
+
+  var context = this;
+
+  var startTime = wtf.now();
+  var xresult = xexpr.evaluate(context, wgxpath.XPathResultType.ANY_TYPE);
+  var duration = wtf.now() - startTime;
+
+  return new wtf.analysis.db.QueryResult(expr, xexpr, duration, xresult);
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getNodeType = function() {
+  return wgxpath.NodeType.DATABASE;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getNodePosition = function() {
+  return 0;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getNodeName = function() {
+  return 'db';
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getNodeValue = function() {
+  return '';
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getRootNode = function() {
+  return this;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getParentNode = function() {
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getPreviousSiblingNode = function() {
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getNextSiblingNode = function() {
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.gatherChildNodes = function(
+    nodeset, opt_test, opt_attrName, opt_attrValue) {
+  for (var n = 0; n < this.zoneIndices_.length; n++) {
+    var zoneIndex = this.zoneIndices_[n];
+    if (!opt_test || opt_test.matches(zoneIndex)) {
+      if (!opt_attrName ||
+          wgxpath.Node.attrMatches(zoneIndex, opt_attrName, opt_attrValue)) {
+        nodeset.add(zoneIndex);
+      }
+    }
+  }
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.gatherDescendantNodes = function(
+    nodeset, opt_test, opt_attrName, opt_attrValue) {
+  for (var n = 0; n < this.zoneIndices_.length; n++) {
+    var zoneIndex = this.zoneIndices_[n];
+    if (!opt_test || opt_test.matches(zoneIndex)) {
+      if (!opt_attrName ||
+          wgxpath.Node.attrMatches(zoneIndex, opt_attrName, opt_attrValue)) {
+        nodeset.add(zoneIndex);
+      }
+    }
+    zoneIndex.gatherDescendantNodes(
+        nodeset, opt_test, opt_attrName, opt_attrValue);
+  }
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getAttributes = function() {
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.EventDatabase.prototype.getAttribute = function(name) {
+  return null;
 };
 
 
@@ -480,7 +627,7 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.traceEvent = function(e) {
       }
     }
     if (!present) {
-      var zoneIndex = new wtf.analysis.db.ZoneIndex(this, newZone);
+      var zoneIndex = new wtf.analysis.db.ZoneIndex(this.db_, newZone);
       this.db_.zoneIndices_.push(zoneIndex);
       this.eventTargets_.push(zoneIndex);
       zoneIndex.beginInserting();
@@ -527,3 +674,6 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.analysis.db.EventDatabase.prototype, 'getTraceListener',
     wtf.analysis.db.EventDatabase.prototype.getTraceListener);
+goog.exportProperty(
+    wtf.analysis.db.EventDatabase.prototype, 'query',
+    wtf.analysis.db.EventDatabase.prototype.query);
