@@ -59,11 +59,19 @@ wgxpath.FilterExpr.prototype.evaluate = function(ctx) {
 /**
  * @override
  */
-wgxpath.FilterExpr.prototype.toString = function(opt_indent) {
+wgxpath.FilterExpr.prototype.toString = function() {
+  return this.toStringIndented();
+};
+
+
+/**
+ * @override
+ */
+wgxpath.FilterExpr.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'Filter: ' + '\n';
   indent += wgxpath.Expr.INDENT;
-  text += this.primary_.toString(indent);
-  text += this.predicates_.toString(indent);
+  text += this.primary_.toStringIndented(indent);
+  text += this.predicates_.toStringIndented(indent);
   return text;
 };

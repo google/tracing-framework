@@ -1,10 +1,10 @@
 goog.provide('wgxpath.Step');
 
-goog.require('goog.dom.NodeType');
 goog.require('wgxpath.DataType');
 goog.require('wgxpath.Expr');
 goog.require('wgxpath.KindTest');
 goog.require('wgxpath.Node');
+goog.require('wgxpath.NodeType');
 goog.require('wgxpath.Predicates');
 
 
@@ -167,7 +167,7 @@ wgxpath.Step.prototype.getTest = function() {
 /**
  * @override
  */
-wgxpath.Step.prototype.toString = function(opt_indent) {
+wgxpath.Step.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'Step: ' + '\n';
   indent += wgxpath.Expr.INDENT;
@@ -175,13 +175,10 @@ wgxpath.Step.prototype.toString = function(opt_indent) {
   if (this.axis_.name_) {
     text += indent + 'Axis: ' + this.axis_ + '\n';
   }
-  text += this.test_.toString(indent);
-  if (this.predicates_.length) {
-    text += indent + 'Predicates: ' + '\n';
-    for (var i = 0; i < this.predicates_.length; i++) {
-      var tail = i < this.predicates_.length - 1 ? ', ' : '';
-      text += this.predicates_[i].toString(indent) + tail;
-    }
+  text += this.test_.toStringIndented(indent);
+  if (this.predicates_.getLength()) {
+    text += '\n';
+    text += this.predicates_.toStringIndented(indent);
   }
   return text;
 };
@@ -193,7 +190,7 @@ wgxpath.Step.prototype.toString = function(opt_indent) {
  *
  * @constructor
  * @param {string} name The axis name.
- * @param {function(!wgxpath.NodeTest, wgxpath.Node, ?string, ?string):
+ * @param {function(!wgxpath.NodeTest, !wgxpath.Node, ?string=, ?string=):
  *     !wgxpath.NodeSet} func The function for this axis.
  * @param {boolean} reverse Whether to iterate over the nodeset in reverse.
  * @param {boolean} supportsQuickAttr Whether quickAttr should be enabled for
@@ -201,7 +198,6 @@ wgxpath.Step.prototype.toString = function(opt_indent) {
  * @private
  */
 wgxpath.Step.Axis_ = function(name, func, reverse, supportsQuickAttr) {
-
   /**
    * @private
    * @type {string}
@@ -210,7 +206,7 @@ wgxpath.Step.Axis_ = function(name, func, reverse, supportsQuickAttr) {
 
   /**
    * @private
-   * @type {function(!wgxpath.NodeTest, wgxpath.Node, ?string, ?string):
+   * @type {function(!wgxpath.NodeTest, !wgxpath.Node, ?string=, ?string=):
    *     !wgxpath.NodeSet}
    */
   this.func_ = func;
@@ -260,7 +256,7 @@ wgxpath.Step.nameToAxisMap_ = {};
  * Creates an axis and maps the axis's name to that axis.
  *
  * @param {string} name The axis name.
- * @param {function(!wgxpath.NodeTest, wgxpath.Node, ?string, ?string):
+ * @param {function(!wgxpath.NodeTest, !wgxpath.Node, ?string=, ?string=):
  *     !wgxpath.NodeSet} func The function for this axis.
  * @param {boolean} reverse Whether to iterate over nodesets in reverse.
  * @param {boolean=} opt_supportsQuickAttr Whether quickAttr can be enabled
@@ -303,7 +299,7 @@ wgxpath.Step.Axis = {
       function(test, node) {
         var nodeset = new wgxpath.NodeSet();
         var parent = node;
-        while (parent = parent.parentNode) {
+        while (parent = parent.getParentNode()) {
           if (test.matches(parent)) {
             nodeset.unshift(parent);
           }
@@ -318,27 +314,18 @@ wgxpath.Step.Axis = {
           if (test.matches(toMatch)) {
             nodeset.unshift(toMatch);
           }
-        } while (toMatch = toMatch.parentNode);
+        } while (toMatch = toMatch.getParentNode());
         return nodeset;
       }, true),
   ATTRIBUTE: wgxpath.Step.createAxis_('attribute',
       function(test, node) {
         var nodeset = new wgxpath.NodeSet();
         var testName = test.getName();
-        var attrs = node.attributes;
-        if (attrs) {
-          if ((test instanceof wgxpath.KindTest &&
-              goog.isNull(test.getType())) || testName == '*') {
-            var sourceIndex = node.sourceIndex;
-            for (var i = 0, attr; attr = attrs[i]; i++) {
-              nodeset.add(attr);
-            }
-          } else {
-            var attr = attrs.getNamedItem(testName);
-            if (attr) {
-              nodeset.add(attr);
-            }
-          }
+        if ((test instanceof wgxpath.KindTest && !test.getType()) ||
+            testName == '*') {
+          wgxpath.Node.addAllAttributes(node, nodeset);
+        } else {
+          wgxpath.Node.addNamedAttribute(node, testName, nodeset);
         }
         return nodeset;
       }, false),
@@ -363,7 +350,7 @@ wgxpath.Step.Axis = {
         var parent = node;
         do {
           var child = parent;
-          while (child = child.nextSibling) {
+          while (child = child.getNextSiblingNode()) {
             if (wgxpath.Node.attrMatches(child, attrName, attrValue)) {
               if (test.matches(child)) {
                 nodeset.add(child);
@@ -372,14 +359,14 @@ wgxpath.Step.Axis = {
             nodeset = wgxpath.Node.getDescendantNodes(test, child,
                 attrName, attrValue, nodeset);
           }
-        } while (parent = parent.parentNode);
+        } while (parent = parent.getParentNode());
         return nodeset;
       }, false, true),
   FOLLOWING_SIBLING: wgxpath.Step.createAxis_('following-sibling',
       function(test, node) {
         var nodeset = new wgxpath.NodeSet();
         var toMatch = node;
-        while (toMatch = toMatch.nextSibling) {
+        while (toMatch = toMatch.getNextSiblingNode()) {
           if (test.matches(toMatch)) {
             nodeset.add(toMatch);
           }
@@ -394,17 +381,19 @@ wgxpath.Step.Axis = {
   PARENT: wgxpath.Step.createAxis_('parent',
       function(test, node) {
         var nodeset = new wgxpath.NodeSet();
-        if (node.nodeType == goog.dom.NodeType.DOCUMENT) {
+        var parentNode = node.getParentNode();
+        if (!parentNode) {
+          // Document root.
           return nodeset;
-        } else if (node.nodeType == goog.dom.NodeType.ATTRIBUTE) {
-          nodeset.add(node.ownerElement);
+        } else if (node.getNodeType() == wgxpath.NodeType.ATTRIBUTE) {
+          nodeset.add(/** @type {!wgxpath.Node} */ (node.getParentNode()));
+          return nodeset;
+        } else {
+          if (test.matches(parentNode)) {
+            nodeset.add(parentNode);
+          }
           return nodeset;
         }
-        var parent = /** @type {!Node} */ (node.parentNode);
-        if (test.matches(parent)) {
-          nodeset.add(parent);
-        }
-        return nodeset;
       }, false),
   PRECEDING: wgxpath.Step.createAxis_('preceding',
       function(test, node, attrName, attrValue) {
@@ -413,17 +402,19 @@ wgxpath.Step.Axis = {
         var parent = node;
         do {
           parents.unshift(parent);
-        } while (parent = parent.parentNode);
+        } while (parent = parent.getParentNode());
         for (var i = 1, l0 = parents.length; i < l0; i++) {
           var siblings = [];
           node = parents[i];
-          while (node = node.previousSibling) {
+          while (node = node.getPreviousSiblingNode()) {
             siblings.unshift(node);
           }
           for (var j = 0, l1 = siblings.length; j < l1; j++) {
             node = siblings[j];
             if (wgxpath.Node.attrMatches(node, attrName, attrValue)) {
-              if (test.matches(node)) nodeset.add(node);
+              if (test.matches(node)) {
+                nodeset.add(node);
+              }
             }
             nodeset = wgxpath.Node.getDescendantNodes(test, node,
                 attrName, attrValue, nodeset);
@@ -435,7 +426,7 @@ wgxpath.Step.Axis = {
       function(test, node) {
         var nodeset = new wgxpath.NodeSet();
         var toMatch = node;
-        while (toMatch = toMatch.previousSibling) {
+        while (toMatch = toMatch.getPreviousSiblingNode()) {
           if (test.matches(toMatch)) {
             nodeset.unshift(toMatch);
           }

@@ -27,6 +27,7 @@ goog.require('wtf.app.ui.Tabbar');
 goog.require('wtf.app.ui.Toolbar');
 goog.require('wtf.app.ui.documentview');
 goog.require('wtf.app.ui.nav.Navbar');
+goog.require('wtf.app.ui.query.QueryPanel');
 goog.require('wtf.app.ui.tracks.TracksPanel');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -126,6 +127,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       this.layout, this);
 
   this.tabbar_.addPanel(new wtf.app.ui.tracks.TracksPanel(this));
+  this.tabbar_.addPanel(new wtf.app.ui.query.QueryPanel(this));
   this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
       this, 'console', 'Console'));
 

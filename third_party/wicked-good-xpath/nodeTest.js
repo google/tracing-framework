@@ -24,7 +24,7 @@ wgxpath.NodeTest = function() {};
  * @param {wgxpath.Node} node The node to be tested.
  * @return {boolean} Whether the node passes the test.
  */
-wgxpath.NodeTest.prototype.matches = goog.abstractMethod;
+wgxpath.NodeTest.prototype.matches = goog.nullFunction;
 
 
 /**
@@ -32,7 +32,7 @@ wgxpath.NodeTest.prototype.matches = goog.abstractMethod;
  *
  * @return {string} The name, either nodename or type name.
  */
-wgxpath.NodeTest.prototype.getName = goog.abstractMethod;
+wgxpath.NodeTest.prototype.getName = goog.nullFunction;
 
 
 /**
@@ -41,4 +41,4 @@ wgxpath.NodeTest.prototype.getName = goog.abstractMethod;
  * @param {string=} opt_indent Optional indentation.
  * @return {string} The string representation.
  */
-wgxpath.NodeTest.prototype.toString = goog.abstractMethod;
+wgxpath.NodeTest.prototype.toStringIndented = goog.nullFunction;

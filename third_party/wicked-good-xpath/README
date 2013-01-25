@@ -22,3 +22,12 @@ Removed files:
 - test/
 - *_test.html
 - ieAttrWrapper.js
+
+
+Differences from XPath (documented in query.md):
+- node types are:
+  - document
+  - scope
+  - instance
+  - etc
+  [TODO: flow, frame, etc]

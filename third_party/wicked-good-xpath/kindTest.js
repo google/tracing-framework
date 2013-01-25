@@ -7,8 +7,8 @@
 
 goog.provide('wgxpath.KindTest');
 
-goog.require('goog.dom.NodeType');
 goog.require('wgxpath.NodeTest');
+goog.require('wgxpath.NodeType');
 
 
 
@@ -42,15 +42,9 @@ wgxpath.KindTest = function(typeName, opt_literal) {
    */
   this.type_ = null;
   switch (typeName) {
-    case 'comment':
-      this.type_ = goog.dom.NodeType.COMMENT;
-      break;
-    case 'text':
-      this.type_ = goog.dom.NodeType.TEXT;
-      break;
-    case 'processing-instruction':
-      this.type_ = goog.dom.NodeType.PROCESSING_INSTRUCTION;
-      break;
+    // case 'comment':
+    //   this.type_ = goog.dom.NodeType.COMMENT;
+    //   break;
     case 'node':
       break;
     default:
@@ -66,8 +60,7 @@ wgxpath.KindTest = function(typeName, opt_literal) {
  * @return {boolean} Whether the type name is legal.
  */
 wgxpath.KindTest.isValidType = function(typeName) {
-  return typeName == 'comment' || typeName == 'text' ||
-      typeName == 'processing-instruction' || typeName == 'node';
+  return typeName == 'comment' || typeName == 'node';
 };
 
 
@@ -75,7 +68,7 @@ wgxpath.KindTest.isValidType = function(typeName) {
  * @override
  */
 wgxpath.KindTest.prototype.matches = function(node) {
-  return goog.isNull(this.type_) || this.type_ == node.nodeType;
+  return !this.type_ || this.type_ == node.getNodeType();
 };
 
 
@@ -100,11 +93,19 @@ wgxpath.KindTest.prototype.getName = function() {
 /**
  * @override
  */
-wgxpath.KindTest.prototype.toString = function(opt_indent) {
+wgxpath.KindTest.prototype.toString = function() {
+  return this.toStringIndented();
+};
+
+
+/**
+ * @override
+ */
+wgxpath.KindTest.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'kindtest: ' + this.typeName_;
-  if (!goog.isNull(this.literal_)) {
-    text += '\n' + this.literal_.toString(indent + wgxpath.Expr.INDENT);
+  if (this.literal_) {
+    text += '\n' + this.literal_.toStringIndented(indent + wgxpath.Expr.INDENT);
   }
   return text;
 };

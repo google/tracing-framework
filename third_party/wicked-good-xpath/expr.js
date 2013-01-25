@@ -64,12 +64,20 @@ wgxpath.Expr.prototype.evaluate = goog.abstractMethod;
 
 
 /**
+ * @override
+ */
+wgxpath.Expr.prototype.toString = function() {
+  return this.toStringIndented();
+};
+
+
+/**
  * Returns the string representation of the expression for debugging.
  *
  * @param {string=} opt_indent An optional indentation.
  * @return {string} The string representation.
  */
-wgxpath.Expr.prototype.toString = goog.abstractMethod;
+wgxpath.Expr.prototype.toStringIndented = goog.abstractMethod;
 
 
 /**

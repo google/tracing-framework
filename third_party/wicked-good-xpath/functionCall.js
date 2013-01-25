@@ -7,8 +7,6 @@
 goog.provide('wgxpath.FunctionCall');
 
 goog.require('goog.array');
-goog.require('goog.dom');
-goog.require('goog.dom.NodeType');
 goog.require('goog.string');
 goog.require('wgxpath.Expr');
 goog.require('wgxpath.Node');
@@ -83,7 +81,7 @@ wgxpath.FunctionCall.prototype.evaluate = function(ctx) {
 /**
  * @override
  */
-wgxpath.FunctionCall.prototype.toString = function(opt_indent) {
+wgxpath.FunctionCall.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'Function: ' + this.func_ + '\n';
   indent += wgxpath.Expr.INDENT;
@@ -91,7 +89,7 @@ wgxpath.FunctionCall.prototype.toString = function(opt_indent) {
     text += indent + 'Arguments:';
     indent += wgxpath.Expr.INDENT;
     text = goog.array.reduce(this.args_, function(prev, curr) {
-      return prev + '\n' + curr.toString(indent);
+      return prev + '\n' + curr.toStringIndented(indent);
     }, text);
   }
   return text;
@@ -295,26 +293,18 @@ wgxpath.FunctionCall.Func = {
       wgxpath.DataType.NODESET, false, false, false,
       function(ctx, expr) {
         var ctxNode = ctx.getNode();
-        var doc = ctxNode.nodeType == goog.dom.NodeType.DOCUMENT ? ctxNode :
-            ctxNode.ownerDocument;
         var ids = expr.asString(ctx).split(/\s+/);
         var nsArray = [];
         goog.array.forEach(ids, function(id) {
-          var elem = idSingle(id);
+          var elem = wgxpath.Node.getNodeById(ctxNode, id);
           if (elem && !goog.array.contains(nsArray, elem)) {
             nsArray.push(elem);
           }
         });
-        nsArray.sort(goog.dom.compareNodeOrder);
+        nsArray.sort(wgxpath.Node.compareNodeOrder);
         var ns = new wgxpath.NodeSet();
-        goog.array.forEach(nsArray, function(n) {
-          ns.add(n);
-        });
+        ns.extend(nsArray);
         return ns;
-
-        function idSingle(id) {
-          return doc.getElementById(id);
-        }
       }, 1),
   LANG: wgxpath.FunctionCall.createFunc_('lang',
       wgxpath.DataType.BOOLEAN, false, false, false,
@@ -334,14 +324,14 @@ wgxpath.FunctionCall.Func = {
       wgxpath.DataType.STRING, false, true, false,
       function(ctx, opt_expr) {
         var node = opt_expr ? opt_expr.evaluate(ctx).getFirst() : ctx.getNode();
-        return node ? node.nodeName.toLowerCase() : '';
+        return node ? node.getNodeName() : '';
       }, 0, 1, true),
   NAME: wgxpath.FunctionCall.createFunc_('name',
       wgxpath.DataType.STRING, false, true, false,
       function(ctx, opt_expr) {
         // TODO(user): Fully implement this.
         var node = opt_expr ? opt_expr.evaluate(ctx).getFirst() : ctx.getNode();
-        return node ? node.nodeName.toLowerCase() : '';
+        return node ? node.getNodeName() : '';
       }, 0, 1, true),
   NAMESPACE_URI: wgxpath.FunctionCall.createFunc_('namespace-uri',
       wgxpath.DataType.STRING, true, false, false,

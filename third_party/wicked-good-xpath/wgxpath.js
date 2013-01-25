@@ -18,6 +18,9 @@
  */
 
 goog.provide('wgxpath');
+goog.provide('wgxpath.XPathExpression');
+goog.provide('wgxpath.XPathResult');
+goog.provide('wgxpath.XPathResultType');
 
 goog.require('wgxpath.Context');
 goog.require('wgxpath.Lexer');
@@ -28,10 +31,9 @@ goog.require('wgxpath.Parser');
 /**
  * Enum for XPathResult types.
  *
- * @private
  * @enum {number}
  */
-wgxpath.XPathResultType_ = {
+wgxpath.XPathResultType = {
   ANY_TYPE: 0,
   NUMBER_TYPE: 1,
   STRING_TYPE: 2,
@@ -50,11 +52,9 @@ wgxpath.XPathResultType_ = {
  * The exported XPathExpression type.
  *
  * @constructor
- * @extends {XPathExpression}
  * @param {string} expr The expression string.
- * @private
  */
-wgxpath.XPathExpression_ = function(expr) {
+wgxpath.XPathExpression = function(expr) {
   if (!expr.length) {
     throw Error('Empty XPath expression.');
   }
@@ -64,14 +64,36 @@ wgxpath.XPathExpression_ = function(expr) {
   if (lexer.empty()) {
     throw Error('Invalid XPath expression.');
   }
-  var gexpr = new wgxpath.Parser(lexer).parseExpr();
+
+  /**
+   * Parser.
+   * @type {!wgxpath.Expr}
+   * @private
+   */
+  this.gexpr_ = new wgxpath.Parser(lexer).parseExpr();
   if (!lexer.empty()) {
     throw Error('Bad token: ' + lexer.next());
   }
-  this['evaluate'] = function(node, type) {
-    var value = gexpr.evaluate(new wgxpath.Context(node));
-    return new wgxpath.XPathResult_(value, type);
-  };
+};
+
+
+/**
+ * Evaluates the expression on the given node.
+ * @param {!wgxpath.Node} node Target node.
+ * @param {wgxpath.XPathResultType} type The result type.
+ * @return {!wgxpath.XPathResult} Result.
+ */
+wgxpath.XPathExpression.prototype.evaluate = function(node, type) {
+  var value = this.gexpr_.evaluate(new wgxpath.Context(node));
+  return new wgxpath.XPathResult(value, type);
+};
+
+
+/**
+ * @override
+ */
+wgxpath.XPathExpression.prototype.toString = function() {
+  return this.gexpr_.toString();
 };
 
 
@@ -80,119 +102,82 @@ wgxpath.XPathExpression_ = function(expr) {
  * The exported XPathResult type.
  *
  * @constructor
- * @extends {XPathResult}
  * @param {(!wgxpath.NodeSet|number|string|boolean)} value The result value.
- * @param {number} type The result type.
- * @private
+ * @param {wgxpath.XPathResultType} type The result type.
  */
-wgxpath.XPathResult_ = function(value, type) {
-  if (type == wgxpath.XPathResultType_.ANY_TYPE) {
+wgxpath.XPathResult = function(value, type) {
+  if (type == wgxpath.XPathResultType.ANY_TYPE) {
     if (value instanceof wgxpath.NodeSet) {
-      type = wgxpath.XPathResultType_.UNORDERED_NODE_ITERATOR_TYPE;
+      type = wgxpath.XPathResultType.UNORDERED_NODE_ITERATOR_TYPE;
     } else if (typeof value == 'string') {
-      type = wgxpath.XPathResultType_.STRING_TYPE;
+      type = wgxpath.XPathResultType.STRING_TYPE;
     } else if (typeof value == 'number') {
-      type = wgxpath.XPathResultType_.NUMBER_TYPE;
+      type = wgxpath.XPathResultType.NUMBER_TYPE;
     } else if (typeof value == 'boolean') {
-      type = wgxpath.XPathResultType_.BOOLEAN_TYPE;
+      type = wgxpath.XPathResultType.BOOLEAN_TYPE;
     } else {
       throw Error('Unexpected evaluation result.');
     }
   }
-  if (type != wgxpath.XPathResultType_.STRING_TYPE &&
-      type != wgxpath.XPathResultType_.NUMBER_TYPE &&
-      type != wgxpath.XPathResultType_.BOOLEAN_TYPE &&
+  if (type != wgxpath.XPathResultType.STRING_TYPE &&
+      type != wgxpath.XPathResultType.NUMBER_TYPE &&
+      type != wgxpath.XPathResultType.BOOLEAN_TYPE &&
       !(value instanceof wgxpath.NodeSet)) {
     throw Error('value could not be converted to the specified type');
   }
-  this['resultType'] = type;
-  var nodes;
+
+  /**
+   * Result type.
+   * @type {wgxpath.XPathResultType}
+   */
+  this.resultType = type;
+
+  /**
+   * @type {(string|number|boolean|!Array.<!wgxpath.Node>|wgxpath.Node|null)}
+   */
+  this.value = null;
+
   switch (type) {
-    case wgxpath.XPathResultType_.STRING_TYPE:
-      this['stringValue'] = (value instanceof wgxpath.NodeSet) ?
+    case wgxpath.XPathResultType.STRING_TYPE:
+      this.value = (value instanceof wgxpath.NodeSet) ?
           value.string() : '' + value;
       break;
-    case wgxpath.XPathResultType_.NUMBER_TYPE:
-      this['numberValue'] = (value instanceof wgxpath.NodeSet) ?
+    case wgxpath.XPathResultType.NUMBER_TYPE:
+      this.value = (value instanceof wgxpath.NodeSet) ?
           value.number() : +value;
       break;
-    case wgxpath.XPathResultType_.BOOLEAN_TYPE:
-      this['booleanValue'] = (value instanceof wgxpath.NodeSet) ?
+    case wgxpath.XPathResultType.BOOLEAN_TYPE:
+      this.value = (value instanceof wgxpath.NodeSet) ?
           value.getLength() > 0 : !!value;
       break;
-    case wgxpath.XPathResultType_.UNORDERED_NODE_ITERATOR_TYPE:
-    case wgxpath.XPathResultType_.ORDERED_NODE_ITERATOR_TYPE:
-    case wgxpath.XPathResultType_.UNORDERED_NODE_SNAPSHOT_TYPE:
-    case wgxpath.XPathResultType_.ORDERED_NODE_SNAPSHOT_TYPE:
+    case wgxpath.XPathResultType.UNORDERED_NODE_ITERATOR_TYPE:
+    case wgxpath.XPathResultType.ORDERED_NODE_ITERATOR_TYPE:
+    case wgxpath.XPathResultType.UNORDERED_NODE_SNAPSHOT_TYPE:
+    case wgxpath.XPathResultType.ORDERED_NODE_SNAPSHOT_TYPE:
       var iter = value.iterator();
-      nodes = [];
+      this.value = [];
       for (var node = iter.next(); node; node = iter.next()) {
-        nodes.push(node);
+        this.value.push(node);
       }
-      this['snapshotLength'] = value.getLength();
-      this['invalidIteratorState'] = false;
       break;
-    case wgxpath.XPathResultType_.ANY_UNORDERED_NODE_TYPE:
-    case wgxpath.XPathResultType_.FIRST_ORDERED_NODE_TYPE:
-      var firstNode = value.getFirst();
-      this['singleNodeValue'] =
-          firstNode instanceof wgxpath.IEAttrWrapper ?
-          firstNode.getNode() : firstNode;
+    case wgxpath.XPathResultType.ANY_UNORDERED_NODE_TYPE:
+    case wgxpath.XPathResultType.FIRST_ORDERED_NODE_TYPE:
+      this.value = value.getFirst();
       break;
     default:
       throw Error('Unknown XPathResult type.');
   }
-  var index = 0;
-  this['iterateNext'] = function() {
-    if (type != wgxpath.XPathResultType_.UNORDERED_NODE_ITERATOR_TYPE &&
-        type != wgxpath.XPathResultType_.ORDERED_NODE_ITERATOR_TYPE) {
-      throw Error('iterateNext called with wrong result type');
-    }
-    return (index >= nodes.length) ? null : nodes[index++];
-  };
-  this['snapshotItem'] = function(i) {
-    if (type != wgxpath.XPathResultType_.UNORDERED_NODE_SNAPSHOT_TYPE &&
-        type != wgxpath.XPathResultType_.ORDERED_NODE_SNAPSHOT_TYPE) {
-      throw Error('snapshotItem called with wrong result type');
-    }
-    return (i >= nodes.length || i < 0) ? null : nodes[i];
-  };
 };
-wgxpath.XPathResult_['ANY_TYPE'] = wgxpath.XPathResultType_.ANY_TYPE;
-wgxpath.XPathResult_['NUMBER_TYPE'] = wgxpath.XPathResultType_.NUMBER_TYPE;
-wgxpath.XPathResult_['STRING_TYPE'] = wgxpath.XPathResultType_.STRING_TYPE;
-wgxpath.XPathResult_['BOOLEAN_TYPE'] = wgxpath.XPathResultType_.BOOLEAN_TYPE;
-wgxpath.XPathResult_['UNORDERED_NODE_ITERATOR_TYPE'] =
-    wgxpath.XPathResultType_.UNORDERED_NODE_ITERATOR_TYPE;
-wgxpath.XPathResult_['ORDERED_NODE_ITERATOR_TYPE'] =
-    wgxpath.XPathResultType_.ORDERED_NODE_ITERATOR_TYPE;
-wgxpath.XPathResult_['UNORDERED_NODE_SNAPSHOT_TYPE'] =
-    wgxpath.XPathResultType_.UNORDERED_NODE_SNAPSHOT_TYPE;
-wgxpath.XPathResult_['ORDERED_NODE_SNAPSHOT_TYPE'] =
-    wgxpath.XPathResultType_.ORDERED_NODE_SNAPSHOT_TYPE;
-wgxpath.XPathResult_['ANY_UNORDERED_NODE_TYPE'] =
-    wgxpath.XPathResultType_.ANY_UNORDERED_NODE_TYPE;
-wgxpath.XPathResult_['FIRST_ORDERED_NODE_TYPE'] =
-    wgxpath.XPathResultType_.FIRST_ORDERED_NODE_TYPE;
+
 
 
 /**
- * Installs the library. This is a noop if native XPath is available.
- *
- * @param {Window=} opt_win The window to install the library on.
+ * Evaluates the given expression and returns a result.
+ * @param {string} expr The expression string.
+ * @param {!wgxpath.Node} context Context node.
+ * @param {wgxpath.XPathResultType} type The result type.
+ * @return {!wgxpath.XPathResult} Result.
  */
-wgxpath.install = function(opt_win) {
-  var win = opt_win || goog.global;
-  var doc = win.document;
-
-  // Installation is a noop if native XPath is available.
-  if (!doc['evaluate']) {
-    win['XPathResult'] = wgxpath.XPathResult_;
-    doc['evaluate'] = function(expr, context, nsresolver, type, result) {
-      return new wgxpath.XPathExpression_(expr).evaluate(context, type);
-    };
-    doc['createExpression'] = function(expr) {
-      return new wgxpath.XPathExpression_(expr);
-    };
-  }
+wgxpath.evaluate = function(expr, context, type) {
+  return new wgxpath.XPathExpression(expr).evaluate(context, type);
 };

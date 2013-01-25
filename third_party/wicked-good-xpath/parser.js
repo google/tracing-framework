@@ -10,6 +10,7 @@ goog.require('wgxpath.BinaryExpr');
 goog.require('wgxpath.FilterExpr');
 goog.require('wgxpath.FunctionCall');
 goog.require('wgxpath.KindTest');
+goog.require('wgxpath.Lexer');
 goog.require('wgxpath.Literal');
 goog.require('wgxpath.NameTest');
 goog.require('wgxpath.Number');
@@ -254,6 +255,15 @@ wgxpath.Parser.prototype.parseNumber_ = function() {
 
 
 /**
+ * @const
+ * @type {!RegExp}
+ * @private
+ */
+wgxpath.Parser.PATH_EXPR_ = new RegExp(
+    '(?![0-9])[' + wgxpath.Lexer.NODE_NAME + ']');
+
+
+/**
  * Attempts to parse the input as a PathExpr.
  *
  * @private
@@ -268,7 +278,7 @@ wgxpath.Parser.prototype.parsePathExpr_ = function() {
     var token = this.lexer_.peek();
     if (op == '/' && (this.lexer_.empty() ||
         (token != '.' && token != '..' && token != '@' && token != '*' &&
-        !/(?![0-9])[\w]/.test(token)))) {
+        !wgxpath.Parser.PATH_EXPR_.test(token)))) {
       return new wgxpath.PathExpr.RootHelperExpr();
     }
     filterExpr = new wgxpath.PathExpr.RootHelperExpr();
@@ -335,7 +345,7 @@ wgxpath.Parser.prototype.parseStep_ = function(op) {
       this.checkNotEmpty_('Missing attribute name');
     } else {
       if (this.lexer_.peek(1) == '::') {
-        if (!/(?![0-9])[\w]/.test(this.lexer_.peek().charAt(0))) {
+        if (!wgxpath.Parser.PATH_EXPR_.test(this.lexer_.peek().charAt(0))) {
           throw Error('Bad token: ' + this.lexer_.next());
         }
         var axisName = this.lexer_.next();
@@ -345,6 +355,8 @@ wgxpath.Parser.prototype.parseStep_ = function(op) {
         }
         this.lexer_.next();
         this.checkNotEmpty_('Missing node name');
+      } else if (this.lexer_.peek(1) == '//') {
+        axis = wgxpath.Step.Axis.DESCENDANT;
       } else {
         axis = wgxpath.Step.Axis.CHILD;
       }
@@ -352,7 +364,7 @@ wgxpath.Parser.prototype.parseStep_ = function(op) {
 
     // Grab the test.
     token = this.lexer_.peek();
-    if (!/(?![0-9])[\w]/.test(token.charAt(0))) {
+    if (!wgxpath.Parser.PATH_EXPR_.test(token.charAt(0))) {
       if (token == '*') {
         test = this.parseNameTest_();
       } else {

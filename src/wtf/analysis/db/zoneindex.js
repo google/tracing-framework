@@ -13,6 +13,7 @@
 
 goog.provide('wtf.analysis.db.ZoneIndex');
 
+goog.require('goog.asserts');
 goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.TimeRangeEvent');
@@ -27,20 +28,28 @@ goog.require('wtf.data.EventFlag');
 /**
  * An in-memory index of events by the zone they occur in.
  *
- * @param {!wtf.analysis.TraceListener} traceListener Trace listener.
+ * @param {!wtf.analysis.db.EventDatabase} db Parent database.
  * @param {!wtf.analysis.Zone} zone Zone this index matches.
  * @constructor
  * @extends {wtf.analysis.db.EventList}
+ * @implements {wgxpath.Node}
  */
-wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
+wtf.analysis.db.ZoneIndex = function(db, zone) {
   goog.base(this);
+
+  /**
+   * Parent database.
+   * @type {!wtf.analysis.db.EventDatabase}
+   * @private
+   */
+  this.db_ = db;
 
   /**
    * Trace listener.
    * @type {!wtf.analysis.TraceListener}
    * @private
    */
-  this.traceListener_ = traceListener;
+  this.traceListener_ = db.getTraceListener();
 
   /**
    * Zone this index is matching.
@@ -116,8 +125,26 @@ wtf.analysis.db.ZoneIndex = function(traceListener, zone) {
    * @private
    */
   this.pendingSystemScopes_ = [];
+
+  /**
+   * Node attributes.
+   * @type {!Array.<!wgxpath.Attr>}
+   * @private
+   */
+  this.attributes_ = [
+    new wgxpath.Attr(this, 0, 'type', this.zone_.getType()),
+    new wgxpath.Attr(this, 1, 'location', this.zone_.getLocation())
+  ];
 };
 goog.inherits(wtf.analysis.db.ZoneIndex, wtf.analysis.db.EventList);
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.toString = function() {
+  return this.zone_.getName();
+};
 
 
 /**
@@ -301,6 +328,136 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
 
   this.timeRangeIndex_.endInserting();
   this.frameIndex_.endInserting();
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getNodeType = function() {
+  return wgxpath.NodeType.ZONE;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getNodePosition = function() {
+  // TODO(benvanik): support zone position
+  return 0;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getNodeName = function() {
+  return this.zone_.getName().toLowerCase();
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getNodeValue = function() {
+  return '';
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getRootNode = function() {
+  return this.db_;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getParentNode = function() {
+  return this.db_;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getPreviousSiblingNode = function() {
+  goog.asserts.fail('not yet implemented');
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getNextSiblingNode = function() {
+  goog.asserts.fail('not yet implemented');
+  return null;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.gatherChildNodes = function(
+    nodeset, opt_test, opt_attrName, opt_attrValue) {
+  this.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
+    // TODO(benvanik): add instance events
+    if (e instanceof wtf.analysis.ScopeEvent &&
+        e.scope && !e.scope.getDepth()) {
+      if (!opt_test || opt_test.matches(e.scope)) {
+        if (!opt_attrName ||
+            wgxpath.Node.attrMatches(e.scope, opt_attrName, opt_attrValue)) {
+          nodeset.add(e.scope);
+        }
+      }
+    }
+  });
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.gatherDescendantNodes = function(
+    nodeset, opt_test, opt_attrName, opt_attrValue) {
+  this.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
+    // TODO(benvanik): add instance events
+    if (e instanceof wtf.analysis.ScopeEvent &&
+        e.scope) {
+      if (!opt_test || opt_test.matches(e.scope)) {
+        if (!opt_attrName ||
+            wgxpath.Node.attrMatches(e.scope, opt_attrName, opt_attrValue)) {
+          nodeset.add(e.scope);
+        }
+      }
+    }
+  });
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getAttributes = function() {
+  return this.attributes_;
+};
+
+
+/**
+ * @override
+ */
+wtf.analysis.db.ZoneIndex.prototype.getAttribute = function(name) {
+  // This is slow because we only have a few attributes and it's not worth
+  // keeping another data structure around.
+  for (var n = 0; n < this.attributes_.length; n++) {
+    if (this.attributes_[n].getNodeName() == name) {
+      return this.attributes_[n];
+    }
+  }
+  return null;
 };
 
 

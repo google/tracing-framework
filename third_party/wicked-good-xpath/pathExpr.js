@@ -8,7 +8,6 @@ goog.provide('wgxpath.PathExpr');
 
 
 goog.require('goog.array');
-goog.require('goog.dom.NodeType');
 goog.require('wgxpath.DataType');
 goog.require('wgxpath.Expr');
 goog.require('wgxpath.NodeSet');
@@ -79,11 +78,7 @@ goog.inherits(wgxpath.PathExpr.RootHelperExpr, wgxpath.Expr);
 wgxpath.PathExpr.RootHelperExpr.prototype.evaluate = function(ctx) {
   var nodeset = new wgxpath.NodeSet();
   var node = ctx.getNode();
-  if (node.nodeType == goog.dom.NodeType.DOCUMENT) {
-    nodeset.add(node);
-  } else {
-    nodeset.add(/** @type {!Node} */ (node.ownerDocument));
-  }
+  nodeset.add(node.getRootNode());
   return nodeset;
 };
 
@@ -94,7 +89,8 @@ wgxpath.PathExpr.RootHelperExpr.prototype.evaluate = function(ctx) {
  * @param {string=} opt_indent An optional indentation.
  * @return {string} The string representation.
  */
-wgxpath.PathExpr.RootHelperExpr.prototype.toString = function(opt_indent) {
+wgxpath.PathExpr.RootHelperExpr.prototype.toStringIndented = function(
+    opt_indent) {
   return opt_indent + 'RootHelperExpr';
 };
 
@@ -131,7 +127,8 @@ wgxpath.PathExpr.ContextHelperExpr.prototype.evaluate = function(ctx) {
  * @param {string=} opt_indent An optional indentation.
  * @return {string} The string representation.
  */
-wgxpath.PathExpr.ContextHelperExpr.prototype.toString = function(opt_indent) {
+wgxpath.PathExpr.ContextHelperExpr.prototype.toStringIndented = function(
+    opt_indent) {
   return opt_indent + 'ContextHelperExpr';
 };
 
@@ -166,29 +163,25 @@ wgxpath.PathExpr.prototype.evaluate = function(ctx) {
     if (!step.doesNeedContextPosition() &&
         step.getAxis() == wgxpath.Step.Axis.FOLLOWING) {
       for (node = iter.next(); next = iter.next(); node = next) {
-        if (node.contains && !node.contains(next)) {
+        node = /** @type {!wgxpath.Node} */ (node);
+        if (!wgxpath.Node.contains(node, next)) {
           break;
-        } else {
-          if (!(next.compareDocumentPosition(/** @type {!Node} */ (node)) &
-              8)) {
-            break;
-          }
         }
       }
       nodeset = step.evaluate(new
-          wgxpath.Context(/** @type {wgxpath.Node} */ (node)));
+          wgxpath.Context(/** @type {!wgxpath.Node} */ (node)));
     } else if (!step.doesNeedContextPosition() &&
         step.getAxis() == wgxpath.Step.Axis.PRECEDING) {
       node = iter.next();
       nodeset = step.evaluate(new
-          wgxpath.Context(/** @type {wgxpath.Node} */ (node)));
+          wgxpath.Context(/** @type {!wgxpath.Node} */ (node)));
     } else {
       node = iter.next();
-      nodeset = step.evaluate(new
-          wgxpath.Context(/** @type {wgxpath.Node} */ (node)));
+      var nodeCtx = new wgxpath.Context(/** @type {!wgxpath.Node} */ (node));
+      nodeset = step.evaluate(nodeCtx);
       while ((node = iter.next()) != null) {
-        var result = step.evaluate(new
-            wgxpath.Context(/** @type {wgxpath.Node} */ (node)));
+        nodeCtx.reset(/** @type {!wgxpath.Node} */ (node));
+        var result = step.evaluate(nodeCtx);
         nodeset = wgxpath.NodeSet.merge(nodeset, result);
       }
     }
@@ -200,16 +193,16 @@ wgxpath.PathExpr.prototype.evaluate = function(ctx) {
 /**
  * @override
  */
-wgxpath.PathExpr.prototype.toString = function(opt_indent) {
+wgxpath.PathExpr.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'PathExpr:' + '\n';
   indent += wgxpath.Expr.INDENT;
-  text += this.filter_.toString(indent);
+  text += this.filter_.toStringIndented(indent) + '\n';
   if (this.steps_.length) {
-    text += indent + 'Steps:' + '\n';
+    text += indent + 'Steps:';
     indent += wgxpath.Expr.INDENT;
     goog.array.forEach(this.steps_, function(step) {
-      text += step.toString(indent);
+      text += '\n' + step.toStringIndented(indent);
     });
   }
   return text;

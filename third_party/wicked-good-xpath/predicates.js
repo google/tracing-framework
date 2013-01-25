@@ -63,7 +63,7 @@ wgxpath.Predicates.prototype.evaluatePredicates =
     for (var j = 0; node = iter.next(); j++) {
       var position = this.reverse_ ? (l - j) : (j + 1);
       var exrs = predicate.evaluate(new
-          wgxpath.Context(/** @type {wgxpath.Node} */ (node), position, l));
+          wgxpath.Context(/** @type {!wgxpath.Node} */ (node), position, l));
       var keep;
       if (typeof exrs == 'number') {
         keep = (position == exrs);
@@ -123,16 +123,24 @@ wgxpath.Predicates.prototype.getLength = function() {
 
 
 /**
+ * @override
+ */
+wgxpath.Predicates.prototype.toString = function() {
+  return this.toStringIndented();
+};
+
+
+/**
  * Returns a string represendation of this set of predicates for debugging.
  *
  * @param {string=} opt_indent An optional indentation.
  * @return {string} The string representation.
  */
-wgxpath.Predicates.prototype.toString = function(opt_indent) {
+wgxpath.Predicates.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var header = indent + 'Predicates:';
   indent += wgxpath.Expr.INDENT;
   return goog.array.reduce(this.predicates_, function(prev, curr) {
-    return prev + '\n' + indent + curr.toString(indent);
+    return prev + '\n' + curr.toStringIndented(indent);
   }, header);
 };

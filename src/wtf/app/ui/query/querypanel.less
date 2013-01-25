@@ -1,0 +1,64 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * QueryPanel CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+/* QueryPanel root. */
+.appUiQueryPanel {
+  @inputBarHeight: 35px;
+
+  .fitParent();
+
+  & .header {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    height: @inputBarHeight;
+    border-bottom: 1px solid #EBEBEB;
+
+    @rightWidth: 150px;
+    & .headerLeft {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin-right: @rightWidth + 10px;
+
+      & .kSearchField {
+        width: 100%;
+        margin: 3px;
+      }
+    }
+    & .headerRight {
+      width: @rightWidth;
+      right: 0;
+      float: right;
+      margin: 3px;
+
+      padding-top: 7px;
+    }
+  }
+
+  & .resultsOuter {
+    position: absolute;
+    width: 100%;
+    top: @inputBarHeight;
+    bottom: 0;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    & .results {
+      padding: 3px;
+    }
+  }
+}

@@ -19,7 +19,6 @@ goog.provide('wgxpath.Context');
  * @constructor
  */
 wgxpath.Context = function(node, opt_position, opt_last) {
-
   /**
     * @private
     * @type {!wgxpath.Node}
@@ -36,6 +35,21 @@ wgxpath.Context = function(node, opt_position, opt_last) {
    * @private
    * @type {number} opt_last
    */
+  this.last_ = opt_last || 1;
+};
+
+
+/**
+ * Resets the context state.
+ * @param {!wgxpath.Node} node A node in the DOM.
+ * @param {number=} opt_position The position of this node in its nodeset,
+ *     defaults to 1.
+ * @param {number=} opt_last Index of the last node in this nodeset,
+ *     defaults to 1.
+ */
+wgxpath.Context.prototype.reset = function(node, opt_position, opt_last) {
+  this.node_ = node;
+  this.position_ = opt_position || 1;
   this.last_ = opt_last || 1;
 };
 

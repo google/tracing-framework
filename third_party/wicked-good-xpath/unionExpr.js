@@ -57,12 +57,12 @@ wgxpath.UnionExpr.prototype.evaluate = function(ctx) {
 /**
  * @override
  */
-wgxpath.UnionExpr.prototype.toString = function(opt_indent) {
+wgxpath.UnionExpr.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'UnionExpr:' + '\n';
   indent += wgxpath.Expr.INDENT;
   goog.array.forEach(this.paths_, function(p) {
-    text += p.toString(indent) + '\n';
+    text += p.toStringIndented(indent) + '\n';
   });
   return text.substring(0, text.length); // Remove trailing newline.
 };

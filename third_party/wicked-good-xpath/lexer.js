@@ -30,6 +30,14 @@ wgxpath.Lexer = function(tokens) {
 
 
 /**
+ * The part of the regex that matches node names.
+ * @type {string}
+ * @const
+ */
+wgxpath.Lexer.NODE_NAME = '\\w-\\#\\.';
+
+
+/**
  * Tokenizes a source string into an array of tokens.
  *
  * @param {string} source Source string to tokenize.
@@ -56,7 +64,8 @@ wgxpath.Lexer.tokenize = function(source) {
  * @private
  */
 wgxpath.Lexer.TOKEN_ = new RegExp(
-    '\\$?(?:(?![0-9-])[\\w-]+:)?(?![0-9-])[\\w-]+' +
+    '\\$?(?:(?![0-9-])[' + wgxpath.Lexer.NODE_NAME +
+        ']+:)?(?![0-9-])[' + wgxpath.Lexer.NODE_NAME + '-]+' +
         // Nodename (possibly with namespace) or variable.
     '|\\/\\/' + // Double slash.
     '|\\.\\.' + // Double dot.

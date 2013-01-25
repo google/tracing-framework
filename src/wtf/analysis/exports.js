@@ -50,6 +50,8 @@ goog.require('wtf.analysis.db.EventList');
 /** @suppress {extraRequire} */
 goog.require('wtf.analysis.db.InstanceEventDataEntry');
 /** @suppress {extraRequire} */
+goog.require('wtf.analysis.db.QueryResult');
+/** @suppress {extraRequire} */
 goog.require('wtf.analysis.db.ScopeEventDataEntry');
 /** @suppress {extraRequire} */
 goog.require('wtf.analysis.db.SortMode');

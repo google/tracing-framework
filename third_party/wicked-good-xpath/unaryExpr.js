@@ -45,10 +45,10 @@ wgxpath.UnaryExpr.prototype.evaluate = function(ctx) {
 /**
  * @override
  */
-wgxpath.UnaryExpr.prototype.toString = function(opt_indent) {
+wgxpath.UnaryExpr.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   var text = indent + 'UnaryExpr: -' + '\n';
   indent += wgxpath.Expr.INDENT;
-  text += this.expr_.toString(indent);
+  text += this.expr_.toStringIndented(indent);
   return text;
 };

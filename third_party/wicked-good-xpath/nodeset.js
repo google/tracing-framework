@@ -6,7 +6,6 @@
 
 goog.provide('wgxpath.NodeSet');
 
-goog.require('goog.dom');
 goog.require('wgxpath.Node');
 
 
@@ -102,9 +101,7 @@ wgxpath.NodeSet.merge = function(a, b) {
       aCurr = aCurr.next;
       bCurr = bCurr.next;
     } else {
-      var compareResult = goog.dom.compareNodeOrder(
-          /** @type {!Node} */ (aCurr.node),
-          /** @type {!Node} */ (bCurr.node));
+      var compareResult = wgxpath.Node.compareNodeOrder(aCurr.node, bCurr.node);
       if (compareResult > 0) {
         next = bCurr;
         bCurr = bCurr.next;
@@ -169,6 +166,28 @@ wgxpath.NodeSet.prototype.add = function(node) {
   }
   this.last_ = entry;
   this.length_++;
+};
+
+
+/**
+ * Adds a list of nodes to this nodeset.
+ *
+ * @param {!Array.<!wgxpath.Node>} nodes The nodes to be added.
+ */
+wgxpath.NodeSet.prototype.extend = function(nodes) {
+  var prev = this.last_;
+  for (var n = 0; n < nodes.length; n++) {
+    var entry = new wgxpath.NodeSet.Entry_(nodes[n]);
+    entry.prev = prev;
+    if (!this.first_) {
+      this.first_ = entry;
+    } else {
+      prev.next = entry;
+    }
+    prev = entry;
+  }
+  this.last_ = prev;
+  this.length_ += nodes.length;
 };
 
 

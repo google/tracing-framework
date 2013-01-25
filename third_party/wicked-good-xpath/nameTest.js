@@ -6,7 +6,7 @@
 
 goog.provide('wgxpath.NameTest');
 
-goog.require('goog.dom.NodeType');
+goog.require('wgxpath.NodeType');
 
 
 
@@ -28,29 +28,19 @@ wgxpath.NameTest = function(name) {
 
 
 /**
- * The default namespace for XHTML nodes.
- *
- * @const
- * @type {string}
- * @private
- */
-wgxpath.NameTest.HTML_NAMESPACE_ = 'http://www.w3.org/1999/xhtml';
-
-
-/**
  * @override
  */
 wgxpath.NameTest.prototype.matches = function(node) {
-  var type = node.nodeType;
-  if (type != goog.dom.NodeType.ELEMENT &&
-      type != goog.dom.NodeType.ATTRIBUTE) {
-    return false;
-  }
-  if (this.name_ == '*' || this.name_ == node.nodeName.toLowerCase()) {
-    return true;
-  } else {
-    var namespace = node.namespaceURI || wgxpath.NameTest.HTML_NAMESPACE_;
-    return this.name_ == namespace + ':*';
+  var type = node.getNodeType();
+  switch (type) {
+    case wgxpath.NodeType.DATABASE:
+    case wgxpath.NodeType.ZONE:
+    case wgxpath.NodeType.SCOPE:
+    case wgxpath.NodeType.INSTANCE:
+    case wgxpath.NodeType.ATTRIBUTE:
+      return this.name_ == '*' || this.name_ == node.getNodeName();
+    default:
+      return false;
   }
 };
 
@@ -66,7 +56,15 @@ wgxpath.NameTest.prototype.getName = function() {
 /**
  * @override
  */
-wgxpath.NameTest.prototype.toString = function(opt_indent) {
+wgxpath.NameTest.prototype.toString = function() {
+  return this.toStringIndented();
+};
+
+
+/**
+ * @override
+ */
+wgxpath.NameTest.prototype.toStringIndented = function(opt_indent) {
   var indent = opt_indent || '';
   return indent + 'nametest: ' + this.name_;
 };
