@@ -64,6 +64,14 @@ file_set(
     name='wtf_src_js',
     srcs=glob('src/**/*.js'))
 
+# third_party js
+file_set(
+    name='third_party_js',
+    srcs=[
+        'third_party/d3/colorbrewer.js',
+        'third_party/wicked-good-xpath:all_js',
+        ])
+
 # Testing support files
 file_set(
     name='testing_files',
@@ -108,9 +116,9 @@ closure_js_library(
     ],
     srcs=[
         'third_party:all_closure_js',
+        ':third_party_js',
         ':wtf_src_js',
         ':all_soy_js',
-        'third_party/d3/colorbrewer.js',
         ],
     compiler_jar=JS_COMPILER_JAR)
 
@@ -141,10 +149,10 @@ closure_gss_library(
         ])
 
 WTF_TRACE_WEB_SRCS=[
+    ':third_party_js',
     ':wtf_src_js',
     ':wtf_ui_soy_js',
     ':wtf_hud_soy_js',
-    'third_party/d3/colorbrewer.js',
     ]
 
 # All uncompiled JS
@@ -274,6 +282,7 @@ closure_js_library(
         ],
     srcs=[
         'third_party:all_closure_js',
+        ':third_party_js',
         ':wtf_src_js',
         ],
     externs=[':all_externs'],
@@ -301,10 +310,10 @@ file_set(
 # TODO(benvanik): move to app/BUILD?
 
 WTF_UI_SRCS=[
+    ':third_party_js',
     ':wtf_src_js',
     ':wtf_ui_soy_js',
     ':wtf_app_soy_js',
-    'third_party/d3/colorbrewer.js',
     ]
 
 # All uncompiled JS

@@ -108,6 +108,16 @@ wtf.ui.SearchControl.prototype.createDom = function(dom) {
 
 
 /**
+ * Sets the placeholder text.
+ * @param {string} value New value.
+ */
+wtf.ui.SearchControl.prototype.setPlaceholderText = function(value) {
+  var el = this.getRootElement();
+  el.placeholder = value;
+};
+
+
+/**
  * Toggles error mode on the control.
  * When true, the control will be drawn with a special error style to indicate
  * that the contents are invalid.
