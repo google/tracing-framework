@@ -5,10 +5,6 @@ if (!available) {
   return;
 }
 
-// TODO(benvanik): find a way to get this - either via the extension APIs
-//     or asking the user for it.
-var currentThreadId = 10406;
-
 var active = false;
 var syncIntervalId = undefined;
 
@@ -83,6 +79,9 @@ function processTraceData(data) {
 
   // First we need to walk the data to find the threads by __metadata.
   // Unfortunately these come out of order.
+  // We also search for sync events and assume they all come from us. The thread
+  // that has them is our thread for inspection.
+  var currentThreadId = 0;
   for (var n = 0; n < data.length; n++) {
     var e = data[n];
     if (!e) {
@@ -93,7 +92,7 @@ function processTraceData(data) {
     if (!thread) {
       thread = threads[e.tid] = {
         name: null,
-        included: e.tid == currentThreadId,
+        included: false,
         openScopes: [],
         zone: null
       };
@@ -117,6 +116,9 @@ function processTraceData(data) {
       var time = parseFloat(e.name.substr(e.name.lastIndexOf(':') + 1));
       timeDelta = e.ts - time;
       data[n] = null;
+
+      // Assume this thread is us.
+      currentThreadId = e.tid;
     }
   }
   console.log('time delta: ' + timeDelta);
@@ -125,21 +127,24 @@ function processTraceData(data) {
   // Perhaps we should do this only when we see events.
   for (var tid in threads) {
     var thread = threads[tid];
-    if (!thread.included) {
-      continue;
-    }
     var name = thread.name || String(tid);
     var type;
     switch (thread.name) {
       case 'CrBrowserMain':
         type = 'native_browser';
+        thread.included = true;
         break;
       case 'CrGpuMain':
         type = 'native_gpu';
+        thread.included = true;
         break;
       default:
         type = 'native_script';
+        thread.included = tid == currentThreadId;
         break;
+    }
+    if (!thread.included) {
+      continue;
     }
     var location = '';
     thread.zone = wtf.trace.createZone(name, type, location);

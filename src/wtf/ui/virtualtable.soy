@@ -1,0 +1,27 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Virtual table DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.ui.virtualtable}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css uiVirtualTable}">
+    <div class="{css scrollbarOuter}">
+      <div class="{css scrollbarInner}"></div>
+      <canvas class="{css canvas}"></canvas>
+    </div>
+  </div>
+{/template}

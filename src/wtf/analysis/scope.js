@@ -32,14 +32,6 @@ wtf.analysis.Scope = function() {
    */
   this.rootNode = null;
 
-  // TODO(benvanik): set source index
-  /**
-   * Position in parent scope.
-   * @type {number}
-   * @private
-   */
-  this.position_ = 0;
-
   /**
    * Analysis-session-unique ID.
    * @type {number}
@@ -418,7 +410,7 @@ wtf.analysis.Scope.prototype.getNodeType = function() {
  * @override
  */
 wtf.analysis.Scope.prototype.getNodePosition = function() {
-  return this.position_;
+  return this.enterEvent_ ? this.enterEvent_.getPosition() : 0;
 };
 
 

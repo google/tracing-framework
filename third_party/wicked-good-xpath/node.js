@@ -403,7 +403,13 @@ wgxpath.Node.compareNodeOrder = function(a, b) {
   if (a == b) {
     return 0;
   }
-  return a.getNodePosition() - b.getNodePosition();
+  var ap = a.getNodeType() == wgxpath.NodeType.ATTRIBUTE ?
+      a.getParentNode().getNodePosition() + 1 / (a.getNodePosition() + 1) :
+      a.getNodePosition();
+  var bp = b.getNodeType() == wgxpath.NodeType.ATTRIBUTE ?
+      b.getParentNode().getNodePosition() + 1 / (b.getNodePosition() + 1) :
+      b.getNodePosition();
+  return ap - bp;
 };
 
 

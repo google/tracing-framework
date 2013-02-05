@@ -293,6 +293,22 @@ wtf.analysis.db.EventDatabase.prototype.invalidate_ = function() {
 
 
 /**
+ * Renumbers all events in the database.
+ * This gives all events a database-absolute position used for sorting.
+ * @private
+ */
+wtf.analysis.db.EventDatabase.prototype.renumber_ = function() {
+  var position = 0;
+  // The database is always at position 0.
+  position++;
+  for (var n = 0; n < this.zoneIndices_.length; n++) {
+    var zoneIndex = this.zoneIndices_[n];
+    position = zoneIndex.renumber(position);
+  }
+};
+
+
+/**
  * Queries the database.
  * Throws errors if the expression could not be parsed.
  * @param {string} expr Query string.
@@ -324,6 +340,7 @@ wtf.analysis.db.EventDatabase.prototype.getNodeType = function() {
  * @override
  */
 wtf.analysis.db.EventDatabase.prototype.getNodePosition = function() {
+  // Database is always at 0.
   return 0;
 };
 
@@ -567,6 +584,10 @@ wtf.analysis.db.EventDatabase.Listener_.prototype.endEventBatch = function() {
   for (var n = this.eventTargets_.length - 1; n >= 0; n--) {
     this.eventTargets_[n].endInserting();
   }
+
+  // Renumber the database.
+  // This could be really slow, and should be done incrementally if possible.
+  this.db_.renumber_();
 
   // Track added zones and emit the event.
   if (this.beginningZoneCount_ != this.db_.zoneIndices_.length) {
