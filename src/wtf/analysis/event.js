@@ -18,6 +18,8 @@ goog.provide('wtf.analysis.ScopeEvent');
 goog.provide('wtf.analysis.TimeRangeEvent');
 goog.provide('wtf.analysis.ZoneEvent');
 
+goog.require('wtf.util');
+
 
 
 /**
@@ -211,6 +213,33 @@ wtf.analysis.Event.prototype.getPosition = function() {
  */
 wtf.analysis.Event.prototype.setPosition = function(value) {
   this.position_ = value;
+};
+
+
+/**
+ * Gets an informative string about an event or list of events.
+ * @param {!wtf.analysis.Event|Array.<!wtf.analysis.Event>} events Target event
+ *     or list of events.
+ * @return {string} Info string.
+ */
+wtf.analysis.Event.getInfoString = function(events) {
+  if (!goog.isArray(events)) {
+    events = [events];
+  }
+
+  var lines = [];
+
+  for (var n = 0; n < events.length; n++) {
+    if (n) {
+      lines.push('\n');
+    }
+    var e = events[n];
+    var eventType = e.eventType;
+    lines.push(eventType.name);
+    wtf.util.addArgumentLines(lines, e.getArguments());
+  }
+
+  return lines.join('\n');
 };
 
 

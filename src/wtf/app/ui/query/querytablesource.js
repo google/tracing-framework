@@ -13,8 +13,10 @@
 
 goog.provide('wtf.app.ui.query.QueryTableSource');
 
+goog.require('goog.asserts');
 goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.Scope');
+goog.require('wtf.analysis.Zone');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.ZoneIndex');
 goog.require('wtf.ui.VirtualTableSource');
@@ -135,8 +137,38 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
 };
 
 
-// TODO(benvanik): hover attribute shows parent event tooltip, click goes to
-//     parent event
+/**
+ * @override
+ */
+wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
+    row, x, bounds) {
+  var value = this.rows_[row];
+  if (typeof value == 'boolean' ||
+      typeof value == 'number' ||
+      typeof value == 'string') {
+    // Primitive.
+    // We don't have any additional information.
+    return undefined;
+  } else {
+    // Attributes all use their parent.
+    if (value instanceof wgxpath.Attr) {
+      var parentNode = value.getParentNode();
+      goog.asserts.assert(value);
+      value = parentNode;
+    }
+
+    if (value instanceof wtf.analysis.Scope) {
+      return wtf.analysis.Scope.getInfoString(value);
+    } else if (value instanceof wtf.analysis.Event) {
+      return wtf.analysis.Event.getInfoString(value);
+    } else if (value instanceof wtf.analysis.db.ZoneIndex) {
+      return wtf.analysis.Zone.getInfoString(value.getZone());
+    } else if (value instanceof wtf.analysis.db.EventDatabase) {
+      return undefined;
+    }
+  }
+};
+
 // TODO(benvanik): if attr value is a URL, add an 'open' link
 // TODO(benvanik): onclick handler sends to event in timeline
 // TODO(benvanik): onhover sets indicator on navbar
