@@ -194,7 +194,7 @@ wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
   prepare: null,
   write: function(a, bufferNames) {
     return [
-      'd[o++] = a ? 1 : 0;'
+      'd[o++] = ' + a + ' ? 1 : 0;'
     ];
   }
 };
