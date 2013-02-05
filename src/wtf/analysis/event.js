@@ -82,6 +82,13 @@ wtf.analysis.Event = function(eventType, zone, time, args) {
    * @type {*}
    */
   this.tag = null;
+
+  /**
+   * Absolute position in the database.
+   * @type {number}
+   * @private
+   */
+  this.position_ = 0;
 };
 
 
@@ -186,6 +193,24 @@ wtf.analysis.Event.prototype.setTag = function(value) {
  */
 wtf.analysis.Event.prototype.drop = function() {
   this.setTag(null);
+};
+
+
+/**
+ * Gets the absolute event position in the database.
+ * @return {number} Event position.
+ */
+wtf.analysis.Event.prototype.getPosition = function() {
+  return this.position_;
+};
+
+
+/**
+ * Sets the absolute event position in the database.
+ * @param {number} value Event position.
+ */
+wtf.analysis.Event.prototype.setPosition = function(value) {
+  this.position_ = value;
 };
 
 

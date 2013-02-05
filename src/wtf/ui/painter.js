@@ -212,6 +212,18 @@ wtf.ui.Painter.prototype.getCanvasContext2d = function() {
 
 
 /**
+ * Gets the pixel scaling ratio used to transform logical pixels to
+ * canvas pixels.
+ * <code>
+ * </code>
+ * @return {number} Scale.
+ */
+wtf.ui.Painter.prototype.getScaleRatio = function() {
+  return this.pixelRatio_;
+};
+
+
+/**
  * Gets the scaled canvas width in CSS pixels.
  * @return {number} Canvas width.
  */
