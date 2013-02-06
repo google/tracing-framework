@@ -84,6 +84,22 @@ wtf.analysis.Zone.prototype.getLocation = function() {
 };
 
 
+/**
+ * Gets an informative string about a zone.
+ * @param {!wtf.analysis.Zone} zone Target zone.
+ * @return {string} Info string.
+ */
+wtf.analysis.Zone.getInfoString = function(zone) {
+  var lines = [
+    zone.name_ + ' (' + zone.type_ + ')'
+  ];
+  if (zone.location_ && zone.location_.length) {
+    lines.push(zone.location_);
+  }
+  return lines.join('\n');
+};
+
+
 goog.exportSymbol(
     'wtf.analysis.Zone',
     wtf.analysis.Zone);

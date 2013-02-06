@@ -13,7 +13,7 @@
 
 /* QueryPanel root. */
 .appUiQueryPanel {
-  @inputBarHeight: 35px;
+  @inputBarHeight: 36px;
 
   .fitParent();
 
@@ -21,7 +21,7 @@
     position: absolute;
     width: 100%;
     top: 0;
-    height: @inputBarHeight;
+    height: @inputBarHeight - 1;
     border-bottom: 1px solid #EBEBEB;
 
     @rightWidth: 150px;
@@ -60,5 +60,13 @@
     & .results {
       .fitParent();
     }
+  }
+
+  & .error {
+    position: absolute;
+    top: @inputBarHeight;
+    left: 0;
+    margin-left: 5px;
+    margin-top: 5px;
   }
 }

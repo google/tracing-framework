@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui.tracks.ZonePainter');
 
+goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.FlowEvent');
 goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.ScopeEvent');
@@ -23,7 +24,6 @@ goog.require('wtf.math');
 goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.RangePainter');
 goog.require('wtf.ui.color.Palette');
-goog.require('wtf.util');
 
 
 
@@ -413,9 +413,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
   var result = this.hitTest_(x, y, bounds);
   if (result instanceof wtf.analysis.Scope) {
-    return this.generateScopeTooltip_(result);
+    return wtf.analysis.Scope.getInfoString(result);
   } else if (result && result.length) {
-    return this.generateInstancesTooltip_(result);
+    return wtf.analysis.Event.getInfoString(result);
   }
   return undefined;
 };
@@ -474,56 +474,4 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(
   }
 
   return null;
-};
-
-
-/**
- * Generates a tooltip string from the given scope.
- * @param {!wtf.analysis.Scope} scope Scope.
- * @return {string} Tooltip string.
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.prototype.generateScopeTooltip_ = function(
-    scope) {
-  var totalTime = wtf.util.formatTime(scope.getTotalDuration());
-  var times = totalTime;
-  if (scope.getTotalDuration() - scope.getOwnDuration()) {
-    var ownTime = wtf.util.formatTime(scope.getOwnDuration());
-    times += ' (' + ownTime + ')';
-  }
-
-  var enter = scope.getEnterEvent();
-  var eventType = enter.eventType;
-  var lines = [
-    times + ': ' + eventType.name
-  ];
-
-  wtf.util.addArgumentLines(lines, scope.getData());
-
-  return lines.join('\n');
-};
-
-
-/**
- * Generates a tooltip string from a list of instance events.
- * @param {!Array.<wtf.analysis.Event>} events Event list.
- * @return {string} Tooltip string.
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.prototype.generateInstancesTooltip_ = function(
-    events) {
-  var lines = [
-  ];
-
-  for (var n = 0; n < events.length; n++) {
-    if (n) {
-      lines.push('\n');
-    }
-    var e = events[n];
-    var eventType = e.eventType;
-    lines.push(eventType.name);
-    wtf.util.addArgumentLines(lines, e.getArguments());
-  }
-
-  return lines.join('\n');
 };

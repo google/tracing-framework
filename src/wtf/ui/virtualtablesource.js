@@ -114,6 +114,16 @@ wtf.ui.VirtualTableSource.prototype.paintRowRange = goog.abstractMethod;
 
 
 /**
+ * Attempt to describe the given row.
+ * @param {number} row Row.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {!goog.math.Rect} bounds Draw bounds.
+ * @return {string|undefined} Info string or undefined for none.
+ */
+wtf.ui.VirtualTableSource.prototype.getInfoString = goog.nullFunction;
+
+
+/**
  * Invalidates the table data.
  * This should be called when the contents of any rows change.
  */

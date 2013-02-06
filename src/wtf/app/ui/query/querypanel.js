@@ -14,6 +14,7 @@
 goog.provide('wtf.app.ui.query.QueryPanel');
 
 goog.require('goog.soy');
+goog.require('goog.style');
 goog.require('wtf.app.ui.TabPanel');
 goog.require('wtf.app.ui.query.QueryTableSource');
 goog.require('wtf.app.ui.query.querypanel');
@@ -64,6 +65,13 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
   this.table_ = new wtf.ui.VirtualTable(
       this.getChildElement(goog.getCssName('results')), dom);
   this.registerDisposable(this.table_);
+
+  /**
+   * Error display element.
+   * @type {!Element}
+   * @private
+   */
+  this.errorEl_ = this.getChildElement(goog.getCssName('error'));
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
@@ -164,6 +172,7 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   this.table_.setSource(null);
   var infoEl = this.getChildElement(goog.getCssName('headerRight'));
   dom.setTextContent(infoEl, '');
+  dom.setTextContent(this.errorEl_, '');
 
   // Attempt to set the search control.
   this.searchControl_.setValue(expression);
@@ -175,13 +184,16 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   // Create the query.
   // It throws if there's an error parsing it.
   var query;
+  var error = null;
   try {
     query = this.db_.query(expression);
-    this.searchControl_.toggleError(false);
   } catch (e) {
-    // TODO(benvanik): display error message in results pane?
-    // e.toString();
-    this.searchControl_.toggleError(true);
+    error = e.toString();
+  }
+  this.searchControl_.toggleError(!!error);
+  goog.style.showElement(this.errorEl_, !!error);
+  if (error) {
+    dom.setTextContent(this.errorEl_, error);
     return;
   }
 
