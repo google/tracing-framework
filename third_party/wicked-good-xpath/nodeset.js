@@ -92,11 +92,22 @@ wgxpath.NodeSet.merge = function(a, b) {
   } else if (!b.first_) {
     return a;
   }
+
+  // Check the append case (a.last < b.first).
+  if (wgxpath.Node.compareNodeOrder(a.last_.node, b.first_.node) <= 0) {
+    // Append.
+    a.last_.next = b.first_;
+    b.first_.prev = a.last_;
+    a.last_ = b.last_;
+    a.length_ += b.length_;
+    return a;
+  }
+
   var aCurr = a.first_;
   var bCurr = b.first_;
   var merged = a, tail = null, next = null, length = 0;
   while (aCurr && bCurr) {
-    if (wgxpath.Node.equal(aCurr.node, bCurr.node)) {
+    if (aCurr.node == bCurr.node) {
       next = aCurr;
       aCurr = aCurr.next;
       bCurr = bCurr.next;

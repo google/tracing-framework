@@ -127,6 +127,13 @@ wtf.analysis.db.ZoneIndex = function(db, zone) {
   this.pendingSystemScopes_ = [];
 
   /**
+   * Absolute position in the database.
+   * @type {number}
+   * @private
+   */
+  this.position_ = 0;
+
+  /**
    * Node attributes.
    * @type {!Array.<!wgxpath.Attr>}
    * @private
@@ -332,6 +339,22 @@ wtf.analysis.db.ZoneIndex.prototype.endInserting = function() {
 
 
 /**
+ * Renumbers all events in the zone.
+ * @param {number} position Starting position.
+ * @return {number} Next position.
+ */
+wtf.analysis.db.ZoneIndex.prototype.renumber = function(position) {
+  this.position_ = position++;
+
+  this.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
+    e.setPosition(position++);
+  });
+
+  return position;
+};
+
+
+/**
  * @override
  */
 wtf.analysis.db.ZoneIndex.prototype.getNodeType = function() {
@@ -343,8 +366,7 @@ wtf.analysis.db.ZoneIndex.prototype.getNodeType = function() {
  * @override
  */
 wtf.analysis.db.ZoneIndex.prototype.getNodePosition = function() {
-  // TODO(benvanik): support zone position
-  return 0;
+  return this.position_;
 };
 
 

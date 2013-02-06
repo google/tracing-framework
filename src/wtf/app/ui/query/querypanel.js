@@ -13,14 +13,15 @@
 
 goog.provide('wtf.app.ui.query.QueryPanel');
 
-goog.require('goog.dom.TagName');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.TabPanel');
+goog.require('wtf.app.ui.query.QueryTableSource');
 goog.require('wtf.app.ui.query.querypanel');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.SearchControl');
+goog.require('wtf.ui.VirtualTable');
 goog.require('wtf.util');
 
 
@@ -45,16 +46,24 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
    */
   this.db_ = db;
 
-  var headerEl = this.getChildElement(
-      goog.getCssName('headerLeft'));
   /**
    * Search text field.
    * @type {!wtf.ui.SearchControl}
    * @private
    */
-  this.searchControl_ = new wtf.ui.SearchControl(headerEl, dom);
+  this.searchControl_ = new wtf.ui.SearchControl(
+      this.getChildElement(goog.getCssName('headerLeft')), dom);
   this.registerDisposable(this.searchControl_);
   this.searchControl_.setPlaceholderText('XPath-like query');
+
+  /**
+   * Results table.
+   * @type {!wtf.ui.VirtualTable}
+   * @private
+   */
+  this.table_ = new wtf.ui.VirtualTable(
+      this.getChildElement(goog.getCssName('results')), dom);
+  this.registerDisposable(this.table_);
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
@@ -87,7 +96,7 @@ goog.inherits(wtf.app.ui.query.QueryPanel, wtf.app.ui.TabPanel);
  */
 wtf.app.ui.query.QueryPanel.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
-  commandManager.unregisterCommand('filter_events');
+  commandManager.unregisterCommand('query');
   goog.base(this, 'disposeInternal');
 };
 
@@ -98,6 +107,14 @@ wtf.app.ui.query.QueryPanel.prototype.disposeInternal = function() {
 wtf.app.ui.query.QueryPanel.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.query.querypanel.control, undefined, undefined, dom));
+};
+
+
+/**
+ * @override
+ */
+wtf.app.ui.query.QueryPanel.prototype.layoutInternal = function() {
+  this.table_.layout();
 };
 
 
@@ -143,68 +160,35 @@ wtf.app.ui.query.QueryPanel.prototype.navigate = function(pathParts) {
 wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   var dom = this.getDom();
 
-  var resultsEl = this.getChildElement(goog.getCssName('results'));
-  dom.setTextContent(resultsEl, '');
-
+  // Clear results.
+  this.table_.setSource(null);
   var infoEl = this.getChildElement(goog.getCssName('headerRight'));
   dom.setTextContent(infoEl, '');
 
+  // Attempt to set the search control.
   this.searchControl_.setValue(expression);
   if (!expression.length) {
     this.searchControl_.toggleError(false);
     return;
   }
 
+  // Create the query.
+  // It throws if there's an error parsing it.
   var query;
   try {
     query = this.db_.query(expression);
     this.searchControl_.toggleError(false);
   } catch (e) {
-    resultsEl.innerText = e.toString();
+    // TODO(benvanik): display error message in results pane?
+    // e.toString();
     this.searchControl_.toggleError(true);
     return;
   }
 
+  // Update the results.
   var result = query.getValue();
-
   dom.setTextContent(infoEl,
       (goog.isArray(result) ? result.length : 1) +
       ' hits in ' + wtf.util.formatSmallTime(query.getDuration()));
-
-  this.addResults_(resultsEl, result);
-};
-
-
-/**
- * Adds results to the given element.
- * @param {!Element} resultsEl Results element.
- * @param {wtf.analysis.db.QueryResultType} result Result.
- * @private
- */
-wtf.app.ui.query.QueryPanel.prototype.addResults_ = function(
-    resultsEl, result) {
-  var dom = this.getDom();
-  if (typeof result == 'boolean' ||
-      typeof result == 'number' ||
-      typeof result == 'string') {
-    var el = dom.createElement(goog.dom.TagName.DIV);
-    dom.setTextContent(el, result.toString());
-    resultsEl.appendChild(el);
-    return;
-  } else if (!result || (goog.isArray(result) && !result.length)) {
-    var el = dom.createElement(goog.dom.TagName.DIV);
-    dom.setTextContent(el, 'Nothing matched');
-    resultsEl.appendChild(el);
-    return;
-  }
-
-  if (goog.isArray(result)) {
-    for (var n = 0; n < result.length; n++) {
-      this.addResults_(resultsEl, result[n]);
-    }
-  } else {
-    var el = dom.createElement(goog.dom.TagName.DIV);
-    dom.setTextContent(el, result.toString());
-    resultsEl.appendChild(el);
-  }
+  this.table_.setSource(new wtf.app.ui.query.QueryTableSource(result));
 };
