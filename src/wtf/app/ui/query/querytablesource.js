@@ -13,11 +13,14 @@
 
 goog.provide('wtf.app.ui.query.QueryTableSource');
 
+goog.require('goog.asserts');
 goog.require('wtf.analysis.Event');
 goog.require('wtf.analysis.Scope');
+goog.require('wtf.analysis.Zone');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.ZoneIndex');
 goog.require('wtf.ui.VirtualTableSource');
+goog.require('wtf.util');
 
 
 
@@ -93,6 +96,9 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
   ctx.fillStyle = '#dddddd';
   ctx.fillRect(gutterWidth - 1, 0, 1, bounds.height);
 
+  var drewColumnTime = false;
+  var columnTimeWidth = 13 * charWidth;
+
   // Draw row contents.
   y = rowOffset;
   for (var n = first; n <= last; n++, y += rowHeight) {
@@ -101,7 +107,8 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
 
     // TODO(benvanik): icons to differentiate event types?
 
-    var column0 = null;
+    var columnTime = -1;
+    var columnTitle = null;
 
     ctx.fillStyle = 'black';
     var value = this.rows_[n];
@@ -109,34 +116,94 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
         typeof value == 'number' ||
         typeof value == 'string') {
       // Primitive.
-      column0 = String(value);
+      columnTitle = String(value);
     } else {
       // Some node.
       if (value instanceof wtf.analysis.Scope) {
-        column0 = value.getName();
+        columnTime = value.getEnterTime();
+        columnTitle = value.getName();
       } else if (value instanceof wtf.analysis.Event) {
-        column0 = value.getEventType().getName();
+        columnTime = value.getTime();
+        columnTitle = value.getEventType().getName();
       } else if (value instanceof wgxpath.Attr) {
+        var parentNode = value.getParentNode();
+        if (parentNode instanceof wtf.analysis.Scope) {
+          columnTime = parentNode.getEnterTime();
+        } else if (parentNode instanceof wtf.analysis.Event) {
+          columnTime = parentNode.getTime();
+        } else {
+          columnTime = 0;
+        }
         var attrkey = value.getNodeName();
         var attrvalue = value.getNodeValue();
-        column0 = attrkey + ': ' + attrvalue;
+        columnTitle = attrkey + ': ' + attrvalue;
       } else if (value instanceof wtf.analysis.db.ZoneIndex) {
-        column0 = value.getZone().getName();
+        columnTime = 0;
+        columnTitle = value.getZone().getName();
       } else if (value instanceof wtf.analysis.db.EventDatabase) {
-        column0 = 'db';
+        columnTime = 0;
+        columnTitle = 'db';
       }
     }
 
+    var x = gutterWidth + charWidth;
+    if (columnTime >= 0) {
+      var columnTimeText = wtf.util.formatTime(columnTime);
+      ctx.fillText(
+          columnTimeText,
+          x + columnTimeWidth - (columnTimeText.length * charWidth),
+          Math.floor(y + rowCenter));
+      x += columnTimeWidth + 2 * charWidth;
+      drewColumnTime = true;
+    }
+
     ctx.fillText(
-        column0,
-        gutterWidth + charWidth,
+        columnTitle,
+        x,
         Math.floor(y + rowCenter));
+  }
+
+  if (drewColumnTime) {
+    ctx.fillStyle = '#dddddd';
+    ctx.fillRect(
+        gutterWidth + charWidth + columnTimeWidth + charWidth,
+        0, 1, bounds.height);
   }
 };
 
 
-// TODO(benvanik): hover attribute shows parent event tooltip, click goes to
-//     parent event
+/**
+ * @override
+ */
+wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
+    row, x, bounds) {
+  var value = this.rows_[row];
+  if (typeof value == 'boolean' ||
+      typeof value == 'number' ||
+      typeof value == 'string') {
+    // Primitive.
+    // We don't have any additional information.
+    return undefined;
+  } else {
+    // Attributes all use their parent.
+    if (value instanceof wgxpath.Attr) {
+      var parentNode = value.getParentNode();
+      goog.asserts.assert(value);
+      value = parentNode;
+    }
+
+    if (value instanceof wtf.analysis.Scope) {
+      return wtf.analysis.Scope.getInfoString(value);
+    } else if (value instanceof wtf.analysis.Event) {
+      return wtf.analysis.Event.getInfoString(value);
+    } else if (value instanceof wtf.analysis.db.ZoneIndex) {
+      return wtf.analysis.Zone.getInfoString(value.getZone());
+    } else if (value instanceof wtf.analysis.db.EventDatabase) {
+      return undefined;
+    }
+  }
+};
+
 // TODO(benvanik): if attr value is a URL, add an 'open' link
 // TODO(benvanik): onclick handler sends to event in timeline
 // TODO(benvanik): onhover sets indicator on navbar

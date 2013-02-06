@@ -265,7 +265,7 @@ wtf.ui.VirtualTable.Painter_.prototype.repaintInternal = function(ctx, bounds) {
 wtf.ui.VirtualTable.Painter_.prototype.onClickInternal = function(
     x, y, modifiers, bounds) {
   var row = this.hitTest_(x, y, bounds);
-  if (!row) {
+  if (row === undefined) {
     return false;
   }
 
@@ -279,13 +279,17 @@ wtf.ui.VirtualTable.Painter_.prototype.onClickInternal = function(
  */
 wtf.ui.VirtualTable.Painter_.prototype.getInfoStringInternal = function(
     x, y, bounds) {
-  var row = this.hitTest_(x, y, bounds);
-  if (!row) {
+  var source = this.table_.getSource();
+  if (!source) {
     return undefined;
   }
 
-  // TODO(benvanik): defer to data source
-  return undefined;
+  var row = this.hitTest_(x, y, bounds);
+  if (row === undefined) {
+    return undefined;
+  }
+
+  return source.getInfoString(row, x, bounds);
 };
 
 
@@ -298,5 +302,23 @@ wtf.ui.VirtualTable.Painter_.prototype.getInfoStringInternal = function(
  * @private
  */
 wtf.ui.VirtualTable.Painter_.prototype.hitTest_ = function(x, y, bounds) {
-  return undefined;
+  var source = this.table_.getSource();
+  if (!source) {
+    return undefined;
+  }
+  var scaleRatio = this.getScaleRatio();
+  var rowHeight = source.getRowHeight();
+  var rowCount = source.getRowCount();
+  var scrollTop = this.table_.getScrollTop();
+
+  if (!rowCount) {
+    return undefined;
+  }
+
+  var row = Math.floor((y + scrollTop / scaleRatio) / rowHeight);
+  if (row >= rowCount) {
+    return undefined;
+  }
+
+  return row;
 };

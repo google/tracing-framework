@@ -16,6 +16,7 @@ goog.provide('wtf.analysis.Scope');
 goog.require('goog.asserts');
 goog.require('wgxpath.Node');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.util');
 
 
 
@@ -395,6 +396,31 @@ wtf.analysis.Scope.prototype.getRenderData = function() {
  */
 wtf.analysis.Scope.prototype.setRenderData = function(value) {
   this.renderData_ = value;
+};
+
+
+/**
+ * Gets an informative string about a scope.
+ * @param {!wtf.analysis.Scope} scope Target scope.
+ * @return {string} Info string.
+ */
+wtf.analysis.Scope.getInfoString = function(scope) {
+  var totalTime = wtf.util.formatTime(scope.getTotalDuration());
+  var times = totalTime;
+  if (scope.getTotalDuration() - scope.getOwnDuration()) {
+    var ownTime = wtf.util.formatTime(scope.getOwnDuration());
+    times += ' (' + ownTime + ')';
+  }
+
+  var enter = scope.getEnterEvent();
+  var eventType = enter.eventType;
+  var lines = [
+    times + ': ' + eventType.name
+  ];
+
+  wtf.util.addArgumentLines(lines, scope.getData());
+
+  return lines.join('\n');
 };
 
 
