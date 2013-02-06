@@ -55,7 +55,8 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
   this.searchControl_ = new wtf.ui.SearchControl(
       this.getChildElement(goog.getCssName('headerLeft')), dom);
   this.registerDisposable(this.searchControl_);
-  this.searchControl_.setPlaceholderText('XPath-like query');
+  this.searchControl_.setPlaceholderText(
+      'substring or /regex/ or XPath-like query');
 
   /**
    * Results table.
@@ -65,6 +66,21 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
   this.table_ = new wtf.ui.VirtualTable(
       this.getChildElement(goog.getCssName('results')), dom);
   this.registerDisposable(this.table_);
+
+  /**
+   * Query info element.
+   * @type {!Element}
+   * @private
+   */
+  this.infoEl_ = this.getChildElement(goog.getCssName('headerRight'));
+
+  /**
+   * Root empty display container.
+   * This is shown when there is an error or the search box is empty.
+   * @type {!Element}
+   * @private
+   */
+  this.emptyEl_ = this.getChildElement(goog.getCssName('empty'));
 
   /**
    * Error display element.
@@ -95,6 +111,9 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
   this.keyboardScope_ = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(this.keyboardScope_);
   this.setupKeyboardShortcuts_();
+
+  goog.style.showElement(this.emptyEl_, true);
+  goog.style.showElement(this.errorEl_, false);
 };
 goog.inherits(wtf.app.ui.query.QueryPanel, wtf.app.ui.TabPanel);
 
@@ -170,14 +189,15 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
 
   // Clear results.
   this.table_.setSource(null);
-  var infoEl = this.getChildElement(goog.getCssName('headerRight'));
-  dom.setTextContent(infoEl, '');
+  dom.setTextContent(this.infoEl_, '');
   dom.setTextContent(this.errorEl_, '');
 
   // Attempt to set the search control.
   this.searchControl_.setValue(expression);
   if (!expression.length) {
     this.searchControl_.toggleError(false);
+    goog.style.showElement(this.emptyEl_, true);
+    goog.style.showElement(this.errorEl_, false);
     return;
   }
 
@@ -190,17 +210,26 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   } catch (e) {
     error = e.toString();
   }
+
+  // Toggle error state.
   this.searchControl_.toggleError(!!error);
+  goog.style.showElement(this.emptyEl_, !!error);
   goog.style.showElement(this.errorEl_, !!error);
   if (error) {
+    dom.setTextContent(this.infoEl_, '');
     dom.setTextContent(this.errorEl_, error);
     return;
   }
 
-  // Update the results.
+  this.infoEl_.title = query.getCompiledExpression().toString();
+
   var result = query.getValue();
-  dom.setTextContent(infoEl,
+
+  // Update info with query stats.
+  dom.setTextContent(this.infoEl_,
       (goog.isArray(result) ? result.length : 1) +
       ' hits in ' + wtf.util.formatSmallTime(query.getDuration()));
+
+  // Update the table.
   this.table_.setSource(new wtf.app.ui.query.QueryTableSource(result));
 };

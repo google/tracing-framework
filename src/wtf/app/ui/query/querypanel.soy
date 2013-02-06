@@ -29,6 +29,52 @@
       <div class="{css results}">
       </div>
     </div>
-    <div class="{css error}"></div>
+    <div class="{css empty}">
+      <div class="{css error}"></div>
+      <div class="{css help}">
+        Start typing to get a case-insensitive substring search.<br/>
+        <table class="{css examples}">
+          <tr>
+            <td class="{css code}">#gc</td>
+            <td>find all GCs</td>
+          </tr>
+          <tr>
+            <td class="{css code}">webgl</td>
+            <td>WebGL related things</td>
+          </tr>
+        </table>
+        <br/>
+        Or, enter a regex:<br/>
+        <table class="{css examples}">
+          <tr>
+            <td class="{css code}">/^webgl/i</td>
+            <td>all WebGL* events</td>
+          </tr>
+        </table>
+        <br/>
+        If you're feeling adventurous, use XPath:<br/>
+        <table class="{css examples}">
+          <tr>
+            <td class="{css code}">//javascript#gc[@totalTime>5]</td>
+            <td>all GCs that took longer than 5ms</td>
+          </tr>
+          <tr>
+            <td class="{css code}">sum(//javascript#gc/@totalTime)</td>
+            <td>total time spent in GC</td>
+          </tr>
+          <tr>
+            <td class="{css code}">//XMLHttpRequest#send/@url</td>
+            <td>the URLs of all XHRs</td>
+          </tr>
+          <tr>
+            <td class="{css code}">//XMLHttpRequest#send/..</td>
+            <td>all scopes that called XHR send</td>
+          </tr>
+        </table>
+        <br/>
+        <br/>
+        TODO: more help (link to docs, etc)<br/>
+      </div>
+    </div>
   </div>
 {/template}

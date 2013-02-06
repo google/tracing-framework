@@ -62,11 +62,27 @@
     }
   }
 
-  & .error {
+  & .empty {
     position: absolute;
     top: @inputBarHeight;
     left: 0;
     margin-left: 5px;
     margin-top: 5px;
+
+    & .error {
+      color: #DD4B39;
+      padding-bottom: 15px;
+    }
+
+    & .help {
+      .examples {
+        margin-left: 15px;
+
+        .code {
+          font-family: monospace;
+          padding-right: 25px;
+        }
+      }
+    }
   }
 }

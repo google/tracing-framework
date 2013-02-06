@@ -11,11 +11,18 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+goog.provide('wtf.analysis.db.CompiledQueryExpression');
 goog.provide('wtf.analysis.db.QueryResult');
 goog.provide('wtf.analysis.db.QueryResultType');
 
 goog.require('goog.Disposable');
 goog.require('wgxpath.XPathExpression');
+
+
+/**
+ * @typedef {(wgxpath.XPathExpression|RegExp|string)}
+ */
+wtf.analysis.db.CompiledQueryExpression;
 
 
 /**
@@ -31,13 +38,15 @@ wtf.analysis.db.QueryResultType;
  * to use.
  *
  * @param {string} expr Expression string.
- * @param {!wgxpath.XPathExpression} xpathExpr XPath expression.
+ * @param {!wtf.analysis.db.CompiledQueryExpression} compiledExpr Expression
+ *     after it has been parsed/prepared, used for debugging output.
  * @param {number} duration Duration of the query, in ms.
- * @param {!wgxpath.XPathResult} xpathResult XPath result.
+ * @param {?wtf.analysis.db.QueryResultType} value Result value.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.analysis.db.QueryResult = function(expr, xpathExpr, duration, xpathResult) {
+wtf.analysis.db.QueryResult = function(expr, compiledExpr, duration,
+    value) {
   goog.base(this);
 
   /**
@@ -49,10 +58,10 @@ wtf.analysis.db.QueryResult = function(expr, xpathExpr, duration, xpathResult) {
 
   /**
    * XPath expression.
-   * @type {!wgxpath.XPathExpression}
+   * @type {!wtf.analysis.db.CompiledQueryExpression}
    * @private
    */
-  this.xpathExpr_ = xpathExpr;
+  this.compiledExpr_ = compiledExpr;
 
   /**
    * Duration, in ms.
@@ -62,10 +71,10 @@ wtf.analysis.db.QueryResult = function(expr, xpathExpr, duration, xpathResult) {
 
   /**
    * Resulting value.
-   * @type {wtf.analysis.db.QueryResultType}
+   * @type {?wtf.analysis.db.QueryResultType}
    * @private
    */
-  this.value_ = xpathResult.value;
+  this.value_ = value;
 };
 goog.inherits(wtf.analysis.db.QueryResult, goog.Disposable);
 
@@ -81,10 +90,10 @@ wtf.analysis.db.QueryResult.prototype.getExpression = function() {
 
 /**
  * Gets the parsed expression object.
- * @return {!wgxpath.XPathExpression} Expression object.
+ * @return {!wtf.analysis.db.CompiledQueryExpression} Expression object.
  */
-wtf.analysis.db.QueryResult.prototype.getXPathExpression = function() {
-  return this.xpathExpr_;
+wtf.analysis.db.QueryResult.prototype.getCompiledExpression = function() {
+  return this.compiledExpr_;
 };
 
 
@@ -99,7 +108,7 @@ wtf.analysis.db.QueryResult.prototype.getDuration = function() {
 
 /**
  * Gets the query result.
- * @return {wtf.analysis.db.QueryResultType} Result value.
+ * @return {?wtf.analysis.db.QueryResultType} Result value.
  */
 wtf.analysis.db.QueryResult.prototype.getValue = function() {
   return this.value_;
@@ -110,8 +119,8 @@ goog.exportProperty(
     wtf.analysis.db.QueryResult.prototype, 'getExpression',
     wtf.analysis.db.QueryResult.prototype.getExpression);
 goog.exportProperty(
-    wtf.analysis.db.QueryResult.prototype, 'getXPathExpression',
-    wtf.analysis.db.QueryResult.prototype.getXPathExpression);
+    wtf.analysis.db.QueryResult.prototype, 'getCompiledExpression',
+    wtf.analysis.db.QueryResult.prototype.getCompiledExpression);
 goog.exportProperty(
     wtf.analysis.db.QueryResult.prototype, 'getDuration',
     wtf.analysis.db.QueryResult.prototype.getDuration);
