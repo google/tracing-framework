@@ -19,6 +19,7 @@ goog.require('wtf.analysis.Scope');
 goog.require('wtf.analysis.Zone');
 goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.analysis.db.ZoneIndex');
+goog.require('wtf.events');
 goog.require('wtf.ui.VirtualTableSource');
 goog.require('wtf.util');
 
@@ -148,6 +149,52 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
 /**
  * @override
  */
+wtf.app.ui.query.QueryTableSource.prototype.onClick = function(
+    row, x, modifiers, bounds) {
+  var value = this.rows_[row];
+  if (typeof value == 'boolean' ||
+      typeof value == 'number' ||
+      typeof value == 'string') {
+    return undefined;
+  }
+
+  // Attributes all use their parent.
+  if (value instanceof wgxpath.Attr) {
+    var parentNode = value.getParentNode();
+    goog.asserts.assert(value);
+    value = parentNode;
+  }
+
+  var startTime = 0;
+  var endTime = 0;
+  if (value instanceof wtf.analysis.Scope) {
+    startTime = value.getEnterTime();
+    endTime = value.getLeaveTime();
+  } else if (value instanceof wtf.analysis.Event) {
+    startTime = endTime = value.getTime();
+  }
+  if (!startTime) {
+    return undefined;
+  }
+
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('filter_events', this, null, '');
+  if (startTime == endTime) {
+    commandManager.execute('select_all', this, null);
+    commandManager.execute('goto_range', this, null,
+        startTime - 0.01, endTime + 0.01, true);
+  } else {
+    commandManager.execute('select_range', this, null, startTime, endTime);
+    commandManager.execute('goto_range', this, null, startTime, endTime, true);
+  }
+  commandManager.execute('navigate', this, null, 'tracks');
+  return true;
+};
+
+
+/**
+ * @override
+ */
 wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
     row, x, bounds) {
   var value = this.rows_[row];
@@ -177,6 +224,6 @@ wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
   }
 };
 
+
 // TODO(benvanik): if attr value is a URL, add an 'open' link
-// TODO(benvanik): onclick handler sends to event in timeline
 // TODO(benvanik): onhover sets indicator on navbar
