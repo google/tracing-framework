@@ -24,7 +24,7 @@
     height: @inputBarHeight - 1;
     border-bottom: 1px solid #EBEBEB;
 
-    @rightWidth: 150px;
+    @rightWidth: 230px;
     & .headerLeft {
       position: absolute;
       top: 0;
@@ -44,7 +44,15 @@
       float: right;
       margin: 3px;
 
-      padding-top: 7px;
+      & .kButtonBar {
+        float: left;
+        margin-right: 6px;
+      }
+
+      & .resultInfo {
+        float: left;
+        padding-top: 7px;
+      }
     }
   }
 

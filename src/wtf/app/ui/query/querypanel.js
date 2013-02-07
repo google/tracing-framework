@@ -13,14 +13,18 @@
 
 goog.provide('wtf.app.ui.query.QueryPanel');
 
+goog.require('goog.dom.classes');
+goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
+goog.require('wtf.analysis.db.QueryDumpFormat');
 goog.require('wtf.app.ui.TabPanel');
 goog.require('wtf.app.ui.query.QueryTableSource');
 goog.require('wtf.app.ui.query.querypanel');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.pal');
 goog.require('wtf.ui.SearchControl');
 goog.require('wtf.ui.VirtualTable');
 goog.require('wtf.util');
@@ -68,11 +72,18 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
   this.registerDisposable(this.table_);
 
   /**
+   * Current query results, if any.
+   * @type {wtf.analysis.db.QueryResult}
+   * @private
+   */
+  this.currentResults_ = null;
+
+  /**
    * Query info element.
    * @type {!Element}
    * @private
    */
-  this.infoEl_ = this.getChildElement(goog.getCssName('headerRight'));
+  this.infoEl_ = this.getChildElement(goog.getCssName('resultInfo'));
 
   /**
    * Root empty display container.
@@ -88,6 +99,15 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
    * @private
    */
   this.errorEl_ = this.getChildElement(goog.getCssName('error'));
+
+  /**
+   * A list of the button <a>'s for easy toggling.
+   * @type {!Array.<!Element>}
+   * @private
+   */
+  this.buttonEls_ = [
+    this.getChildElement(goog.getCssName('saveCsvResults'))
+  ];
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
@@ -112,8 +132,25 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
   this.registerDisposable(this.keyboardScope_);
   this.setupKeyboardShortcuts_();
 
-  goog.style.showElement(this.emptyEl_, true);
-  goog.style.showElement(this.errorEl_, false);
+  // Button handling.
+  this.getHandler().listen(
+      this.getChildElement(goog.getCssName('saveCsvResults')),
+      goog.events.EventType.CLICK,
+      function(e) {
+        e.preventDefault();
+        if (!this.currentResults_) {
+          return;
+        }
+
+        var dump = this.currentResults_.dump(
+            wtf.analysis.db.QueryDumpFormat.CSV);
+        if (dump) {
+          var pal = wtf.pal.getPlatform();
+          pal.writeTextFile('wtf-query.csv', dump, 'text/csv');
+        }
+      }, false);
+
+  this.clear();
 };
 goog.inherits(wtf.app.ui.query.QueryPanel, wtf.app.ui.TabPanel);
 
@@ -180,6 +217,31 @@ wtf.app.ui.query.QueryPanel.prototype.navigate = function(pathParts) {
 
 
 /**
+ * Clears the results.
+ */
+wtf.app.ui.query.QueryPanel.prototype.clear = function() {
+  var dom = this.getDom();
+
+  // Clear results.
+  this.currentResults_ = null;
+  this.table_.setSource(null);
+  dom.setTextContent(this.infoEl_, '');
+  dom.setTextContent(this.errorEl_, '');
+
+  // Clear errors/show empty help text.
+  this.searchControl_.toggleError(false);
+  goog.style.showElement(this.emptyEl_, true);
+  goog.style.showElement(this.errorEl_, false);
+
+  // Disable all buttons.
+  for (var n = 0; n < this.buttonEls_.length; n++) {
+    var buttonEl = this.buttonEls_[n];
+    goog.dom.classes.add(buttonEl, goog.getCssName('kDisabled'));
+  }
+};
+
+
+/**
  * Issues a query.
  * @param {string} expression Query string.
  * @private
@@ -188,16 +250,11 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   var dom = this.getDom();
 
   // Clear results.
-  this.table_.setSource(null);
-  dom.setTextContent(this.infoEl_, '');
-  dom.setTextContent(this.errorEl_, '');
+  this.clear();
 
   // Attempt to set the search control.
   this.searchControl_.setValue(expression);
   if (!expression.length) {
-    this.searchControl_.toggleError(false);
-    goog.style.showElement(this.emptyEl_, true);
-    goog.style.showElement(this.errorEl_, false);
     return;
   }
 
@@ -220,15 +277,20 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
     dom.setTextContent(this.errorEl_, error);
     return;
   }
-
   this.infoEl_.title = query.getCompiledExpression().toString();
 
-  var result = query.getValue();
+  // Enable buttons.
+  this.currentResults_ = query;
+  for (var n = 0; n < this.buttonEls_.length; n++) {
+    var buttonEl = this.buttonEls_[n];
+    goog.dom.classes.remove(buttonEl, goog.getCssName('kDisabled'));
+  }
+
+  var result = query.getRows();
 
   // Update info with query stats.
-  dom.setTextContent(this.infoEl_,
-      (goog.isArray(result) ? result.length : 1) +
-      ' hits in ' + wtf.util.formatSmallTime(query.getDuration()));
+  dom.setTextContent(this.infoEl_, result.length + ' hits in ' +
+      wtf.util.formatSmallTime(query.getDuration()));
 
   // Update the table.
   this.table_.setSource(new wtf.app.ui.query.QueryTableSource(result));
