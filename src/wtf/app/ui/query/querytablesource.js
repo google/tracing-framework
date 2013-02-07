@@ -27,37 +27,12 @@ goog.require('wtf.util');
 /**
  * Virtual table data source wrapping the query results.
  *
- * @param {?wtf.analysis.db.QueryResultType} queryResult Query result.
+ * @param {!Array.<string|number|boolean|wgxpath.Node>} rows Query result rows.
  * @constructor
  * @extends {wtf.ui.VirtualTableSource}
  */
-wtf.app.ui.query.QueryTableSource = function(queryResult) {
+wtf.app.ui.query.QueryTableSource = function(rows) {
   goog.base(this);
-
-  /**
-   * Query result.
-   * @type {?wtf.analysis.db.QueryResultType}
-   * @private
-   */
-  this.result_ = queryResult;
-
-  var rows = null;
-  if (typeof queryResult == 'boolean' ||
-      typeof queryResult == 'number' ||
-      typeof queryResult == 'string') {
-    rows = [queryResult];
-  } else if (
-      !queryResult || (goog.isArray(queryResult) && !queryResult.length)) {
-    // Nothing matched.
-    rows = [];
-  } else if (goog.isArray(queryResult)) {
-    // List of results.
-    rows = queryResult;
-  } else {
-    // Single entry (event/etc).
-    rows = [queryResult];
-  }
-  this.setRowCount(rows.length);
 
   /**
    * All rows.
@@ -65,6 +40,7 @@ wtf.app.ui.query.QueryTableSource = function(queryResult) {
    * @private
    */
   this.rows_ = rows;
+  this.setRowCount(this.rows_.length);
 };
 goog.inherits(wtf.app.ui.query.QueryTableSource, wtf.ui.VirtualTableSource);
 
@@ -137,12 +113,9 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
         var attrkey = value.getNodeName();
         var attrvalue = value.getNodeValue();
         columnTitle = attrkey + ': ' + attrvalue;
-      } else if (value instanceof wtf.analysis.db.ZoneIndex) {
+      } else {
         columnTime = 0;
-        columnTitle = value.getZone().getName();
-      } else if (value instanceof wtf.analysis.db.EventDatabase) {
-        columnTime = 0;
-        columnTitle = 'db';
+        columnTitle = value.toString();
       }
     }
 
