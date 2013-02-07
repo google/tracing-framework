@@ -264,13 +264,19 @@ wtf.ui.VirtualTable.Painter_.prototype.repaintInternal = function(ctx, bounds) {
  */
 wtf.ui.VirtualTable.Painter_.prototype.onClickInternal = function(
     x, y, modifiers, bounds) {
+  var source = this.table_.getSource();
+  if (!source) {
+    return undefined;
+  }
+
   var row = this.hitTest_(x, y, bounds);
   if (row === undefined) {
     return false;
   }
 
-  // TODO(benvanik): selection logic? shift/ctrl select?
-  return false;
+  // TODO(benvanik): handle selection logic based on modifiers?
+
+  return source.onClick(row, x, modifiers, bounds);
 };
 
 

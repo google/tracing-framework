@@ -151,8 +151,10 @@ wtf.app.ui.Tabbar.prototype.addPanel = function(panel) {
   }
 
   // Register a key chord for this tab.
+  var keyIndex = 1 + (this.panels_.length - 1);
+  tabElement.title = 'ctrl-' + keyIndex;
   this.keyboardScope_.addShortcut(
-      'ctrl+' + (1 + (this.panels_.length - 1)),
+      'ctrl+' + keyIndex,
       function() {
         this.setSelectedPanel(panel);
       }, this);
