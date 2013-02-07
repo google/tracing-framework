@@ -93,7 +93,7 @@ function runTool(platform, args) {
       return;
     }
 
-    var xexpr = result.getXPathExpression();
+    var xexpr = result.getCompiledExpression();
     console.log(xexpr.toString());
     console.log('');
 

@@ -17,6 +17,9 @@ goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.events');
 goog.require('wtf');
+goog.require('wtf.analysis.Event');
+goog.require('wtf.analysis.EventFilter');
+goog.require('wtf.analysis.ScopeEvent');
 goog.require('wtf.analysis.TraceListener');
 goog.require('wtf.analysis.db.EventIndex');
 goog.require('wtf.analysis.db.QueryResult');
@@ -315,16 +318,73 @@ wtf.analysis.db.EventDatabase.prototype.renumber_ = function() {
  * @return {wtf.analysis.db.QueryResult} Result.
  */
 wtf.analysis.db.EventDatabase.prototype.query = function(expr) {
-  // TODO(benvanik): better error handling around this?
-  var xexpr = new wgxpath.XPathExpression(expr || '.');
-
-  var context = this;
+  // Try to figure out what type the query is.
+  // First, we see if it's some kind of simple substring (starts without /)
+  // or a regex (starts and ends with /). If that's true, we use the
+  // event filter logic to populate the table.
+  // Otherwise, we assume they are trying to type an xpath expression. Note that
+  // this will cause someone typing a regex to have the intermediate stages
+  // interpreted as an xpath query, but that's ok.
+  var isFilter = false;
+  if (expr.charAt(0) != '/' &&
+      expr.indexOf('(') == -1) {
+    // Definitely a substring.
+    isFilter = true;
+  } else if (/^\/(.+)\/([gim]*)$/.test(expr)) {
+    // Likely a regex, very rare for a query to match this, so trust it.
+    isFilter = true;
+  } else {
+    // Likely an xpath query, do that.
+    isFilter = false;
+  }
 
   var startTime = wtf.now();
-  var xresult = xexpr.evaluate(context, wgxpath.XPathResultType.ANY_TYPE);
-  var duration = wtf.now() - startTime;
 
-  return new wtf.analysis.db.QueryResult(expr, xexpr, duration, xresult);
+  var compiledExpr = null;
+  var result = null;
+  if (isFilter) {
+    // Create filter.
+    var filter = new wtf.analysis.EventFilter();
+    var parseResult = filter.setFromString(expr);
+    if (parseResult == wtf.analysis.EventFilter.Result.FAILED) {
+      throw 'Invalid regex.';
+    }
+
+    result = [];
+    var evaluator = filter.getEvaluator();
+    for (var n = 0; n < this.zoneIndices_.length; n++) {
+      var zoneIndex = this.zoneIndices_[n];
+      zoneIndex.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
+        if (e.eventType.flags & wtf.data.EventFlag.INTERNAL) {
+          return;
+        }
+        if (!evaluator || evaluator(e)) {
+          if (e instanceof wtf.analysis.ScopeEvent) {
+            result.push(e.scope);
+          } else {
+            result.push(e);
+          }
+        }
+      });
+    }
+    result.sort(wtf.analysis.Event.comparer);
+
+    compiledExpr = filter.getEvaluator().toString();
+  } else {
+    // Create the XPath expression.
+    // TODO(benvanik): better error handling around this?
+    var xexpr = new wgxpath.XPathExpression(expr || '.');
+
+    // Run the XPath query on the database.
+    var context = this;
+    var xresult = xexpr.evaluate(context, wgxpath.XPathResultType.ANY_TYPE);
+
+    compiledExpr = xexpr;
+    result = xresult.value;
+  }
+
+  var duration = wtf.now() - startTime;
+  return new wtf.analysis.db.QueryResult(expr, compiledExpr, duration, result);
 };
 
 
