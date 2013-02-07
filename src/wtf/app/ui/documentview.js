@@ -159,6 +159,7 @@ goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
  */
 wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
+  commandManager.unregisterCommand('navigate');
   commandManager.unregisterCommand('select_all');
   commandManager.unregisterCommand('select_visible');
   commandManager.unregisterCommand('select_range');
@@ -190,6 +191,11 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
   var commandManager = wtf.events.getCommandManager();
 
   commandManager.registerSimpleCommand(
+      'navigate', function(source, target, path) {
+        this.tabbar_.navigate(path);
+      }, this);
+
+  commandManager.registerSimpleCommand(
       'select_all', function() {
         selection.clearTimeRange();
       }, this);
@@ -207,12 +213,14 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
       }, this);
 
   commandManager.registerSimpleCommand(
-      'goto_range', function(source, target, timeStart, timeEnd) {
+      'goto_range', function(source, target, timeStart, timeEnd,
+          opt_immediate) {
         var firstEventTime = db.getFirstEventTime();
         var pad = (timeEnd - timeStart) * 0.05;
         view.setVisibleRange(
             timeStart - pad,
-            timeEnd + pad);
+            timeEnd + pad,
+            opt_immediate);
 
         wtf.ui.Tooltip.hideAll();
       }, this);

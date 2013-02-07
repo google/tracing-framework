@@ -114,6 +114,18 @@ wtf.ui.VirtualTableSource.prototype.paintRowRange = goog.abstractMethod;
 
 
 /**
+ * Handles click events on the given row.
+ * @param {number} row Row.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} modifiers Modifier key bitmask from
+ *     {@see wtf.ui.ModifierKey}.
+ * @param {!goog.math.Rect} bounds Draw bounds.
+ * @return {boolean|undefined} True if the event was handled.
+ */
+wtf.ui.VirtualTableSource.prototype.onClick = goog.nullFunction;
+
+
+/**
  * Attempt to describe the given row.
  * @param {number} row Row.
  * @param {number} x X coordinate, relative to canvas.
