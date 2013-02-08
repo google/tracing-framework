@@ -237,6 +237,44 @@ wtf.app.ui.MainDisplay.prototype.setupDragDropLoading_ = function() {
 
 
 /**
+ * Sets the title of the tab.
+ * This portion is used as the suffix after the application name.
+ * @param {string?} value New value, or null to clear.
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.setTitle_ = function(value) {
+  var title = 'Web Tracing Framework';
+  if (!COMPILED) {
+    title += ' (DEBUG)';
+  }
+  if (value && value.length) {
+    title += ': ' + value;
+  }
+  var doc = this.getDom().getDocument();
+  doc.title = title;
+};
+
+
+/**
+ * Sets the title of the tab from the given filenames.
+ * @param {!Array.<string>} filenames A list of filenames (paths/URLs allowed).
+ * @private
+ */
+wtf.app.ui.MainDisplay.prototype.setTitleFromFilenames_ = function(filenames) {
+  var title = '';
+  for (var n = 0; n < filenames.length; n++) {
+    var filename = filenames[n];
+    var lastSlash = filename.lastIndexOf('/');
+    if (lastSlash != -1) {
+      filename = filename.substr(lastSlash + 1);
+    }
+    title += filename;
+  }
+  this.setTitle_(title);
+};
+
+
+/**
  * Gets the active document view.
  * @return {wtf.app.ui.DocumentView} Document view, if any.
  */
@@ -263,6 +301,8 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
   if (documentView) {
     // TODO(benvanik): notify of change?
     this.documentView_ = documentView;
+  } else {
+    this.setTitle_(null);
   }
 };
 
@@ -328,6 +368,9 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   }
   _gaq.push(['_trackEvent', 'app', 'open_snapshot', null, contentLength]);
 
+  // TODO(benvanik): get from document? or in snapshot command?
+  this.setTitle_('snapshot');
+
   // Create document with snapshot data.
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
@@ -357,6 +400,9 @@ wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
   var contentType = data['content_type'];
 
   _gaq.push(['_trackEvent', 'app', 'open_stream']);
+
+  // TODO(benvanik): get from document? or in stream command?
+  this.setTitle_('streaming');
 
   // TODO(benvanik): support multiple streams into the same trace/etc
   var doc = new wtf.doc.Document(this.platform_);
@@ -416,15 +462,18 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
 wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   var binarySources = [];
   var jsonSources = [];
+  var filenames = [];
   for (var n = 0; n < traceFiles.length; n++) {
     var file = traceFiles[n];
     if (goog.string.endsWith(file.name, '.wtf-trace') ||
         goog.string.endsWith(file.name, '.bin.part') ||
         file.type == 'application/x-extension-wtf-trace') {
       binarySources.push(file);
+      filenames.push(file.name);
     } else if (goog.string.endsWith(file.name, '.wtf-json') ||
         file.type == 'application/x-extension-wtf-json') {
       jsonSources.push(file);
+      filenames.push(file.name);
     }
   }
   if (!binarySources.length && !jsonSources.length) {
@@ -439,7 +488,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
   for (var n = 0; n < jsonSources.length; n++) {
     deferreds.push(goog.fs.FileReader.readAsText(jsonSources[n]));
   }
-  this.openDeferredSources_(deferreds);
+  this.openDeferredSources_(deferreds, filenames);
 };
 
 
@@ -450,13 +499,16 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
 wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
   var binarySources = [];
   var jsonSources = [];
+  var filenames = [];
   for (var n = 0; n < urls.length; n++) {
     var url = urls[n];
     if (goog.string.endsWith(url, '.wtf-trace') ||
         goog.string.endsWith(url, '.bin.part')) {
       binarySources.push(url);
+      filenames.push(url);
     } else if (goog.string.endsWith(url, '.wtf-json')) {
       jsonSources.push(url);
+      filenames.push(url);
     } else {
       wtf.ui.ErrorDialog.show(
           'Unsupported input URL',
@@ -497,7 +549,7 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
         goog.net.XhrIo.ResponseType.TEXT));
   }
 
-  this.openDeferredSources_(deferreds);
+  this.openDeferredSources_(deferreds, filenames);
 };
 
 
@@ -525,6 +577,7 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
 
     var deferreds = [];
 
+    var filenames = [];
     for (var n = 0; n < files.length; n++) {
       var fileName = files[n][0];
       var fileId = files[n][1];
@@ -533,15 +586,15 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
       goog.result.wait(wtf.io.drive.downloadFile(fileId), function(result) {
         var driveFile = result.getValue();
         if (driveFile) {
-          // TODO(benvanik): pass back filename/etc?
           fileDeferred.callback(driveFile.contents);
+          filenames.push(driveFile.filename);
         } else {
           fileDeferred.errback(result.getError());
         }
       }, this);
     }
 
-    this.openDeferredSources_(deferreds);
+    this.openDeferredSources_(deferreds, filenames);
   }, this);
 };
 
@@ -553,9 +606,13 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
  * @param {!Array.<!goog.async.Deferred>} deferreds a List of deferreds to wait
  *     on. Each should return an array buffer (for binary sources) or a string
  *     (for json sources).
+ * @param {!Array.<string>} filenames File names (paths/URLs/etc allowed). This
+ *     is used primarily for UI display, so they need to align to the deferreds
+ *     list.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
+wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(
+    deferreds, filenames) {
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
 
@@ -564,6 +621,9 @@ wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(deferreds) {
         // Add all data.
         var contentLength = doc.addEventSources(datas);
         _gaq.push(['_trackEvent', 'app', 'open_files', null, contentLength]);
+
+        // Set title.
+        this.setTitleFromFilenames_(filenames);
 
         // Zoom to fit.
         // TODO(benvanik): remove setTimeout when zoomToFit is based on view
