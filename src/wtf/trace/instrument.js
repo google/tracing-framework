@@ -35,7 +35,7 @@ goog.require('wtf.util');
  * @param {Function} value Target function.
  * @param {string} signature Method signature.
  * @param {string=} opt_namePrefix String to prepend to the name.
- * @param {(function(Function, Function):Function)=} opt_generator
+ * @param {?(function(Function, Function):Function)=} opt_generator
  *     A custom function generator that is responsible for taking the given
  *     {@code value} and returning a wrapped function that emits the given
  *     event type.
@@ -60,20 +60,30 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
   // TODO(benvanik): use a FunctionBuilder to generate the argument stuff from
   //     the signature.
   var result;
+  var leaveScope = wtf.trace.leaveScope;
   if (opt_generator) {
     result = opt_generator(value, customEvent);
   } else if (!argMap || !argMap.length) {
     // Simple function - no custom data.
-    result = function() {
-      if (opt_pre) {
+    if (opt_pre) {
+      result = function() {
         opt_pre.call(this);
-      }
-      var scope = customEvent();
-      var result = value.apply(this, arguments);
-      return wtf.trace.leaveScope(scope, result);
-    };
+        var scope = customEvent();
+        var result = value.apply(this, arguments);
+        leaveScope(scope);
+        return result;
+      };
+    } else {
+      result = function() {
+        var scope = customEvent();
+        var result = value.apply(this, arguments);
+        leaveScope(scope);
+        return result;
+      };
+    }
   } else {
     // Custom arguments.
+    // TODO(benvanik): optimize this function to not require the for-loop.
     var eventArgs = new Array(argMap.length);
     result = function() {
       if (opt_pre) {
@@ -84,7 +94,8 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
       }
       var scope = customEvent.apply(customEvent, eventArgs);
       var result = value.apply(this, arguments);
-      return wtf.trace.leaveScope(scope, result);
+      leaveScope(scope);
+      return result;
     };
   }
 
