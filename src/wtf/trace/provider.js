@@ -79,6 +79,16 @@ wtf.trace.Provider.prototype.injectFunction = function(target, name, value) {
 
 
 /**
+ * Gets a list of HUD button descriptions.
+ * These will be added to the HUD when displayed.
+ * @return {!Array.<!wtf.hud.Overlay.ButtonInfo>} Buttons.
+ */
+wtf.trace.Provider.prototype.getHudButtons = function() {
+  return [];
+};
+
+
+/**
  * Gets a list of settings section config, if any.
  * See {@see wtf.ui.SettingsDialog} for more information.
  * @return {!Array.<!Object>} Settings section config objects.

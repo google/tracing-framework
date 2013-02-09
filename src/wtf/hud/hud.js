@@ -51,6 +51,16 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
   // Get combined options.
   var options = traceManager.getOptions(opt_options);
 
+  // Run through providers and get any buttons/etc we need.
+  var providers = traceManager.getProviders();
+  for (var n = 0; n < providers.length; n++) {
+    var provider = providers[n];
+    var buttons = provider.getHudButtons();
+    for (var m = 0; m < buttons.length; m++) {
+      wtf.hud.buttons_.push(buttons[m]);
+    }
+  }
+
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(wtf.trace.util.ignoreListener(function() {
     var listener = new wtf.hud.SessionListener_(options, opt_parentElement);
