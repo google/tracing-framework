@@ -3,6 +3,8 @@ body{line-height:1;}
 ol,ul{list-style:none;}
 blockquote,q{quotes:none;}
 blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
+.noSelect{-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none;}
+.allowSelect{-moz-user-select:auto !important;-ms-user-select:auto !important;-webkit-user-select:auto !important;}
 .fitParent{position:absolute;left:0;right:0;top:0;bottom:0;}
 .fitParentRelative{position:relative;left:0;right:0;top:0;bottom:0;}
 .floatClear{float:left;clear:both;}
@@ -91,7 +93,7 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .k input[type="checkbox"]:active{border-color:#666;background:#ebebeb;}
 .k input[type="checkbox"]:hover{border-color:#666;-webkit-box-shadow:inset 0px 1px 1px rgba(0, 0, 0, 0.1);box-shadow:inset 0px 1px 1px rgba(0, 0, 0, 0.1);}
 .k input[type="checkbox"]:checked::after{content:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAYAAACpF6WWAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAOpJREFUeNpi/P//PwO1ARMDDcAwNZSRkRGFjYQlgZidLEORIxXEhvLNgbgSiG0wJInBWIA9EC8B4ihks1goCLpAIPYA4ktAvAJZghxDWYE4CYiNgPgy0GVTkMOaHEO5gTgPiBWA+A4QzyQp9oG2g1zgD8Qs0BgWAwpXQA18CsRTgPg3Vr24sinQEEcgFQHED4F4HxCHQV36Coi7gPgzLHJg3oeZhc9QEJUKxCZIwh+AuBOI3yGnHnRDCaVTUHJ5CWWDXDYJ2UC8CZpAmpQF4h5oWBKVIQh5HwY4gfg7LkOJDtPRom9wGQoQYADRjokrpemFfAAAAABJRU5ErkJggg==');display:block;position:absolute;top:-6px;left:-5px;}
-.uiDialog{overflow:hidden;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-style:normal;color:black;background-color:white;border:1px solid rgba(0, 0, 0, 0.2);-webkit-box-shadow:0 4px 16px rgba(0, 0, 0, 0.2);box-shadow:0 4px 16px rgba(0, 0, 0, 0.2);cursor:default;position:fixed;z-index:999999;-webkit-transition:-webkit-transform 0.218s ease,opacity 0.218s ease;-moz-transition:-moz-transform 0.218s ease,opacity 0.218s ease;-ms-transition:-ms-transform 0.218s ease,opacity 0.218s ease;-o-transition:-o-transform 0.218s ease,opacity 0.218s ease;transition:transform 0.218s ease,opacity 0.218s ease;-webkit-transform:scale(1.05);-moz-transform:scale(1.05);-ms-transform:scale(1.05);-o-transform:scale(1.05);transform:scale(1.05);opacity:0;}.uiDialog .header{background-color:#f1f1f1;border-bottom:1px solid #ccc;height:71px;}.uiDialog .header h1{font-size:16px;line-height:24px;font-weight:normal;color:#222;margin:0;padding:0;border:0;background:transparent;padding-top:26px;padding-left:42px;cursor:default;}
+.uiDialog{overflow:hidden;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-style:normal;color:black;background-color:white;border:1px solid rgba(0, 0, 0, 0.2);-webkit-box-shadow:0 4px 16px rgba(0, 0, 0, 0.2);box-shadow:0 4px 16px rgba(0, 0, 0, 0.2);cursor:default;text-align:left;position:fixed;z-index:999999;-webkit-transition:-webkit-transform 0.218s ease,opacity 0.218s ease;-moz-transition:-moz-transform 0.218s ease,opacity 0.218s ease;-ms-transition:-ms-transform 0.218s ease,opacity 0.218s ease;-o-transition:-o-transform 0.218s ease,opacity 0.218s ease;transition:transform 0.218s ease,opacity 0.218s ease;-webkit-transform:scale(1.05);-moz-transform:scale(1.05);-ms-transform:scale(1.05);-o-transform:scale(1.05);transform:scale(1.05);opacity:0;}.uiDialog .header{background-color:#f1f1f1;border-bottom:1px solid #ccc;height:71px;}.uiDialog .header h1{font-size:16px;line-height:24px;font-weight:normal;color:#222;margin:0;padding:0;border:0;background:transparent;padding-top:26px;padding-left:42px;cursor:default;}
 .uiDialog .header .buttons{float:right;padding-right:26px;padding-top:22px;margin:0;}
 .uiDialog .contents{margin:10px;}
 .uiDialog .footer{position:absolute;bottom:0;margin:10px;}
@@ -106,11 +108,13 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .uiSettingsDialog .nav li{line-height:17px;margin-bottom:13px;}
 .uiSettingsDialog .nav li a{display:block;color:#333;cursor:default;text-decoration:none;}.uiSettingsDialog .nav li a:hover{color:#111;}
 .uiSettingsDialog .nav li a.selected{color:#DD4B39;font-weight:bold;}
-.uiSettingsDialog .contents{position:absolute;top:72px;left:0;right:0;bottom:0;margin:1px;margin-left:171px;height:auto;overflow:scroll;}
+.uiSettingsDialog .contents{position:absolute;top:72px;left:0;right:0;bottom:0;margin:1px;margin-left:171px;height:auto;overflow:auto;overflow-x:hidden;overflow-y:auto;}
 .uiSettingsDialog .pane{padding:16px 32px;height:auto;overflow:auto;}
 .uiSettingsDialog .section{clear:both;border-bottom:1px solid #ebebeb;padding:20px 0;}.uiSettingsDialog .section .label{display:block;width:135px;float:left;font-weight:bold;cursor:default;}
-.uiSettingsDialog .section .content{margin-left:160px;}.uiSettingsDialog .section .content p{margin:0 0 1em;line-height:13px;}
+.uiSettingsDialog .section .content{margin-left:160px;}.uiSettingsDialog .section .content p{margin:0 0 1em;line-height:13px;}.uiSettingsDialog .section .content p select{margin-bottom:5px;}
 .uiTooltip{position:absolute;color:white;background-color:rgba(0, 0, 0, 0.7);padding:5px;white-space:pre;pointer-events:none;}
+.uiVirtualTable{position:absolute;left:0;right:0;top:0;bottom:0;background-color:white;}.uiVirtualTable .scrollbarOuter{position:absolute;left:0;right:0;top:0;bottom:0;background-color:white;overflow-x:hidden;overflow-y:auto;}.uiVirtualTable .scrollbarOuter .scrollbarInner{background-color:white;width:20px;height:0px;}
+.uiVirtualTable .scrollbarOuter .canvas{position:absolute;left:0;right:0;top:0;bottom:0;background-color:white;}
 .appUiDocumentView{position:absolute;left:0;right:0;top:0;bottom:0;overflow:hidden;background:white;}
 .appUiDocumentViewToolbar{overflow:hidden;}
 .appUiDocumentViewInner{position:absolute;left:0;right:0;top:41px;bottom:29px;overflow:hidden;}
@@ -119,6 +123,8 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiMainDisplay{position:absolute;left:0;right:0;top:0;bottom:0;}
 .appUiMainDocumentView{position:absolute;left:0;right:0;top:0;bottom:0;min-width:450px;overflow:hidden;}
 .appUiMainCenteredBlock{position:absolute;width:100%;height:100%;top:50%;text-align:center;}
+.appUiSplashDialog{width:400px;height:200px;}.appUiSplashDialog .header>h1{padding-left:0;font-weight:bold;text-align:center;}
+.appUiSplashDialog .kButtonBar{text-align:center;}.appUiSplashDialog .kButtonBar .kButton{float:none;}
 .appUiStatusbar{position:absolute;left:0;right:0;top:0;bottom:0;color:#777777;font-size:12px;font-family:monospace;background:white;border-top:1px solid #EBEBEB;padding-top:7px;padding-left:7px;padding-right:7px;}.appUiStatusbar .left{float:left;}.appUiStatusbar .left div{float:left;}
 .appUiStatusbar .right{float:right;}.appUiStatusbar .right div{float:left;}
 .appUiStatusbar .selectionCounts{margin-right:5px;width:100px;text-align:center;}
@@ -136,6 +142,12 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiNavbar{position:relative;left:0;right:0;top:0;height:140px;overflow:hidden;background:white;}.appUiNavbar .outer{position:absolute;left:0;right:0;height:100%;margin-right:300px;border-right:1px solid #ebebeb;}.appUiNavbar .outer .canvas{cursor:crosshair;}
 .appUiNavbar .outer .canvasOverlay{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;overflow:hidden;margin-top:16px;}.appUiNavbar .outer .canvasOverlay .view{position:absolute;bottom:0;top:0;background-color:rgba(0, 0, 0, 0.1);border-left:1px solid #DDDDDD;border-right:1px solid #DDDDDD;}
 .appUiNavbar .infoOuter{position:absolute;top:0;bottom:0;right:0;width:300px;}.appUiNavbar .infoOuter .info{position:absolute;left:0;right:0;top:0;bottom:0;padding:3px;overflow-x:hidden;overflow-y:auto;}
+.appUiQueryPanel{position:absolute;left:0;right:0;top:0;bottom:0;}.appUiQueryPanel .header{position:absolute;width:100%;top:0;height:35px;border-bottom:1px solid #EBEBEB;}.appUiQueryPanel .header .headerLeft{position:absolute;top:0;bottom:0;left:0;right:0;margin-right:240px;}.appUiQueryPanel .header .headerLeft .kSearchField{width:100%;margin:3px;}
+.appUiQueryPanel .header .headerRight{width:230px;right:0;float:right;margin:3px;}.appUiQueryPanel .header .headerRight .kButtonBar{float:left;margin-right:6px;}
+.appUiQueryPanel .header .headerRight .resultInfo{float:left;padding-top:7px;}
+.appUiQueryPanel .resultsOuter{position:absolute;width:100%;top:36px;bottom:0;overflow-x:hidden;overflow-y:auto;}.appUiQueryPanel .resultsOuter .results{position:absolute;left:0;right:0;top:0;bottom:0;}
+.appUiQueryPanel .empty{position:absolute;top:36px;left:0;margin-left:5px;margin-top:5px;}.appUiQueryPanel .empty .error{color:#DD4B39;padding-bottom:15px;}
+.appUiQueryPanel .empty .help .examples{margin-left:15px;}.appUiQueryPanel .empty .help .examples .code{font-family:monospace;padding-right:25px;}
 .appUiTracksPanelInfo{position:absolute;top:0;bottom:0;right:0;width:300px;}.appUiTracksPanelInfo>.header{position:absolute;left:0;right:0;top:0;height:35px;border-bottom:1px solid #ebebeb;padding-left:5px;padding-top:5px;}
 .appUiTracksPanelInfo>.content{position:absolute;left:0;right:0;top:40px;bottom:0;padding:3px;overflow-x:hidden;overflow-y:auto;}
 .appUiTracksPanelInfo .entry{position:relative;height:26px;font-family:monospace;font-size:11px;border-bottom:1px solid #e2e2e2;margin-bottom:2px;cursor:pointer;}.appUiTracksPanelInfo .entry .header{position:relative;}
