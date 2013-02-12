@@ -6370,13 +6370,13 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 // Input 66
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13605732E5
+  return 13605768E5
 };
 wtf.version.getCommit = function() {
-  return"aaab2ee97c85589945118570cb2a1b41d86b1869"
+  return"89694b88521a0264b7a5f73500c4ea0ab52c9a6f"
 };
 wtf.version.toString = function() {
-  return"2013.2.11-1"
+  return"2013.2.11-2"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -13975,17 +13975,22 @@ wtf.trace.providers.WebGLProvider = function(a, b) {
   this.hudButtons_ = [];
   this.locked_ = this.isCapturing_ = !1;
   this.contextRestoreFns_ = [];
-  goog.global.HTMLCanvasElement && goog.global.WebGLContextEvent && b.getNumber("wtf.trace.provider.webgl", 0) && (this.injectCanvas_(), b.getBoolean("wtf.trace.provider.webgl.recordAtStartup", !1) ? (this.isCapturing_ = !0, this.injectContextType_()) : this.hudButtons_.push({title:"Toggle WebGL Capture", icon:'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M8.841,9.068C8.682,8.38,8.291,7.899,7.672,7.626C7.326,7.476,6.94,7.4,6.517,7.4c-0.811,0-1.478,0.306-2,0.918 C3.995,8.93,3.734,9.85,3.734,11.078c0,1.236,0.283,2.112,0.848,2.627c0.565,0.514,1.208,0.771,1.928,0.771 c0.707,0,1.285-0.202,1.736-0.608c0.451-0.404,0.729-0.936,0.834-1.593H6.749v-1.682h4.197V16H9.552L9.34,14.742 c-0.406,0.477-0.77,0.812-1.094,1.008c-0.556,0.34-1.24,0.51-2.051,0.51c-1.335,0-2.429-0.463-3.281-1.387 c-0.889-0.93-1.333-2.199-1.333-3.812c0-1.63,0.449-2.937,1.347-3.921s2.085-1.476,3.562-1.476c1.281,0,2.31,0.325,3.087,0.974 c0.776,0.649,1.222,1.459,1.336,2.43H8.841z"/><path d="M12.956,5.924h2.105v8.265h5.031V16h-7.137V5.924z"/></svg>', 
-  shortcut:"f4", callback:function() {
-    this.toggleCapture_()
-  }, scope:this}))
+  if(goog.global.HTMLCanvasElement && goog.global.WebGLRenderingContext && b.getNumber("wtf.trace.provider.webgl", 0)) {
+    this.injectCanvas_();
+    var c = b.getBoolean("wtf.trace.provider.webgl.recordAtStartup", !1);
+    goog.global.WebGLContextEvent || (goog.global.console.log("Browser does not expose WebGLContextEvent, forcing to record at startup."), c = !0);
+    c ? (this.isCapturing_ = !0, this.injectContextType_()) : this.hudButtons_.push({title:"Toggle WebGL Capture", icon:'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="21px" height="21px"><path d="M8.841,9.068C8.682,8.38,8.291,7.899,7.672,7.626C7.326,7.476,6.94,7.4,6.517,7.4c-0.811,0-1.478,0.306-2,0.918 C3.995,8.93,3.734,9.85,3.734,11.078c0,1.236,0.283,2.112,0.848,2.627c0.565,0.514,1.208,0.771,1.928,0.771 c0.707,0,1.285-0.202,1.736-0.608c0.451-0.404,0.729-0.936,0.834-1.593H6.749v-1.682h4.197V16H9.552L9.34,14.742 c-0.406,0.477-0.77,0.812-1.094,1.008c-0.556,0.34-1.24,0.51-2.051,0.51c-1.335,0-2.429-0.463-3.281-1.387 c-0.889-0.93-1.333-2.199-1.333-3.812c0-1.63,0.449-2.937,1.347-3.921s2.085-1.476,3.562-1.476c1.281,0,2.31,0.325,3.087,0.974 c0.776,0.649,1.222,1.459,1.336,2.43H8.841z"/><path d="M12.956,5.924h2.105v8.265h5.031V16h-7.137V5.924z"/></svg>', 
+    shortcut:"f4", callback:function() {
+      this.toggleCapture_()
+    }, scope:this})
+  }
 };
 goog.inherits(wtf.trace.providers.WebGLProvider, wtf.trace.Provider);
 wtf.trace.providers.WebGLProvider.prototype.getHudButtons = function() {
   return this.hudButtons_
 };
 wtf.trace.providers.WebGLProvider.prototype.getSettingsSectionConfigs = function() {
-  return[{title:"WebGL", widgets:[{type:"checkbox", key:"wtf.trace.provider.webgl", title:"Enabled", "default":!1}, {type:"checkbox", key:"wtf.trace.provider.webgl.recordAtStartup", title:"Start recording at page load", "default":!1}, {type:"dropdown", key:"wtf.trace.provider.webgl.captureLevel", title:"Capture:", options:[{value:"draw_calls", title:"Draw/read/uploads only"}, {value:"all_calls", title:"All calls"}, {value:"all_calls_with_arguments", title:"All calls with arguments"}, {value:"all_calls_with_data", 
+  return[{title:"WebGL", widgets:[{type:"checkbox", key:"wtf.trace.provider.webgl", title:"Enabled", "default":!1}, {type:"checkbox", key:"wtf.trace.provider.webgl.recordAtStartup", title:"Start recording at page load", "default":!0}, {type:"dropdown", key:"wtf.trace.provider.webgl.captureLevel", title:"Capture:", options:[{value:"draw_calls", title:"Draw/read/uploads only"}, {value:"all_calls", title:"All calls"}, {value:"all_calls_with_arguments", title:"All calls with arguments"}, {value:"all_calls_with_data", 
   title:"All calls with textures/buffers"}], "default":"draw_calls"}, {type:"checkbox", key:"wtf.trace.provider.webgl.embedRemoteImages", title:"Embed remote textures in trace (slow)", "default":!1}]}]
 };
 wtf.trace.providers.WebGLProvider.prototype.injectCanvas_ = function() {
