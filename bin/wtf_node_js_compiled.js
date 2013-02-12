@@ -6370,13 +6370,13 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 // Input 66
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13605768E5
+  return 13606596E5
 };
 wtf.version.getCommit = function() {
-  return"89694b88521a0264b7a5f73500c4ea0ab52c9a6f"
+  return"9536e14782481a5b107b2a01f2eaee0cf1f924fd"
 };
 wtf.version.toString = function() {
-  return"2013.2.11-2"
+  return"2013.2.12-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -13348,7 +13348,7 @@ wtf.trace.providers.BrowserProvider.prototype.isAvailable = function() {
   return this.available_
 };
 wtf.trace.providers.BrowserProvider.prototype.getSettingsSectionConfigs = function() {
-  return[{title:"Browser Events", widgets:[{type:"checkbox", key:"wtf.trace.provider.browser", title:"Enabled", "default":!1}, {type:"checkbox", key:"wtf.trace.provider.browser.timeline", title:"GCs/paints/layouts/etc", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.browser.memoryInfo", title:"Memory information (todo)", "default":!1}]}]
+  return[{title:"Browser Events", widgets:[{type:"checkbox", key:"wtf.trace.provider.browser", title:"Enabled", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.browser.timeline", title:"GCs/paints/layouts/etc", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.browser.memoryInfo", title:"Memory information (todo)", "default":!1}]}]
 };
 wtf.trace.providers.BrowserProvider.prototype.setupTimelineDispatch_ = function() {
   var a = wtf.timebase(), b = wtf.trace.events.createScope("javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME);
@@ -14943,7 +14943,7 @@ wtf.trace.providers.setup = function(a) {
   var b = a.getOptions();
   a.addProvider(new wtf.trace.providers.ConsoleProvider(b));
   a.addProvider(new wtf.trace.providers.TimingProvider(b));
-  wtf.NODE || (a.addProvider(new wtf.trace.providers.DomProvider(b)), a.addProvider(new wtf.trace.providers.ImageProvider(b)), a.addProvider(new wtf.trace.providers.XhrProvider(b)), a.addProvider(new wtf.trace.providers.WebGLProvider(a, b)), a.addProvider(new wtf.trace.providers.WebWorkerProvider(a, b)), a.addProvider(new wtf.trace.providers.BrowserProvider(b)))
+  wtf.NODE || (a.addProvider(new wtf.trace.providers.BrowserProvider(b)), a.addProvider(new wtf.trace.providers.DomProvider(b)), a.addProvider(new wtf.trace.providers.ImageProvider(b)), a.addProvider(new wtf.trace.providers.XhrProvider(b)), a.addProvider(new wtf.trace.providers.WebGLProvider(a, b)), a.addProvider(new wtf.trace.providers.WebWorkerProvider(a, b)))
 };
 // Input 194
 wtf.trace.prepare = function(a) {
