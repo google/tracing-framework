@@ -108,7 +108,7 @@ wtf.trace.providers.BrowserProvider.prototype.getSettingsSectionConfigs =
           'type': 'checkbox',
           'key': 'wtf.trace.provider.browser',
           'title': 'Enabled',
-          'default': false
+          'default': true
         },
         {
           'type': 'checkbox',

@@ -76,8 +76,16 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
   this.debugger_ = null;
 
   if (pageOptions['wtf.trace.provider.browser']) {
-    if (pageOptions['wtf.trace.provider.browser.timeline'] ||
-        pageOptions['wtf.trace.provider.browser.memoryInfo']) {
+    var timelineEnabled = pageOptions['wtf.trace.provider.browser.timeline'];
+    if (timelineEnabled === undefined) {
+      timelineEnabled = true;
+    }
+    var memoryInfoEnabled =
+        pageOptions['wtf.trace.provider.browser.memoryInfo'];
+    if (memoryInfoEnabled === undefined) {
+      memoryInfoEnabled = false;
+    }
+    if (timelineEnabled || memoryInfoEnabled) {
       this.debugger_ = new Debugger(
           this.tabId_, this.pageOptions_, this.queueTraceEvents_.bind(this));
     }

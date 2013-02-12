@@ -143,7 +143,12 @@ Debugger.prototype.onDetach_ = function(source) {
  * @private
  */
 Debugger.prototype.beginListening_ = function() {
-  if (this.pageOptions_['wtf.trace.provider.browser.timeline']) {
+  var timelineEnabled =
+      this.pageOptions_['wtf.trace.provider.browser.timeline'];
+  if (timelineEnabled === undefined) {
+    timelineEnabled = true;
+  }
+  if (timelineEnabled) {
     chrome.debugger.sendCommand(this.debugee_, 'Timeline.start', {
       // Limit call stack depth to keep messages small - if we ever need this
       // data this can be increased.
@@ -151,7 +156,12 @@ Debugger.prototype.beginListening_ = function() {
     });
   }
 
-  if (this.pageOptions_['wtf.trace.provider.browser.memoryInfo']) {
+  var memoryInfoEnabled =
+      this.pageOptions_['wtf.trace.provider.browser.memoryInfo'];
+  if (memoryInfoEnabled === undefined) {
+    memoryInfoEnabled = false;
+  }
+  if (memoryInfoEnabled) {
     this.startMemoryPoll_();
   }
 };

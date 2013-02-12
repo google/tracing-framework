@@ -120,7 +120,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
       function(timeRange) {
         // Skip if excluded.
         var level = timeRange.getLevel();
-        if (level > wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_) {
+        if (level >= wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_) {
           return;
         }
 
