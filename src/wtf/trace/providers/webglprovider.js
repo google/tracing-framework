@@ -86,7 +86,7 @@ wtf.trace.providers.WebGLProvider = function(traceManager, options) {
   this.contextRestoreFns_ = [];
 
   if (!goog.global['HTMLCanvasElement'] ||
-      !goog.global['WebGLContextEvent']) {
+      !goog.global['WebGLRenderingContext']) {
     return;
   }
 
@@ -97,10 +97,20 @@ wtf.trace.providers.WebGLProvider = function(traceManager, options) {
 
   this.injectCanvas_();
 
+  var recordAtStartup =
+      options.getBoolean('wtf.trace.provider.webgl.recordAtStartup', false);
+  // Firefox does not expose WebGLContextEvent, so we can't work like this.
+  if (!goog.global['WebGLContextEvent']) {
+    goog.global.console.log(
+        'Browser does not expose WebGLContextEvent, forcing to ' +
+        'record at startup.');
+    recordAtStartup = true;
+  }
+
   // If we are recording at startup that means we are recording always -
   // hook the WebGL context proto. Otherwise, the user will have to request
   // it and we only hook after faked loss/restore.
-  if (options.getBoolean('wtf.trace.provider.webgl.recordAtStartup', false)) {
+  if (recordAtStartup) {
     this.isCapturing_ = true;
     this.injectContextType_();
   } else {
@@ -147,7 +157,7 @@ wtf.trace.providers.WebGLProvider.prototype.getSettingsSectionConfigs =
           'type': 'checkbox',
           'key': 'wtf.trace.provider.webgl.recordAtStartup',
           'title': 'Start recording at page load',
-          'default': false
+          'default': true
         },
         {
           'type': 'dropdown',
