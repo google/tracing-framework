@@ -182,7 +182,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   var contentEl = this.getChildElement(
       goog.getCssName('content'));
   var dom = this.getDom();
-  contentEl.innerText = '';
+  dom.setTextContent(contentEl, '');
 
   var sortMode = this.sortMode_;
   table.forEach(function(entry) {
