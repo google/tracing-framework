@@ -92,7 +92,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   function addSortButton(title, tooltip, mode) {
     var el = dom.createElement(goog.dom.TagName.A);
     goog.style.setStyle(el, 'margin-left', '2px');
-    el.innerText = title;
+    dom.setTextContent(el, title);
     el.title = tooltip;
     eh.listen(el, goog.events.EventType.CLICK, function(e) {
       e.preventDefault();

@@ -43,7 +43,7 @@ function testError(msg) {
 
   var errorDiv = document.createElement('div');
   errorDiv.id = 'error';
-  errorDiv.innerText = msg;
+  errorDiv.innerHTML = msg;
   document.body.insertBefore(errorDiv, document.body.firstChild);
 };
 
