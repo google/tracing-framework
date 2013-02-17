@@ -47,14 +47,6 @@ wtf.ipc.DomChannel = function(el, eventType) {
   this.eventType_ = eventType;
 
   /**
-   * A somewhat unique ID used to identify this end of the channel.
-   * This prevents this channels own events from being detected.
-   * @type {string}
-   * @private
-   */
-  this.localId_ = String(goog.now());
-
-  /**
    * Bound {@see #handleMessage_} call that will be ignored in the trace.
    * @type {!function(Event):(boolean|undefined)}
    * @private
@@ -103,6 +95,15 @@ wtf.ipc.DomChannel.SENDER_TOKEN = 'wtf_ipc_sender_token';
 
 
 /**
+ * A somewhat unique ID used to identify this end of the channel.
+ * This prevents this channels own events from being detected.
+ * @type {string}
+ * @private
+ */
+wtf.ipc.DomChannel.LOCAL_ID_ = String(goog.now());
+
+
+/**
  * @override
  */
 wtf.ipc.DomChannel.prototype.isConnected = function() {
@@ -123,7 +124,7 @@ wtf.ipc.DomChannel.prototype.handleMessage_ = function(e) {
   var packet = /** @type {wtf.ipc.DomChannel.Packet} */ (detail);
   if (!packet ||
       !packet[wtf.ipc.DomChannel.PACKET_TOKEN] ||
-      packet[wtf.ipc.DomChannel.SENDER_TOKEN] == this.localId_) {
+      packet[wtf.ipc.DomChannel.SENDER_TOKEN] == wtf.ipc.DomChannel.LOCAL_ID_) {
     return;
   }
 
@@ -141,7 +142,7 @@ wtf.ipc.DomChannel.prototype.postMessage = function(
     'data': data
   });
   packet[wtf.ipc.DomChannel.PACKET_TOKEN] = true;
-  packet[wtf.ipc.DomChannel.SENDER_TOKEN] = this.localId_;
+  packet[wtf.ipc.DomChannel.SENDER_TOKEN] = wtf.ipc.DomChannel.LOCAL_ID_;
 
   // Actual post.
   var doc = goog.dom.getOwnerDocument(this.el_);

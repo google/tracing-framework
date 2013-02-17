@@ -212,18 +212,14 @@ InjectedTab.prototype.messageReceived_ = function(data, port) {
 
     // Pops up a UI with the given snapshot data.
     case 'show_snapshot':
-      var contentsLength = 0;
-      var dataContents = data['contents'];
-      for (var n = 0; n < dataContents.length; n++) {
-        contentsLength += dataContents[n].length;
-      }
       _gaq.push(['_trackEvent', 'extension', 'show_snapshot',
-          null, contentsLength]);
+          null, data['content_length']]);
       this.extension_.showSnapshot(
           tab,
           data['page_url'],
           data['content_type'],
-          data['contents']);
+          data['content_urls'],
+          data['content_length']);
       break;
 
     // Starts/stops a chrome:tracing session.

@@ -254,7 +254,9 @@ function setupCommunications() {
           'command': 'show_snapshot',
           'page_url': data['page_url'],
           'content_type': data['content_type'],
-          'contents': data['contents']
+          'content_urls': data['content_urls'],
+          'content_buffers': data['content_buffers'],
+          'content_length': data['content_length']
         });
         break;
       case 'start_chrome_tracing':

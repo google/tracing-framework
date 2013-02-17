@@ -18,6 +18,7 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
+goog.require('goog.fs');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
@@ -26,7 +27,6 @@ goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ext');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.overlay');
-goog.require('wtf.io');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
@@ -602,24 +602,29 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
     // Get the page URL.
     var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
 
+    var contentLength = 0;
+    for (var n = 0; n < buffers.length; n++) {
+      contentLength += buffers[n].length;
+    }
+
     // TODO(benvanik): if the extension is attached always show snapshot through
     // it - this would ensure the UI runs in a different process.
     if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
       // Opening in an extension window, need to marshal through the content
       // script to get it open.
 
-      // Since extension channels cannot take the typed arrays we convert to
-      // a string to make it flow faster through the system.
-      var stringBuffers = [];
+      var blobUrls = [];
       for (var n = 0; n < buffers.length; n++) {
-        stringBuffers.push(wtf.io.byteArrayToString(buffers[n]));
+        var blob = new Blob([/** @type {!ArrayBufferView} */ (buffers[n])]);
+        blobUrls.push(goog.fs.createObjectUrl(blob));
       }
 
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',
         'page_url': endpoint,
         'content_type': 'application/x-extension-wtf-trace',
-        'contents': stringBuffers
+        'content_urls': blobUrls,
+        'content_length': contentLength
       });
     } else {
       // Create window and show.
@@ -630,7 +635,8 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
         channel.postMessage({
           'command': 'snapshot',
           'content_type': 'application/x-extension-wtf-trace',
-          'contents': buffers
+          'content_buffers': buffers,
+          'content_length': contentLength
         }, buffers);
       }, this);
     }
