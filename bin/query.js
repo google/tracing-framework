@@ -40,18 +40,17 @@ function runTool(platform, args) {
   console.log('Querying ' + inputFile + '...');
 
   // Create database for querying.
-  var db = new wtf.analysis.db.EventDatabase();
-
-  // Run to populate the db.
   var loadStart = wtf.now();
-  var traceListener = db.getTraceListener();
-  if (!wtf.analysis.run(traceListener, inputFile)) {
-    console.log('failed to start analysis!');
+  var db = wtf.db.load(inputFile);
+  if (!db) {
     return -1;
   }
   var loadDuration = wtf.now() - loadStart;
   console.log('Database loaded in ' + loadDuration.toFixed(3) + 'ms');
   console.log('');
+
+  // TODO(benvanik): allow the user to switch zone.
+  var zone = db.getZones()[0];
 
   // If the user provided an expression on the command line, use that.
   if (expr && expr.length) {
@@ -87,7 +86,7 @@ function runTool(platform, args) {
 
     var result;
     try {
-      result = db.query(expr);
+      result = zone.query(expr);
     } catch (e) {
       console.log(e);
       return;

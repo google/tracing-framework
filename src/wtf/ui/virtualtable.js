@@ -189,6 +189,7 @@ wtf.ui.VirtualTable.prototype.updateScrollbar_ = function() {
   if (this.source_) {
     height = this.source_.getRowCount() * this.source_.getRowHeight();
   }
+  height *= this.getPaintContext().getScaleRatio();
   goog.style.setHeight(this.scrollbarInnerEl_, height);
   this.scrollbarOuterEl_.scrollTop = 0;
 
@@ -233,7 +234,7 @@ wtf.ui.VirtualTable.Painter_.prototype.repaintInternal = function(ctx, bounds) {
   var scaleRatio = this.getScaleRatio();
   var rowHeight = source.getRowHeight();
   var rowCount = source.getRowCount();
-  var scrollHeight = rowHeight * rowCount / scaleRatio;
+  var scrollHeight = rowHeight * rowCount;
   var scrollTop = this.table_.getScrollTop();
 
   // Create scrolled bounding region.
@@ -245,11 +246,11 @@ wtf.ui.VirtualTable.Painter_.prototype.repaintInternal = function(ctx, bounds) {
       scrollHeight - scrollBounds.top, scrollBounds.height);
 
   // Calculate visible rows.
-  var first = scrollBounds.top * scaleRatio / rowHeight;
-  var last = (scrollBounds.top + scrollBounds.height) * scaleRatio / rowHeight;
+  var first = scrollBounds.top / rowHeight;
+  var last = (scrollBounds.top + scrollBounds.height) / rowHeight;
   first = Math.floor(first);
   last = Math.min(rowCount - 1, Math.floor(last));
-  var rowOffset = (first * rowHeight) * scaleRatio - scrollBounds.top;
+  var rowOffset = (first * rowHeight) - scrollBounds.top;
 
   // Paint using the source.
   source.paintRowRange(

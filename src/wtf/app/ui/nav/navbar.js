@@ -19,13 +19,13 @@ goog.require('goog.dom.classes');
 goog.require('goog.math');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.analysis.db.EventDatabase');
-goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.FramePainter');
 goog.require('wtf.app.ui.MarkPainter');
 goog.require('wtf.app.ui.nav.HeatmapPainter');
 goog.require('wtf.app.ui.nav.TimelinePainter');
 goog.require('wtf.app.ui.nav.navbar');
+goog.require('wtf.db.Database');
+goog.require('wtf.db.Granularity');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.math');
@@ -66,7 +66,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
@@ -145,10 +145,6 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
       wtf.app.ui.nav.Navbar.MAX_GRANULARITY_);
   this.timePainters_.push(this.rulerPainter_);
 
-  var markPainter = new wtf.app.ui.MarkPainter(this.navbarCanvas_, db);
-  this.painterStack_.addChildPainter(markPainter);
-  this.timePainters_.push(markPainter);
-
   /**
    * Vertical stack of painters for zone painters.
    * @type {!wtf.ui.Painter}
@@ -159,12 +155,11 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   this.zonePainterStack_.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
 
   // Watch for zones and add as needed.
-  db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
-      function(zoneIndices) {
-        goog.array.forEach(zoneIndices, this.addZoneTrack_, this);
-      }, this);
-  var zoneIndices = db.getZoneIndices();
-  goog.array.forEach(zoneIndices, this.addZoneTrack_, this);
+  db.addListener(wtf.db.Database.EventType.ZONES_ADDED, function(zones) {
+    goog.array.forEach(zones, this.addZoneTrack_, this);
+  }, this);
+  var zones = db.getZones();
+  goog.array.forEach(zones, this.addZoneTrack_, this);
 
   var heatmapPainter = new wtf.app.ui.nav.HeatmapPainter(
       this.navbarCanvas_, db);
@@ -224,7 +219,7 @@ wtf.app.ui.nav.Navbar.MAX_HEIGHT = 400;
  * @private
  */
 wtf.app.ui.nav.Navbar.MIN_GRANULARITY_ =
-    100 * wtf.analysis.db.Granularity.SECOND;
+    100 * wtf.db.Granularity.SECOND;
 
 
 /**
@@ -248,22 +243,26 @@ wtf.app.ui.nav.Navbar.prototype.createDom = function(dom) {
 
 /**
  * Adds a new zone track for the given zone index.
- * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index to add the track
- *     for.
+ * @param {!wtf.db.Zone} zone Zone to add the track for.
  * @private
  */
-wtf.app.ui.nav.Navbar.prototype.addZoneTrack_ = function(zoneIndex) {
+wtf.app.ui.nav.Navbar.prototype.addZoneTrack_ = function(zone) {
   var zonePainterStack = new wtf.ui.Painter(this.navbarCanvas_);
   this.zonePainterStack_.addChildPainter(zonePainterStack);
   zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
 
+  var markPainter = new wtf.app.ui.MarkPainter(
+      this.navbarCanvas_, zone.getMarkList());
+  zonePainterStack.addChildPainter(markPainter);
+  this.timePainters_.push(markPainter);
+
   var timelinePainter = new wtf.app.ui.nav.TimelinePainter(
-      this.navbarCanvas_, this.db_, zoneIndex);
+      this.navbarCanvas_, this.db_, zone);
   zonePainterStack.addChildPainter(timelinePainter);
   this.timePainters_.push(timelinePainter);
 
   var framePainter = new wtf.app.ui.FramePainter(
-      this.navbarCanvas_, this.db_, zoneIndex.getFrameIndex());
+      this.navbarCanvas_, this.db_, zone.getFrameList());
   zonePainterStack.addChildPainter(framePainter);
   this.timePainters_.push(framePainter);
 };

@@ -18,11 +18,11 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf');
-goog.require('wtf.analysis.db.InstanceEventDataEntry');
-goog.require('wtf.analysis.db.ScopeEventDataEntry');
-goog.require('wtf.analysis.db.SortMode');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.db.InstanceEventDataEntry');
+goog.require('wtf.db.ScopeEventDataEntry');
+goog.require('wtf.db.SortMode');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -81,10 +81,10 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
 
   /**
    * Current sort mode.
-   * @type {wtf.analysis.db.SortMode}
+   * @type {wtf.db.SortMode}
    * @private
    */
-  this.sortMode_ = wtf.analysis.db.SortMode.TOTAL_TIME;
+  this.sortMode_ = wtf.db.SortMode.TOTAL_TIME;
 
   // Add sort buttons.
   // TODO(benvanik): fancy dropdown popup button thing.
@@ -103,13 +103,13 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   };
   addSortButton(
       'count', 'Sort by total event count.',
-      wtf.analysis.db.SortMode.COUNT);
+      wtf.db.SortMode.COUNT);
   addSortButton(
       'total', 'Sort by total event time.',
-      wtf.analysis.db.SortMode.TOTAL_TIME);
+      wtf.db.SortMode.TOTAL_TIME);
   addSortButton(
       'mean', 'Sort by average event duration.',
-      wtf.analysis.db.SortMode.MEAN_TIME);
+      wtf.db.SortMode.MEAN_TIME);
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
@@ -171,11 +171,8 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.createDom = function(dom) {
  * @private
  */
 wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
-  var documentView = this.tracksPanel_.getDocumentView();
-  var db = documentView.getDatabase();
-
   var beginTime = wtf.now();
-  var table = this.selection_.computeEventDataTable();
+  var table = this.selection_.computeEventStatistics();
   var updateDuration = wtf.now() - beginTime;
   //goog.global.console.log('update info', updateDuration);
 
@@ -199,8 +196,8 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
 
 /**
  * Builds the HTML for a table row.
- * @param {!wtf.analysis.db.EventDataEntry} entry Event data entry.
- * @param {wtf.analysis.db.SortMode} sortMode Sort mode used.
+ * @param {!wtf.db.EventDataEntry} entry Event data entry.
+ * @param {wtf.db.SortMode} sortMode Sort mode used.
  * @return {!Element} HTML element.
  * @private
  */
@@ -212,7 +209,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.buildTableRow_ = function(
   var title = eventType.name;
 
   var content = '';
-  if (entry instanceof wtf.analysis.db.ScopeEventDataEntry) {
+  if (entry instanceof wtf.db.ScopeEventDataEntry) {
     var totalTime = wtf.util.formatSmallTime(entry.getTotalTime());
     var userTime = wtf.util.formatSmallTime(entry.getUserTime());
     var meanTime = wtf.util.formatSmallTime(entry.getMeanTime());
@@ -221,19 +218,19 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.buildTableRow_ = function(
         totalTime + ' t, ' +
         userTime + ' u, ' +
         meanTime + ' a';
-  } else if (entry instanceof wtf.analysis.db.InstanceEventDataEntry) {
+  } else if (entry instanceof wtf.db.InstanceEventDataEntry) {
     content += entry.getCount();
   }
 
   var value = '';
   switch (sortMode) {
-    case wtf.analysis.db.SortMode.COUNT:
+    case wtf.db.SortMode.COUNT:
       value = String(entry.getCount());
       break;
-    case wtf.analysis.db.SortMode.TOTAL_TIME:
+    case wtf.db.SortMode.TOTAL_TIME:
       value = totalTime || '';
       break;
-    case wtf.analysis.db.SortMode.MEAN_TIME:
+    case wtf.db.SortMode.MEAN_TIME:
       value = meanTime || '';
       break;
   }

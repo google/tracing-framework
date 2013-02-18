@@ -18,6 +18,7 @@ goog.provide('wtf.trace.TimeRange');
 
 goog.require('goog.asserts');
 goog.require('goog.string');
+goog.require('wtf.io');
 goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.io.CustomWriteStream');
 goog.require('wtf.io.LocalFileWriteStream');
@@ -96,21 +97,40 @@ wtf.trace.addSessionListener = function(listener) {
  * @private
  */
 wtf.trace.getTraceFilename_ = function(targetValue) {
-  var traceManager = wtf.trace.getTraceManager();
-  var contextInfo = traceManager.detectContextInfo();
-
-  // Pick a filename prefix.
-  var filenamePrefix = targetValue;
-  if (filenamePrefix.length) {
-    if (filenamePrefix != 'file://') {
-      filenamePrefix += '-';
-    }
+  // If the input looks like a full filename ('file://foo.bar') then use that.
+  // Otherwise treat it as a prefix.
+  if (goog.string.startsWith(targetValue, 'file://') &&
+      targetValue.indexOf('.') != -1) {
+    return targetValue.replace('file://', '');
   } else {
-    filenamePrefix = 'file://';
-  }
+    var traceManager = wtf.trace.getTraceManager();
+    var contextInfo = traceManager.detectContextInfo();
 
-  var filename = filenamePrefix + contextInfo.getFilename();
-  return filename.replace('file://', '');
+    // Pick a filename prefix.
+    var filenamePrefix = targetValue;
+    if (filenamePrefix.length) {
+      if (filenamePrefix != 'file://') {
+        filenamePrefix += '-';
+      }
+    } else {
+      filenamePrefix = 'file://';
+    }
+
+    // prefix-YYYY-MM-DDTHH-MM-SS
+    var dt = new Date();
+    var filenameSuffix = '-' +
+        dt.getFullYear() +
+        goog.string.padNumber(dt.getMonth() + 1, 2) +
+        goog.string.padNumber(dt.getDate(), 2) + 'T' +
+        goog.string.padNumber(dt.getHours(), 2) +
+        goog.string.padNumber(dt.getMinutes(), 2) +
+        goog.string.padNumber(dt.getSeconds(), 2);
+
+    var filename =
+        filenamePrefix + contextInfo.getFilename() + filenameSuffix +
+        wtf.io.FILE_EXTENSION;
+    return filename.replace('file://', '');
+  }
 };
 
 

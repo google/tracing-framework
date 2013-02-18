@@ -26,29 +26,21 @@ goog.require('wtf.util');
 /**
  * Paints a time range region into the view.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.analysis.db.EventDatabase} db Database.
- * @param {!wtf.analysis.db.TimeRangeIndex} timeRangeIndex Time range index.
+ * @param {!wtf.db.TimeRangeList} timeRangeList Time range list.
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
 wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
-    canvas, db, timeRangeIndex) {
+    canvas, timeRangeList) {
   goog.base(this, canvas);
   var dom = this.getDom();
 
   /**
-   * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * Time range list.
+   * @type {!wtf.db.TimeRangeList}
    * @private
    */
-  this.db_ = db;
-
-  /**
-   * Time range index.
-   * @type {!wtf.analysis.db.TimeRangeIndex}
-   * @private
-   */
-  this.timeRangeIndex_ = timeRangeIndex;
+  this.timeRangeList_ = timeRangeList;
 
   /**
    * Color palette used for drawing marks.
@@ -58,10 +50,8 @@ wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
   this.palette_ = new wtf.ui.color.Palette(
       wtf.ui.color.Palette.D3_10);
 
-  this.timeRangeIndex_.addListener(wtf.events.EventType.INVALIDATED,
-      function() {
-        this.requestRepaint();
-      }, this);
+  this.timeRangeList_.addListener(wtf.events.EventType.INVALIDATED,
+      this.requestRepaint, this);
 };
 goog.inherits(wtf.app.ui.tracks.TimeRangePainter, wtf.ui.RangePainter);
 
@@ -91,7 +81,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   var maxLevel = Math.min(
-      this.timeRangeIndex_.getMaximumLevel(),
+      this.timeRangeList_.getMaximumLevel(),
       wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
   var levelHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
   newBounds.height = maxLevel * levelHeight;
@@ -109,14 +99,14 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
   var timeRangeHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
 
   var maxLevel = Math.min(
-      this.timeRangeIndex_.getMaximumLevel(),
+      this.timeRangeList_.getMaximumLevel(),
       wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
   this.beginRenderingRanges(bounds, maxLevel,
       wtf.ui.RangePainter.DrawStyle.TIME_SPAN);
 
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
-  this.timeRangeIndex_.forEachIntersecting(timeLeft, timeRight,
+  this.timeRangeList_.forEachIntersecting(timeLeft, timeRight,
       function(timeRange) {
         // Skip if excluded.
         var level = timeRange.getLevel();
@@ -124,12 +114,9 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
           return;
         }
 
-        var beginEvent = timeRange.getBeginEvent();
-        var endEvent = timeRange.getEndEvent();
-
         // Compute screen size.
-        var startTime = beginEvent.time;
-        var endTime = endEvent.time;
+        var startTime = timeRange.getTime();
+        var endTime = timeRange.getEndTime();
         var left = wtf.math.remap(startTime,
             timeLeft, timeRight,
             bounds.left, bounds.left + bounds.width);
@@ -147,7 +134,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
 
         // Compute color by name.
         var label = timeRange.getName();
-        if (!label) {
+        if (!label || !label.length) {
           return;
         }
         var color = palette.getColorForString(label);
@@ -158,7 +145,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
         if (screenWidth > 15) {
           var y = level * timeRangeHeight;
           this.drawRangeLabel(
-              bounds, left, right, screenLeft, screenRight, y, label);
+              bounds, left, right, screenLeft, screenRight, y + 1, label);
         }
       }, this);
 
@@ -181,8 +168,8 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.onClickInternal =
     return false;
   }
 
-  var timeStart = timeRange.getBeginEvent().time;
-  var timeEnd = timeRange.getEndEvent().time;
+  var timeStart = timeRange.getTime();
+  var timeEnd = timeRange.getEndTime();
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('goto_range', this, null, timeStart, timeEnd);
@@ -204,11 +191,16 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
     return undefined;
   }
 
-  var duration = timeRange.getTotalDuration();
+  var duration = timeRange.getDuration();
   var lines = [
     wtf.util.formatTime(duration) + ': ' + timeRange.getName()
   ];
-  wtf.util.addArgumentLines(lines, timeRange.getData());
+  var value = timeRange.getValue();
+  if (value) {
+    wtf.util.addArgumentLines(lines, {
+      'value': value
+    });
+  }
   return lines.join('\n');
 };
 
@@ -218,7 +210,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
  * @param {!goog.math.Rect} bounds Draw bounds.
- * @return {wtf.analysis.TimeRange} Time range or nothing.
+ * @return {wtf.db.TimeRange} Time range or nothing.
  * @private
  */
 wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
@@ -228,16 +220,11 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,
       this.timeLeft, this.timeRight);
-  var e = this.timeRangeIndex_.search(time, function(e) {
-    if (e.value.getLevel() == level) {
-      var beginEvent = e.value.getBeginEvent();
-      var endEvent = e.value.getEndEvent();
-      if (beginEvent && endEvent &&
-          e.time <= beginEvent.time && time <= endEvent.time) {
-        return true;
-      }
+  var matches = this.timeRangeList_.getTimeRangesAtTime(time);
+  for (var n = 0; n < matches.length; n++) {
+    if (matches[n].getLevel() == level) {
+      return matches[n];
     }
-    return false;
-  });
-  return e ? e.value : null;
+  }
+  return null;
 };

@@ -13,12 +13,6 @@
 
 goog.provide('wtf.app.ui.query.QueryTableSource');
 
-goog.require('goog.asserts');
-goog.require('wtf.analysis.Event');
-goog.require('wtf.analysis.Scope');
-goog.require('wtf.analysis.Zone');
-goog.require('wtf.analysis.db.EventDatabase');
-goog.require('wtf.analysis.db.ZoneIndex');
 goog.require('wtf.events');
 goog.require('wtf.ui.VirtualTableSource');
 goog.require('wtf.util');
@@ -28,20 +22,20 @@ goog.require('wtf.util');
 /**
  * Virtual table data source wrapping the query results.
  *
- * @param {!Array.<string|number|boolean|wgxpath.Node>} rows Query result rows.
+ * @param {!wtf.db.EventIterator} result Query result.
  * @constructor
  * @extends {wtf.ui.VirtualTableSource}
  */
-wtf.app.ui.query.QueryTableSource = function(rows) {
+wtf.app.ui.query.QueryTableSource = function(result) {
   goog.base(this);
 
   /**
    * All rows.
-   * @type {!Array.<string|number|boolean|wgxpath.Node>}
+   * @type {!wtf.db.EventIterator}
    * @private
    */
-  this.rows_ = rows;
-  this.setRowCount(this.rows_.length);
+  this.result_ = result;
+  this.setRowCount(result.getCount());
 };
 goog.inherits(wtf.app.ui.query.QueryTableSource, wtf.ui.VirtualTableSource);
 
@@ -78,6 +72,7 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
 
   // Draw row contents.
   y = rowOffset;
+  var it = this.result_;
   for (var n = first; n <= last; n++, y += rowHeight) {
     ctx.fillStyle = n % 2 ? '#fafafa' : '#ffffff';
     ctx.fillRect(gutterWidth, y, bounds.width - gutterWidth, rowHeight);
@@ -85,40 +80,19 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
     // TODO(benvanik): icons to differentiate event types?
 
     var columnTime = -1;
-    var columnTitle = null;
+    var columnTitle = '';
 
     ctx.fillStyle = 'black';
-    var value = this.rows_[n];
-    if (typeof value == 'boolean' ||
-        typeof value == 'number' ||
-        typeof value == 'string') {
-      // Primitive.
-      columnTitle = String(value);
-    } else {
-      // Some node.
-      if (value instanceof wtf.analysis.Scope) {
-        columnTime = value.getEnterTime();
-        columnTitle = value.getName();
-      } else if (value instanceof wtf.analysis.Event) {
-        columnTime = value.getTime();
-        columnTitle = value.getEventType().getName();
-      } else if (value instanceof wgxpath.Attr) {
-        var parentNode = value.getParentNode();
-        if (parentNode instanceof wtf.analysis.Scope) {
-          columnTime = parentNode.getEnterTime();
-        } else if (parentNode instanceof wtf.analysis.Event) {
-          columnTime = parentNode.getTime();
-        } else {
-          columnTime = 0;
-        }
-        var attrkey = value.getNodeName();
-        var attrvalue = value.getNodeValue();
-        columnTitle = attrkey + ': ' + attrvalue;
-      } else {
-        columnTime = 0;
-        columnTitle = value.toString();
-      }
+
+    it.seek(n);
+    if (it.isScope()) {
+      columnTime = it.getTime();
+      columnTitle = it.getName();
+    } else if (it.isInstance()) {
+      columnTime = it.getTime();
+      columnTitle = it.getName();
     }
+    // TODO(benvanik): arguments/etc?
 
     var x = gutterWidth + charWidth;
     if (columnTime >= 0) {
@@ -151,30 +125,15 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
  */
 wtf.app.ui.query.QueryTableSource.prototype.onClick = function(
     row, x, modifiers, bounds) {
-  var value = this.rows_[row];
-  if (typeof value == 'boolean' ||
-      typeof value == 'number' ||
-      typeof value == 'string') {
-    return undefined;
-  }
+  var it = this.result_;
+  it.seek(row);
 
-  // Attributes all use their parent.
-  if (value instanceof wgxpath.Attr) {
-    var parentNode = value.getParentNode();
-    goog.asserts.assert(value);
-    value = parentNode;
-  }
-
-  var startTime = 0;
+  var startTime = it.getTime();
   var endTime = 0;
-  if (value instanceof wtf.analysis.Scope) {
-    startTime = value.getEnterTime();
-    endTime = value.getLeaveTime();
-  } else if (value instanceof wtf.analysis.Event) {
-    startTime = endTime = value.getTime();
-  }
-  if (!startTime) {
-    return undefined;
+  if (it.isScope()) {
+    endTime = it.getEndTime();
+  } else if (it.isInstance()) {
+    endTime = startTime;
   }
 
   var commandManager = wtf.events.getCommandManager();
@@ -197,31 +156,9 @@ wtf.app.ui.query.QueryTableSource.prototype.onClick = function(
  */
 wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
     row, x, bounds) {
-  var value = this.rows_[row];
-  if (typeof value == 'boolean' ||
-      typeof value == 'number' ||
-      typeof value == 'string') {
-    // Primitive.
-    // We don't have any additional information.
-    return undefined;
-  } else {
-    // Attributes all use their parent.
-    if (value instanceof wgxpath.Attr) {
-      var parentNode = value.getParentNode();
-      goog.asserts.assert(value);
-      value = parentNode;
-    }
-
-    if (value instanceof wtf.analysis.Scope) {
-      return wtf.analysis.Scope.getInfoString(value);
-    } else if (value instanceof wtf.analysis.Event) {
-      return wtf.analysis.Event.getInfoString(value);
-    } else if (value instanceof wtf.analysis.db.ZoneIndex) {
-      return wtf.analysis.Zone.getInfoString(value.getZone());
-    } else if (value instanceof wtf.analysis.db.EventDatabase) {
-      return undefined;
-    }
-  }
+  var it = this.result_;
+  it.seek(row);
+  return it.getInfoString();
 };
 
 

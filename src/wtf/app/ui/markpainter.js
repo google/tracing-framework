@@ -13,10 +13,7 @@
 
 goog.provide('wtf.app.ui.MarkPainter');
 
-goog.require('goog.asserts');
-goog.require('goog.async.DeferredList');
 goog.require('wtf.events');
-goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.RangePainter');
@@ -28,19 +25,12 @@ goog.require('wtf.util');
 /**
  * Paints a ruler into the view.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.analysis.db.EventDatabase} db Database.
+ * @param {!wtf.db.MarkList} markList Mark list.
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.MarkPainter = function MarkPainter(canvas, db) {
+wtf.app.ui.MarkPainter = function MarkPainter(canvas, markList) {
   goog.base(this, canvas);
-
-  /**
-   * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
-   * @private
-   */
-  this.db_ = db;
 
   // TODO(benvanik): a better palette.
   /**
@@ -52,33 +42,11 @@ wtf.app.ui.MarkPainter = function MarkPainter(canvas, db) {
       wtf.app.ui.MarkPainter.MARK_COLORS_);
 
   /**
-   * Mark event index.
-   * Only valid once it has been created and the control readied.
-   * @type {wtf.analysis.db.EventIndex}
+   * Mark list.
+   * @type {wtf.db.MarkList}
    * @private
    */
-  this.markIndex_ = null;
-
-  var deferreds = [];
-  deferreds.push(this.db_.createEventIndex('wtf.trace#mark'));
-
-  this.setReady(false);
-  new goog.async.DeferredList(deferreds).addCallbacks(
-      function() {
-        // Grab indicies.
-        var markIndex = this.db_.getEventIndex('wtf.trace#mark');
-        goog.asserts.assert(markIndex);
-        this.markIndex_ = markIndex;
-        this.markIndex_.addListener(wtf.events.EventType.INVALIDATED,
-            this.markIndexInvalidated_, this);
-        this.markIndexInvalidated_();
-
-        // Ready and redraw.
-        this.setReady(true);
-      },
-      function(arg) {
-        // Failued to create indices.
-      }, this);
+  this.markList_ = markList;
 };
 goog.inherits(wtf.app.ui.MarkPainter, wtf.ui.RangePainter);
 
@@ -101,29 +69,6 @@ wtf.app.ui.MarkPainter.MARK_COLORS_ = [
 
 
 /**
- * Handles invalidations of the mark index.
- * @private
- */
-wtf.app.ui.MarkPainter.prototype.markIndexInvalidated_ = function() {
-  // Iterate and fixup all mark events.
-  // TODO(benvanik): move to a dedicated mark navigation structure
-  var previousMark = null;
-  this.markIndex_.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
-    if (previousMark) {
-      previousMark.args['duration'] = e.time - previousMark.time;
-    }
-    previousMark = e;
-  });
-  if (previousMark) {
-    previousMark.args['duration'] =
-        this.db_.getLastEventTime() - previousMark.time;
-  }
-
-  this.requestRepaint();
-};
-
-
-/**
  * Height of the mark region, in pixels.
  * @type {number}
  * @const
@@ -137,7 +82,7 @@ wtf.app.ui.MarkPainter.HEIGHT = 16;
 wtf.app.ui.MarkPainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
-  if (this.markIndex_ && this.markIndex_.getCount()) {
+  if (this.markList_.getCount()) {
     newBounds.height = wtf.app.ui.MarkPainter.HEIGHT;
   } else {
     newBounds.height = 0;
@@ -164,26 +109,20 @@ wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
 
   this.beginRenderingRanges(bounds, 1);
 
-  var markIndex = this.markIndex_;
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 
-  // Search left to find the mark active at the start of the visible range.
-  var firstMarkEvent = markIndex.search(timeLeft, function(e) {
-    return true;
-  });
-  var searchLeft = firstMarkEvent ? firstMarkEvent.time : timeLeft;
-
   // Draw all visible marks.
-  markIndex.forEach(searchLeft, timeRight, function(e) {
+  this.markList_.forEachIntersecting(timeLeft, timeRight, function(mark) {
     // Ignore empty marks.
-    if (!e.args['name'] || !e.args['name'].length) {
+    var name = mark.getName();
+    if (!name || !name.length) {
       return;
     }
 
     // Compute screen size.
-    var startTime = e.time;
-    var endTime = e.time + e.args['duration'];
+    var startTime = mark.getTime();
+    var endTime = mark.getEndTime();
     var left = wtf.math.remap(startTime,
         timeLeft, timeRight,
         bounds.left, bounds.left + bounds.width);
@@ -200,17 +139,19 @@ wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
     }
 
     // Pick a random color.
-    if (!e.tag) {
-      e.tag = palette.getRandomColor();
+    // We stash this on the mark so that we can ensure it's the same each draw.
+    var color = /** @type {!wtf.ui.color.RgbColor} */ (mark.getRenderData());
+    if (!color) {
+      color = palette.getRandomColor();
+      mark.setRenderData(color);
     }
-    var color = /** @type {!wtf.ui.color.RgbColor} */ (e.tag);
 
     // Draw bar.
     this.drawRange(0, screenLeft, screenRight, color, 1);
 
     if (screenWidth > 15) {
       this.drawRangeLabel(
-          bounds, left, right, screenLeft, screenRight, 0, e.args['name']);
+          bounds, left, right, screenLeft, screenRight, 0, name);
     }
   }, this);
 
@@ -226,13 +167,13 @@ wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
  */
 wtf.app.ui.MarkPainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
-  var e = this.hitTest_(x, y, bounds);
-  if (e) {
+  var mark = this.hitTest_(x, y, bounds);
+  if (mark) {
     var commandManager = wtf.events.getCommandManager();
-    commandManager.execute('goto_mark', this, null, e);
+    commandManager.execute('goto_mark', this, null, mark);
     if (modifiers & wtf.ui.ModifierKey.SHIFT) {
       commandManager.execute('select_range', this, null,
-          e.time, e.time + e.args['duration']);
+          mark.getTime(), mark.getEndTime());
     }
   }
   return true;
@@ -244,14 +185,17 @@ wtf.app.ui.MarkPainter.prototype.onClickInternal =
  */
 wtf.app.ui.MarkPainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
-  var e = this.hitTest_(x, y, bounds);
-  if (e) {
+  var mark = this.hitTest_(x, y, bounds);
+  if (mark) {
     var lines = [
-      wtf.util.formatTime(e.args['duration']) + ': ' + e.args['name']
+      wtf.util.formatTime(mark.getDuration()) + ': ' + mark.getName()
     ];
-    wtf.util.addArgumentLines(lines, {
-      'value': e.args['value'] !== null ? e.args['value'] : undefined
-    });
+    var value = mark.getValue();
+    if (value) {
+      wtf.util.addArgumentLines(lines, {
+        'value': value
+      });
+    }
     return lines.join('\n');
   }
   return undefined;
@@ -263,7 +207,7 @@ wtf.app.ui.MarkPainter.prototype.getInfoStringInternal =
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
  * @param {!goog.math.Rect} bounds Draw bounds.
- * @return {wtf.analysis.Event} Mark or nothing.
+ * @return {wtf.db.Mark} Mark or nothing.
  * @private
  */
 wtf.app.ui.MarkPainter.prototype.hitTest_ = function(
@@ -271,8 +215,5 @@ wtf.app.ui.MarkPainter.prototype.hitTest_ = function(
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,
       this.timeLeft, this.timeRight);
-  return this.markIndex_.search(time, function(e) {
-    return e.time <= time && time <= e.time + e.args['duration'] &&
-        e.args['name'] && e.args['name'].length;
-  });
+  return this.markList_.getMarkAtTime(time);
 };

@@ -70,7 +70,9 @@ wtf.io.drive.OAUTH_SCOPES_ = [
  * @return {boolean} True if the drive API can be used.
  */
 wtf.io.drive.isSupported = function() {
-  return !wtf.CHROME_EXTENSION;
+  // Ignore in debug builds too, as it throws exceptions on load that are
+  // annoying.
+  return COMPILED && !wtf.CHROME_EXTENSION;
 };
 
 
