@@ -20,11 +20,9 @@
  *
  * @param {number} tabId Tab ID.
  * @param {!Object} pageOptions Page options.
- * @param {!function(!Object)} queueData A function that queues event data for
- *     sending to the target tab.
  * @constructor
  */
-var Debugger = function(tabId, pageOptions, queueData) {
+var Debugger = function(tabId, pageOptions) {
   /**
    * Target tab ID.
    * @type {number}
@@ -49,19 +47,11 @@ var Debugger = function(tabId, pageOptions, queueData) {
   this.pageOptions_ = pageOptions;
 
   /**
-   * A function that queues event data for sending.
-   * @type {!function(!Object)}
+   * A list of timeline records that have been recorded.
+   * @type {!Array.<!Array>}
    * @private
    */
-  this.queueData_ = queueData;
-
-  /**
-   * Dispatch for records, keyed by record type.
-   * @type {!Object.<function(!Object):Object>}
-   * @private
-   */
-  this.timelineDispatch_ = {};
-  this.setupTimelineDispatch_();
+  this.records_ = [];
 
   /**
    * Whether this debugger is attached.
@@ -118,6 +108,8 @@ Debugger.prototype.dispose = function() {
 
   chrome.debugger.onEvent.removeListener(this.eventHandlers_.onEvent);
   chrome.debugger.onDetach.removeListener(this.eventHandlers_.onDetach);
+
+  this.records_.length = 0;
 };
 
 
@@ -158,9 +150,6 @@ Debugger.prototype.beginListening_ = function() {
 
   var memoryInfoEnabled =
       this.pageOptions_['wtf.trace.provider.browser.memoryInfo'];
-  if (memoryInfoEnabled === undefined) {
-    memoryInfoEnabled = false;
-  }
   if (memoryInfoEnabled) {
     this.startMemoryPoll_();
   }
@@ -199,125 +188,128 @@ Debugger.prototype.startMemoryPoll_ = function() {
 
 
 /**
- * Sets up the dispatch table for the timeline.
+ * A table of record types to functions that convert them into efficient(ish)
+ * records for storage/transmission.
+ * @type {!Object.<function(!Object):!Array>}
  * @private
  */
-Debugger.prototype.setupTimelineDispatch_ = function() {
+Debugger.TIMELINE_DISPATCH_ = (function() {
   // The table of available record types can be found here:
   // http://trac.webkit.org/browser/trunk/Source/WebCore/inspector/front-end/TimelinePresentationModel.js#L70
 
+  var dispatch = {};
+
   // GCEvent: garbage collections.
-  this.timelineDispatch_['GCEvent'] = function(record) {
-    return {
-      'type': 'GCEvent',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      //'stackTrace': record.stackTrace,
-      'usedHeapSize': record.usedHeapSize,
-      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
-    };
+  dispatch['GCEvent'] = function(record) {
+    return [
+      'GCEvent',
+      record.startTime,
+      record.endTime,
+      record.usedHeapSize,
+      record.data.usedHeapSizeDelta
+    ];
   };
 
   // EvaluateScript: script runtime/parsing/etc.
-  this.timelineDispatch_['EvaluateScript'] = function(record) {
-    return {
-      'type': 'EvaluateScript',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'usedHeapSize': record.usedHeapSize,
-      'usedHeapSizeDelta': record.data.usedHeapSizeDelta
-    };
+  dispatch['EvaluateScript'] = function(record) {
+    return [
+      'EvaluateScript',
+      record.startTime,
+      record.endTime,
+      record.usedHeapSize,
+      record.data.usedHeapSizeDelta
+    ];
   };
 
   // ParseHTML: parsing of HTML in a page.
-  this.timelineDispatch_['ParseHTML'] = function(record) {
-    return {
-      'type': 'ParseHTML',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'length': record.data.length
-    };
+  dispatch['ParseHTML'] = function(record) {
+    return [
+      'ParseHTML',
+      record.startTime,
+      record.endTime,
+      record.data.length
+    ];
   };
 
   // ScheduleStyleRecalculation: a style has been invalidated - expect a
   // RecalculateStyles.
-  this.timelineDispatch_['ScheduleStyleRecalculation'] = function(record) {
-    return {
-      'type': 'ScheduleStyleRecalculation',
-      'time': record.startTime
-    };
+  dispatch['ScheduleStyleRecalculation'] = function(record) {
+    return [
+      'ScheduleStyleRecalculation',
+      record.startTime
+    ];
   };
 
   // RecalculateStyles: style recalculation is occurring.
-  this.timelineDispatch_['RecalculateStyles'] = function(record) {
-    return {
-      'type': 'RecalculateStyles',
-      'startTime': record.startTime,
-      'endTime': record.endTime
-    };
+  dispatch['RecalculateStyles'] = function(record) {
+    return [
+      'RecalculateStyles',
+      record.startTime,
+      record.endTime
+    ];
   };
 
   // InvalidateLayout: DOM layout was invalidated - expect a Layout.
-  this.timelineDispatch_['InvalidateLayout'] = function(record) {
-    return {
-      'type': 'InvalidateLayout',
-      'time': record.startTime
-    };
+  dispatch['InvalidateLayout'] = function(record) {
+    return [
+      'InvalidateLayout',
+      record.startTime
+    ];
   };
 
   // Layout: DOM layout.
-  this.timelineDispatch_['Layout'] = function(record) {
-    return {
-      'type': 'Layout',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'x': record.data.x,
-      'y': record.data.y,
-      'width': record.data.width,
-      'height': record.data.height,
-    };
+  dispatch['Layout'] = function(record) {
+    return [
+      'Layout',
+      record.startTime,
+      record.endTime,
+      record.data.x,
+      record.data.y,
+      record.data.width,
+      record.data.height,
+    ];
   };
 
   // Paint: DOM element painting.
-  this.timelineDispatch_['Paint'] = function(record) {
-    return {
-      'type': 'Paint',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'x': record.data.x,
-      'y': record.data.y,
-      'width': record.data.width,
-      'height': record.data.height,
-    };
+  dispatch['Paint'] = function(record) {
+    return [
+      'Paint',
+      record.startTime,
+      record.endTime,
+      record.data.x,
+      record.data.y,
+      record.data.width,
+      record.data.height,
+    ];
   };
 
   // CompositeLayers: the compositor ran and composited the page.
-  this.timelineDispatch_['CompositeLayers'] = function(record) {
-    return {
-      'type': 'CompositeLayers',
-      'startTime': record.startTime,
-      'endTime': record.endTime
-    };
+  dispatch['CompositeLayers'] = function(record) {
+    return [
+      'CompositeLayers',
+      record.startTime,
+      record.endTime
+    ];
   };
 
   // DecodeImage: a compressed image was decoded.
-  this.timelineDispatch_['DecodeImage'] = function(record) {
-    return {
-      'type': 'DecodeImage',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'imageType': record.data.imageType
-    };
+  dispatch['DecodeImage'] = function(record) {
+    return [
+      'DecodeImage',
+      record.startTime,
+      record.endTime,
+      record.data.imageType
+    ];
   };
 
   // ResizeImage: a resized version of a decoded image was required.
-  this.timelineDispatch_['ResizeImage'] = function(record) {
-    return {
-      'type': 'ResizeImage',
-      'startTime': record.startTime,
-      'endTime': record.endTime,
-      'cached': record.data.cached
-    };
+  dispatch['ResizeImage'] = function(record) {
+    return [
+      'ResizeImage',
+      record.startTime,
+      record.endTime,
+      record.data.cached
+    ];
   };
 
   // TODO(benvanik): explore adding the other types:
@@ -327,7 +319,9 @@ Debugger.prototype.setupTimelineDispatch_ = function() {
   // ResourceReceivedData
   // ScrollLayer
   // Program (may be good to show as a heatmap?)
-};
+
+  return dispatch;
+})();
 
 
 /**
@@ -369,12 +363,9 @@ Debugger.prototype.onEvent_ = function(source, method, params) {
  */
 Debugger.prototype.processTimelineRecord_ = function(record) {
   // Handle the record.
-  var dispatch = this.timelineDispatch_[record.type];
+  var dispatch = Debugger.TIMELINE_DISPATCH_[record.type];
   if (dispatch) {
-    var data = dispatch(record);
-    if (data) {
-      this.queueData_(data);
-    }
+    this.records_.push(dispatch(record));
   }
 
   // Recursively check children.
@@ -383,4 +374,21 @@ Debugger.prototype.processTimelineRecord_ = function(record) {
       this.processTimelineRecord_(record.children[n]);
     }
   }
+};
+
+
+/**
+ * Gets the list of all records.
+ * @return {!Array.<!Array>} Records.
+ */
+Debugger.prototype.getRecords = function() {
+  return this.records_;
+};
+
+
+/**
+ * Clears all recorded records.
+ */
+Debugger.prototype.clearRecords = function() {
+  this.records_.length = 0;
 };

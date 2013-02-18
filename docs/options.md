@@ -75,15 +75,20 @@ occurred since the last snapshot is written.
 The frequency, in milliseconds, to flush data buffers or 0 to prevent automatic
 flushing.
 
+### wtf.trace.disableProviders
+
+When set to true all providers and global hooks will be disabled. This is useful
+when including the tracing script to do file manipulation/etc.
+
 ### wtf.trace.provider.*
 
 Each event provider can be toggled here to allow for the choice of which kind
 of events to include in the stream or the fidelity of the events added.
 
-#### wtf.trace.provider.browser
+#### wtf.trace.provider.chromeDebug
 
-Set `wtf.trace.provider.browser` to 1+ to enable the events. This will
-use a variety of means to attempt to gather javascript runtime events, such as
+Set `wtf.trace.provider.chromeDebug` to 1+ to enable the events. This will
+use a variety of means to attempt to gather Javascript runtime events, such as
 garbage collections, JIT activity, etc. This functionality relies on the
 injector extension or custom builds of Chromium. It introduces some overhead,
 such as an additional 0.1ms per XHR open/send.
