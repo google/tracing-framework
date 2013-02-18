@@ -13,8 +13,9 @@
 
 goog.provide('wtf.app.ui.Selection');
 
-goog.require('wtf.analysis.EventFilter');
-goog.require('wtf.analysis.db.EventDataTable');
+goog.require('wtf.db.EventStatistics');
+goog.require('wtf.db.Filter');
+goog.require('wtf.db.FilterResult');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
 
@@ -22,7 +23,7 @@ goog.require('wtf.events.EventType');
 
 /**
  * Selection and filtering state.
- * @param {!wtf.analysis.db.EventDatabase} db Event database.
+ * @param {!wtf.db.Database} db Event database.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
@@ -47,26 +48,26 @@ wtf.app.ui.Selection = function(db) {
 
   /**
    * Filter expression.
-   * @type {!wtf.analysis.EventFilter}
+   * @type {!wtf.db.Filter}
    * @private
    */
-  this.filter_ = new wtf.analysis.EventFilter();
+  this.filter_ = new wtf.db.Filter();
 
   /**
    * Cached event data table.
    * This is regenerated on demand as the selection changes.
-   * @type {!wtf.analysis.db.EventDataTable}
+   * @type {!wtf.db.EventStatistics}
    * @private
    */
-  this.eventDataTable_ = new wtf.analysis.db.EventDataTable(db);
-  this.registerDisposable(this.eventDataTable_);
+  this.eventStatistics_ = new wtf.db.EventStatistics(db);
+  this.registerDisposable(this.eventStatistics_);
 
   /**
    * Whether the event data table is dirty and needs to be regenerated.
    * @type {boolean}
    * @private
    */
-  this.eventDataTableDirty_ = true;
+  this.eventStatisticsDirty_ = true;
 
   db.addListener(
       wtf.events.EventType.INVALIDATED, this.invalidate_, this);
@@ -157,6 +158,15 @@ wtf.app.ui.Selection.prototype.clearTimeRange = function() {
 
 
 /**
+ * Gets the underlying filter object.
+ * @return {!wtf.db.Filter} Filter.
+ */
+wtf.app.ui.Selection.prototype.getFilter = function() {
+  return this.filter_;
+};
+
+
+/**
  * Gets a value indicating whether a filter expression is specified.
  * @return {boolean} True if a filter expression is specified.
  */
@@ -184,13 +194,13 @@ wtf.app.ui.Selection.prototype.getFilterExpression = function() {
 wtf.app.ui.Selection.prototype.setFilterExpression = function(value) {
   var result = this.filter_.setFromString(value);
   switch (result) {
-    case wtf.analysis.EventFilter.Result.UPDATED:
+    case wtf.db.FilterResult.UPDATED:
       this.invalidate_();
       return true;
-    case wtf.analysis.EventFilter.Result.FAILED:
+    case wtf.db.FilterResult.FAILED:
       return false;
     default:
-    case wtf.analysis.EventFilter.Result.NO_CHANGE:
+    case wtf.db.FilterResult.NO_CHANGE:
       return true;
   }
 };
@@ -200,7 +210,7 @@ wtf.app.ui.Selection.prototype.setFilterExpression = function(value) {
  * Clears the current filter expression.
  */
 wtf.app.ui.Selection.prototype.clearFilterExpression = function() {
-  if (this.filter_.clear() == wtf.analysis.EventFilter.Result.UPDATED) {
+  if (this.filter_.clear() == wtf.db.FilterResult.UPDATED) {
     this.invalidate_();
   }
 };
@@ -208,7 +218,7 @@ wtf.app.ui.Selection.prototype.clearFilterExpression = function() {
 
 /**
  * Gets a function that can be used to test if events pass the active filter.
- * @return {!function(!wtf.analysis.Event):boolean} A filter function.
+ * @return {!wtf.db.FilterFunction} A filter function.
  */
 wtf.app.ui.Selection.prototype.getFilterEvaluator = function() {
   return this.filter_.getEvaluator() || Boolean;
@@ -219,16 +229,16 @@ wtf.app.ui.Selection.prototype.getFilterEvaluator = function() {
  * Computes an event data table for the current selection.
  * This will return the same value on subsequent calls if the selection has
  * not changed. Do not retain the returned value beyond the calling scope.
- * @return {!wtf.analysis.db.EventDataTable} Event data table.
+ * @return {!wtf.db.EventStatistics} Event data table.
  */
-wtf.app.ui.Selection.prototype.computeEventDataTable = function() {
-  if (this.eventDataTableDirty_) {
-    this.eventDataTable_.rebuild(
+wtf.app.ui.Selection.prototype.computeEventStatistics = function() {
+  if (this.eventStatisticsDirty_) {
+    this.eventStatistics_.rebuild(
         this.timeStart_, this.timeEnd_,
-        this.getFilterEvaluator());
-    this.eventDataTableDirty_ = false;
+        this.filter_.getEvaluator());
+    this.eventStatisticsDirty_ = false;
   }
-  return this.eventDataTable_;
+  return this.eventStatistics_;
 };
 
 
@@ -237,6 +247,6 @@ wtf.app.ui.Selection.prototype.computeEventDataTable = function() {
  * @private
  */
 wtf.app.ui.Selection.prototype.invalidate_ = function() {
-  this.eventDataTableDirty_ = true;
+  this.eventStatisticsDirty_ = true;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };

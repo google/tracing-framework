@@ -16,9 +16,9 @@ goog.provide('wtf.app.ui.Toolbar');
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
-goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
+goog.require('wtf.db.Database');
 goog.require('wtf.events');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.io.drive');
@@ -81,7 +81,7 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
 
   var db = documentView.getDatabase();
   db.addListener(
-      wtf.analysis.db.EventDatabase.EventType.SOURCES_CHANGED,
+      wtf.db.Database.EventType.SOURCES_CHANGED,
       this.updateDisplay_,
       this);
   this.updateDisplay_();
@@ -112,8 +112,8 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   if (!sources.length) {
     return;
   }
-  var source = sources[0];
-  if (!(source instanceof wtf.data.ScriptContextInfo)) {
+  var contextInfo = sources[0].getContextInfo();
+  if (!(contextInfo instanceof wtf.data.ScriptContextInfo)) {
     return;
   }
 
@@ -122,17 +122,17 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   var urlEl = this.getChildElement(
       goog.getCssName('appUiToolbarInfoUrl'));
 
-  dom.setTextContent(titleEl, source.title || '');
-  dom.setTextContent(urlEl, source.uri);
+  dom.setTextContent(titleEl, contextInfo.title || '');
+  dom.setTextContent(urlEl, contextInfo.uri);
   dom.setProperties(urlEl, {
-    'href': source.uri
+    'href': contextInfo.uri
   });
 
   // Begin refreshing the icon - this may take some time, as packaged apps
   // have some crazy silly security rules...
-  var iconUri = goog.Uri.resolve(source.uri, '/favicon.ico').toString();
-  if (source.icon && source.icon.uri) {
-    iconUri = source.icon.uri;
+  var iconUri = goog.Uri.resolve(contextInfo.uri, '/favicon.ico').toString();
+  if (contextInfo.icon && contextInfo.icon.uri) {
+    iconUri = contextInfo.icon.uri;
   }
   this.refreshIcon_(iconUri);
 };

@@ -18,7 +18,6 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
-goog.require('wtf.analysis.db.EventDatabase');
 goog.require('wtf.app.ui.EmptyTabPanel');
 goog.require('wtf.app.ui.ExtensionManager');
 goog.require('wtf.app.ui.Selection');
@@ -29,6 +28,7 @@ goog.require('wtf.app.ui.documentview');
 goog.require('wtf.app.ui.nav.Navbar');
 goog.require('wtf.app.ui.query.QueryPanel');
 goog.require('wtf.app.ui.tracks.TracksPanel');
+goog.require('wtf.db.Database');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -136,7 +136,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   // Show error dialogs.
   var db = doc.getDatabase();
-  db.addListener(wtf.analysis.db.EventDatabase.EventType.SOURCE_ERROR,
+  db.addListener(wtf.db.Database.EventType.SOURCE_ERROR,
       function(message, opt_detail) {
         goog.global.console.log(message, opt_detail);
         wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
@@ -184,7 +184,7 @@ wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
  * @private
  */
 wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
-  var db = this.getDatabase();
+  var db2 = this.getDatabase();
   var view = this.localView_;
   var selection = this.selection_;
 
@@ -215,7 +215,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
   commandManager.registerSimpleCommand(
       'goto_range', function(source, target, timeStart, timeEnd,
           opt_immediate) {
-        var firstEventTime = db.getFirstEventTime();
+        var firstEventTime = db2.getFirstEventTime();
         var pad = (timeEnd - timeStart) * 0.05;
         view.setVisibleRange(
             timeStart - pad,
@@ -226,38 +226,36 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
       }, this);
 
   commandManager.registerSimpleCommand(
-      'goto_mark', function(source, target, e) {
+      'goto_mark', function(source, target, mark) {
         // Go to mark event.
-        var timeStart = e.time;
-        var timeEnd = e.time + e.args['duration'];
-        commandManager.execute('goto_range', this, null,
-            timeStart, timeEnd);
+        var timeStart = mark.getTime();
+        var timeEnd = mark.getEndTime();
+        commandManager.execute('goto_range', this, null, timeStart, timeEnd);
       }, this);
 
   commandManager.registerSimpleCommand(
       'goto_frame', function(source, target, frameOrNumber) {
         var frame = null;
         if (goog.isNumber(frameOrNumber)) {
-          // Find a frame index.
-          var frameIndex = db.getFirstFrameIndex();
-          if (!frameIndex) {
+          // Find a frame list with frames in it.
+          var frameList = db2.getFirstFrameList();
+          if (!frameList) {
             return;
           }
 
           // Find frame.
-          frame = frameIndex.getFrame(frameOrNumber);
+          frame = frameList.getFrame(frameOrNumber);
         } else {
-          frame = /** @type {!wtf.analysis.Frame} */ (frameOrNumber);
+          frame = /** @type {!wtf.db.Frame} */ (frameOrNumber);
         }
         if (!frame) {
           return;
         }
 
         // Go to frame.
-        var timeStart = frame.getStartEvent().time;
-        var timeEnd = frame.getEndEvent().time;
-        commandManager.execute('goto_range', this, null,
-            timeStart, timeEnd);
+        var timeStart = frame.getTime();
+        var timeEnd = frame.getEndTime();
+        commandManager.execute('goto_range', this, null, timeStart, timeEnd);
       }, this);
 };
 
@@ -267,7 +265,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
  * @private
  */
 wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
-  var db = this.getDatabase();
+  var db2 = this.getDatabase();
   var view = this.localView_;
   var selection = this.selection_;
 
@@ -278,8 +276,8 @@ wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
   this.registerDisposable(keyboardScope);
 
   keyboardScope.addShortcut('home', function() {
-    var firstEventTime = db.getFirstEventTime();
-    var lastEventTime = db.getLastEventTime();
+    var firstEventTime = db2.getFirstEventTime();
+    var lastEventTime = db2.getLastEventTime();
     commandManager.execute('goto_range', this, null,
         firstEventTime, lastEventTime);
   }, this);
@@ -325,7 +323,7 @@ wtf.app.ui.DocumentView.prototype.getDocument = function() {
 
 /**
  * Gets the database of the active document.
- * @return {!wtf.analysis.db.EventDatabase} Event database.
+ * @return {!wtf.db.Database} Event database.
  */
 wtf.app.ui.DocumentView.prototype.getDatabase = function() {
   return this.document_.getDatabase();

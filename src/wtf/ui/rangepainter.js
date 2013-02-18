@@ -213,7 +213,7 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
   var labelForeground = '#FFFFFF';
   switch (this.drawStyle_) {
     case wtf.ui.RangePainter.DrawStyle.INSTANCE:
-      insetY = rowHeight * 0.3;
+      insetH = rowHeight * 0.3;
       break;
     case wtf.ui.RangePainter.DrawStyle.TIME_SPAN:
       insetY = insetH = rowHeight / 4;
@@ -250,7 +250,7 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
     if (labelBackground) {
       ctx.fillStyle = labelBackground;
       ctx.fillRect(
-          label.x - 4, top + label.y - 4, label.w + 8, labelHeight + 8);
+          label.x - 4, top + label.y - 1, label.w + 8, labelHeight + 4);
       ctx.fillStyle = labelForeground;
     }
 

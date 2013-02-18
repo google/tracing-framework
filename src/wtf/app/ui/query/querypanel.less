@@ -30,12 +30,29 @@
       top: 0;
       bottom: 0;
       left: 0;
-      right: 0;
-      margin-right: @rightWidth + 10px;
+      right: @rightWidth + 7px;
 
-      & .kSearchField {
-        width: 100%;
-        margin: 3px;
+      @zoneWidth: 128px;
+      & .zoneSelect {
+        float: left;
+        width: @zoneWidth;
+        margin-left: 5px;
+        margin-right: 5px;
+        margin-top: 8px;
+      }
+
+      & .searchBox {
+        float: left;
+        position: absolute;
+        left: @zoneWidth;
+        right: 0;
+        margin-top: 3px;
+        margin-bottom: 3px;
+        margin-left: 10px;
+
+        & .kTextField {
+          width: 100%;
+        }
       }
     }
     & .headerRight {

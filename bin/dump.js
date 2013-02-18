@@ -34,57 +34,26 @@ function runTool(platform, args) {
   console.log('Dumping ' + inputFile + '...');
   console.log('');
 
-  var traceListener = wtf.analysis.createTraceListener({
-    'sourceAdded': function(timebase, contextInfo) {
-      console.log(
-          util.formatTime(timebase) + ' source added');
-      util.logContextInfo(contextInfo);
-    },
-
-    'wtf.trace#discontinuity': function(e) {
-      util.logEvent(e);
-    },
-
-    'wtf.scope#enter': function(e) {
-      var scopeId = e.scope ? e.scope.getId() : null;
-      util.logEvent(e, scopeId, e.args);
-    },
-    'wtf.scope#leave': function(e) {
-      var scopeId = e.scope ? e.scope.getId() : null;
-      util.logEvent(e, scopeId);
-    },
-
-    'wtf.flow#branch': function(e) {
-      util.logEvent(e, e.value.getId(), e.args);
-    },
-    'wtf.flow#extend': function(e) {
-      if (e.value) {
-        util.logEvent(e, e.value.getId(), e.args);
-      }
-    },
-    'wtf.flow#terminate': function(e) {
-      if (e.value) {
-        util.logEvent(e, e.value.getId(), e.args);
-      }
-    },
-
-    'wtf.trace#mark': function(e) {
-      util.logEvent(e, undefined, e.args);
-    },
-
-    'custom': function(e) {
-      if (e instanceof wtf.analysis.ScopeEvent) {
-        var scopeId = e.scope ? e.scope.getId() : null;
-        util.logEvent(e, scopeId, e.args);
-      } else {
-        util.logEvent(e, undefined, e.args);
-      }
-    }
-  });
-
-  if (!wtf.analysis.run(traceListener, inputFile)) {
-    console.log('failed to start analysis!');
+  var db = wtf.db.load(inputFile);
+  if (!db) {
     return -1;
+  }
+
+  var sources = db.getSources();
+  for (var n = 0; n < sources.length; n++) {
+    util.logContextInfo(sources[n].getContextInfo());
+  }
+
+  var zones = db.getZones();
+  if (!zones.length) {
+    console.log('No zones');
+    return 0;
+  }
+  var zone = zones[0];
+  var eventList = zone.getEventList();
+  var it = eventList.begin();
+  for (; !it.done(); it.next()) {
+    util.logEvent(it, zone);
   }
 
   return 0;
