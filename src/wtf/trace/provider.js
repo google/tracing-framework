@@ -81,7 +81,7 @@ wtf.trace.Provider.prototype.injectFunction = function(target, name, value) {
 /**
  * Gets a list of HUD button descriptions.
  * These will be added to the HUD when displayed.
- * @return {!Array.<!wtf.hud.Overlay.ButtonInfo>} Buttons.
+ * @return {!Array.<!Object>} Buttons.
  */
 wtf.trace.Provider.prototype.getHudButtons = function() {
   return [];

@@ -55,11 +55,8 @@ Manual control:
     $ npm install tracing-framework
     $ node
     > var wtf = require('tracing-framework');
-    > wtf.analysis.run(wtf.analysis.createTraceListener({
-        'wtf.scope#enter': function(e) {
-          console.log(e.time);
-        }
-      }), 'test.wtf-trace');
+    > var db = wtf.db.load('test.wtf-trace');
+    > db.query('something');
 
 ### Using the Tool Runner
 

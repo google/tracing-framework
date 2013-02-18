@@ -39,24 +39,25 @@ function runTool(platform, args) {
 
   var filter = null;
   if (filterString) {
-    filter = new wtf.analysis.EventFilter(filterString);
+    filter = new wtf.db.Filter(filterString);
   }
 
   // Create databases for querying.
-  var db1 = wtf.analysis.loadDatabase(inputFile1);
-  var db2 = wtf.analysis.loadDatabase(inputFile2);
+  var db1 = wtf.db.load(inputFile1);
+  var db2 = wtf.db.load(inputFile2);
+  if (!db1 || !db2) {
+    return -1;
+  }
 
   // Build event data tables.
-  var table1 = new wtf.analysis.db.EventDataTable(db1, filter);
-  var table2 = new wtf.analysis.db.EventDataTable(db2, filter);
+  var table1 = new wtf.db.EventStatistics(db1, filter);
+  var table2 = new wtf.db.EventStatistics(db2, filter);
 
   // Grab all event types from each table and divide by type.
-  var allInstanceEntryNames =
-      wtf.analysis.db.EventDataTable.getAllEventTypeNames(
-          [table1, table2], wtf.data.EventClass.INSTANCE);
-  var allScopeEntryNames =
-      wtf.analysis.db.EventDataTable.getAllEventTypeNames(
-          [table1, table2], wtf.data.EventClass.SCOPE);
+  var allInstanceEntryNames = wtf.db.EventStatistics.getAllEventTypeNames(
+      [table1, table2], wtf.data.EventClass.INSTANCE);
+  var allScopeEntryNames = wtf.db.EventStatistics.getAllEventTypeNames(
+      [table1, table2], wtf.data.EventClass.SCOPE);
 
   // Dump scope events.
   console.log(util.spaceValues(

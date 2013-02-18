@@ -18,8 +18,7 @@ goog.provide('wtf.doc.DocumentStatus');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.object');
-goog.require('wtf.analysis.Session');
-goog.require('wtf.analysis.db.EventDatabase');
+goog.require('wtf.db.Database');
 goog.require('wtf.doc.CommentScope');
 goog.require('wtf.doc.Profile');
 goog.require('wtf.doc.View');
@@ -125,21 +124,11 @@ wtf.doc.Document = function(platform) {
 
   /**
    * Event database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
-  this.db_ = new wtf.analysis.db.EventDatabase();
+  this.db_ = new wtf.db.Database(true);
   this.registerDisposable(this.db_);
-
-  /**
-   * Analysis session, used for streaming data into the database.
-   * @type {!wtf.analysis.Session}
-   * @private
-   */
-  this.session_ = new wtf.analysis.Session(this.db_.getTraceListener(), {
-  });
-  this.registerDisposable(this.session_);
-  this.session_.setStorageEnabled(true);
 
   /**
    * Incoming read streams, mapped by stream ID.
@@ -262,7 +251,7 @@ wtf.doc.Document.prototype.getViewList = function() {
 
 /**
  * Gets the event database.
- * @return {!wtf.analysis.db.EventDatabase} Event database.
+ * @return {!wtf.db.Database} Event database.
  */
 wtf.doc.Document.prototype.getDatabase = function() {
   return this.db_;
@@ -277,7 +266,7 @@ wtf.doc.Document.prototype.getDatabase = function() {
 wtf.doc.Document.prototype.beginEventStream = function(streamId, contentType) {
   var readStream = new wtf.io.MemoryReadStream();
   this.readStreams_[streamId] = readStream;
-  this.session_.addStreamingSource(readStream);
+  this.db_.addStreamingSource(readStream);
   this.setStatus(wtf.doc.DocumentStatus.STREAMING);
 };
 
@@ -325,14 +314,14 @@ wtf.doc.Document.prototype.endEventStream = function(streamId) {
  */
 wtf.doc.Document.prototype.addEventSource = function(data) {
   if (wtf.io.isByteArray(data)) {
-    this.session_.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data));
+    this.db_.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data));
     return data.length;
   } else if (data instanceof ArrayBuffer) {
     var dataBuffer = new Uint8Array(data);
-    this.session_.addBinarySource(dataBuffer);
+    this.db_.addBinarySource(dataBuffer);
     return dataBuffer.length;
   } else {
-    this.session_.addJsonSource(data);
+    this.db_.addJsonSource(data);
     return goog.isString(data) ? data.length : 0;
   }
 };
@@ -355,10 +344,10 @@ wtf.doc.Document.prototype.addEventSources = function(datas) {
 
 /**
  * Gets the trace data storage.
- * @return {!wtf.analysis.Storage} Trace data storage.
+ * @return {!wtf.db.DataStorage} Trace data storage.
  */
 wtf.doc.Document.prototype.getStorage = function() {
-  var storage = this.session_.getStorage();
+  var storage = this.db_.getStorage();
   goog.asserts.assert(storage);
   return storage;
 };

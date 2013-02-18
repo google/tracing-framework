@@ -13,14 +13,17 @@
 
 goog.provide('wtf.app.ui.query.QueryPanel');
 
+goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.analysis.db.QueryDumpFormat');
 goog.require('wtf.app.ui.TabPanel');
 goog.require('wtf.app.ui.query.QueryTableSource');
 goog.require('wtf.app.ui.query.querypanel');
+goog.require('wtf.db.Database');
+goog.require('wtf.db.EventIterator');
+goog.require('wtf.db.QueryDumpFormat');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -46,7 +49,7 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
@@ -57,10 +60,20 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
    * @private
    */
   this.searchControl_ = new wtf.ui.SearchControl(
-      this.getChildElement(goog.getCssName('headerLeft')), dom);
+      this.getChildElement(goog.getCssName('searchBox')), dom);
   this.registerDisposable(this.searchControl_);
   this.searchControl_.setPlaceholderText(
       'substring or /regex/ or XPath-like query');
+
+  /**
+   * Zone selection dropdown.
+   * @type {!Element}
+   * @private
+   */
+  this.zoneSelect_ = this.getChildElement(goog.getCssName('zoneSelect'));
+  this.updateZoneList_();
+  this.getHandler().listen(this.zoneSelect_, goog.events.EventType.CHANGE,
+      this.reissueQuery_, false, this);
 
   /**
    * Results table.
@@ -73,7 +86,7 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
 
   /**
    * Current query results, if any.
-   * @type {wtf.analysis.db.QueryResult}
+   * @type {wtf.db.QueryResult}
    * @private
    */
   this.currentResults_ = null;
@@ -142,13 +155,15 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
           return;
         }
 
-        var dump = this.currentResults_.dump(
-            wtf.analysis.db.QueryDumpFormat.CSV);
+        var dump = this.currentResults_.dump(wtf.db.QueryDumpFormat.CSV);
         if (dump) {
           var pal = wtf.pal.getPlatform();
           pal.writeTextFile('wtf-query.csv', dump, 'text/csv');
         }
       }, false);
+
+  db.addListener(wtf.db.Database.EventType.ZONES_ADDED,
+      this.updateZoneList_, this);
 
   this.clear();
 };
@@ -205,6 +220,9 @@ wtf.app.ui.query.QueryPanel.prototype.setupKeyboardShortcuts_ = function() {
 wtf.app.ui.query.QueryPanel.prototype.setVisible = function(value) {
   goog.base(this, 'setVisible', value);
   this.keyboardScope_.setEnabled(value);
+  if (value) {
+    this.searchControl_.focus();
+  }
 };
 
 
@@ -213,6 +231,34 @@ wtf.app.ui.query.QueryPanel.prototype.setVisible = function(value) {
  */
 wtf.app.ui.query.QueryPanel.prototype.navigate = function(pathParts) {
   // TODO(benvanik): support navigation
+};
+
+
+/**
+ * Updates the zone drop down.
+ * @private
+ */
+wtf.app.ui.query.QueryPanel.prototype.updateZoneList_ = function() {
+  var dom = this.getDom();
+
+  var selectedIndex = this.zoneSelect_.selectedIndex;
+
+  dom.removeChildren(this.zoneSelect_);
+
+  var zones = this.db_.getZones();
+  for (var n = 0; n < zones.length; n++) {
+    var zone = zones[n];
+
+    var option = dom.createElement(goog.dom.TagName.OPTION);
+    option.value = n;
+    dom.setTextContent(option, zone.getName());
+    dom.appendChild(this.zoneSelect_, option);
+  }
+
+  if (selectedIndex == -1) {
+    selectedIndex = 0;
+  }
+  this.zoneSelect_.selectedIndex = selectedIndex;
 };
 
 
@@ -242,6 +288,15 @@ wtf.app.ui.query.QueryPanel.prototype.clear = function() {
 
 
 /**
+ * Reissues the current query.
+ * @private
+ */
+wtf.app.ui.query.QueryPanel.prototype.reissueQuery_ = function() {
+  this.issueQuery_(this.searchControl_.getValue());
+};
+
+
+/**
  * Issues a query.
  * @param {string} expression Query string.
  * @private
@@ -258,12 +313,19 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
     return;
   }
 
+  // Get the target zone.
+  var selectedIndex = this.zoneSelect_.selectedIndex;
+  var zone = this.db_.getZones()[selectedIndex];
+  if (!zone) {
+    return;
+  }
+
   // Create the query.
   // It throws if there's an error parsing it.
   var query;
   var error = null;
   try {
-    query = this.db_.query(expression);
+    query = zone.query(expression);
   } catch (e) {
     error = e.toString();
   }
@@ -286,12 +348,23 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
     goog.dom.classes.remove(buttonEl, goog.getCssName('kDisabled'));
   }
 
-  var result = query.getRows();
+  var result = query.getValue();
+  var count = 0;
+  if (result instanceof wtf.db.EventIterator) {
+    count = result.getCount();
+  } else if (count !== null) {
+    count = 1;
+  }
 
   // Update info with query stats.
-  dom.setTextContent(this.infoEl_, result.length + ' hits in ' +
+  dom.setTextContent(this.infoEl_, count + ' hits in ' +
       wtf.util.formatSmallTime(query.getDuration()));
 
   // Update the table.
-  this.table_.setSource(new wtf.app.ui.query.QueryTableSource(result));
+  if (result instanceof wtf.db.EventIterator) {
+    // Show using table.
+    this.table_.setSource(new wtf.app.ui.query.QueryTableSource(result));
+  } else {
+    // Show simple result.
+  }
 };

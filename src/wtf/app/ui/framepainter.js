@@ -26,29 +26,29 @@ goog.require('wtf.util');
 /**
  * Paints a ruler into the view.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.analysis.db.EventDatabase} db Database.
- * @param {!wtf.analysis.db.FrameIndex} frameIndex Zone frame index.
+ * @param {!wtf.db.Database} db Database.
+ * @param {!wtf.db.FrameList} frameList Zone frame list.
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.FramePainter = function FramePainter(canvas, db, frameIndex) {
+wtf.app.ui.FramePainter = function FramePainter(canvas, db, frameList) {
   goog.base(this, canvas);
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
 
   /**
-   * Frame event index.
-   * @type {wtf.analysis.db.FrameIndex}
+   * Frame event list.
+   * @type {wtf.db.FrameList}
    * @private
    */
-  this.frameIndex_ = frameIndex;
-  this.frameIndex_.addListener(wtf.events.EventType.INVALIDATED,
-      this.requestRepaint, this);
+  this.frameList_ = frameList;
+  this.frameList_.addListener(
+      wtf.events.EventType.INVALIDATED, this.requestRepaint, this);
 };
 goog.inherits(wtf.app.ui.FramePainter, wtf.ui.RangePainter);
 
@@ -80,7 +80,7 @@ wtf.app.ui.FramePainter.HEIGHT = 26;
 wtf.app.ui.FramePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
-  if (this.frameIndex_.getCount()) {
+  if (this.frameList_.getCount()) {
     newBounds.height = wtf.app.ui.FramePainter.HEIGHT;
   } else {
     newBounds.height = 0;
@@ -105,8 +105,8 @@ wtf.app.ui.FramePainter.prototype.repaintInternal = function(
   var timeRight = this.timeRight;
 
   // Draw all visible frames.
-  this.frameIndex_.forEachIntersecting(timeLeft, timeRight, function(frame) {
-    var startTime = frame.getStartTime();
+  this.frameList_.forEachIntersecting(timeLeft, timeRight, function(frame) {
+    var startTime = frame.getTime();
     var endTime = frame.getEndTime();
 
     // Compute screen size.
@@ -174,7 +174,7 @@ wtf.app.ui.FramePainter.prototype.onClickInternal =
     var timeLeft = frameLeft ?
         frameLeft.getEndTime() : this.db_.getFirstEventTime();
     var timeRight = frameRight ?
-        frameRight.getStartTime() : this.db_.getLastEventTime();
+        frameRight.getTime() : this.db_.getLastEventTime();
     commandManager.execute('goto_range', this, null, timeLeft, timeRight);
     if (modifiers & wtf.ui.ModifierKey.SHIFT) {
       commandManager.execute('select_range', this, null, timeLeft, timeRight);
@@ -184,7 +184,7 @@ wtf.app.ui.FramePainter.prototype.onClickInternal =
     commandManager.execute('goto_frame', this, null, frame);
     if (modifiers & wtf.ui.ModifierKey.SHIFT) {
       commandManager.execute('select_range', this, null,
-          frame.getStartTime(), frame.getEndTime());
+          frame.getTime(), frame.getEndTime());
     }
   }
 
@@ -210,7 +210,7 @@ wtf.app.ui.FramePainter.prototype.getInfoStringInternal =
     var timeLeft = frameLeft ?
         frameLeft.getEndTime() : this.db_.getFirstEventTime();
     var timeRight = frameRight ?
-        frameRight.getStartTime() : this.db_.getLastEventTime();
+        frameRight.getTime() : this.db_.getLastEventTime();
     var duration = timeRight - timeLeft;
     lines.push(
         '(' + wtf.util.formatTime(duration) + ': between ' +
@@ -233,7 +233,7 @@ wtf.app.ui.FramePainter.prototype.getInfoStringInternal =
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
  * @param {!goog.math.Rect} bounds Draw bounds.
- * @return {wtf.analysis.Frame|Array.<wtf.analysis.Frame>} Frame or an array
+ * @return {wtf.db.Frame|Array.<wtf.db.Frame>} Frame or an array
  *     containing the two frames on either side of the time.
  * @private
  */
@@ -242,9 +242,9 @@ wtf.app.ui.FramePainter.prototype.hitTest_ = function(
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,
       this.timeLeft, this.timeRight);
-  var frame = this.frameIndex_.getFrameAtTime(time);
+  var frame = this.frameList_.getFrameAtTime(time);
   if (frame) {
     return frame;
   }
-  return this.frameIndex_.getIntraFrameAtTime(time);
+  return this.frameList_.getIntraFrameAtTime(time);
 };

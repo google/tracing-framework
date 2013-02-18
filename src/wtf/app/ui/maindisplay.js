@@ -480,7 +480,7 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
     return;
   }
 
-  // TODO(benvanik): move into wtf.analysis?
+  // TODO(benvanik): move into wtf.db?
   var deferreds = [];
   for (var n = 0; n < binarySources.length; n++) {
     deferreds.push(goog.fs.FileReader.readAsArrayBuffer(binarySources[n]));
@@ -650,13 +650,12 @@ wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
   }
 
   var doc = this.documentView_.getDocument();
-  var db = doc.getDatabase();
-  var sources = db.getSources();
+  var sources = doc.getDatabase().getSources();
   if (!sources.length) {
     return;
   }
   // Just pick the first source for naming.
-  var contextInfo = sources[0];
+  var contextInfo = sources[0].getContextInfo();
   var filename = contextInfo.getFilename();
 
   // prefix-YYYY-MM-DDTHH-MM-SS
@@ -815,7 +814,7 @@ wtf.app.ui.MainDisplay.prototype.showSplashDialog_ = function(visible) {
         return;
       } else {
         // Hide.
-        goog.dispose(this.activeDialog_);
+        this.activeDialog_.close();
         this.activeDialog_ = null;
       }
     } else {

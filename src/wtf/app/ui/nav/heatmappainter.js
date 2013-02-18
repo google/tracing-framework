@@ -13,9 +13,9 @@
 
 goog.provide('wtf.app.ui.nav.HeatmapPainter');
 
-goog.require('goog.asserts');
-goog.require('goog.async.Deferred');
-goog.require('goog.async.DeferredList');
+goog.require('goog.array');
+goog.require('wtf.db.Database');
+goog.require('wtf.db.EventIndex');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimePainter');
 
@@ -24,7 +24,7 @@ goog.require('wtf.ui.TimePainter');
 /**
  * Heatmap painter.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.analysis.db.EventDatabase} db Database.
+ * @param {!wtf.db.Database} db Database.
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
@@ -33,7 +33,7 @@ wtf.app.ui.nav.HeatmapPainter = function HeatmapPainter(canvas, db) {
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
@@ -48,32 +48,16 @@ wtf.app.ui.nav.HeatmapPainter = function HeatmapPainter(canvas, db) {
   this.bars_ = [];
 
   // TODO(benvanik): pull from profile
+  var n = 0;
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'flows', [
     'wtf.flow#branch'
-  ]));
+  ], wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n++]));
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'GCs', [
     'javascript#gc'
-  ]));
+  ], wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n++]));
   this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'compiles', [
     'javascript#evalscript'
-  ]));
-
-  var deferreds = [];
-  for (var n = 0; n < this.bars_.length; n++) {
-    var color = wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[
-        n % wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_.length];
-    deferreds.push(this.bars_[n].prepare(color));
-  }
-
-  this.setReady(false);
-  new goog.async.DeferredList(deferreds).addCallbacks(
-      function() {
-        // Ready and redraw.
-        this.setReady(true);
-      },
-      function(arg) {
-        // Failued to create indices.
-      }, this);
+  ], wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n++]));
 };
 goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimePainter);
 
@@ -149,13 +133,15 @@ wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_ = [
 /**
  * Heatmap painter event bar.
  * @param {!wtf.ui.Painter} painter Parent painter.
- * @param {!wtf.analysis.db.EventDatabase} db Database.
+ * @param {!wtf.db.Database} db Database.
  * @param {string} name Bar name, used in the overlay.
  * @param {!Array.<string>} eventTypes List of event type names.
+ * @param {string} color Color.
  * @constructor
  * @private
  */
-wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes) {
+wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes,
+    color) {
   /**
    * Parent painter.
    * @type {!wtf.ui.Painter}
@@ -165,7 +151,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes) {
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
@@ -186,17 +172,17 @@ wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes) {
 
   /**
    * Loaded indicies.
-   * @type {!Array.<!wtf.analysis.db.EventIndex>}
+   * @type {!Array.<!wtf.db.EventIndex>}
    * @private
    */
-  this.indicies_ = [];
+  this.indices_ = [];
 
   /**
    * Color used when drawing the bar.
    * @type {string}
    * @private
    */
-  this.color_ = 'rgb(0,0,0)';
+  this.color_ = color;
 
   /**
    * Cached buckets, in order.
@@ -206,37 +192,21 @@ wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes) {
    * @private
    */
   this.cachedBuckets_ = new Uint32Array(0);
+
+  this.db_.addListener(wtf.db.Database.EventType.ZONES_ADDED, function(zones) {
+    goog.array.forEach(zones, this.addZoneIndex_, this);
+  }, this);
+  goog.array.forEach(this.db_.getZones(), this.addZoneIndex_, this);
 };
 
 
 /**
- * Prepares the bar for use.
- * @param {string} color Color used to draw the bar.
- * @return {!goog.async.Deferred} A deferred fulfilled when the bar is ready
- *     to draw.
+ * Creates an event index for the given zone.
+ * @param {!wtf.db.Zone} zone Zone.
+ * @private
  */
-wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.prepare = function(color) {
-  this.color_ = color;
-
-  var deferreds = [];
-  for (var n = 0; n < this.eventTypes_.length; n++) {
-    deferreds.push(this.db_.createEventIndex(this.eventTypes_[n]));
-  }
-
-  var readyDeferred = new goog.async.Deferred();
-  new goog.async.DeferredList(deferreds).addCallbacks(
-      function() {
-        for (var n = 0; n < this.eventTypes_.length; n++) {
-          var index = this.db_.getEventIndex(this.eventTypes_[n]);
-          goog.asserts.assert(index);
-          this.indicies_.push(index);
-        }
-        readyDeferred.callback(null);
-      },
-      function(arg) {
-        readyDeferred.errback(arg);
-      }, this);
-  return readyDeferred;
+wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.addZoneIndex_ = function(zone) {
+  this.indices_.push(new wtf.db.EventIndex(zone, this.eventTypes_));
 };
 
 
@@ -266,6 +236,9 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
   var log2 = Math.log(unsnappedBucketDuration) / Math.LN2;
   var bucketDuration = Math.pow(2, Math.ceil(log2));
   var bucketWidth = bucketDuration * pixelsPerMs;
+  if (!bucketWidth) {
+    return;
+  }
 
   var buckets = this.cachedBuckets_;
   var bucketCount = Math.ceil(bounds.width / bucketWidth) + 1;
@@ -283,17 +256,19 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
       bucketTimeLeft, timeLeft, timeRight, 0, bounds.width);
   var bucketMax = 0;
 
-  for (var n = 0; n < this.indicies_.length; n++) {
-    var index = this.indicies_[n];
-    index.forEach(bucketTimeLeft, bucketTimeRight, function(e) {
-      var bucketIndex = Math.floor((e.time - bucketTimeLeft) / bucketDuration);
+  for (var n = 0; n < this.indices_.length; n++) {
+    var index = this.indices_[n];
+    // TODO(benvanik): limit to bucketTimeLeft, bucketTimeRight
+    var it = index.begin();
+    for (; !it.done(); it.next()) {
+      var bucketIndex = ((it.getTime() - bucketTimeLeft) / bucketDuration) | 0;
       var bucketValue = buckets[bucketIndex];
       bucketValue++;
       buckets[bucketIndex] = bucketValue;
       if (bucketValue > bucketMax) {
         bucketMax = bucketValue;
       }
-    }, this);
+    }
   }
 
   //bucketMax = 100;

@@ -16,6 +16,7 @@ goog.provide('wtf.trace.providers.WebGLProvider');
 goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('goog.webgl');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.timing');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');

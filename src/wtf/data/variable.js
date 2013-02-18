@@ -192,7 +192,7 @@ wtf.data.Variable.parseSignature = function(signature) {
   // Split signature.
   // 'a.b.c(<params>)'
   // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
-  var signatureParts = /^([a-zA-Z0-9_\.#:]+)(\((.*)\)$)?/.exec(signature);
+  var signatureParts = /^([a-zA-Z0-9_\.#:\$]+)(\((.*)\)$)?/.exec(signature);
   var signatureName = signatureParts[1]; // entire name before ()
   var signatureArgs = signatureParts[3]; // contents of () (excluding ())
 

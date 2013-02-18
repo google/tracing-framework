@@ -72,25 +72,26 @@ wtf.hud.addButton({
 });
 
 function processTraceData(data) {
-  var threads = {};
-  var timeDelta = 0;
-
   data = JSON.parse('[' + data.join(',') + ']');
 
   // First we need to walk the data to find the threads by __metadata.
   // Unfortunately these come out of order.
   // We also search for sync events and assume they all come from us. The thread
   // that has them is our thread for inspection.
-  var currentThreadId = 0;
+  var threads = {};
+  var timeDelta = 0;
   for (var n = 0; n < data.length; n++) {
     var e = data[n];
     if (!e) {
       continue;
     }
 
-    var thread = threads[e.tid];
+    var threadKey = e.pid + ':' + e.tid;
+    var thread = threads[threadKey];
     if (!thread) {
-      thread = threads[e.tid] = {
+      thread = threads[threadKey] = {
+        pid: e.pid,
+        tid: e.tid,
         name: null,
         included: false,
         openScopes: [],
@@ -118,16 +119,16 @@ function processTraceData(data) {
       data[n] = null;
 
       // Assume this thread is us.
-      currentThreadId = e.tid;
+      thread.included = true;
     }
   }
   console.log('time delta: ' + timeDelta);
 
   // Create thread zones.
   // Perhaps we should do this only when we see events.
-  for (var tid in threads) {
-    var thread = threads[tid];
-    var name = thread.name || String(tid);
+  for (var key in threads) {
+    var thread = threads[key];
+    var name = thread.name || String(key);
     var type;
     switch (thread.name) {
       case 'CrBrowserMain':
@@ -140,7 +141,6 @@ function processTraceData(data) {
         break;
       default:
         type = 'native_script';
-        thread.included = tid == currentThreadId;
         break;
     }
     if (!thread.included) {
@@ -156,7 +156,8 @@ function processTraceData(data) {
     if (!e) {
       continue;
     }
-    var thread = threads[e.tid];
+    var threadKey = e.pid + ':' + e.tid;
+    var thread = threads[threadKey];
     if (!thread.included || !e.ts) {
       continue;
     }
@@ -172,8 +173,14 @@ function processTraceData(data) {
       case 'B':
         {
           var scope = wtf.trace.enterScope(e.name, ts);
-          for (var key in e.args) {
-            wtf.trace.appendScopeData(key, e.args[key], ts);
+          if (e.args['name'] && e.args['value'] !== undefined) {
+            wtf.trace.appendScopeData(e.args['name'], e.args['value'], ts);
+          } else if (e.args['name'] == e.name) {
+            // Ignored.
+          } else {
+            for (var key in e.args) {
+              wtf.trace.appendScopeData(key, e.args[key], ts);
+            }
           }
           openScopes.push(scope);
         }
@@ -195,8 +202,8 @@ function processTraceData(data) {
   }
 
   // Close all open scopes.
-  for (var tid in threads) {
-    var thread = threads[tid];
+  for (var key in threads) {
+    var thread = threads[key];
     while (thread.openScopes.length) {
       wtf.trace.leaveScope(thread.openScopes.pop());
     }

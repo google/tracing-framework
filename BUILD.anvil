@@ -108,9 +108,9 @@ closure_js_library(
     out='wtf_js',
     mode='DEPS',
     entry_points=[
-        'wtf.analysis.exports',
         'wtf.app.background.exports',
         'wtf.app.ui.exports',
+        'wtf.db.exports',
         'wtf.hud.exports',
         'wtf.trace.exports',
     ],
@@ -275,8 +275,8 @@ closure_js_library(
     mode='SIMPLE',
     pretty_print=True,
     entry_points=[
-        'wtf.analysis.exports',
-        'wtf.analysis.node',
+        'wtf.db.exports',
+        'wtf.db.node',
         'wtf.trace.exports',
         'wtf.trace.node',
         ],
@@ -291,7 +291,7 @@ closure_js_library(
         '--define=goog.DEBUG=false',
         '--define=goog.asserts.ENABLE_ASSERTS=false',
         '--define=wtf.NODE=true',
-        '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.db.exports.ENABLE_EXPORTS=true',
         '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
         '--output_wrapper="module.exports = (function(exports){%output%;return this.wtf;}).call(global); delete global.wtf;"',
         ])
@@ -334,9 +334,9 @@ file_set(
         ] + WTF_UI_SRCS)
 
 WTF_UI_ENTRY_POINTS=[
-    'wtf.analysis.exports',
     'wtf.app.background.exports',
     'wtf.app.ui.exports',
+    'wtf.db.exports',
     ]
 
 # wtf_ui_js_uncompiled
@@ -361,9 +361,9 @@ closure_js_library(
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
-        '--define=wtf.analysis.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.background.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.ui.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.db.exports.ENABLE_EXPORTS=true',
         ],
     wrap_with_global='window')
 

@@ -22,36 +22,35 @@ goog.require('wtf.ui.TimePainter');
 /**
  * Timeline painter.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.analysis.db.EventDatabase} db Database.
- * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index.
+ * @param {!wtf.db.Database} db Database.
+ * @param {!wtf.db.Zone} zone Zone.
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.app.ui.nav.TimelinePainter = function TimelinePainter(
-    canvas, db, zoneIndex) {
+wtf.app.ui.nav.TimelinePainter = function TimelinePainter(canvas, db, zone) {
   goog.base(this, canvas);
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
 
   /**
    * Zone index.
-   * @type {!wtf.analysis.db.ZoneIndex}
+   * @type {!wtf.db.Zone}
    * @private
    */
-  this.zoneIndex_ = zoneIndex;
+  this.zone_ = zone;
 
   /**
-   * Frame event index.
-   * @type {wtf.analysis.db.FrameIndex}
+   * Frame list.
+   * @type {wtf.db.FrameList}
    * @private
    */
-  this.frameIndex_ = zoneIndex.getFrameIndex();
-  this.frameIndex_.addListener(wtf.events.EventType.INVALIDATED,
+  this.frameList_ = zone.getFrameList();
+  this.frameList_.addListener(wtf.events.EventType.INVALIDATED,
       this.requestRepaint, this);
 };
 goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
@@ -63,7 +62,7 @@ goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
 wtf.app.ui.nav.TimelinePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
-  if (this.frameIndex_.getCount()) {
+  if (this.frameList_.getCount()) {
     newBounds.height = 45;
   } else {
     newBounds.height = 0;
@@ -96,9 +95,9 @@ wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
   var lastX = 0;
   ctx.beginPath();
   ctx.moveTo(bounds.left, bounds.top + bounds.height);
-  this.frameIndex_.forEachIntersecting(timeLeft, timeRight, function(frame) {
+  this.frameList_.forEachIntersecting(timeLeft, timeRight, function(frame) {
     // Compute time of frame based on previous time.
-    var previousFrame = this.frameIndex_.getPreviousFrame(frame);
+    var previousFrame = this.frameList_.getPreviousFrame(frame);
     var frameTime = 0;
     if (previousFrame) {
       frameTime = frame.getEndTime() - previousFrame.getEndTime();

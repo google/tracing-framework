@@ -165,7 +165,7 @@ Application extensions run inside a hidden iframe sandbox inside of the
 application. Each extension gets loaded when a document is opened and destroyed
 when it is closed.
 
-Extensions have access to the `wtf.analysis` namespace on the global object as
+Extensions have access to the `wtf.db` namespace on the global object as
 well as a few helper libraries, such as [d3](http://d3js.org/). Any other
 scripts can be inserted via the manifest.
 
@@ -174,7 +174,7 @@ scripts can be inserted via the manifest.
 A global object `documentView` is available that contains APIs related to the
 currently loaded document.
 
-    // The wtf.analysis.db.EventDatabase instance of the document view.
+    // The wtf.db.Database instance of the document view.
     documentView.db;
 
 ### Panels

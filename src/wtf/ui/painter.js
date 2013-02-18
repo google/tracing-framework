@@ -124,6 +124,13 @@ wtf.ui.Painter = function(canvas) {
   this.bounds_ = new goog.math.Rect(0, 0, 0, 0);
 
   /**
+   * Cached draw bounds (same as bounds but with padding included).
+   * @type {!goog.math.Rect}
+   * @private
+   */
+  this.drawBounds_ = new goog.math.Rect(0, 0, 0, 0);
+
+  /**
    * Padding for layout.
    * This value is added to the computed layout bounds.
    * @type {!goog.math.Rect}
@@ -360,11 +367,6 @@ wtf.ui.Painter.prototype.layout = function(availableBounds) {
   // Compute self layout.
   var newBounds = this.layoutInternal(availableBounds);
 
-  // Factor in padding.
-  // The width/height is done in the parent.
-  newBounds.left += this.padding_.left;
-  newBounds.top += this.padding_.top;
-
   // Remaining bounds is available minus self.
   var remainingBounds = newBounds.clone();
   remainingBounds.width =
@@ -402,6 +404,14 @@ wtf.ui.Painter.prototype.layout = function(availableBounds) {
   }
 
   this.bounds_ = newBounds;
+  var drawBounds = newBounds.clone();
+  if (newBounds.width && newBounds.height) {
+    drawBounds.left += this.padding_.left;
+    drawBounds.top += this.padding_.top;
+    drawBounds.width -= this.padding_.left + this.padding_.width;
+    drawBounds.height -= this.padding_.top + this.padding_.height;
+  }
+  this.drawBounds_ = drawBounds;
   return newBounds.clone();
 };
 
@@ -522,14 +532,14 @@ wtf.ui.Painter.prototype.recursiveRepaint_ = function() {
   var ctx = this.canvasContext2d_;
 
   // Skip if too small.
-  if (!this.bounds_.width ||
-      !this.bounds_.height) {
+  if (this.drawBounds_.width <= 0 ||
+      this.drawBounds_.height <= 0) {
     return;
   }
 
   // Paint self.
   ctx.save();
-  var preventChildren = this.repaintInternal(ctx, this.bounds_);
+  var preventChildren = this.repaintInternal(ctx, this.drawBounds_);
   if (wtf.ui.Painter.DEBUG_) {
     ctx.strokeStyle = '#ff0000';
     ctx.strokeRect(
@@ -643,7 +653,7 @@ wtf.ui.Painter.prototype.drawLabel = function(label, opt_y, opt_height) {
  * @return {boolean} True if the point is within the bounds.
  */
 wtf.ui.Painter.prototype.pointInBounds = function(x, y) {
-  var bounds = this.bounds_;
+  var bounds = this.drawBounds_;
   return x >= bounds.left &&
       x <= bounds.left + bounds.width &&
       y >= bounds.top &&
@@ -660,8 +670,13 @@ wtf.ui.Painter.prototype.pointInBounds = function(x, y) {
  * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
+  // Skip if too small.
+  if (this.drawBounds_.width <= 0 ||
+      this.drawBounds_.height <= 0) {
+    return false;
+  }
+
   // Ensure point is inside region.
-  var bounds = this.bounds_;
   if (!this.pointInBounds(x, y)) {
     return false;
   }
@@ -673,7 +688,7 @@ wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
     }
   }
 
-  if (this.onClickInternal(x, y, modifiers, bounds)) {
+  if (this.onClickInternal(x, y, modifiers, this.drawBounds_)) {
     return true;
   }
 
@@ -703,8 +718,11 @@ wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
  * @return {boolean} True if the event was handled.
  */
 wtf.ui.Painter.prototype.onMouseMove = function(x, y, modifiers) {
-  // Ensure point is inside region.
-  var bounds = this.bounds_;
+  // Skip if too small.
+  if (this.drawBounds_.width <= 0 ||
+      this.drawBounds_.height <= 0) {
+    return false;
+  }
 
   // TODO(benvanik): some toggle for this behavior? ruler needs to sniff all
   // if (!this.pointInBounds(x, y)) {
@@ -718,7 +736,7 @@ wtf.ui.Painter.prototype.onMouseMove = function(x, y, modifiers) {
     }
   }
 
-  if (this.onMouseMoveInternal(x, y, modifiers, bounds)) {
+  if (this.onMouseMoveInternal(x, y, modifiers, this.drawBounds_)) {
     return true;
   }
 
@@ -766,14 +784,19 @@ wtf.ui.Painter.prototype.onMouseOutInternal = goog.nullFunction;
  * @return {string|undefined} Info string or undefined for none.
  */
 wtf.ui.Painter.prototype.getInfoString = function(x, y) {
+  // Skip if too small.
+  if (this.drawBounds_.width <= 0 ||
+      this.drawBounds_.height <= 0) {
+    return undefined;
+  }
+
   // Ensure point is inside region.
-  var bounds = this.bounds_;
   if (!this.pointInBounds(x, y)) {
     return undefined;
   }
 
   // Get info string.
-  var info = this.getInfoStringInternal(x, y, bounds);
+  var info = this.getInfoStringInternal(x, y, this.drawBounds_);
   if (info) {
     return info;
   }
@@ -795,7 +818,7 @@ wtf.ui.Painter.prototype.getInfoString = function(x, y) {
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
  * @param {!goog.math.Rect} bounds Draw bounds.
- * @return {string|undefined} Info string or undefined for none.
+ * @return {string|null|undefined} Info string or undefined for none.
  * @protected
  */
 wtf.ui.Painter.prototype.getInfoStringInternal = goog.nullFunction;

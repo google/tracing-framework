@@ -53,8 +53,8 @@ function prepareDebug() {
   // Load WTF and configure options.
   goog.require('wtf');
   wtf.NODE = true;
-  goog.require('wtf.analysis.exports');
-  goog.require('wtf.analysis.node');
+  goog.require('wtf.db.exports');
+  goog.require('wtf.db.node');
 };
 
 
@@ -168,23 +168,6 @@ exports.util.pad0 = function(value, count) {
 
 
 /**
- * Formats time in the standard format.
- * @param {number} value Wall-time.
- * @return {string} Formatted time string.
- */
-exports.util.formatTime = function(value) {
-  // Format time: 05:33:28.105.25530
-  var dt = new Date(value);
-  return '' +
-      exports.util.pad0(dt.getHours(), 2) + ':' +
-      exports.util.pad0(dt.getMinutes(), 2) + ':' +
-      exports.util.pad0(dt.getSeconds(), 2) + '.' +
-      String((dt.getMilliseconds() / 1000).toFixed(3)).slice(2, 5) + '.' +
-      exports.util.pad0(Math.floor((value - Math.floor(value)) * 10000), 4);
-};
-
-
-/**
  * Generates a string from the given arguments and their spacings.
  * @param {!Array.<number>} spacing Spacing values.
  * @param {...*} var_args Arguments.
@@ -209,22 +192,24 @@ exports.util.spaceValues = function(spacing, var_args) {
  * Spacing values for log event lines.
  * @type {!Array.<number>}
  */
-var logEventSpacing = [17, 1, 8, 1, 48, 13];
+var logEventSpacing = [-10, 1, 8, 1, 48, 13];
 
 
 /**
  * Logs event information to the console.
- * @param {!wtf.analysis.Event} e Event.
- * @param {(string|number)=} opt_tag Event identifier.
- * @param {*=} opt_extra Extra information/object data/etc.
+ * @param {!wtf.db.EventIterator} it Event.
+ * @param {!wtf.db.Zone} zone Zone.
  */
-exports.util.logEvent = function(e, opt_tag, opt_extra) {
-  if (opt_extra instanceof Object) {
-    opt_extra = JSON.stringify(opt_extra);
+exports.util.logEvent = function(it, zone) {
+  var args = it.getArguments();
+  if (args) {
+    args = JSON.stringify(args.toObject());
+  } else {
+    args = undefined;
   }
   var line = exports.util.spaceValues(logEventSpacing,
-      exports.util.formatTime(e.time), '[', e.zone, ']',
-      e.eventType.name, opt_tag, opt_extra);
+      wtf.util.formatSmallTime(it.getTime()), '[', zone.getName(), ']',
+      it.getName(), undefined, args);
   console.log(line);
 };
 

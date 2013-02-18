@@ -123,7 +123,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   this.addArgument('opt_time');
   this.addArgument('opt_buffer');
 
-  this.append('var time = opt_time || now();');
+  this.append('var time = (opt_time === undefined) ? now() : opt_time;');
   this.append('var session = sessionPtr[0];');
   this.append('var buffer = opt_buffer;');
   this.append(

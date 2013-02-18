@@ -13,7 +13,6 @@
 
 goog.provide('wtf.io.LocalFileWriteStream');
 
-goog.require('goog.string');
 goog.require('wtf.io');
 goog.require('wtf.io.WriteStream');
 goog.require('wtf.pal');
@@ -24,29 +23,19 @@ goog.require('wtf.pal');
  * Memory-buffered local-file write stream.
  * Clones all buffers and keeps them around until closed.
  *
- * @param {string} filenamePrefix Prefix for the filename.
+ * @param {string} filename Filename.
  * @constructor
  * @extends {wtf.io.WriteStream}
  */
-wtf.io.LocalFileWriteStream = function(filenamePrefix) {
+wtf.io.LocalFileWriteStream = function(filename) {
   goog.base(this);
-
-  // prefix-YYYY-MM-DDTHH-MM-SS
-  var dt = new Date();
-  var filenameSuffix = '-' +
-      dt.getFullYear() +
-      goog.string.padNumber(dt.getMonth() + 1, 2) +
-      goog.string.padNumber(dt.getDate(), 2) + 'T' +
-      goog.string.padNumber(dt.getHours(), 2) +
-      goog.string.padNumber(dt.getMinutes(), 2) +
-      goog.string.padNumber(dt.getSeconds(), 2);
 
   /**
    * Filename used when saving.
    * @type {string}
    * @private
    */
-  this.filename_ = filenamePrefix + filenameSuffix + wtf.io.FILE_EXTENSION;
+  this.filename_ = filename;
 
   /**
    * Cloned memory buffers.

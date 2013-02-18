@@ -18,8 +18,6 @@ goog.require('goog.dom');
 goog.require('goog.math.Rect');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.analysis.db.EventDatabase');
-goog.require('wtf.analysis.db.Granularity');
 goog.require('wtf.app.ui.FramePainter');
 goog.require('wtf.app.ui.MarkPainter');
 goog.require('wtf.app.ui.SelectionPainter');
@@ -28,6 +26,8 @@ goog.require('wtf.app.ui.tracks.TimeRangePainter');
 goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
+goog.require('wtf.db.Database');
+goog.require('wtf.db.Granularity');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -58,7 +58,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   /**
    * Database.
-   * @type {!wtf.analysis.db.EventDatabase}
+   * @type {!wtf.db.Database}
    * @private
    */
   this.db_ = db;
@@ -86,40 +86,14 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
       1000 / wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
       1000 / wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   var reentry = 0;
-  this.viewport_.addListener(
-      wtf.events.EventType.INVALIDATED,
-      function() {
-        if (reentry) {
-          return;
-        }
-        reentry++;
-
-        var firstEventTime = db.getFirstEventTime();
-
-        // Update from viewport.
-        var width = this.viewport_.getScreenWidth();
-        var timeLeft = this.viewport_.screenToScene(0, 0).x;
-        var timeRight = this.viewport_.screenToScene(width, 0).x;
-        timeLeft += firstEventTime;
-        timeRight += firstEventTime;
-
-        // Update the main view.
-        // This will be ignored if our invalidation came from the view.
-        var localView = documentView.getLocalView();
-        localView.setVisibleRange(timeLeft, timeRight);
-
-        // Reset painter time ranges.
-        for (var n = 0; n < this.timePainters_.length; n++) {
-          var painter = this.timePainters_[n];
-          painter.setTimeRange(timeLeft, timeRight);
-        }
-
-        // Update the tooltip, if it's visible.
-        this.updateTooltip();
-
-        this.requestRepaint();
-        reentry--;
-      }, this);
+  this.viewport_.addListener(wtf.events.EventType.INVALIDATED, function() {
+    if (reentry) {
+      return;
+    }
+    reentry++;
+    this.viewportChanged_();
+    reentry--;
+  }, this);
   // TODO(benvanik): set to something larger to get more precision.
   this.viewport_.setSceneSize(1, 1);
 
@@ -217,17 +191,12 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
       wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timePainters_.push(this.rulerPainter_);
 
-  var markPainter = new wtf.app.ui.MarkPainter(this.trackCanvas_, db);
-  this.painterStack_.addChildPainter(markPainter);
-  this.timePainters_.push(markPainter);
-
   // Watch for zones and add as needed.
-  db.addListener(wtf.analysis.db.EventDatabase.EventType.ZONES_ADDED,
-      function(zoneIndices) {
-        goog.array.forEach(zoneIndices, this.addZoneTrack_, this);
-      }, this);
-  var zoneIndices = db.getZoneIndices();
-  goog.array.forEach(zoneIndices, this.addZoneTrack_, this);
+  db.addListener(wtf.db.Database.EventType.ZONES_ADDED, function(zones) {
+    goog.array.forEach(zones, this.addZoneTrack_, this);
+  }, this);
+  var zones = db.getZones();
+  goog.array.forEach(zones, this.addZoneTrack_, this);
 
   // Done last so any other handlers are properly registered.
   this.viewport_.registerElement(this.trackCanvas_);
@@ -268,9 +237,9 @@ wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
   }, this);
 
   function moveFrames(delta, framesOnly) {
-    // Find a frame index.
-    var frameIndex = db.getFirstFrameIndex();
-    if (!frameIndex) {
+    // Find a frame list.
+    var frameList = db.getFirstFrameList();
+    if (!frameList) {
       return;
     }
 
@@ -279,36 +248,36 @@ wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
     time += db.getFirstEventTime();
 
     // Find the frame at the center of the viewport.
-    var hit = frameIndex.getFrameAtTime(time);
+    var hit = frameList.getFrameAtTime(time);
     if (hit) {
       // Frame, move to adjacent intra-frame space or frame.
       if (framesOnly) {
         var newFrame;
         if (delta < 0) {
-          newFrame = frameIndex.getPreviousFrame(hit);
+          newFrame = frameList.getPreviousFrame(hit);
         } else {
-          newFrame = frameIndex.getNextFrame(hit);
+          newFrame = frameList.getNextFrame(hit);
         }
         commandManager.execute('goto_frame', this, null, newFrame);
       } else {
         var startTime;
         var endTime;
         if (delta < 0) {
-          var otherFrame = frameIndex.getPreviousFrame(hit);
+          var otherFrame = frameList.getPreviousFrame(hit);
           startTime = otherFrame ?
               otherFrame.getEndTime() : db.getFirstEventTime();
-          endTime = hit.getStartTime();
+          endTime = hit.getTime();
         } else {
-          var otherFrame = frameIndex.getNextFrame(hit);
+          var otherFrame = frameList.getNextFrame(hit);
           startTime = hit.getEndTime();
           endTime = otherFrame ?
-              otherFrame.getStartTime() : db.getLastEventTime();
+              otherFrame.getTime() : db.getLastEventTime();
         }
         commandManager.execute('goto_range', this, null, startTime, endTime);
       }
     } else {
       // If in a intra-frame space, move to a frame.
-      hit = frameIndex.getIntraFrameAtTime(time);
+      hit = frameList.getIntraFrameAtTime(time);
       if (hit) {
         var newFrame = delta < 0 ? hit[0] : hit[1];
         commandManager.execute('goto_frame', this, null, newFrame);
@@ -363,7 +332,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
  * @private
  */
 wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_ =
-    100 * wtf.analysis.db.Granularity.SECOND;
+    100 * wtf.db.Granularity.SECOND;
 
 
 /**
@@ -409,32 +378,75 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
 
 
 /**
- * Adds a new zone track for the given zone index.
- * @param {!wtf.analysis.db.ZoneIndex} zoneIndex Zone index to add the track
- *     for.
+ * Handles viewport invalidations.
  * @private
  */
-wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zoneIndex) {
+wtf.app.ui.tracks.TracksPanel.prototype.viewportChanged_ = function() {
+  var documentView = this.getDocumentView();
+  var db = this.db_;
+
+  var firstEventTime = db.getFirstEventTime();
+
+  // Update from viewport.
+  var width = this.viewport_.getScreenWidth();
+  var timeLeft = this.viewport_.screenToScene(0, 0).x;
+  var timeRight = this.viewport_.screenToScene(width, 0).x;
+  timeLeft += firstEventTime;
+  timeRight += firstEventTime;
+
+  // Update the main view.
+  // This will be ignored if our invalidation came from the view.
+  var localView = documentView.getLocalView();
+  localView.setVisibleRange(timeLeft, timeRight);
+
+  // Reset painter time ranges.
+  for (var n = 0; n < this.timePainters_.length; n++) {
+    var painter = this.timePainters_[n];
+    painter.setTimeRange(timeLeft, timeRight);
+  }
+
+  // Update the tooltip, if it's visible.
+  this.updateTooltip();
+
+  this.requestRepaint();
+};
+
+
+/**
+ * Adds a new zone track for the given zone.
+ * @param {!wtf.db.Zone} zone Zone to add the tracks for.
+ * @private
+ */
+wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zone) {
   var zonePainterStack = new wtf.ui.Painter(this.trackCanvas_);
   this.painterStack_.addChildPainter(zonePainterStack);
   zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
-  zonePainterStack.setPadding(new goog.math.Rect(0, 5, 0, 5));
+  zonePainterStack.setPadding(new goog.math.Rect(0, 0, 0, 5));
+
+  var markPainter = new wtf.app.ui.MarkPainter(
+      this.trackCanvas_, zone.getMarkList());
+  zonePainterStack.addChildPainter(markPainter);
+  this.timePainters_.push(markPainter);
 
   var framePainter = new wtf.app.ui.FramePainter(
-      this.trackCanvas_, this.db_, zoneIndex.getFrameIndex());
+      this.trackCanvas_, this.db_, zone.getFrameList());
   zonePainterStack.addChildPainter(framePainter);
   this.timePainters_.push(framePainter);
-  framePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
+  framePainter.setPadding(new goog.math.Rect(0, 5, 0, 0));
 
   var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
-      this.trackCanvas_, this.db_, zoneIndex.getTimeRangeIndex());
+      this.trackCanvas_, zone.getTimeRangeList());
   zonePainterStack.addChildPainter(timeRangePainter);
   this.timePainters_.push(timeRangePainter);
-  timeRangePainter.setPadding(new goog.math.Rect(0, 0, 0, 5));
+  timeRangePainter.setPadding(new goog.math.Rect(0, 5, 0, 0));
 
   var docView = this.getDocumentView();
   var zonePainter = new wtf.app.ui.tracks.ZonePainter(
-      this.trackCanvas_, this.db_, zoneIndex, docView.getSelection());
+      this.trackCanvas_, zone, docView.getSelection());
   zonePainterStack.addChildPainter(zonePainter);
   this.timePainters_.push(zonePainter);
+  zonePainter.setPadding(new goog.math.Rect(0, 8, 0, 0));
+
+  // Always fire a viewport change so that we update the time ranges/etc.
+  this.viewportChanged_();
 };
