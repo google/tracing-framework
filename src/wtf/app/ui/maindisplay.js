@@ -350,22 +350,7 @@ wtf.app.ui.MainDisplay.prototype.channelMessage_ = function(data) {
  */
 wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   var contentType = data['content_type'];
-  var datas = data['contents'];
-
-  if (!datas.length) {
-    return;
-  }
-
-  // Convert data from Arrays to ensure we are typed all the way through.
-  var contentLength = 0;
-  for (var n = 0; n < datas.length; n++) {
-    if (goog.isArray(datas[n])) {
-      datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
-    } else if (goog.isString(datas[n])) {
-      datas[n] = wtf.io.stringToNewByteArray(datas[n]);
-    }
-    contentLength += datas[n].length;
-  }
+  var contentLength = data['content_length'];
   _gaq.push(['_trackEvent', 'app', 'open_snapshot', null, contentLength]);
 
   // TODO(benvanik): get from document? or in snapshot command?
@@ -375,17 +360,71 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
 
-  // Append data after a bit - gives the UI time to setup.
-  wtf.timing.setImmediate(function() {
-    // Add all sources.
-    doc.addEventSources(datas);
+  // This supports either 'content_buffers' with arrays/arraybuffers or
+  // 'content_urls' with a blob URLs with binary data.
+  if (data['content_buffers']) {
+    var datas = data['content_buffers'];
+    if (!datas.length) {
+      return;
+    }
 
-    // Zoom to fit.
-    // TODO(benvanik): remove setTimeout when zoomToFit is based on view
-    wtf.timing.setTimeout(50, function() {
-      this.documentView_.zoomToFit();
+    // Convert data from Arrays to ensure we are typed all the way through.
+    for (var n = 0; n < datas.length; n++) {
+      if (goog.isArray(datas[n])) {
+        datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
+      } else if (goog.isString(datas[n])) {
+        datas[n] = wtf.io.stringToNewByteArray(datas[n]);
+      }
+    }
+
+    // Append data after a bit - gives the UI time to setup.
+    wtf.timing.setImmediate(function() {
+      // Add all sources.
+      doc.addEventSources(datas);
+
+      // Zoom to fit.
+      // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+      wtf.timing.setTimeout(50, function() {
+        this.documentView_.zoomToFit();
+      }, this);
     }, this);
-  }, this);
+  } else if (data['content_urls']) {
+    var blobUrls = data['content_urls'];
+
+    var deferreds = goog.array.map(blobUrls, function(blobUrl) {
+      var deferred = new goog.async.Deferred();
+      var xhr = new goog.net.XhrIo();
+      xhr.setResponseType(goog.net.XhrIo.ResponseType.ARRAY_BUFFER);
+      goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
+        if (xhr.isSuccess()) {
+          var data = xhr.getResponse();
+          goog.asserts.assert(data);
+          deferred.callback(data);
+        } else {
+          deferred.errback('Failed to fetch');
+        }
+      });
+      xhr.send(blobUrl);
+      return deferred;
+    }, this);
+    goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
+        function(datas) {
+          // Add all sources.
+          doc.addEventSources(datas);
+
+          // Zoom to fit.
+          // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+          wtf.timing.setTimeout(50, function() {
+            this.documentView_.zoomToFit();
+          }, this);
+        },
+        function(args) {
+          wtf.ui.ErrorDialog.show(
+              'Unable to load snapshot',
+              'A blob from the source page could not be fetched.',
+              this.getDom());
+        }, this);
+  }
 };
 
 

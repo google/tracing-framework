@@ -213,12 +213,8 @@ function setupCommunications() {
 
   // Listen for data from the extension.
   port.onMessage.addListener(function(data, port) {
-    switch (data['command']) {
-      case 'trace_events':
-      case 'chrome_tracing_data':
-        sendMessage(data);
-        break;
-    }
+    // We try to keep the data opaque so we don't waste any time here.
+    sendMessage(data);
   });
 
   // Setup a communication channel with the page via events.
@@ -236,38 +232,10 @@ function setupCommunications() {
 
     // NOTE: Chrome ports do not support transferrables! Need to convert!
 
+    // Pass through the messages.
+    // We trust the Chrome security model and just send the data along.
     var data = packet['data'];
-    switch (data['command']) {
-      case 'reload':
-        port.postMessage({
-          'command': 'reload'
-        });
-        break;
-      case 'save_settings':
-        port.postMessage({
-          'command': 'save_settings',
-          'content': data['content']
-        });
-        break;
-      case 'show_snapshot':
-        port.postMessage({
-          'command': 'show_snapshot',
-          'page_url': data['page_url'],
-          'content_type': data['content_type'],
-          'contents': data['contents']
-        });
-        break;
-      case 'start_chrome_tracing':
-        port.postMessage({
-          'command': 'start_chrome_tracing'
-        });
-        break;
-      case 'stop_chrome_tracing':
-        port.postMessage({
-          'command': 'stop_chrome_tracing'
-        });
-        break;
-    }
+    port.postMessage(data);
   }, false);
 
   function sendMessage(data) {

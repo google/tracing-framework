@@ -131,6 +131,15 @@ wtf.trace.Session.prototype.disposeInternal = function() {
 
 
 /**
+ * Gets the trace manager.
+ * @return {!wtf.trace.TraceManager} Trace manager.
+ */
+wtf.trace.Session.prototype.getTraceManager = function() {
+  return this.traceManager_;
+};
+
+
+/**
  * Gets the options object.
  * The return value should not be modified.
  * @return {!wtf.util.Options} Options object.

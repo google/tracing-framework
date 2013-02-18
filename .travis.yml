@@ -35,7 +35,7 @@ before_script:
 
 script:
   # Do a full build to ensure things all work.
-  - "./third_party/anvil-build/anvil-local.sh build :debug :release"
+  - "./third_party/anvil-build/anvil-local.sh build -j1 :debug :release"
   # Build :fast and run all tests.
   - "./scripts/run-tests.sh"
   # Run a full sauce test, if we have a key.
