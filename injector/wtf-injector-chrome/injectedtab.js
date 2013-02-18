@@ -62,32 +62,24 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
   this.port_ = port;
 
   /**
-   * Data pending send.
-   * @type {!Array.<!Object>}
-   * @private
-   */
-  this.queuedData_ = [];
-
-  /**
    * Debugger source, if enabled.
    * @type {Debugger}
    * @private
    */
   this.debugger_ = null;
 
-  if (pageOptions['wtf.trace.provider.browser']) {
-    var timelineEnabled = pageOptions['wtf.trace.provider.browser.timeline'];
+  if (pageOptions['wtf.trace.provider.chromeDebug']) {
+    var timelineEnabled = pageOptions[
+        'wtf.trace.provider.chromeDebug.timeline'];
     if (timelineEnabled === undefined) {
       timelineEnabled = true;
     }
     var memoryInfoEnabled =
-        pageOptions['wtf.trace.provider.browser.memoryInfo'];
-    if (memoryInfoEnabled === undefined) {
-      memoryInfoEnabled = false;
-    }
-    if (timelineEnabled || memoryInfoEnabled) {
-      this.debugger_ = new Debugger(
-          this.tabId_, this.pageOptions_, this.queueTraceEvents_.bind(this));
+        pageOptions['wtf.trace.provider.chromeDebug.memoryInfo'];
+    var tracingEnabled =
+        pageOptions['wtf.trace.provider.chromeDebug.tracing'];
+    if (timelineEnabled || memoryInfoEnabled || tracingEnabled) {
+      this.debugger_ = new Debugger(this.tabId_, this.pageOptions_);
     }
   }
 
@@ -103,6 +95,24 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
 
   this.port_.onMessage.addListener(this.eventHandlers_.onMessage);
   this.port_.onDisconnect.addListener(this.eventHandlers_.onDisconnect);
+
+  /**
+   * Periodic timer to transmit debugger data.
+   * @type {number}
+   * @private
+   */
+  this.debuggerTransmitId_ = -1;
+
+  if (this.debugger_) {
+    this.debuggerTransmitId_ = window.setInterval((function() {
+      var records = this.debugger_.getRecords();
+      this.port_.postMessage(JSON.stringify({
+        'command': 'debugger_data',
+        'records': records
+      }));
+      this.debugger_.clearRecords();
+    }).bind(this), 1000);
+  }
 };
 
 
@@ -110,6 +120,10 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
  * Cleans up all attached tab resources.
  */
 InjectedTab.prototype.dispose = function() {
+  if (this.debuggerTransmitId_ != -1) {
+    window.clearInterval(this.debuggerTransmitId_);
+  }
+
   this.port_.onMessage.removeListener(this.eventHandlers_.onMessage);
   this.port_.onDisconnect.removeListener(this.eventHandlers_.onDisconnect);
 
@@ -136,50 +150,6 @@ InjectedTab.prototype.dispose = function() {
 InjectedTab.prototype.disconnected_ = function() {
   this.extension_.removeInjectedTab(this.tabId_);
   this.dispose();
-};
-
-
-/**
- * Queues WTF event data for sending to the target tab.
- * @param {!Object} data Event data.
- * @private
- */
-InjectedTab.prototype.queueTraceEvents_ = function(data) {
-  this.queuedData_.push({
-    'command': 'trace_events',
-    'contents': [data]
-  });
-
-  // TODO(benvanik): delay flush for a bit? 100ms? etc?
-  this.flush();
-};
-
-
-/**
- * Queues chrome:tracing data for sending to the target tab.
- * @param {string} data chrome:tracing JSON data.
- * @private
- */
-InjectedTab.prototype.queueChromeTracingData_ = function(data) {
-  this.queuedData_.push({
-    'command': 'chrome_tracing_data',
-    'contents': [data]
-  });
-
-  // TODO(benvanik): delay flush for a bit? 100ms? etc?
-  this.flush();
-};
-
-
-/**
- * Flushes all pending event data to the target tab.
- */
-InjectedTab.prototype.flush = function() {
-  // Send all pending data to the target tab content script.
-  for (var n = 0; n < this.queuedData_.length; n++) {
-    this.port_.postMessage(this.queuedData_[n]);
-  }
-  this.queuedData_.length = 0;
 };
 
 
@@ -212,26 +182,38 @@ InjectedTab.prototype.messageReceived_ = function(data, port) {
 
     // Pops up a UI with the given snapshot data.
     case 'show_snapshot':
-      var contentsLength = 0;
-      var dataContents = data['contents'];
-      for (var n = 0; n < dataContents.length; n++) {
-        contentsLength += dataContents[n].length;
-      }
       _gaq.push(['_trackEvent', 'extension', 'show_snapshot',
-          null, contentsLength]);
+          null, data['content_length']]);
       this.extension_.showSnapshot(
           tab,
           data['page_url'],
           data['content_type'],
-          data['contents']);
+          data['content_urls'],
+          data['content_length']);
+      break;
+
+    // Grabs any pending data.
+    case 'clear_debugger_data':
+      this.debugger_.clearRecords();
+      break;
+    case 'get_debugger_data':
+      if (this.debugger_) {
+        var records = this.debugger_.getRecords();
+        this.port_.postMessage(JSON.stringify({
+          'command': 'debugger_data',
+          'request_id': data['request_id'],
+          'records': records
+        }));
+        this.debugger_.clearRecords();
+      }
       break;
 
     // Starts/stops a chrome:tracing session.
     case 'start_chrome_tracing':
-      this.startChromeTracing();
+      this.startChromeTracing_();
       break;
     case 'stop_chrome_tracing':
-      this.stopChromeTracing();
+      this.stopChromeTracing_(data['tracker_id'], data['include_threads']);
       break;
   }
 };
@@ -240,8 +222,9 @@ InjectedTab.prototype.messageReceived_ = function(data, port) {
 /**
  * Starts tracing.
  * If any previous tracing is running the data is dropped.
+ * @private
  */
-InjectedTab.prototype.startChromeTracing = function() {
+InjectedTab.prototype.startChromeTracing_ = function() {
   var tracer = this.extension_.getTracer();
   if (!tracer) {
     return;
@@ -252,11 +235,140 @@ InjectedTab.prototype.startChromeTracing = function() {
 };
 
 
-InjectedTab.prototype.stopChromeTracing = function() {
+/**
+ * Stops tracing and gets the data.
+ * @param {?string} trackerId ID of the user thread to track.
+ * @param {Array.<string>} includeThreads List of thread names to include.
+ * @private
+ */
+InjectedTab.prototype.stopChromeTracing_ = function(trackerId, includeThreads) {
   var tracer = this.extension_.getTracer();
   if (!tracer) {
     return;
   }
 
-  tracer.stop(this.queueChromeTracingData_, this);
+  tracer.stop(function(data) {
+    // In order to minimize the amount of data sent to the page, we do a quick
+    // filter here. We also build a thread info table so that the processing
+    // in the page can run a bit faster. It also hides a lot of the details of
+    // the chrome:tracing format from the provider code, keeping it simpler.
+
+    data = JSON.parse('[' + data.join(',') + ']');
+
+    // First we need to walk the data to find the threads by __metadata.
+    // Unfortunately these come out of order.
+    // We also search for sync events and assume they all come from us.
+    // The thread that has them is our thread for inspection.
+    var nextZoneId = 0;
+    var threads = {};
+    var timeDelta = 0;
+    for (var n = 0; n < data.length; n++) {
+      var e = data[n];
+      if (!e) {
+        continue;
+      }
+
+      var threadKey = e.pid + ':' + e.tid;
+      var thread = threads[threadKey];
+      if (!thread) {
+        thread = threads[threadKey] = {
+          pid: e.pid,
+          tid: e.tid,
+          name: null,
+          included: false,
+          zoneId: nextZoneId++
+        };
+      }
+
+      if (e.cat == '__metadata') {
+        if (e.name == 'thread_name') {
+          thread.name = e.args.name;
+          if (includeThreads && includeThreads.indexOf(thread.name) != -1) {
+            thread.included = true;
+          }
+        }
+        data[n] = null;
+      }
+
+      // Sniff out our sync interval events.
+      if (e.ph == 'S' &&
+          e.name[0] == '$' &&
+          e.name.lastIndexOf('$WTFTRACE') == 0) {
+        var time = parseFloat(e.name.substr(e.name.lastIndexOf(':') + 1));
+        timeDelta = e.ts - time;
+        data[n] = null;
+
+        // TODO(benvanik): match on trackerId
+
+        // Assume this thread is us.
+        thread.included = true;
+      }
+    }
+
+    // Build zone list.
+    var zoneList = [];
+    for (var threadKey in threads) {
+      var thread = threads[threadKey];
+      if (thread.included) {
+        zoneList.push({
+          'id': thread.zoneId,
+          'name': thread.name
+        });
+      }
+    }
+
+    // Filter and modify the data.
+    var filteredData = [];
+    for (var n = 0; n < data.length; n++) {
+      var e = data[n];
+      if (!e) {
+        continue;
+      }
+      var threadKey = e.pid + ':' + e.tid;
+      var thread = threads[threadKey];
+      if (!thread.included || !e.ts) {
+        continue;
+      }
+
+      // Only send along B/E/I events.
+      var ts = (e.ts - timeDelta) / 1000;
+      switch (e.ph) {
+        case 'B':
+        {
+          var ed = [0, thread.zoneId, ts, e.name];
+          if (e.args['name'] == e.name) {
+            // Ignore args.
+          } else {
+            // Append args as key, value. This prevents the need for another
+            // list/object.
+            for (var key in e.args) {
+              ed.push(key);
+              ed.push(e.args[key]);
+            }
+          }
+          filteredData.push(ed);
+          break;
+        }
+        case 'E':
+          filteredData.push([
+            1, thread.zoneId, ts
+          ]);
+          break;
+        case 'I':
+          filteredData.push([
+            2, thread.zoneId, ts, e.name
+          ]);
+          break;
+        default:
+          // Ignore unsupported types.
+          continue;
+      }
+    }
+
+    this.port_.postMessage(JSON.stringify({
+      'command': 'chrome_tracing_data',
+      'zone_list': zoneList,
+      'event_list': filteredData
+    }));
+  }, this);
 };

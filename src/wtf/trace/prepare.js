@@ -41,9 +41,12 @@ wtf.trace.prepare = function(opt_options) {
 
   // Setup.
   var traceManager = new wtf.trace.TraceManager(opt_options);
+  var options = traceManager.getOptions();
 
   // Add providers.
-  wtf.trace.providers.setup(traceManager);
+  if (!options.getBoolean('wtf.trace.disableProviders', false)) {
+    wtf.trace.providers.setup(traceManager);
+  }
 
   // Stash the global object.
   wtf.trace.TraceManager.setSharedInstance(traceManager);

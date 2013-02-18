@@ -676,7 +676,8 @@ Extension.prototype.showFileInUi_ = function(options, url) {
           'data': {
             'command': 'snapshot',
             'content_type': contentType,
-            'contents': contents
+            'content_buffers': contents,
+            'content_length': contents[0].length
           }
         }, '*');
       });
@@ -691,11 +692,12 @@ Extension.prototype.showFileInUi_ = function(options, url) {
  * @param {!Tab} sourceTab Source tab.
  * @param {string} pageUrl Page URL to open.
  * @param {string} contentType Data content type.
- * @param {!Array.<!Uint8Array>} contents Data.
+ * @param {!Array.<string>} contentUrls Content URLs.
+ * @param {number} contentLength Content length, in bytes.
  * @private
  */
 Extension.prototype.showSnapshot = function(
-    sourceTab, pageUrl, contentType, contents) {
+    sourceTab, pageUrl, contentType, contentUrls, contentLength) {
   this.showUi_({
     pageUrl: pageUrl,
     sourceTab: sourceTab
@@ -706,7 +708,8 @@ Extension.prototype.showSnapshot = function(
       'data': {
         'command': 'snapshot',
         'content_type': contentType,
-        'contents': contents
+        'content_urls': contentUrls,
+        'content_length': contentLength
       }
     }, '*');
   });

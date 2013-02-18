@@ -240,7 +240,8 @@ wtf.app.background.BackgroundPage.prototype.snapshotReceived_ = function(
     this.queueMessage_({
       'command': 'snapshot',
       'content_type': contentType,
-      'contents': [data]
+      'content_buffers': [data],
+      'content_length': data.length
     });
   }, this);
 };
