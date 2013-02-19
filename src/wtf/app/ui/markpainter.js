@@ -140,9 +140,10 @@ wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
 
     // Pick a random color.
     // We stash this on the mark so that we can ensure it's the same each draw.
-    var color = /** @type {!wtf.ui.color.RgbColor} */ (mark.getRenderData());
+    var color =
+        /** @type {!wtf.ui.color.RgbColorValue} */ (mark.getRenderData());
     if (!color) {
-      color = palette.getRandomColor();
+      color = palette.getRandomColor().toValue();
       mark.setRenderData(color);
     }
 

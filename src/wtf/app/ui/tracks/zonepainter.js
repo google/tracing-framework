@@ -186,9 +186,13 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
     }
 
     // Get color in the palette used for filling.
-    // TODO(benvanik): cache color index
+    // Cache this on the event so we don't have to do it each time.
     var name = it.getName();
-    var color = palette.getColorForString(name);
+    var color = it.getTag();
+    if (!color) {
+      color = palette.getColorForString(name).toValue();
+      it.setTag(color);
+    }
 
     var alpha = 1;
     if (enterTime >= selectionEnd || leaveTime <= selectionStart) {
@@ -276,9 +280,13 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
         bounds.left, bounds.left + bounds.width);
     var screenWidth = right - left;
 
-    // Get color in the palette used for filling.
+    // Cache this on the event so we don't have to do it each time.
     var name = it.getName();
-    var color = palette.getColorForString(name);
+    var color = /** @type {!wtf.ui.color.RgbColorValue} */ (it.getTag());
+    if (!color) {
+      color = palette.getColorForString(name).toValue();
+      it.setTag(color);
+    }
 
     var screenLeft = Math.max(bounds.left, left);
     var screenRight = Math.min((bounds.left + bounds.width) - 0.999, right);

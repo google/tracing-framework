@@ -353,7 +353,7 @@ wtf.db.EventIterator.prototype.getArgument = function(key) {
 
 
 /**
- * Gets the application-defined event tagfor the current event, if any.
+ * Gets the application-defined event tag for the current event, if any.
  * @return {number} Event tag.
  */
 wtf.db.EventIterator.prototype.getTag = function() {

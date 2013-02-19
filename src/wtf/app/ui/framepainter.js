@@ -18,7 +18,7 @@ goog.require('wtf.events.EventType');
 goog.require('wtf.math');
 goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.RangePainter');
-goog.require('wtf.ui.color.RgbColor');
+goog.require('wtf.ui.color');
 goog.require('wtf.util');
 
 
@@ -55,14 +55,14 @@ goog.inherits(wtf.app.ui.FramePainter, wtf.ui.RangePainter);
 
 /**
  * Colors used for drawing frames.
- * @type {!Array.<!wtf.ui.color.RgbColor>}
+ * @type {!Array.<!wtf.ui.color.RgbColorValue>}
  * @private
  * @const
  */
 wtf.app.ui.FramePainter.FRAME_COLORS_ = [
-  new wtf.ui.color.RgbColor(26, 152, 80),
-  new wtf.ui.color.RgbColor(206, 215, 39),
-  new wtf.ui.color.RgbColor(215, 48, 39)
+  wtf.ui.color.createValue(26, 152, 80, 255),
+  wtf.ui.color.createValue(206, 215, 39, 255),
+  wtf.ui.color.createValue(215, 48, 39, 255)
 ];
 
 
