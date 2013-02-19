@@ -65,7 +65,7 @@ if [ ! -e "$(which pip)" ]; then
     sudo easy_install pip
   elif [ "$(which apt-get 2>/dev/null)" ]; then
     # Linux (Ubuntu)
-    sudo apt-get install pip
+    sudo apt-get install python-pip
   elif [ "$(which port 2>/dev/null)" ]; then
     # OS X (MacPorts)
     sudo port selfupdate
