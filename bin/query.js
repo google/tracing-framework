@@ -97,12 +97,22 @@ function runTool(platform, args) {
     console.log('');
 
     var resultValue = result.getValue();
-    if (typeof resultValue == 'boolean' ||
+    if (resultValue instanceof wtf.db.EventIterator) {
+      var it = resultValue;
+      if (!it.getCount()) {
+        console.log('Nothing matched');
+      } else {
+        console.log('Results: (' + it.getCount() + ' total)');
+        for (; !it.done(); it.next()) {
+          util.logEvent(it, zone);
+        }
+      }
+    } else if (typeof resultValue == 'boolean' ||
         typeof resultValue == 'number' ||
         typeof resultValue == 'string') {
       console.log('Result:');
       logResult(resultValue);
-    } else if (!resultValue || !resultValue.length) {
+    } else if (!resultValue) {
       // Note we test this after so that 0/strings/etc are handled.
       console.log('Nothing matched');
     } else if (resultValue.length) {

@@ -766,3 +766,47 @@ wtf.db.EventList.prototype.getIndexOfRootScopeIncludingTime = function(time) {
 wtf.db.EventList.prototype.getEvent = function(id) {
   return new wtf.db.EventIterator(this, id, id, id);
 };
+
+
+goog.exportSymbol(
+    'wtf.db.EventList',
+    wtf.db.EventList);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getCount',
+    wtf.db.EventList.prototype.getCount);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getFirstEventTime',
+    wtf.db.EventList.prototype.getFirstEventTime);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getLastEventTime',
+    wtf.db.EventList.prototype.getLastEventTime);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getTotalEventCount',
+    wtf.db.EventList.prototype.getTotalEventCount);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getMaximumScopeDepth',
+    wtf.db.EventList.prototype.getMaximumScopeDepth);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'dump',
+    wtf.db.EventList.prototype.dump);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'begin',
+    wtf.db.EventList.prototype.begin);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'beginTimeRange',
+    wtf.db.EventList.prototype.beginTimeRange);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'beginEventRange',
+    wtf.db.EventList.prototype.beginEventRange);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getIndexOfEventNearTime',
+    wtf.db.EventList.prototype.getIndexOfEventNearTime);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getEventNearTime',
+    wtf.db.EventList.prototype.getEventNearTime);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getIndexOfRootScopeIncludingTime',
+    wtf.db.EventList.prototype.getIndexOfRootScopeIncludingTime);
+goog.exportProperty(
+    wtf.db.EventList.prototype, 'getEvent',
+    wtf.db.EventList.prototype.getEvent);

@@ -486,3 +486,89 @@ wtf.db.EventIterator.prototype.getInstanceInfoString_ = function() {
 
   return lines.join('\n');
 };
+
+
+goog.exportSymbol(
+    'wtf.db.EventIterator',
+    wtf.db.EventIterator);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getCount',
+    wtf.db.EventIterator.prototype.getCount);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'seek',
+    wtf.db.EventIterator.prototype.seek);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'next',
+    wtf.db.EventIterator.prototype.next);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'nextScope',
+    wtf.db.EventIterator.prototype.nextScope);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'nextInstance',
+    wtf.db.EventIterator.prototype.nextInstance);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'nextSibling',
+    wtf.db.EventIterator.prototype.nextSibling);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'moveToParent',
+    wtf.db.EventIterator.prototype.moveToParent);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'done',
+    wtf.db.EventIterator.prototype.done);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getId',
+    wtf.db.EventIterator.prototype.getId);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getTypeId',
+    wtf.db.EventIterator.prototype.getTypeId);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getType',
+    wtf.db.EventIterator.prototype.getType);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getName',
+    wtf.db.EventIterator.prototype.getName);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getTypeFlags',
+    wtf.db.EventIterator.prototype.getTypeFlags);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'isScope',
+    wtf.db.EventIterator.prototype.isScope);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'isInstance',
+    wtf.db.EventIterator.prototype.isInstance);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getParent',
+    wtf.db.EventIterator.prototype.getParent);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getDepth',
+    wtf.db.EventIterator.prototype.getDepth);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getTime',
+    wtf.db.EventIterator.prototype.getTime);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getArguments',
+    wtf.db.EventIterator.prototype.getArguments);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getArgument',
+    wtf.db.EventIterator.prototype.getArgument);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getTag',
+    wtf.db.EventIterator.prototype.getTag);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'setTag',
+    wtf.db.EventIterator.prototype.setTag);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getEndTime',
+    wtf.db.EventIterator.prototype.getEndTime);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getTotalDuration',
+    wtf.db.EventIterator.prototype.getTotalDuration);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getUserDuration',
+    wtf.db.EventIterator.prototype.getUserDuration);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getOwnDuration',
+    wtf.db.EventIterator.prototype.getOwnDuration);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getInfoString',
+    wtf.db.EventIterator.prototype.getInfoString);

@@ -38,6 +38,8 @@ goog.require('wtf.db.EventDataEntry');
 /** @suppress {extraRequire} */
 goog.require('wtf.db.EventIndex');
 /** @suppress {extraRequire} */
+goog.require('wtf.db.EventIterator');
+/** @suppress {extraRequire} */
 goog.require('wtf.db.EventList');
 /** @suppress {extraRequire} */
 goog.require('wtf.db.EventStatistics');
