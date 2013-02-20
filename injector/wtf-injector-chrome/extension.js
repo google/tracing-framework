@@ -333,7 +333,7 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
   var pageOptions = options.getPageOptions(pageUrl);
 
   // Set availablility overrides.
-  pageOptions['wtf.trace.chromeTracing.available'] = !!this.getTracer();
+  pageOptions['wtf.trace.provider.chromeDebug.tracing'] = !!this.getTracer();
 
   // Create an exported blob URL that the content script can access.
   // To save on cookie space send only the UUID.

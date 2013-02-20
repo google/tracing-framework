@@ -141,7 +141,7 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
   this.available_ = !!this.extensionChannel_;
 
   if (this.available_ &&
-      options.getBoolean('wtf.trace.chromeTracing.available', false)) {
+      options.getBoolean('wtf.trace.provider.chromeDebug.tracing', false)) {
     this.hudButtons_.push({
       'title': 'Toggle chrome:tracing Capture',
       // TODO(benvanik): use embedded button?
@@ -203,6 +203,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.getSettingsSectionConfigs =
         //   'title': 'Memory information (todo)',
         //   'default': false
         // },
+        // This value is set to true by the extension when tracing is available.
         {
           'type': 'checkbox',
           'key': 'wtf.trace.provider.chromeDebug.tracing',
