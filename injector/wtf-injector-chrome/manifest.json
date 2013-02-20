@@ -4,7 +4,7 @@
   // These can be copy/pasted directly between them.
   // ---------------------------------------------------------------------------
   "manifest_version": 2,
-  "version": "2013.2.12.1",
+  "version": "2013.2.19.1",
   "minimum_chrome_version": "21",
   "offline_enabled": true,
   "incognito": "split",
