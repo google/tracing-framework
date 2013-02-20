@@ -104,9 +104,16 @@ wtf.db.sources.BinaryDataSource = function(db, readStream) {
   // Start listening for read stream events.
   this.readStream_.addListener(
       wtf.io.EventType.READ, this.processBuffer_, this);
-  this.readStream_.listen();
 };
 goog.inherits(wtf.db.sources.BinaryDataSource, wtf.db.DataSource);
+
+
+/**
+ * @override
+ */
+wtf.db.sources.BinaryDataSource.prototype.start = function() {
+  this.readStream_.listen();
+};
 
 
 /**

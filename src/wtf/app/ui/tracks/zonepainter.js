@@ -112,6 +112,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 
+  var repaintStartTime = wtf.now();
+
   // Get a table of matching event types (if a filter is set).
   // This is used by the draw routines to quickly see if an event is filtered.
   var matchedEventTypes = null;
@@ -133,6 +135,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
 
   // Draw instance events.
   this.drawInstanceEvents_(bounds, timeLeft, timeRight, matchedEventTypes);
+
+  var repaintDuration = wtf.now() - repaintStartTime;
+  //goog.global.console.log('zone paint', repaintDuration);
 };
 
 
