@@ -13,7 +13,6 @@
 
 goog.provide('wtf.db.sources.BinaryDataSource');
 
-goog.require('goog.asserts');
 goog.require('goog.math.Long');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventFlag');
@@ -129,19 +128,13 @@ wtf.db.sources.BinaryDataSource.prototype.processBuffer_ =
 
   // Read trace header, if required.
   // We assume it is always at the head of the first buffer received.
-  var contextInfo;
   if (!this.hasReadTraceHeader_) {
     if (!this.readTraceHeader_(buffer)) {
       return false;
     }
-    contextInfo = this.getContextInfo();
-    goog.asserts.assert(contextInfo);
     // TODO(benvanik): fire a 'source added' event on the database here?
     this.hasReadTraceHeader_ = true;
   }
-
-  contextInfo = this.getContextInfo();
-  goog.asserts.assert(contextInfo);
   db.beginInsertingEvents(this);
 
   // Read all events from the buffer.

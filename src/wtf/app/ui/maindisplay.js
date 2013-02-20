@@ -380,7 +380,7 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
     // Append data after a bit - gives the UI time to setup.
     wtf.timing.setImmediate(function() {
       // Add all sources.
-      doc.addEventSources(datas);
+      doc.addEventSources(datas, contentType);
 
       // Zoom to fit.
       // TODO(benvanik): remove setTimeout when zoomToFit is based on view
@@ -410,7 +410,7 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
     goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
         function(datas) {
           // Add all sources.
-          doc.addEventSources(datas);
+          doc.addEventSources(datas, contentType);
 
           // Zoom to fit.
           // TODO(benvanik): remove setTimeout when zoomToFit is based on view
@@ -481,6 +481,7 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
   inputElement['accept'] = [
     '.wtf-trace,application/x-extension-wtf-trace',
     '.wtf-json,application/x-extension-wtf-json',
+    '.wtf-calls,application/x-extension-wtf-calls',
     '.part,application/x-extension-part'
   ].join(',');
   inputElement.click();
@@ -499,35 +500,52 @@ wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
  * @param {!Array.<!File>} traceFiles Files to load.
  */
 wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
-  var binarySources = [];
-  var jsonSources = [];
-  var filenames = [];
+  var entries = [];
   for (var n = 0; n < traceFiles.length; n++) {
     var file = traceFiles[n];
     if (goog.string.endsWith(file.name, '.wtf-trace') ||
         goog.string.endsWith(file.name, '.bin.part') ||
         file.type == 'application/x-extension-wtf-trace') {
-      binarySources.push(file);
-      filenames.push(file.name);
+      entries.push({
+        source: file,
+        filename: file.name,
+        mimeType: 'application/x-extension-wtf-trace'
+      });
     } else if (goog.string.endsWith(file.name, '.wtf-json') ||
         file.type == 'application/x-extension-wtf-json') {
-      jsonSources.push(file);
-      filenames.push(file.name);
+      entries.push({
+        source: file,
+        filename: file.name,
+        mimeType: 'application/x-extension-wtf-json'
+      });
+    } else if (goog.string.endsWith(file.name, '.wtf-calls') ||
+        file.type == 'application/x-extension-wtf-calls') {
+      entries.push({
+        source: file,
+        filename: file.name,
+        mimeType: 'application/x-extension-wtf-calls'
+      });
     }
   }
-  if (!binarySources.length && !jsonSources.length) {
+  if (!entries.length) {
     return;
   }
 
   // TODO(benvanik): move into wtf.db?
   var deferreds = [];
-  for (var n = 0; n < binarySources.length; n++) {
-    deferreds.push(goog.fs.FileReader.readAsArrayBuffer(binarySources[n]));
+  for (var n = 0; n < entries.length; n++) {
+    var entry = entries[n];
+    switch (entry.mimeType) {
+      case 'application/x-extension-wtf-trace':
+      case 'application/x-extension-wtf-calls':
+        deferreds.push(goog.fs.FileReader.readAsArrayBuffer(entry.source));
+        break;
+      case 'application/x-extension-wtf-json':
+        deferreds.push(goog.fs.FileReader.readAsText(entry.source));
+        break;
+    }
   }
-  for (var n = 0; n < jsonSources.length; n++) {
-    deferreds.push(goog.fs.FileReader.readAsText(jsonSources[n]));
-  }
-  this.openDeferredSources_(deferreds, filenames);
+  this.openDeferredSources_(entries, deferreds);
 };
 
 
@@ -536,26 +554,36 @@ wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
  * @param {!Array.<!string>} urls Array of resources to load.
  */
 wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
-  var binarySources = [];
-  var jsonSources = [];
-  var filenames = [];
+  var entries = [];
   for (var n = 0; n < urls.length; n++) {
     var url = urls[n];
     if (goog.string.endsWith(url, '.wtf-trace') ||
         goog.string.endsWith(url, '.bin.part')) {
-      binarySources.push(url);
-      filenames.push(url);
+      entries.push({
+        source: url,
+        filename: url,
+        mimeType: 'application/x-extension-wtf-trace'
+      });
     } else if (goog.string.endsWith(url, '.wtf-json')) {
-      jsonSources.push(url);
-      filenames.push(url);
+      entries.push({
+        source: url,
+        filename: url,
+        mimeType: 'application/x-extension-wtf-json'
+      });
+    } else if (goog.string.endsWith(url, '.wtf-calls')) {
+      entries.push({
+        source: url,
+        filename: url,
+        mimeType: 'application/x-extension-wtf-calls'
+      });
     } else {
       wtf.ui.ErrorDialog.show(
           'Unsupported input URL',
-          'Only .wtf-trace and .wtf-json inputs are supported.',
+          'Only .wtf-trace, .wtf-json, and .wtf-calls inputs are supported.',
           this.getDom());
     }
   }
-  if (!binarySources.length && !jsonSources.length) {
+  if (!entries.length) {
     return;
   }
 
@@ -579,16 +607,21 @@ wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
   }
 
   var deferreds = [];
-  for (var n = 0; n < binarySources.length; n++) {
-    deferreds.push(loadUrl(binarySources[n],
-        goog.net.XhrIo.ResponseType.ARRAY_BUFFER));
+  for (var n = 0; n < entries.length; n++) {
+    var entry = entries[n];
+    switch (entry.mimeType) {
+      case 'application/x-extension-wtf-trace':
+      case 'application/x-extension-wtf-calls':
+        deferreds.push(loadUrl(entry.source,
+            goog.net.XhrIo.ResponseType.ARRAY_BUFFER));
+        break;
+      case 'application/x-extension-wtf-json':
+        deferreds.push(loadUrl(entry.source,
+            goog.net.XhrIo.ResponseType.TEXT));
+        break;
+    }
   }
-  for (var n = 0; n < jsonSources.length; n++) {
-    deferreds.push(loadUrl(jsonSources[n],
-        goog.net.XhrIo.ResponseType.TEXT));
-  }
-
-  this.openDeferredSources_(deferreds, filenames);
+  this.openDeferredSources_(entries, deferreds);
 };
 
 
@@ -616,24 +649,30 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
 
     var deferreds = [];
 
-    var filenames = [];
+    var entries = [];
     for (var n = 0; n < files.length; n++) {
       var fileName = files[n][0];
       var fileId = files[n][1];
+      var entry = {
+        source: fileId,
+        filename: fileName,
+        mimeType: 'application/x-extension-wtf-trace'
+      };
+      entries.push(entry);
       var fileDeferred = new goog.async.Deferred();
       deferreds.push(fileDeferred);
       goog.result.wait(wtf.io.drive.downloadFile(fileId), function(result) {
         var driveFile = result.getValue();
         if (driveFile) {
+          entry.filename = driveFile.filename;
           fileDeferred.callback(driveFile.contents);
-          filenames.push(driveFile.filename);
         } else {
           fileDeferred.errback(result.getError());
         }
       }, this);
     }
 
-    this.openDeferredSources_(deferreds, filenames);
+    this.openDeferredSources_(entries, deferreds);
   }, this);
 };
 
@@ -642,23 +681,33 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
  * Creates a document and adds sources for a set of deferred items. Each
  * deferred should provide a ArrayBuffer of binary source data or a string
  * of json data.
+ * @param {!Array.<{
+ *   source: *,
+ *   filename: string,
+ *   mimeType: string
+ * }>} entries The list of deferred entries being opened. This must match up
+ *     1:1 with the deferreds list.
  * @param {!Array.<!goog.async.Deferred>} deferreds a List of deferreds to wait
  *     on. Each should return an array buffer (for binary sources) or a string
  *     (for json sources).
- * @param {!Array.<string>} filenames File names (paths/URLs/etc allowed). This
- *     is used primarily for UI display, so they need to align to the deferreds
- *     list.
  * @private
  */
 wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(
-    deferreds, filenames) {
+    entries, deferreds) {
   var doc = new wtf.doc.Document(this.platform_);
   this.openDocument(doc);
 
   goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
       function(datas) {
+        var filenames = [];
+        var mimeTypes = [];
+        for (var n = 0; n < entries.length; n++) {
+          filenames.push(entries[n].filename);
+          mimeTypes.push(entries[n].mimeType);
+        }
+
         // Add all data.
-        var contentLength = doc.addEventSources(datas);
+        var contentLength = doc.addEventSources(datas, mimeTypes);
         _gaq.push(['_trackEvent', 'app', 'open_files', null, contentLength]);
 
         // Set title.
