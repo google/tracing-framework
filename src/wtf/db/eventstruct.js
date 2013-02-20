@@ -47,37 +47,38 @@ wtf.db.EventStruct = {
   TIME: 4,
 
   /**
+   * End time.
+   * Used by scopes only. If this is zero the event is an instance.
+   */
+  END_TIME: 5,
+
+  /**
    * Next sibling in the parent scope or 0 if at the end.
    */
-  NEXT_SIBLING: 5,
+  NEXT_SIBLING: 6,
 
   /**
    * Arguments data ID or 0 if none.
    */
-  ARGUMENTS: 6,
-
-  VALUE: 7,
-  TAG: 8,
-
-  // Scopes only:
+  ARGUMENTS: 7,
 
   /**
-   * End time.
+   * Used by the application for rendering/etc.
    */
-  END_TIME: 9,
+  TAG: 8,
 
   /**
    * Total time in all descendants spent in system time.
    */
-  SYSTEM_TIME: 10,
+  SYSTEM_TIME: 9,
 
   /**
    * Total time of all immediate children.
    */
-  CHILD_TIME: 11,
+  CHILD_TIME: 10,
 
   /**
    * Event size, in uint32s.
    */
-  STRUCT_SIZE: 12
+  STRUCT_SIZE: 11
 };

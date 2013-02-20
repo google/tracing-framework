@@ -137,7 +137,12 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
         if (!label || !label.length) {
           return;
         }
-        var color = palette.getColorForString(label);
+        var color = /** @type {!wtf.ui.color.RgbColorValue} */ (
+            timeRange.getRenderData());
+        if (!color) {
+          color = palette.getColorForString(label).toValue();
+          timeRange.setRenderData(color);
+        }
 
         // Draw bar.
         this.drawRange(level, screenLeft, screenRight, color, 1);

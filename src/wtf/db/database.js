@@ -227,6 +227,9 @@ wtf.db.Database.prototype.addDataSource = function(dataSource) {
 
   this.emitEvent(wtf.db.Database.EventType.SOURCES_CHANGED);
   this.invalidate_();
+
+  // NOTE: this may start streaming back data immediately.
+  dataSource.start();
 };
 
 

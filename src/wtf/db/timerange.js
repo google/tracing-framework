@@ -80,6 +80,13 @@ wtf.db.TimeRange = function() {
    * @private
    */
   this.overlap_ = 0;
+
+  /**
+   * Render data.
+   * @type {Object|number|string}
+   * @private
+   */
+  this.renderData_ = null;
 };
 
 
@@ -169,6 +176,24 @@ wtf.db.TimeRange.prototype.getLevel = function() {
  */
 wtf.db.TimeRange.prototype.getOverlap = function() {
   return this.overlap_;
+};
+
+
+/**
+ * Gets the render data value.
+ * @return {Object|number|string} Value, if any.
+ */
+wtf.db.TimeRange.prototype.getRenderData = function() {
+  return this.renderData_;
+};
+
+
+/**
+ * Sets the render data value.
+ * @param {Object|number|string} value New value.
+ */
+wtf.db.TimeRange.prototype.setRenderData = function(value) {
+  this.renderData_ = value;
 };
 
 

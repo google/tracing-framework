@@ -64,8 +64,7 @@ wtf.ui.RangeRenderer.prototype.reset = function(width) {
  * Draws a range into the buffer.
  * @param {number} left The left edge of the range.
  * @param {number} right The right edge of the range.
- * @param {!wtf.ui.color.RgbColor} color The color for the range. Each
- *   component should be in the range 0 to 255.
+ * @param {wtf.ui.color.RgbColorValue} color The color for the range.
  * @param {number} alpha The alpha to use for drawing color, in the range 0 to
  *   1.
  */
@@ -91,14 +90,14 @@ wtf.ui.RangeRenderer.prototype.drawRange = function(left, right, color, alpha) {
 /**
  * Replace pixel x with 100% color.
  * @param {number} x Pixel coordinate.
- * @param {!wtf.ui.color.RgbColor} color The color to write.
+ * @param {wtf.ui.color.RgbColorValue} color The color to write.
  * @param {number} alpha The alpha to draw with.
  * @private
  */
 wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
-  this.buffer_[x * 4 + 0] = alpha * color.r;
-  this.buffer_[x * 4 + 1] = alpha * color.g;
-  this.buffer_[x * 4 + 2] = alpha * color.b;
+  this.buffer_[x * 4 + 0] = alpha * (color & 0xFF);
+  this.buffer_[x * 4 + 1] = alpha * ((color >> 8) & 0xFF);
+  this.buffer_[x * 4 + 2] = alpha * ((color >> 16) & 0xFF);
   this.buffer_[x * 4 + 3] = alpha;
 };
 
@@ -107,14 +106,14 @@ wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
  * Accumulate a partial pixel into position x.
  * @param {number} x Pixel coordinate.
  * @param {number} d The fraction of the pixel covered.
- * @param {!wtf.ui.color.RgbColor} color The color to write.
+ * @param {wtf.ui.color.RgbColorValue} color The color to write.
  * @param {number} alpha The alpha to draw with.
  * @private
  */
 wtf.ui.RangeRenderer.prototype.accumPx_ = function(x, d, color, alpha) {
-  this.buffer_[x * 4 + 0] += d * alpha * color.r;
-  this.buffer_[x * 4 + 1] += d * alpha * color.g;
-  this.buffer_[x * 4 + 2] += d * alpha * color.b;
+  this.buffer_[x * 4 + 0] += d * alpha * (color & 0xFF);
+  this.buffer_[x * 4 + 1] += d * alpha * ((color >> 8) & 0xFF);
+  this.buffer_[x * 4 + 2] += d * alpha * ((color >> 16) & 0xFF);
   this.buffer_[x * 4 + 3] += d * alpha;
 };
 

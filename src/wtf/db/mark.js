@@ -63,7 +63,7 @@ wtf.db.Mark = function(eventId, name, value, time) {
 
   /**
    * Render data.
-   * @type {Object}
+   * @type {Object|number|string}
    * @private
    */
   this.renderData_ = null;
@@ -126,7 +126,7 @@ wtf.db.Mark.prototype.getDuration = function() {
 
 /**
  * Gets the render data value.
- * @return {Object} Value, if any.
+ * @return {Object|number|string} Value, if any.
  */
 wtf.db.Mark.prototype.getRenderData = function() {
   return this.renderData_;
@@ -135,7 +135,7 @@ wtf.db.Mark.prototype.getRenderData = function() {
 
 /**
  * Sets the render data value.
- * @param {Object} value New value.
+ * @param {Object|number|string} value New value.
  */
 wtf.db.Mark.prototype.setRenderData = function(value) {
   this.renderData_ = value;

@@ -19,6 +19,7 @@ goog.provide('wtf.db.SortMode');
 
 goog.require('goog.Disposable');
 goog.require('goog.object');
+goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.Filter');
@@ -115,6 +116,8 @@ goog.inherits(wtf.db.EventStatistics, goog.Disposable);
  */
 wtf.db.EventStatistics.prototype.rebuild = function(
     startTime, endTime, opt_filter) {
+  var rebuildStartTime = wtf.now();
+
   this.filteredEventCount_ = 0;
   var tableById = {};
   var list = [];
@@ -185,6 +188,9 @@ wtf.db.EventStatistics.prototype.rebuild = function(
   this.table_ = tableByName;
   this.list_ = validList;
   this.listSortMode_ = wtf.db.SortMode.ANY;
+
+  var rebuildDuration = wtf.now() - rebuildStartTime;
+  //goog.global.console.log('stats rebuild', rebuildDuration);
 };
 
 

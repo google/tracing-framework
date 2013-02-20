@@ -81,9 +81,7 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
 
   var db = documentView.getDatabase();
   db.addListener(
-      wtf.db.Database.EventType.SOURCES_CHANGED,
-      this.updateDisplay_,
-      this);
+      wtf.events.EventType.INVALIDATED, this.updateDisplay_, this);
   this.updateDisplay_();
 };
 goog.inherits(wtf.app.ui.Toolbar, wtf.ui.Control);
@@ -110,6 +108,9 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   var db = this.documentView_.getDatabase();
   var sources = db.getSources();
   if (!sources.length) {
+    return;
+  }
+  if (!sources[0].isInitialized()) {
     return;
   }
   var contextInfo = sources[0].getContextInfo();
