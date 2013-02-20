@@ -168,6 +168,12 @@ wtf.db.DataSource.prototype.getTimeDelay = function() {
 
 
 /**
+ * Signals that the data source should start adding data.
+ */
+wtf.db.DataSource.prototype.start = goog.nullFunction;
+
+
+/**
  * Initializes the trace source.
  * This will likely be called outside of the constructor once a header has
  * been read. It must be called before any other events are dispatched to

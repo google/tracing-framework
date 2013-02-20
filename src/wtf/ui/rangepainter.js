@@ -142,8 +142,7 @@ wtf.ui.RangePainter.prototype.beginRenderingRanges = function(
  * @param {number} depth Range depth.
  * @param {number} screenLeft The left edge of the range.
  * @param {number} screenRight The right edge of the range.
- * @param {!wtf.ui.color.RgbColor} color The color for the range. Each
- *   component should be in the range 0 to 255.
+ * @param {!wtf.ui.color.RgbColorValue} color The color for the range.
  * @param {number} alpha The alpha to use for drawing color, in the range 0 to
  *   1.
  * @protected

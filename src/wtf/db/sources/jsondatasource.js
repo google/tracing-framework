@@ -70,12 +70,34 @@ wtf.db.sources.JsonDataSource = function(db, sourceData) {
         'The file could not be parsed as JSON. Perhaps it\'s corrupted?\n' + e);
     return;
   }
-
-  if (goog.isArray(sourceData)) {
-    this.parseEvents_(sourceData);
+  if (!goog.isArray(sourceData)) {
+    db.sourceError(
+        this,
+        'Error parsing data',
+        'The data was expected to be an array.');
+    return;
   }
+
+  /**
+   * The source data to process.
+   * This is consumed and cleared on start().
+   * @type {Array}
+   * @private
+   */
+  this.pendingSourceData_ = sourceData;
 };
 goog.inherits(wtf.db.sources.JsonDataSource, wtf.db.DataSource);
+
+
+/**
+ * @override
+ */
+wtf.db.sources.JsonDataSource.prototype.start = function() {
+  var sourceData = this.pendingSourceData_;
+  this.pendingSourceData_ = null;
+  goog.asserts.assert(sourceData);
+  this.parseEvents_(sourceData);
+};
 
 
 /**
