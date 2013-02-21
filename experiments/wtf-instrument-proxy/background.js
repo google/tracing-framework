@@ -29,7 +29,7 @@ function registerRules() {
         details.url.indexOf('blob:') != 0 &&
         details.url.indexOf('http://localhost:8081/inject') != 0) {
       console.log(details.url);
-      var localUrl = 'http://localhost:8081/inject?url=' + details.url;
+      var localUrl = 'http://localhost:8081/inject?url=' + escape(details.url);
       return {
         redirectUrl: localUrl
       };
