@@ -96,9 +96,28 @@ function transformCode(moduleId, url, sourceCode) {
     };
   }).toString() + ')(window);';
 
+  // Attempt to guess the names of functions.
+  var nextAnonymousName = 0;
+  function getFunctionName(node) {
+    if (node.id) {
+      return node.id.name;
+    }
+
+    // TODO(benvanik): support other ways:
+    // var unnamed1 = function() {};
+    // My.unnamed2 = function() {};
+    // My.prototype.unnamed3 = function() {};
+
+    // TODO(benvanik): support jscompiler prototype alias:
+    // _.$JSCompiler_prototypeAlias$$ = _.$something;
+    // ...
+    // _.$JSCompiler_prototypeAlias$$.$unnamed = function() {};
+
+    return 'anon' + nextAnonymousName++;
+  };
+
   // Walk the entire document instrumenting functions.
   var nextFnId = moduleId << 24 + 1;
-  var nextAnonymousName = 0;
   var fns = [];
   var targetCode = falafel(sourceCode, function(node) {
     if (node.type == 'BlockStatement') {
@@ -107,13 +126,13 @@ function transformCode(moduleId, url, sourceCode) {
       // function foo() {}
       var isDecl = parent.type == 'FunctionDeclaration';
       // = function [optional]() {}
-      var isExpr = isDecl ? false : (parent.type == 'FunctionExpression');
+      var isExpr = parent.type == 'FunctionExpression';
       if (!isDecl && !isExpr) {
         return;
       }
 
       var fnId = nextFnId++;
-      var name = parent.id ? parent.id.name : ('anon' + nextAnonymousName++);
+      var name = getFunctionName(parent);
       fns.push(fnId);
       fns.push('"' + name + '"');
       fns.push(node.range[0]);

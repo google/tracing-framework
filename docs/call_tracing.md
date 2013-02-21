@@ -31,7 +31,8 @@ This tool only supports named function declarations right now:
 function someName() {}
 // These will NOT:
 var unnamed1 = function() {};
-My.prototype.unnamed2 = function() {};
+My.unnamed2 = function() {};
+My.prototype.unnamed3 = function() {};
 ```
 
 Future versions will try to handle these better.

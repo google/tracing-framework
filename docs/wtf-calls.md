@@ -1,7 +1,5 @@
 # wtf-calls File Format
 
-TODO(benvanik): document the wtf-calls binary format.
-
 ## Structure
 
 All values in little-endian.
@@ -51,8 +49,8 @@ the function name and range to match functions.
 ## Calls
 
 Calls in the file are paired enter-exits, similar to scopes in the WTF format.
-Enters are the function ID being entered, and exits are the function ID with
-its MSB set. Each ID is 4b.
+Enters are the function ID being entered, and exits are the negative of the
+function ID. Each ID is 4b.
 
 For example:
 
