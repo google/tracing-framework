@@ -20,6 +20,7 @@ goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
 goog.require('wtf.db.Zone');
 goog.require('wtf.db.sources.BinaryDataSource');
+goog.require('wtf.db.sources.CallsDataSource');
 goog.require('wtf.db.sources.JsonDataSource');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
@@ -277,6 +278,21 @@ wtf.db.Database.prototype.addJsonSource = function(data) {
 
 
 /**
+ * Adds a binary instrumented call source as an immediately-available stream.
+ * @param {!wtf.io.ByteArray} data Input data.
+ */
+wtf.db.Database.prototype.addCallsSource = function(data) {
+  // TODO(benvanik): support mimetype storage?
+  // Send to storage, if needed.
+  // if (this.storage_) {
+  //   stream = this.storage_.captureStream(stream);
+  // }
+
+  this.addDataSource(new wtf.db.sources.CallsDataSource(this, data));
+};
+
+
+/**
  * Gets a list of all sources that have been added to provide event data.
  * @return {!Array.<!wtf.db.DataSource>} A list of all sources. Do not modify.
  */
@@ -504,6 +520,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.Database.prototype, 'addJsonSource',
     wtf.db.Database.prototype.addJsonSource);
+goog.exportProperty(
+    wtf.db.Database.prototype, 'addCallsSource',
+    wtf.db.Database.prototype.addCallsSource);
 goog.exportProperty(
     wtf.db.Database.prototype, 'getSources',
     wtf.db.Database.prototype.getSources);
