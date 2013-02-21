@@ -29,13 +29,12 @@ This tool only supports named function declarations right now:
 ```
 // This will be named properly:
 function someName() {}
-// These will NOT:
-var unnamed1 = function() {};
-My.unnamed2 = function() {};
-My.prototype.unnamed3 = function() {};
+var named1 = function() {};
+My.named2 = function() {};
+My.prototype.named3 = function() {};
 ```
 
-Future versions will try to handle these better.
+Future versions will try to handle other cases better.
 
 If you're using Closure Compiler to generate your optimized code you can enable
 anonymous function naming via the `setAnonymousFunctionNaming` compiler option.

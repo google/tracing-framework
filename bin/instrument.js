@@ -77,8 +77,6 @@ function transformCode(moduleId, url, sourceCode) {
       }
       var padBytes = new Uint8Array(padLength);
 
-      console.log(headerLength, padLength, window.__wtfi);
-
       var contents = global.__wtfd.subarray(0, window.__wtfi);
       a.href = URL.createObjectURL(new Blob([
         header,
@@ -97,27 +95,61 @@ function transformCode(moduleId, url, sourceCode) {
   }).toString() + ')(window);';
 
   // Attempt to guess the names of functions.
-  var nextAnonymousName = 0;
   function getFunctionName(node) {
+    // Simple case of:
+    // function foo() {}
     if (node.id) {
       return node.id.name;
     }
 
-    // TODO(benvanik): support other ways:
-    // var unnamed1 = function() {};
-    // My.unnamed2 = function() {};
-    // My.prototype.unnamed3 = function() {};
+    // var foo = function() {};
+    if (node.parent.type == 'VariableDeclarator') {
+      if (node.parent.id) {
+        return node.parent.id.name;
+      }
+      console.log('unknown var decl', node.parent);
+      return null;
+    }
+
+    // foo = function() {};
+    // Bar.foo = function() {};
+    //
+    if (node.parent.type = 'AssignmentExpression') {
+      // We are the RHS, LHS is something else.
+      var left = node.parent.left;
+      if (!left) {
+        // This happens if it's (function(){})();
+        return null;
+      }
+      if (left.type == 'MemberExpression') {
+        // Bar.foo = function() {};
+        // left.object {type: 'Identifier', name: 'Bar'}
+        // left.property {type: 'Identifier', name: 'foo'}
+        // Object can be recursive MemberExpression's:
+        // Bar.prototype.foo = function() {};
+        // left.object {type: 'MemberExpression', ...}
+        // left.property {type: 'Identifier', name: 'foo'}
+        return left.source();
+      } else if (left.type == 'Identifier') {
+        return left.name;
+      }
+      console.log('unknown assignment LHS', left);
+      return null;
+    }
+
+    console.log('unknown fn construct', node);
 
     // TODO(benvanik): support jscompiler prototype alias:
     // _.$JSCompiler_prototypeAlias$$ = _.$something;
     // ...
     // _.$JSCompiler_prototypeAlias$$.$unnamed = function() {};
 
-    return 'anon' + nextAnonymousName++;
+    return null;
   };
 
   // Walk the entire document instrumenting functions.
   var nextFnId = moduleId << 24 + 1;
+  var nextAnonymousName = 0;
   var fns = [];
   var targetCode = falafel(sourceCode, function(node) {
     if (node.type == 'BlockStatement') {
@@ -131,10 +163,22 @@ function transformCode(moduleId, url, sourceCode) {
         return;
       }
 
-      var fnId = nextFnId++;
+      // Guess function name or set to some random one.
       var name = getFunctionName(parent);
+      if (name) {
+        // Strip off any junk.
+        // jscompiler adds a _.$ prefix sometimes.
+        if (name.indexOf('_.$') == 0) {
+          name = name.substr(3);
+        }
+      }
+      if (!name || !name.length) {
+        name = 'anon' + moduleId + '$' + nextAnonymousName++;
+      }
+
+      var fnId = nextFnId++;
       fns.push(fnId);
-      fns.push('"' + name + '"');
+      fns.push('"' + name.replace(/\"/g, '\\"') + '"');
       fns.push(node.range[0]);
       fns.push(node.range[1]);
 
@@ -244,12 +288,28 @@ function startServer(httpPort, httpsPort, certs) {
 
     var targetModule = targetUrl.indexOf('https') == 0 ? https : http;
     targetModule.get(targetUrl, function(originalRes) {
+      // Pull out content type to see if we are interested in it.
+      var supportedContentType = false;
       var contentType = originalRes.headers['content-type'];
       if (contentType.indexOf(';') != 0) {
         contentType = contentType.substr(0, contentType.indexOf(';'));
       }
-      if (contentType == 'text/javascript' ||
-          contentType == 'application/javascript') {
+      switch (contentType) {
+        case 'text/javascript':
+        case 'application/javascript':
+          supportedContentType = true;
+          break;
+      }
+
+      // Also parse the URL - some servers don't return content type for some
+      // reason.
+      var supportedPath = false;
+      var contentUrl = url.parse(targetUrl);
+      if (path.extname(contentUrl.pathname) == '.js') {
+        supportedPath = true;
+      }
+
+      if (supportedContentType || supportedPath) {
         var headers = [];
         for (var key in originalRes.headers) {
           if (key == 'content-length') {
@@ -260,7 +320,7 @@ function startServer(httpPort, httpsPort, certs) {
         res.writeHead(originalRes.statusCode, headers);
         injectStream(targetUrl, originalRes, res);
       } else {
-        console.log('Pass-through: ' + targetUrl);
+        console.log('Pass-through: ' + targetUrl, contentType);
         res.writeHead(originalRes.statusCode, originalRes.headers);
         originalRes.pipe(res);
       }
