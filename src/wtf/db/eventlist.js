@@ -230,6 +230,37 @@ wtf.db.EventList.prototype.getMaximumScopeDepth = function() {
 
 
 /**
+ * Ensures that the event list has at least the given capacity, expanding if it
+ * doesn't.
+ * @param {number=} opt_minimum New minimum capacity. If omitted, the buffer is
+ *     increased by some heuristic.
+ */
+wtf.db.EventList.prototype.expandCapacity = function(opt_minimum) {
+  var newCapacity;
+  if (opt_minimum !== undefined) {
+    // User specified capacity.
+    newCapacity = opt_minimum;
+  } else {
+    // Just expand a bit.
+    // TODO(benvanik): better growth characteristics.
+    newCapacity = Math.max(this.capacity_ * 2, 1024);
+  }
+  if (newCapacity <= this.capacity_) {
+    return;
+  }
+
+  this.capacity_ = newCapacity;
+  var newSize = this.capacity_ * wtf.db.EventStruct.STRUCT_SIZE;
+  var newData = new Uint32Array(newSize);
+  var oldData = this.eventData;
+  for (var n = 0; n < this.count * wtf.db.EventStruct.STRUCT_SIZE; n++) {
+    newData[n] = oldData[n];
+  }
+  this.eventData = newData;
+};
+
+
+/**
  * Inserts an event into the list.
  * @param {!wtf.db.EventType} eventType Event type.
  * @param {number} time Time, in microseconds.
@@ -237,16 +268,8 @@ wtf.db.EventList.prototype.getMaximumScopeDepth = function() {
  */
 wtf.db.EventList.prototype.insert = function(eventType, time, opt_argData) {
   // Grow the event data store, if required.
-  if (this.count + 1 >= this.capacity_) {
-    // TODO(benvanik): better growth characteristics.
-    this.capacity_ = Math.max(this.capacity_ * 2, 1024);
-    var newSize = this.capacity_ * wtf.db.EventStruct.STRUCT_SIZE;
-    var newData = new Uint32Array(newSize);
-    var oldData = this.eventData;
-    for (var n = 0; n < this.count * wtf.db.EventStruct.STRUCT_SIZE; n++) {
-      newData[n] = oldData[n];
-    }
-    this.eventData = newData;
+  if (this.count + 1 > this.capacity_) {
+    this.expandCapacity();
   }
 
   // Prep the event and return.

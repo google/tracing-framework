@@ -382,11 +382,13 @@ wtf.data.ScriptContextInfo.prototype.parse = function(json) {
   } : null;
   this.taskId = json['taskId'] || null;
   this.args = json['args'];
-  this.userAgent.value = json['userAgent']['value'];
-  this.userAgent.type = json['userAgent']['type'];
-  this.userAgent.platform = json['userAgent']['platform'];
-  this.userAgent.platformVersion = json['userAgent']['platformVersion'];
-  this.userAgent.device = json['userAgent']['device'];
+  if (json['userAgent']) {
+    this.userAgent.value = json['userAgent']['value'];
+    this.userAgent.type = json['userAgent']['type'];
+    this.userAgent.platform = json['userAgent']['platform'];
+    this.userAgent.platformVersion = json['userAgent']['platformVersion'];
+    this.userAgent.device = json['userAgent']['device'];
+  }
   return true;
 };
 

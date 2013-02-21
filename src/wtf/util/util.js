@@ -191,6 +191,22 @@ wtf.util.convertAsciiStringToUint8Array = function(value) {
 };
 
 
+/**
+ * Converts a byte array into an ASCII string.
+ * This is very unsafe and should only be used when the content is known-ASCII.
+ * @param {!Uint8Array} value Source buffer.
+ * @return {string} Resulting string.
+ */
+wtf.util.convertUint8ArrayToAsciiString = function(value) {
+  // TODO(benvanik): evaluate not using a temp array
+  var out = new Array(value.length);
+  for (var n = 0; n < value.length; n++) {
+    out[n] = String.fromCharCode(value[n]);
+  }
+  return out.join('');
+};
+
+
 goog.exportSymbol(
     'wtf.util.formatTime',
     wtf.util.formatTime);

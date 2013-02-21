@@ -309,20 +309,32 @@ wtf.doc.Document.prototype.endEventStream = function(streamId) {
 /**
  * Adds an event data source to the database.
  * The given data can be a binary array or some form of JSON.
- * @param {!wtf.io.ByteArray|string|!Object} data Source data.
+ * @param {!wtf.io.ByteArray|string|!Object|!ArrayBuffer} data Source data.
+ * @param {string} mimeType Mime type.
  * @return {number} Estimated size, in bytes, of the data source.
  */
-wtf.doc.Document.prototype.addEventSource = function(data) {
-  if (wtf.io.isByteArray(data)) {
-    this.db_.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data));
-    return data.length;
-  } else if (data instanceof ArrayBuffer) {
-    var dataBuffer = new Uint8Array(data);
-    this.db_.addBinarySource(dataBuffer);
-    return dataBuffer.length;
-  } else {
-    this.db_.addJsonSource(data);
-    return goog.isString(data) ? data.length : 0;
+wtf.doc.Document.prototype.addEventSource = function(data, mimeType) {
+  // Wrap array buffers.
+  if (data instanceof ArrayBuffer) {
+    data = new Uint8Array(data);
+  }
+
+  switch (mimeType) {
+    case 'application/x-extension-wtf-trace':
+      goog.asserts.assert(wtf.io.isByteArray(data));
+      this.db_.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data));
+      return data.length;
+      break;
+    case 'application/x-extension-wtf-json':
+      this.db_.addJsonSource(data);
+      return goog.isString(data) ? data.length : 0;
+    case 'application/x-extension-wtf-calls':
+      goog.asserts.assert(wtf.io.isByteArray(data));
+      this.db_.addCallsSource(/** @type {!wtf.io.ByteArray} */ (data));
+      return data.length;
+    default:
+      goog.asserts.fail('Unsupported mime type: ' + mimeType);
+      return 0;
   }
 };
 
@@ -330,13 +342,17 @@ wtf.doc.Document.prototype.addEventSource = function(data) {
 /**
  * Adds a list of event sources to the database.
  * The given data can be binary arrays or some form of JSON.
- * @param {!Array.<!wtf.io.ByteArray|string|!Object>} datas Source data list.
+ * @param {!Array.<!wtf.io.ByteArray|string|!Object|!ArrayBuffer>} datas Source
+ *     data list.
+ * @param {string|!Array.<string>} mimeTypes A mime type to use for all data
+ *     or a 1:1 mapping to the datas list.
  * @return {number} Estimated size, in bytes, of all the data sources.
  */
-wtf.doc.Document.prototype.addEventSources = function(datas) {
+wtf.doc.Document.prototype.addEventSources = function(datas, mimeTypes) {
   var contentLength = 0;
   for (var n = 0; n < datas.length; n++) {
-    contentLength += this.addEventSource(datas[n]);
+    var mimeType = goog.isArray(mimeTypes) ? mimeTypes[n] : mimeTypes;
+    contentLength += this.addEventSource(datas[n], mimeType);
   }
   return contentLength;
 };

@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui.tracks.ZonePainter');
 
+goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
