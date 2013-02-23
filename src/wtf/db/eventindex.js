@@ -93,7 +93,7 @@ wtf.db.EventIndex.prototype.getCount = function() {
  */
 wtf.db.EventIndex.prototype.begin = function() {
   return new wtf.db.EventIterator(
-      this.zone_.getEventList(), 0, this.getCount(), 0,
+      this.zone_.getEventList(), 0, this.getCount() - 1, 0,
       this.events_);
 };
 
