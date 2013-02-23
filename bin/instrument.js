@@ -43,7 +43,7 @@ function transformCode(moduleId, url, sourceCode) {
   // TODO(benvanik): put in an external file, have a HUD, etc.
   var sharedInitCode = '(' + (function(global) {
     global.__wtfm = window.__wtfm || {};
-    global.__wtfd = window.__wtfd || new Int32Array(128 * 1024 * 1024);
+    global.__wtfd = window.__wtfd || new Int32Array(64 * 1024 * 1024);
     global.__wtfi = window.__wtfi || 0;
     global.__resetTrace = function() {
       global.__wtfi = 0;
