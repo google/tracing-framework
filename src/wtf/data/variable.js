@@ -148,6 +148,9 @@ wtf.data.Variable.parseSignatureArguments = function(argsString) {
   var regex = wtf.data.Variable.SIGNATURE_REGEX_;
   for (var n = 0; n < signatureArgs.length; n++) {
     var signatureArg = regex.exec(signatureArgs[n]);
+    if (!signatureArg) {
+      throw new Error('Invalid signature argument: ' + signatureArgs[n]);
+    }
 
     // 'uint8 foo' or 'uint8 foo@4'
     var argType = signatureArg[1];
@@ -160,14 +163,15 @@ wtf.data.Variable.parseSignatureArguments = function(argsString) {
     }
 
     var variable = wtf.data.Variable.create(argName, argType);
-    goog.asserts.assert(variable);
-    if (variable) {
-      // Add to map.
-      argMap.push({
-        ordinal: ordinal,
-        variable: variable
-      });
+    if (!variable) {
+      throw new Error('Invalid signature argument type: ' + argType);
     }
+
+    // Add to map.
+    argMap.push({
+      ordinal: ordinal,
+      variable: variable
+    });
 
     ordinal++;
   }
@@ -193,8 +197,15 @@ wtf.data.Variable.parseSignature = function(signature) {
   // 'a.b.c(<params>)'
   // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
   var signatureParts = /^([a-zA-Z0-9_\.#:\$]+)(\((.*)\)$)?/.exec(signature);
+  if (!signatureParts || !signatureParts.length) {
+    throw new Error('Invalid event signature: ' + signature);
+  }
+
   var signatureName = signatureParts[1]; // entire name before ()
   var signatureArgs = signatureParts[3]; // contents of () (excluding ())
+  if (!signatureName || !signatureName.length) {
+    throw new Error('Invalid event name: ' + signature);
+  }
 
   // Build argument mapping.
   var argMap = [];
