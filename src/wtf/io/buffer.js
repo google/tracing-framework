@@ -488,11 +488,11 @@ wtf.io.Buffer.prototype.readAsciiString = function() {
   var offset = this.offset;
   var out = new Array(charCount);
   for (var n = 0; n < charCount; n++) {
-    out[n] = String.fromCharCode(data[offset++]);
+    out[n] = data[offset++];
   }
   this.offset = offset;
 
-  return out.join('');
+  return String.fromCharCode.apply(null, out);
 };
 
 
@@ -583,20 +583,19 @@ wtf.io.Buffer.prototype.readUtf8String = function() {
   while (c < charCount) {
     var c1 = data[offset++];
     if (c1 < 128) {
-      out[c++] = String.fromCharCode(c1);
+      out[c++] = c1;
     } else if (c1 > 191 && c1 < 224) {
       var c2 = data[offset++];
-      out[c++] = String.fromCharCode((c1 & 31) << 6 | c2 & 63);
+      out[c++] = (c1 & 31) << 6 | (c2 & 63);
     } else {
       var c2 = data[offset++];
       var c3 = data[offset++];
-      out[c++] = String.fromCharCode(
-          (c1 & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
+      out[c++] = (c1 & 15) << 12 | (c2 & 63) << 6 | (c3 & 63);
     }
   }
   this.offset = offset;
 
-  return out.join('');
+  return String.fromCharCode.apply(null, out);
 };
 
 
