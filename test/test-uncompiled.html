@@ -38,6 +38,9 @@
     window.onload = function() {
       wtf.trace.mark('onload');
       var arrayEvent = wtf.trace.events.createInstance('arrayEvent(uint8[] v)');
+      var appendScopeData = wtf.trace.events.createInstance(
+          'customAppendScopeData(uint32 xxx)',
+          wtf.data.EventFlag.APPEND_SCOPE_DATA);
       var appendFlowData = wtf.trace.events.createInstance(
           'customAppendFlowData(flowId id, int32 a)',
           wtf.data.EventFlag.APPEND_FLOW_DATA);
@@ -53,6 +56,7 @@
         var scope = wtf.trace.enterScope('onclick');
 
         wtf.trace.appendScopeData('hello', 'world');
+        appendScopeData(12345);
 
         arrayEvent(new Uint8Array([1, 2, 3]));
 

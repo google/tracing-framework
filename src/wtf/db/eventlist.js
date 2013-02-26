@@ -486,7 +486,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
     } else if (typeId == appendScopeDataId) {
       // appendScopeData.
       this.appendScopeData_(
-          stack[stackTop], eventData[o + wtf.db.EventStruct.ARGUMENTS]);
+          stack[stackTop], eventData[o + wtf.db.EventStruct.ARGUMENTS],
+          true);
       hiddenCount++;
       deleteArgs = true;
     } else if (typeId == timeStampId) {
@@ -518,6 +519,14 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
           (wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.BUILTIN)) {
         hiddenCount++;
       }
+      if (type.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA) {
+        // An appendScopeData-alike.
+        this.appendScopeData_(
+            stack[stackTop], eventData[o + wtf.db.EventStruct.ARGUMENTS],
+            false);
+        hiddenCount++;
+        deleteArgs = true;
+      }
     }
 
     if (deleteArgs) {
@@ -542,9 +551,11 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
  * parent scope.
  * @param {number} scopeId Scope event ID.
  * @param {number} argsId Argument data ID to append.
+ * @param {boolean} isBuiltin Whether this is a builtin appendScopeData call.
  * @private
  */
-wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId) {
+wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId,
+    isBuiltin) {
   var eventData = this.eventData;
   var o = scopeId * wtf.db.EventStruct.STRUCT_SIZE;
   var scopeArgsId = eventData[o + wtf.db.EventStruct.ARGUMENTS];
@@ -561,9 +572,19 @@ wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId) {
   }
 
   var srcArgs = this.argumentData_[argsId];
-  scopeArgs.set(
-      /** @type {string} */ (srcArgs.get('name')),
-      srcArgs.get('value'));
+  if (!srcArgs) {
+    // Not normally possible, but a user could do it.
+    return;
+  }
+  if (isBuiltin) {
+    // name=value
+    scopeArgs.set(
+        /** @type {string} */ (srcArgs.get('name')),
+        srcArgs.get('value'));
+  } else {
+    // Many possible args, need to enumerate.
+    scopeArgs.merge(srcArgs);
+  }
 };
 
 
