@@ -2128,13 +2128,13 @@ goog.debug.entryPointRegistry.register(function(a) {
 // Input 22
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13614372E5
+  return 13618692E5
 };
 wtf.version.getCommit = function() {
-  return"f89bdf4f18884d68e82f85bbb33ac47c1a6bdf10"
+  return"cfdfa0878675015a0db8abd85d22f562e3902d89"
 };
 wtf.version.toString = function() {
-  return"2013.2.21-1"
+  return"2013.2.26-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -2707,10 +2707,10 @@ wtf.io.Buffer.prototype.readAsciiString = function() {
     return null
   }
   for(var b = this.data, c = this.offset, d = Array(a), e = 0;e < a;e++) {
-    d[e] = String.fromCharCode(b[c++])
+    d[e] = b[c++]
   }
   this.offset = c;
-  return d.join("")
+  return String.fromCharCode.apply(null, d)
 };
 wtf.io.Buffer.prototype.writeAsciiString = function(a) {
   if(!a || !a.length) {
@@ -2743,19 +2743,19 @@ wtf.io.Buffer.prototype.readUtf8String = function() {
   for(b = 0;b < c;) {
     var f = d[e++];
     if(128 > f) {
-      a[b++] = String.fromCharCode(f)
+      a[b++] = f
     }else {
       if(191 < f && 224 > f) {
         var g = d[e++];
-        a[b++] = String.fromCharCode((f & 31) << 6 | g & 63)
+        a[b++] = (f & 31) << 6 | g & 63
       }else {
         var g = d[e++], h = d[e++];
-        a[b++] = String.fromCharCode((f & 15) << 12 | (g & 63) << 6 | h & 63)
+        a[b++] = (f & 15) << 12 | (g & 63) << 6 | h & 63
       }
     }
   }
   this.offset = e;
-  return a.join("")
+  return String.fromCharCode.apply(null, a)
 };
 wtf.io.Buffer.prototype.writeUtf8String = function(a) {
   if(!a || !a.length) {
@@ -4704,26 +4704,39 @@ wtf.data.Variable.SIGNATURE_REGEX_ = /[ ]*([a-zA-Z0-9 \[\]\<\>]+) ([a-zA-Z0-9_]+
 wtf.data.Variable.parseSignatureArguments = function(a) {
   a = a.split(",");
   for(var b = [], c = 0, d = wtf.data.Variable.SIGNATURE_REGEX_, e = 0;e < a.length;e++) {
-    var f = d.exec(a[e]), g = f[1], f = f[2], h = f.indexOf("@");
+    var f = d.exec(a[e]);
+    if(!f) {
+      throw Error("Invalid signature argument: " + a[e]);
+    }
+    var g = f[1], f = f[2], h = f.indexOf("@");
     -1 != h && (c = Number(f.substr(h + 1)), f = f.substr(0, h));
-    g = wtf.data.Variable.create(f, g);
-    goog.asserts.assert(g);
-    g && b.push({ordinal:c, variable:g});
+    f = wtf.data.Variable.create(f, g);
+    if(!f) {
+      throw Error("Invalid signature argument type: " + g);
+    }
+    b.push({ordinal:c, variable:f});
     c++
   }
   return b
 };
 wtf.data.Variable.parseSignature = function(a) {
   var b = /^([a-zA-Z0-9_\.#:\$]+)(\((.*)\)$)?/.exec(a);
-  a = b[1];
-  var c = b[3], b = [], d = [];
-  if(c) {
-    b = wtf.data.Variable.parseSignatureArguments(c);
-    for(c = 0;c < b.length;c++) {
-      d.push(b[c].variable)
+  if(!b || !b.length) {
+    throw Error("Invalid event signature: " + a);
+  }
+  var c = b[1], b = b[3];
+  if(!c || !c.length) {
+    throw Error("Invalid event name: " + a);
+  }
+  a = [];
+  var d = [];
+  if(b) {
+    a = wtf.data.Variable.parseSignatureArguments(b);
+    for(b = 0;b < a.length;b++) {
+      d.push(a[b].variable)
     }
   }
-  return{name:a, args:d, argMap:b}
+  return{name:c, args:d, argMap:a}
 };
 // Input 53
 wtf.util.FunctionBuilder = function() {
@@ -5086,8 +5099,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
     n[p + wtf.db.EventStruct.NEXT_SIBLING] = s;
     var k = n[p + wtf.db.EventStruct.TYPE], l = !1;
     k == a ? (l = this.argumentData_[n[p + wtf.db.EventStruct.ARGUMENTS]], l = l.get("name"), (r = this.eventTypeTable.getByName(l)) || (r = this.eventTypeTable.defineType(wtf.db.EventType.createScope(l))), n[p + wtf.db.EventStruct.TYPE] = r.id, e[++i] = n[p + wtf.db.EventStruct.ID], f[i] = r, j = Math.max(j, i), l = !0) : k == b ? (n[p + wtf.db.EventStruct.NEXT_SIBLING] = 0, i && (i--, r *= wtf.db.EventStruct.STRUCT_SIZE, n[r + wtf.db.EventStruct.NEXT_SIBLING] = s, k = n[p + wtf.db.EventStruct.TIME], 
-    s = k - n[r + wtf.db.EventStruct.TIME], n[r + wtf.db.EventStruct.END_TIME] = k, k = h[i], n[r + wtf.db.EventStruct.CHILD_TIME] = g[i], n[r + wtf.db.EventStruct.SYSTEM_TIME] = k, g[i] = 0, h[i] = 0, i && (g[i - 1] += s, f[i].flags & wtf.data.EventFlag.SYSTEM_TIME && (h[i - 1] += s))), m++) : k == c ? (this.appendScopeData_(e[i], n[p + wtf.db.EventStruct.ARGUMENTS]), m++, l = !0) : k == d ? (l = this.argumentData_[n[p + wtf.db.EventStruct.ARGUMENTS]], l = l.get("name"), (r = this.eventTypeTable.getByName(l)) || 
-    (r = this.eventTypeTable.defineType(wtf.db.EventType.createInstance(l))), n[p + wtf.db.EventStruct.TYPE] = r.id, l = !0) : (r = this.eventTypeTable.getById(k), r.eventClass == wtf.data.EventClass.SCOPE && (e[++i] = n[p + wtf.db.EventStruct.ID], f[i] = r, i > j && (j = i)), r.flags & (wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.BUILTIN) && m++);
+    s = k - n[r + wtf.db.EventStruct.TIME], n[r + wtf.db.EventStruct.END_TIME] = k, k = h[i], n[r + wtf.db.EventStruct.CHILD_TIME] = g[i], n[r + wtf.db.EventStruct.SYSTEM_TIME] = k, g[i] = 0, h[i] = 0, i && (g[i - 1] += s, f[i].flags & wtf.data.EventFlag.SYSTEM_TIME && (h[i - 1] += s))), m++) : k == c ? (this.appendScopeData_(e[i], n[p + wtf.db.EventStruct.ARGUMENTS], !0), m++, l = !0) : k == d ? (l = this.argumentData_[n[p + wtf.db.EventStruct.ARGUMENTS]], l = l.get("name"), (r = this.eventTypeTable.getByName(l)) || 
+    (r = this.eventTypeTable.defineType(wtf.db.EventType.createInstance(l))), n[p + wtf.db.EventStruct.TYPE] = r.id, l = !0) : (r = this.eventTypeTable.getById(k), r.eventClass == wtf.data.EventClass.SCOPE && (e[++i] = n[p + wtf.db.EventStruct.ID], f[i] = r, i > j && (j = i)), r.flags & (wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.BUILTIN) && m++, r.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA && (this.appendScopeData_(e[i], n[p + wtf.db.EventStruct.ARGUMENTS], !1), m++, l = !0));
     l && (this.argumentData_[n[p + wtf.db.EventStruct.ARGUMENTS]] = null, n[p + wtf.db.EventStruct.ARGUMENTS] = 0);
     if(1024 <= i) {
       goog.global.console.log("Max scope depth exceeded, aborting!");
@@ -5097,11 +5110,11 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
   this.hiddenCount_ = m;
   this.maximumScopeDepth_ = j
 };
-wtf.db.EventList.prototype.appendScopeData_ = function(a, b) {
-  var c = this.eventData, d = a * wtf.db.EventStruct.STRUCT_SIZE, e = c[d + wtf.db.EventStruct.ARGUMENTS], f = null;
-  e ? f = this.argumentData_[e] : (f = new wtf.db.ArgumentData, f.id = this.nextArgumentDataId_++, this.argumentData_[f.id] = f, c[d + wtf.db.EventStruct.ARGUMENTS] = f.id);
-  c = this.argumentData_[b];
-  f.set(c.get("name"), c.get("value"))
+wtf.db.EventList.prototype.appendScopeData_ = function(a, b, c) {
+  var d = this.eventData, e = a * wtf.db.EventStruct.STRUCT_SIZE, f = d[e + wtf.db.EventStruct.ARGUMENTS];
+  a = null;
+  f ? a = this.argumentData_[f] : (a = new wtf.db.ArgumentData, a.id = this.nextArgumentDataId_++, this.argumentData_[a.id] = a, d[e + wtf.db.EventStruct.ARGUMENTS] = a.id);
+  (b = this.argumentData_[b]) && (c ? a.set(b.get("name"), b.get("value")) : a.merge(b))
 };
 wtf.db.EventList.prototype.rebuildAncillaryLists_ = function(a) {
   if(a.length) {
@@ -11020,7 +11033,7 @@ wtf.db.EventIndex.prototype.getCount = function() {
   return this.events_.length
 };
 wtf.db.EventIndex.prototype.begin = function() {
-  return new wtf.db.EventIterator(this.zone_.getEventList(), 0, this.getCount(), 0, this.events_)
+  return new wtf.db.EventIterator(this.zone_.getEventList(), 0, this.getCount() - 1, 0, this.events_)
 };
 wtf.db.EventIndex.prototype.beginRebuild = function(a) {
   this.events_.length = 0;
