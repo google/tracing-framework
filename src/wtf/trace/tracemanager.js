@@ -25,6 +25,7 @@ goog.require('wtf.io.MemoryWriteStream');
 goog.require('wtf.timing');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
+goog.require('wtf.trace.EventSessionContext');
 goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.Zone');
 goog.require('wtf.util.Options');
@@ -137,17 +138,8 @@ wtf.trace.TraceManager = function(opt_options) {
    */
   this.currentSession_ = null;
 
-  var registry = wtf.trace.EventRegistry.getShared();
-  /**
-   * A 'pointer' to the current session.
-   * This is kept in sync with {@see #currentSession_} and is used to allow
-   * for resetting the session in generated closures.
-   * @type {!Array.<wtf.trace.Session>}
-   * @private
-   */
-  this.currentSessionPtr_ = registry.getSessionPtr();
-
   // Listen for newly registered events.
+  var registry = wtf.trace.EventRegistry.getShared();
   registry.addListener(
       wtf.trace.EventRegistry.EventType.EVENT_TYPE_REGISTERED,
       this.eventTypeRegistered_, this);
@@ -351,10 +343,12 @@ wtf.trace.TraceManager.prototype.startSession = function(session) {
   goog.asserts.assert(!this.currentSession_);
 
   this.currentSession_ = session;
-  this.currentSessionPtr_[0] = session;
+
+  var registry = wtf.trace.EventRegistry.getShared();
+  var context = registry.getEventSessionContext();
+  wtf.trace.EventSessionContext.init(context, session);
 
   // Reset all event counts.
-  var registry = wtf.trace.EventRegistry.getShared();
   var eventTypes = registry.getEventTypes();
   for (var n = 0; n < eventTypes.length; n++) {
     var eventType = eventTypes[n];
@@ -384,7 +378,10 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
   // Cleanup session.
   goog.dispose(this.currentSession_);
   this.currentSession_ = null;
-  this.currentSessionPtr_[0] = null;
+
+  var registry = wtf.trace.EventRegistry.getShared();
+  var context = registry.getEventSessionContext();
+  wtf.trace.EventSessionContext.init(context, null);
 };
 
 

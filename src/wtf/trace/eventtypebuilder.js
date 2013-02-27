@@ -54,18 +54,20 @@ goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
 
 /**
  * Generates an event tracing function.
- * @param {!Array.<wtf.trace.Session>} sessionPtr An array containing a
- *     reference to the target trace session.
+ * @param {!wtf.trace.EventSessionContextType} context Event session context.
  * @param {!wtf.trace.EventType} eventType Event type.
  * @return {Function} Generated function based on class.
  */
-wtf.trace.EventTypeBuilder.prototype.generate = function(
-    sessionPtr, eventType) {
+wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
   var writers = wtf.trace.EventTypeBuilder.WRITERS_;
+
+  // Context structure, from eventsessioncontext.js:
+  // [0] = wtf.trace.Session?
+  // [1] = wtf.io.Buffer?
 
   // Begin building the function with default args.
   this.begin();
-  this.addScopeVariable('sessionPtr', sessionPtr);
+  this.addScopeVariable('context', context);
   this.addScopeVariable('eventType', eventType);
   this.addScopeVariable('now', wtf.now);
   this.addScopeVariable('writeFloat32',
@@ -92,6 +94,10 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
     }
     return json;
   });
+
+  // Fetch the time as early as possible.
+  // TODO(benvanik): inline now code (instead of using wtf.now)
+  this.append('var time = (opt_time === undefined) ? now() : opt_time;');
 
   // Count.
   this.append('eventType.' + this.eventTypeNames_.count + '++;');
@@ -123,14 +129,14 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(
   this.addArgument('opt_time');
   this.addArgument('opt_buffer');
 
-  this.append('var time = (opt_time === undefined) ? now() : opt_time;');
-  this.append('var session = sessionPtr[0];');
-  this.append('var buffer = opt_buffer;');
   this.append(
-      'if (!buffer && (!session || ' +
-      '!(buffer = session.acquireBuffer(time, size)))) {',
-      '  return undefined;',
-      '}');
+      'var buffer = opt_buffer || context[1];',
+      'var session = context[0];',
+      'if (!buffer || buffer.capacity - buffer.offset < size) {',
+      '  buffer = session ? session.acquireBuffer(time, size) : null;',
+      '  context[1] = buffer;',
+      '}',
+      'if (!buffer || !session) return undefined;');
 
   // Write event header.
   // This is manually inlined because it's so common and we don't get any
