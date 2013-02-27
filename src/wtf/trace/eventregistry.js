@@ -16,6 +16,7 @@ goog.provide('wtf.trace.EventRegistry');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('wtf.events.EventEmitter');
+goog.require('wtf.trace.EventSessionContext');
 goog.require('wtf.trace.EventTypeBuilder');
 
 
@@ -34,10 +35,10 @@ wtf.trace.EventRegistry = function() {
    * A 'pointer' to the current session.
    * This is kept in sync with {@see #currentSession_} and is used to allow
    * for resetting the session in generated closures.
-   * @type {!Array.<wtf.trace.Session>}
+   * @type {!wtf.trace.EventSessionContextType}
    * @private
    */
-  this.currentSessionPtr_ = [null];
+  this.eventSessionContext_ = wtf.trace.EventSessionContext.create();
 
   /**
    * A list of all registered events.
@@ -58,11 +59,11 @@ goog.inherits(wtf.trace.EventRegistry, wtf.events.EventEmitter);
 
 
 /**
- * Gets the current session pointer.
- * @return {!Array.<wtf.trace.Session>} Current session pointer.
+ * Gets the event session context.
+ * @return {!wtf.trace.EventSessionContextType} Event session context.
  */
-wtf.trace.EventRegistry.prototype.getSessionPtr = function() {
-  return this.currentSessionPtr_;
+wtf.trace.EventRegistry.prototype.getEventSessionContext = function() {
+  return this.eventSessionContext_;
 };
 
 
@@ -80,7 +81,7 @@ wtf.trace.EventRegistry.prototype.registerEventType = function(eventType) {
   this.eventTypesByName_[eventType.name] = eventType;
 
   this.eventTypeBuilder_ = new wtf.trace.EventTypeBuilder();
-  eventType.generateCode(this.eventTypeBuilder_, this.currentSessionPtr_);
+  eventType.generateCode(this.eventTypeBuilder_, this.eventSessionContext_);
 
   this.emitEvent(wtf.trace.EventRegistry.EventType.EVENT_TYPE_REGISTERED,
       eventType);
