@@ -14,7 +14,6 @@
 goog.provide('wtf.data.Variable');
 goog.provide('wtf.data.VariableFlag');
 
-goog.require('goog.asserts');
 goog.require('goog.string');
 
 

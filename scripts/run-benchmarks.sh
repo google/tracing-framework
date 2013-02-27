@@ -21,4 +21,7 @@ else
   echo "Running benchmarks matching '$GREP'..."
 fi
 
-node ./scripts/run-benchmarks.js $GREP
+TRACING=""
+#TRACING="--trace-hydrogen --trace-inlining"
+
+node $TRACING ./scripts/run-benchmarks.js $GREP
