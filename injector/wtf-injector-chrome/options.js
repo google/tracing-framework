@@ -329,7 +329,16 @@ Options.prototype.getPageOptions = function(url) {
   var storedOptions = this.pageOptions_[url] || {};
   if (storedOptions) {
     // Override defaults with specified values.
+    // Except for a few that we don't want to track across session.
     for (var key in storedOptions) {
+      switch (key) {
+        case 'wtf.injector':
+        case 'wtf.hud.app.mode':
+        case 'wtf.hud.app.endpoint':
+        case 'wtf.extensions':
+        case 'wtf.trace.provider.chromeDebug':
+          continue;
+      }
       options[key] = storedOptions[key];
     }
   }
