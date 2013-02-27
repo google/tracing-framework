@@ -147,3 +147,27 @@ for (var n = 0; n < traceFloat32ArrayLarge.length; n++) {
 benchmark.register('traceFloat32ArrayLarge', function() {
   traceFloat32ArrayLargeEvent(traceFloat32ArrayLarge);
 });
+
+
+var traceAsciiEvent = wtf.trace.events.createInstance('traceAscii(ascii v)');
+benchmark.register('traceAscii1', function() {
+  traceAsciiEvent('0');
+});
+benchmark.register('traceAscii10', function() {
+  traceAsciiEvent('0123456789');
+});
+benchmark.register('traceAscii40', function() {
+  traceAsciiEvent('0123456789012345678901234567890123456789');
+});
+
+
+var traceUtf8Event = wtf.trace.events.createInstance('traceUtf8(utf8 v)');
+benchmark.register('traceUtf81', function() {
+  traceUtf8Event('0');
+});
+benchmark.register('traceUtf810', function() {
+  traceUtf8Event('0123456789');
+});
+benchmark.register('traceUtf840', function() {
+  traceUtf8Event('0123456789012345678901234567890123456789');
+});
