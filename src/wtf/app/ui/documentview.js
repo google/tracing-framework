@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.ui.DocumentView');
 
+goog.require('goog.asserts');
 goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
@@ -20,6 +21,7 @@ goog.require('goog.string');
 goog.require('goog.style');
 goog.require('wtf.app.ui.EmptyTabPanel');
 goog.require('wtf.app.ui.ExtensionManager');
+goog.require('wtf.app.ui.HealthDialog');
 goog.require('wtf.app.ui.Selection');
 goog.require('wtf.app.ui.Statusbar');
 goog.require('wtf.app.ui.Tabbar');
@@ -184,11 +186,21 @@ wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
  * @private
  */
 wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
-  var db2 = this.getDatabase();
+  var db = this.getDatabase();
   var view = this.localView_;
   var selection = this.selection_;
 
   var commandManager = wtf.events.getCommandManager();
+
+  commandManager.registerSimpleCommand(
+      'view_trace_health', function() {
+        var body = this.getDom().getDocument().body;
+        goog.asserts.assert(body);
+        this.activeDialog_ = new wtf.app.ui.HealthDialog(
+            db,
+            body,
+            this.getDom());
+      }, this);
 
   commandManager.registerSimpleCommand(
       'navigate', function(source, target, path) {
@@ -215,7 +227,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
   commandManager.registerSimpleCommand(
       'goto_range', function(source, target, timeStart, timeEnd,
           opt_immediate) {
-        var firstEventTime = db2.getFirstEventTime();
+        var firstEventTime = db.getFirstEventTime();
         var pad = (timeEnd - timeStart) * 0.05;
         view.setVisibleRange(
             timeStart - pad,
@@ -238,7 +250,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
         var frame = null;
         if (goog.isNumber(frameOrNumber)) {
           // Find a frame list with frames in it.
-          var frameList = db2.getFirstFrameList();
+          var frameList = db.getFirstFrameList();
           if (!frameList) {
             return;
           }
@@ -265,7 +277,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
  * @private
  */
 wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
-  var db2 = this.getDatabase();
+  var db = this.getDatabase();
   var view = this.localView_;
   var selection = this.selection_;
 
@@ -276,8 +288,8 @@ wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
   this.registerDisposable(keyboardScope);
 
   keyboardScope.addShortcut('home', function() {
-    var firstEventTime = db2.getFirstEventTime();
-    var lastEventTime = db2.getLastEventTime();
+    var firstEventTime = db.getFirstEventTime();
+    var lastEventTime = db.getLastEventTime();
     commandManager.execute('goto_range', this, null,
         firstEventTime, lastEventTime);
   }, this);

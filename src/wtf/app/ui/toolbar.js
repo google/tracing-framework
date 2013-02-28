@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.Toolbar');
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('goog.style');
 goog.require('wtf.app.ui.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
@@ -45,39 +46,48 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
    */
   this.documentView_ = documentView;
 
+  var healthPane = this.getChildElement(
+      goog.getCssName('healthPane'));
+  goog.style.showElement(healthPane, false);
+
   eh.listen(
-      this.getChildElement(goog.getCssName('appUiToolbarButtonOpen')),
+      this.getChildElement(goog.getCssName('viewHealthLink')),
+      goog.events.EventType.CLICK,
+      this.viewHealthClicked_, false);
+
+  eh.listen(
+      this.getChildElement(goog.getCssName('buttonOpen')),
       goog.events.EventType.CLICK,
       this.openClicked_, false);
   eh.listen(
       this.getChildElement(
-          goog.getCssName('appUiToolbarButtonOpenDrive')),
+          goog.getCssName('buttonOpenDrive')),
       goog.events.EventType.CLICK,
       this.openDriveClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('appUiToolbarButtonShare')),
+      this.getChildElement(goog.getCssName('buttonShare')),
       goog.events.EventType.CLICK,
       this.shareClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('appUiToolbarButtonSave')),
+      this.getChildElement(goog.getCssName('buttonSave')),
       goog.events.EventType.CLICK,
       this.saveClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('appUiToolbarButtonSettings')),
+      this.getChildElement(goog.getCssName('buttonSettings')),
       goog.events.EventType.CLICK,
       this.settingsClicked_, false);
   eh.listen(
-      this.getChildElement(goog.getCssName('appUiToolbarButtonHelp')),
+      this.getChildElement(goog.getCssName('buttonHelp')),
       goog.events.EventType.CLICK,
       this.helpClicked_, false);
 
-  this.toggleButton(goog.getCssName('appUiToolbarButtonOpen'), true);
-  this.toggleButton(goog.getCssName('appUiToolbarButtonOpenDrive'),
+  this.toggleButton(goog.getCssName('buttonOpen'), true);
+  this.toggleButton(goog.getCssName('buttonOpenDrive'),
       wtf.io.drive.isSupported());
-  this.toggleButton(goog.getCssName('appUiToolbarButtonShare'), false);
-  this.toggleButton(goog.getCssName('appUiToolbarButtonSave'), true);
-  this.toggleButton(goog.getCssName('appUiToolbarButtonSettings'), true);
-  this.toggleButton(goog.getCssName('appUiToolbarButtonHelp'), true);
+  this.toggleButton(goog.getCssName('buttonShare'), false);
+  this.toggleButton(goog.getCssName('buttonSave'), true);
+  this.toggleButton(goog.getCssName('buttonSettings'), true);
+  this.toggleButton(goog.getCssName('buttonHelp'), true);
 
   var db = documentView.getDatabase();
   db.addListener(
@@ -119,9 +129,9 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   }
 
   var titleEl = this.getChildElement(
-      goog.getCssName('appUiToolbarInfoTitle'));
+      goog.getCssName('infoTitle'));
   var urlEl = this.getChildElement(
-      goog.getCssName('appUiToolbarInfoUrl'));
+      goog.getCssName('infoUrl'));
 
   dom.setTextContent(titleEl, contextInfo.title || '');
   dom.setTextContent(urlEl, contextInfo.uri);
@@ -136,6 +146,11 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
     iconUri = contextInfo.icon.uri;
   }
   this.refreshIcon_(iconUri);
+
+  var healthInfo = db.getHealthInfo();
+  var healthPane = this.getChildElement(
+      goog.getCssName('healthPane'));
+  goog.style.showElement(healthPane, healthInfo.isBad());
 };
 
 
@@ -147,7 +162,7 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
 wtf.app.ui.Toolbar.prototype.refreshIcon_ = function(uri) {
   var dom = this.getDom();
   var iconEl = this.getChildElement(
-      goog.getCssName('appUiToolbarInfoIcon'));
+      goog.getCssName('infoIcon'));
 
   // TODO(benvanik): use XHR to grab the ico - if it fails, use a default.
   // TODO(benvanik): a way that is compatible with security - this may mean
@@ -159,6 +174,18 @@ wtf.app.ui.Toolbar.prototype.refreshIcon_ = function(uri) {
   dom.setProperties(iconEl, {
     'src': uri
   });
+};
+
+
+/**
+ * Handles 'view health' link clicks.
+ * @param {!goog.events.BrowserEvent} e Event.
+ * @private
+ */
+wtf.app.ui.Toolbar.prototype.viewHealthClicked_ = function(e) {
+  e.preventDefault();
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('view_trace_health', this, null);
 };
 
 

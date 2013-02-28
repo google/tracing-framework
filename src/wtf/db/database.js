@@ -18,6 +18,7 @@ goog.require('goog.events');
 goog.require('wtf');
 goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
+goog.require('wtf.db.HealthInfo');
 goog.require('wtf.db.Zone');
 goog.require('wtf.db.sources.BinaryDataSource');
 goog.require('wtf.db.sources.CallsDataSource');
@@ -53,6 +54,12 @@ goog.require('wtf.io.MemoryReadStream');
  */
 wtf.db.Database = function(opt_useStorage) {
   goog.base(this);
+
+  /**
+   * Health information.
+   * @private
+   */
+  this.healthInfo_ = new wtf.db.HealthInfo();
 
   /**
    * Trace data storage.
@@ -191,21 +198,11 @@ wtf.db.Database.prototype.invalidate_ = function() {
 
 
 /**
- * Gets the event type table.
- * @return {!wtf.db.EventTypeTable} Event type table.
+ * Gets health information.
+ * @return {!wtf.db.HealthInfo} Health information.
  */
-wtf.db.Database.prototype.getEventTypeTable = function() {
-  return this.eventTypeTable_;
-};
-
-
-/**
- * Gets the event type for the given event name.
- * @param {string} name Event name.
- * @return {wtf.db.EventType?} Event type, if found.
- */
-wtf.db.Database.prototype.getEventType = function(name) {
-  return this.eventTypeTable_.getByName(name);
+wtf.db.Database.prototype.getHealthInfo = function() {
+  return this.healthInfo_;
 };
 
 
@@ -384,6 +381,25 @@ wtf.db.Database.prototype.getDefaultZone = function() {
  */
 wtf.db.Database.prototype.getZones = function() {
   return this.zoneList_;
+};
+
+
+/**
+ * Gets the event type table.
+ * @return {!wtf.db.EventTypeTable} Event type table.
+ */
+wtf.db.Database.prototype.getEventTypeTable = function() {
+  return this.eventTypeTable_;
+};
+
+
+/**
+ * Gets the event type for the given event name.
+ * @param {string} name Event name.
+ * @return {wtf.db.EventType?} Event type, if found.
+ */
+wtf.db.Database.prototype.getEventType = function(name) {
+  return this.eventTypeTable_.getByName(name);
 };
 
 

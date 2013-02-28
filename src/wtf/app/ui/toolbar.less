@@ -18,62 +18,77 @@
   background: white;
 
   border-bottom: 1px solid #EBEBEB;
-}
 
-.appUiToolbarInfo {
-  float: left;
-  height: 100%;
-  margin-top: 8px;
-}
-.appUiToolbarInfoIcon {
-  width: 16px;
-  height: 16px;
-  margin-left: 6px;
-  position: relative;
-  top: 2px;
-}
-.appUiToolbarInfoTitle {
-  max-width: 300px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 16px;
-  color: #dd4b39;
-  padding-left: 2px;
-  padding-right: 6px;
-}
-.appUiToolbarInfoUrl {
-  .allowSelect();
-  display: block;
-  max-width: 200px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.appUiToolbarInfoContext {
-}
+  .leftPane {
+    float: left;
+    height: 100%;
+    margin-top: 8px;
 
-.appUiToolbarRight {
-  position: relative;
-  top: 6px;
-  bottom: 6px;
-  float: right;
-}
+    .infoIcon {
+      width: 16px;
+      height: 16px;
+      margin-left: 6px;
+      position: relative;
+      top: 2px;
+    }
+    .infoTitle {
+      max-width: 300px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 16px;
+      color: #dd4b39;
+      padding-left: 2px;
+      padding-right: 6px;
+    }
+    .infoUrl {
+      .allowSelect();
+      display: block;
+      max-width: 200px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .infoContext {
+    }
+  }
 
-.appUiToolbarViewers {
-  float: left;
-  margin-right: 6px;
-  margin-top: 6px;
-  font-size: 12px;
-  color: #777777;
-}
+  .healthPane {
+    float: left;
+    margin-top: 15px;
+    height: 100%;
+    left: 50%;
+    right: 50%;
 
-.appUiToolbarButtons {
-  float: left;
+    .warning {
+      font-weight: bold;
+    }
+    .viewHealthLink {}
+  }
+
+  .rightPane {
+    position: relative;
+    top: 6px;
+    bottom: 6px;
+    float: right;
+
+    .viewers {
+      float: left;
+      margin-right: 6px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #777777;
+    }
+
+    .buttons {
+      float: left;
+
+      .buttonOpen {}
+      .buttonOpenDrive {}
+      .buttonShare {}
+      .buttonSave {}
+      .buttonSettings {}
+      .buttonHelp {}
+    }
+  }
 }
-.appUiToolbarButtonOpen {}
-.appUiToolbarButtonOpenDrive {}
-.appUiToolbarButtonShare {}
-.appUiToolbarButtonSave {}
-.appUiToolbarButtonSettings {}
-.appUiToolbarButtonHelp {}
