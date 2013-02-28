@@ -12,7 +12,37 @@
  */
 
 .appUiHealthDialog {
-  width: 800px;
+  width: 550px;
   height: 400px;
   margin: 10px;
+
+  .listHeader {
+  }
+  .scrollArea {
+    position: absolute;
+    top: 60px;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+
+    border: 1px solid #EBEBEB;
+
+    padding: 5px;
+
+    overflow-y: scroll;
+  }
+  .list {
+    .allowSelect();
+  }
+
+  .warningsList {}
+  .offendersList {}
+
+  .warning {
+    margin-bottom: 5px;
+
+    div {
+      margin-bottom: 3px;
+    }
+  }
 }

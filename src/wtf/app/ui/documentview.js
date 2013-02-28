@@ -31,6 +31,7 @@ goog.require('wtf.app.ui.nav.Navbar');
 goog.require('wtf.app.ui.query.QueryPanel');
 goog.require('wtf.app.ui.tracks.TracksPanel');
 goog.require('wtf.db.Database');
+goog.require('wtf.db.HealthInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -75,6 +76,24 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    */
   this.selection_ = new wtf.app.ui.Selection(doc.getDatabase());
   this.registerDisposable(this.selection_);
+
+  /**
+   * Database health information.
+   * @type {!wtf.db.HealthInfo}
+   * @private
+   */
+  this.healthInfo_ = new wtf.db.HealthInfo(doc.getDatabase());
+
+  // Rebuild health info.
+  // We try to pass in our event statistics if we can (no filter).
+  var db = doc.getDatabase();
+  db.addListener(wtf.events.EventType.INVALIDATED, function() {
+    var eventStatistics = null;
+    if (!this.selection_.hasFilterSpecified()) {
+      eventStatistics = this.selection_.computeEventStatistics();
+    }
+    this.healthInfo_ = new wtf.db.HealthInfo(db, eventStatistics);
+  }, this);
 
   /**
    * Toolbar.
@@ -137,7 +156,6 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   this.setupKeyboardShortcuts_();
 
   // Show error dialogs.
-  var db = doc.getDatabase();
   db.addListener(wtf.db.Database.EventType.SOURCE_ERROR,
       function(message, opt_detail) {
         goog.global.console.log(message, opt_detail);
@@ -161,6 +179,7 @@ goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
  */
 wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
+  commandManager.unregisterCommand('view_trace_health');
   commandManager.unregisterCommand('navigate');
   commandManager.unregisterCommand('select_all');
   commandManager.unregisterCommand('select_visible');
@@ -198,6 +217,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
         goog.asserts.assert(body);
         this.activeDialog_ = new wtf.app.ui.HealthDialog(
             db,
+            this.healthInfo_,
             body,
             this.getDom());
       }, this);
@@ -357,6 +377,15 @@ wtf.app.ui.DocumentView.prototype.getLocalView = function() {
  */
 wtf.app.ui.DocumentView.prototype.getSelection = function() {
   return this.selection_;
+};
+
+
+/**
+ * Gets the database health information.
+ * @return {!wtf.db.HealthInfo} Health information.
+ */
+wtf.app.ui.DocumentView.prototype.getHealthInfo = function() {
+  return this.healthInfo_;
 };
 
 

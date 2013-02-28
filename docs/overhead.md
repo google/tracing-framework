@@ -5,7 +5,7 @@ TODO(benvanik): more information
 ## Measured Overhead
 
 Every machine/browser/operating system has a different amount of overhead when
-tracing. Use the 'View Health' dialog in the WTF app to see information about
+tracing. Use the 'View Warnings' dialog in the WTF app to see information about
 the measured overhead from the machine that traced the file.
 
 The simplest WTF event takes about 0.1µs (that's 0.0001ms) on a decently fast
@@ -35,3 +35,10 @@ instrumention functions like `wtf.trace.instrument`.
 ## Benchmarks
 
 TODO(benvanik): post a public benchmark page.
+
+## Warning Information
+
+<a name="warn_too_many_events_per_frame"></a>
+### Too Many Events Per Frame
+
+TODO(benvanik): document this

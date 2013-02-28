@@ -12,6 +12,7 @@
  */
 
 goog.provide('wtf.db.EventList');
+goog.provide('wtf.db.EventListStatistics');
 goog.provide('wtf.db.IAncillaryList');
 
 goog.require('goog.array');
@@ -58,6 +59,18 @@ wtf.db.IAncillaryList.prototype.handleEvent = goog.nullFunction;
 wtf.db.IAncillaryList.prototype.endRebuild = goog.nullFunction;
 
 
+/**
+ * Simple event counts as processed on the wire.
+ * @typedef {{
+ *   totalCount: number,
+ *   genericEnterScope: number,
+ *   genericTimeStamp: number,
+ *   appendScopeData: number
+ * }}
+ */
+wtf.db.EventListStatistics;
+
+
 
 /**
  * Event data list.
@@ -78,6 +91,18 @@ wtf.db.EventList = function(eventTypeTable) {
    * @private
    */
   this.ancillaryLists_ = [];
+
+  /**
+   * Event statistics.
+   * @type {!wtf.db.EventListStatistics}
+   * @private
+   */
+  this.statistics_ = {
+    totalCount: 0,
+    genericEnterScope: 0,
+    genericTimeStamp: 0,
+    appendScopeData: 0
+  };
 
   /**
    * Total number of events stored in the backing buffer.
@@ -180,6 +205,15 @@ wtf.db.EventList.prototype.registerAncillaryList = function(value) {
  */
 wtf.db.EventList.prototype.unregisterAncillaryList = function(value) {
   goog.array.remove(this.ancillaryLists_, value);
+};
+
+
+/**
+ * Gets some statistics about the events seen by the list so far.
+ * @return {!wtf.db.EventListStatistics} Statistics.
+ */
+wtf.db.EventList.prototype.getStatistics = function() {
+  return this.statistics_;
 };
 
 
@@ -311,6 +345,12 @@ wtf.db.EventList.prototype.rebuild = function() {
   var t1 = wtf.now();
 
   // Reset stats.
+  this.statistics_ = {
+    totalCount: this.count,
+    genericEnterScope: 0,
+    genericTimeStamp: 0,
+    appendScopeData: 0
+  };
   this.firstEventTime_ = 0;
   this.lastEventTime_ = 0;
   if (this.count) {
@@ -418,6 +458,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
   var hiddenCount = 0;
 
   // Directly poke into the event data array for speed.
+  var statistics = this.statistics_;
   var eventData = this.eventData;
   for (var n = 0, o = 0; n < this.count;
       n++, o += wtf.db.EventStruct.STRUCT_SIZE) {
@@ -453,6 +494,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       typeStack[stackTop] = newEventType;
       stackMax = Math.max(stackMax, stackTop);
       deleteArgs = true;
+      statistics.genericEnterScope++;
     } else if (typeId == scopeLeaveId) {
       // Scope leave.
       eventData[o + wtf.db.EventStruct.NEXT_SIBLING] = 0;
@@ -490,6 +532,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
           true);
       hiddenCount++;
       deleteArgs = true;
+      statistics.appendScopeData++;
     } else if (typeId == timeStampId) {
       // Generic timestamp.
       // Replace with an on-demand event type.
@@ -504,6 +547,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       typeId = newEventType.id;
       eventData[o + wtf.db.EventStruct.TYPE] = newEventType.id;
       deleteArgs = true;
+      statistics.genericTimeStamp++;
     } else {
       // Remaining event types.
       var type = this.eventTypeTable.getById(typeId);
@@ -526,6 +570,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
             false);
         hiddenCount++;
         deleteArgs = true;
+        statistics.appendScopeData++;
       }
     }
 

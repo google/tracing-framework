@@ -147,7 +147,7 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   }
   this.refreshIcon_(iconUri);
 
-  var healthInfo = db.getHealthInfo();
+  var healthInfo = this.documentView_.getHealthInfo();
   var healthPane = this.getChildElement(
       goog.getCssName('healthPane'));
   goog.style.showElement(healthPane, healthInfo.isBad());

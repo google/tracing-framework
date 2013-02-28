@@ -18,7 +18,6 @@ goog.require('goog.events');
 goog.require('wtf');
 goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
-goog.require('wtf.db.HealthInfo');
 goog.require('wtf.db.Zone');
 goog.require('wtf.db.sources.BinaryDataSource');
 goog.require('wtf.db.sources.CallsDataSource');
@@ -54,12 +53,6 @@ goog.require('wtf.io.MemoryReadStream');
  */
 wtf.db.Database = function(opt_useStorage) {
   goog.base(this);
-
-  /**
-   * Health information.
-   * @private
-   */
-  this.healthInfo_ = new wtf.db.HealthInfo();
 
   /**
    * Trace data storage.
@@ -194,15 +187,6 @@ wtf.db.Database.EventType = {
  */
 wtf.db.Database.prototype.invalidate_ = function() {
   this.emitEvent(wtf.events.EventType.INVALIDATED);
-};
-
-
-/**
- * Gets health information.
- * @return {!wtf.db.HealthInfo} Health information.
- */
-wtf.db.Database.prototype.getHealthInfo = function() {
-  return this.healthInfo_;
 };
 
 
@@ -516,12 +500,6 @@ goog.exportSymbol(
     'wtf.db.Database',
     wtf.db.Database);
 goog.exportProperty(
-    wtf.db.Database.prototype, 'getEventTypeTable',
-    wtf.db.Database.prototype.getEventTypeTable);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'getEventType',
-    wtf.db.Database.prototype.getEventType);
-goog.exportProperty(
     wtf.db.Database.prototype, 'getStorage',
     wtf.db.Database.prototype.getStorage);
 goog.exportProperty(
@@ -548,6 +526,12 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.Database.prototype, 'getZones',
     wtf.db.Database.prototype.getZones);
+goog.exportProperty(
+    wtf.db.Database.prototype, 'getEventTypeTable',
+    wtf.db.Database.prototype.getEventTypeTable);
+goog.exportProperty(
+    wtf.db.Database.prototype, 'getEventType',
+    wtf.db.Database.prototype.getEventType);
 goog.exportProperty(
     wtf.db.Database.prototype, 'getFirstFrameList',
     wtf.db.Database.prototype.getFirstFrameList);
