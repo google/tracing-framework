@@ -614,10 +614,10 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
       // script to get it open.
 
       var blobUrls = [];
-      for (var n = 0; n < buffers.length; n++) {
-        var blob = new Blob([/** @type {!ArrayBufferView} */ (buffers[n])]);
-        blobUrls.push(goog.fs.createObjectUrl(blob));
-      }
+      var blob = new Blob(/** @type {!Array.<!ArrayBufferView>} */ (buffers), {
+        'type': 'application/x-extension-wtf-trace'
+      });
+      blobUrls.push(goog.fs.createObjectUrl(blob));
 
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',

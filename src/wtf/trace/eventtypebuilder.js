@@ -132,7 +132,8 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
   this.append(
       'var buffer = opt_buffer || context[1];',
       'var session = context[0];',
-      'if (!buffer || buffer.capacity - buffer.offset < size) {',
+      'if (!buffer || buffer.' + this.bufferNames_.capacity + ' - ' +
+          'buffer.' + this.bufferNames_.offset + ' < size) {',
       '  buffer = session ? session.acquireBuffer(time, size) : null;',
       '  context[1] = buffer;',
       '}',
