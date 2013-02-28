@@ -5,13 +5,16 @@
   // ---------------------------------------------------------------------------
   "manifest_version": 2,
   "version": "2013.2.26.1",
-  "minimum_chrome_version": "21",
+  "minimum_chrome_version": "23",
+  "homepage_url": "https://github.com/google/tracing-framework",
+
   "offline_enabled": true,
   "incognito": "split",
   "permissions": [
     "chrome://favicon/",
     "cookies",
     "debugger",
+    "fileBrowserHandler",
     "management",
     "storage",
     "tabs",
@@ -22,18 +25,37 @@
   ],
   "requirements": {
   },
-  // This enables eval/new Function.
-  //"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "content_security_policy": "script-src 'self' https://ssl.google-analytics.com https://apis.google.com https://www.google.com https://docs.google.com https://www-onepick-opensocial.googleusercontent.com https://www.googleapis.com; object-src 'self'",
+
+  // This enables eval/new Function. It has the risk of making the web store
+  // angry at us, but is worth it for the speed bump in parsing.
+  "content_security_policy": "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com https://apis.google.com https://www.google.com https://docs.google.com https://www-onepick-opensocial.googleusercontent.com https://www.googleapis.com; object-src 'self'",
+
   "page_action": {
+    // Required due to a chrome bug, even though we do everything in code.
     "workaround": "https://code.google.com/p/chromium/issues/detail?id=86449"
   },
+
+  // Support wtf omnibox queries for showing the UI or loading URLs.
   "omnibox": {
     "keyword": "wtf"
   },
+
+  // TODO(benvanik): icons
   "icons": {
   },
-  //"homepage_url": "",
+
+  // Used by ChromeOS for the file picker and content handling support.
+  "file_browser_handlers": [
+    {
+      "id": "open",
+      "default_title": "View in WTF",
+      "file_filters": [
+        "filesystem:*.wtf-calls",
+        "filesystem:*.wtf-json",
+        "filesystem:*.wtf-trace"
+      ]
+    }
+  ],
 
   // ---------------------------------------------------------------------------
   // Release properties.

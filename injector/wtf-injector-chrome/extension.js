@@ -159,6 +159,21 @@ var Extension = function() {
       }
     }).bind(this));
   }).bind(this));
+
+  // FileBrowserHandler requests, on Chrome OS.
+  if (chrome.fileBrowserHandler) {
+    chrome.fileBrowserHandler.onExecute.addListener((function(id, details) {
+      chrome.tabs.get(details.tab_id, (function(tab) {
+        switch (id) {
+          case 'open':
+            this.showFileEntriesInUi_({
+              targetTab: tab
+            }, details.entries);
+            break;
+        }
+      }).bind(this));
+    }).bind(this));
+  }
 };
 
 
@@ -548,26 +563,6 @@ Extension.prototype.convertArraysToUint8Arrays_ = function(sources) {
 
 
 /**
- * Converts a list of Uint8Arrays to regular arrays.
- * @param {!Array.<!Uint8Array>} sources Source arrays.
- * @return {!Array.<!Array.<number>>} Target arrays.
- * @private
- */
-Extension.prototype.convertUint8ArraysToArrays_ = function(sources) {
-  var targets = [];
-  for (var n = 0; n < sources.length; n++) {
-    var source = sources[n];
-    var target = new Array(source.length);
-    for (var i = 0; i < source.length; i++) {
-      target[i] = source[i];
-    }
-    targets.push(target);
-  }
-  return targets;
-};
-
-
-/**
  * @typedef {{
  *   pageUrl: string|null,
  *   sourceTab: Tab|undefined,
@@ -669,9 +664,14 @@ Extension.prototype.showFileInUi_ = function(options, url) {
   xhr.onload = (function() {
     if (xhr.status == 200) {
       var contentType = 'application/x-extension-wtf-trace';
-      var contents = this.convertUint8ArraysToArrays_([
+      var blob = new Blob([
         new Uint8Array(xhr.response)
-      ]);
+      ], {
+        type: contentType
+      });
+      var blobUrl = URL.createObjectURL(blob);
+      var contentUrls = [blobUrl];
+      var contentLength = blob.size;
       this.showUi_(options, function(port) {
         // NOTE: postMessage doesn't support transferrables here.
         port.postMessage({
@@ -679,14 +679,69 @@ Extension.prototype.showFileInUi_ = function(options, url) {
           'data': {
             'command': 'snapshot',
             'content_type': contentType,
-            'content_buffers': contents,
-            'content_length': contents[0].length
+            'content_urls': contentUrls,
+            'content_length': contentLength
           }
         }, '*');
       });
     }
   }).bind(this);
   xhr.send(null);
+};
+
+
+/**
+ * Shows a file at the given URL in the UI.
+ * @param {Extension.ShowOptions?} options Options.
+ * @param {!Array.<!FileEntry>} fileEntries List of HTML File System entries.
+ * @private
+ */
+Extension.prototype.showFileEntriesInUi_ = function(options, fileEntries) {
+  if (!fileEntries.length) {
+    return;
+  }
+
+  var processFiles = (function(files) {
+    // Sniff the first file to get the MIME type.
+    var contentType = 'application/x-extension-wtf-trace';
+    var fileName = files[0].name;
+    var dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex != -1) {
+      extension = fileName.substring(dotIndex + 1);
+      contentType = 'application/x-extension-' + extension;
+    }
+
+    var blob = new Blob(files, {
+      type: 'application/octet-stream'
+    });
+    var blobUrl = URL.createObjectURL(blob);
+    var contentUrls = [blobUrl];
+    var contentLength = blob.size;
+    this.showUi_(options, function(port) {
+      // NOTE: postMessage doesn't support transferrables here.
+      port.postMessage({
+        'wtf_ipc_connect_token': true,
+        'data': {
+          'command': 'snapshot',
+          'content_type': contentType,
+          'content_urls': contentUrls,
+          'content_length': contentLength
+        }
+      }, '*');
+    });
+  }).bind(this);
+
+  var files = [];
+  var remaining = fileEntries.length;
+  fileEntries.forEach(function(entry) {
+    entry.file(function(file) {
+      files.push(file);
+      remaining--;
+      if (!remaining) {
+        processFiles(files);
+      }
+    });
+  });
 };
 
 
