@@ -382,7 +382,10 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
     });
     chrome.pageAction.setIcon({
       tabId: tabId,
-      path: '/assets/icons/' + icon + '19.png'
+      path: {
+        '19': '/assets/icons/' + icon + '19.png',
+        '38': '/assets/icons/' + icon + '38.png'
+      }
     });
     chrome.pageAction.setPopup({
       tabId: tabId,
