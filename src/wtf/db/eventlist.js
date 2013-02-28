@@ -696,6 +696,10 @@ wtf.db.EventList.prototype.begin = function() {
  */
 wtf.db.EventList.prototype.beginTimeRange = function(
     startTime, endTime, opt_startAtRoot) {
+  if (!this.count) {
+    return new wtf.db.EventIterator(
+        this, 0, -1, 0);
+  }
   var startIndex = opt_startAtRoot ?
       this.getIndexOfRootScopeIncludingTime(startTime) :
       this.getIndexOfEventNearTime(startTime);
