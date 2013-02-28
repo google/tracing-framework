@@ -40,8 +40,15 @@
     "keyword": "wtf"
   },
 
-  // TODO(benvanik): icons
+  // Icons. Chrome is bad about picking these, so maybe we should force it by
+  // giving it more sizes.
+  // We do a 32, for example, so that we can force the 16 style on page icons
+  // on retina devices instead of the 48 style.
   "icons": {
+    "16": "assets/icons/wtf-16.png",
+    "32": "assets/icons/wtf-32.png",
+    "48": "assets/icons/wtf-48.png",
+    "128": "assets/icons/wtf-128.png"
   },
 
   // Used by ChromeOS for the file picker and content handling support.
