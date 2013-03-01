@@ -1,5 +1,22 @@
 # Building
 
+## Quickstart
+
+Just want the extension as fast as possible?
+
+    umask 0022
+    git clone git@github.com:google/tracing-framework.git
+    cd tracing-framework/
+    ./scripts/setup.sh # or setup.bat on Windows
+    source wtfrc && deployext
+    # At chrome://extensions load unpacked extension from
+    # build-bin/wtf-injector-chrome
+
+If you pull new changes, just rebuild:
+
+    git pull && git submodule update
+    anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy
+    # Reload from chrome://extensions
 
 ## Setup
 
@@ -22,42 +39,32 @@
     # When updating goog.require/provide or soy/gss you must do:
     anvil build :fast
 
-## Extensions/apps
-
-### Injector
+## Building the Chrome Extension
 
 The only way to use the injector is to compile a release build. This is because
 of all the namespace conflicts and other issues that would come about if you
 tried to run it uncompiled in a page with its own content.
 
-#### Debug
+### Local Unpacked
+
+If you want to do debugging/use the extension unpacked on a local machine,
+deploy it to a local directory:
 
     # Build a release build and get all of the files in a folder
     anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy
-    # Load unpacked extension from build-bin/wtf-injector-chrome
-    # Redeploy and reload after changing things
+    # Alternatively, use an alias:
+    deployext
 
-#### Chrome Web Store .zip
+Then, use 'Load Unpacked Extension' from `chrome://extensions`. Any time you
+update the code you'll have to rerun this step and then reload the extension.
+
+### Chrome Web Store .zip
+
+The Web Store requires a zip file:
 
     # Build release and deploy a zip
     anvil deploy -o build-bin/ :injector
     # Load build-bin/wtf-injector-chrome/wtf-injector-chrome.zip as an unpacked extension in Chrome or upload to the CWS
-
-### App
-
-#### Debug
-
-The best course of action is to avoid debugging the app entirely:
-
-    # Build only required when changing requires/soy/gss
-    anvil build :fast
-    # Open /app/maindisplay-debug.html in your browser, edit-refresh!
-
-To debug the app features:
-
-    # Build a debug overlay, required with new files/requires/soy/gss
-    anvil build app:debug_view
-    # Load unpacked from the tracing-framework/ root
 
 ## Platform Notes
 
@@ -80,4 +87,3 @@ happen automatically.
 Keep your working directory in the root tracing-framework\ path and
 use the `anvil` commands as described above. Builds may be a little
 slower than on *nix systems but should still work!
-
