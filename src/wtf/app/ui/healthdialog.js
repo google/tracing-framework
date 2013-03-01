@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.HealthDialog');
 goog.require('goog.soy');
 goog.require('wtf.app.ui.healthdialog');
 goog.require('wtf.ui.Dialog');
+goog.require('wtf.util');
 
 
 
@@ -35,6 +36,17 @@ wtf.app.ui.HealthDialog = function(db, healthInfo, parentElement, opt_dom) {
   }, parentElement, opt_dom);
 
   var dom = this.getDom();
+
+  // Not all traces have this information.
+  if (healthInfo.getOverheadPerScopeNs()) {
+    dom.setTextContent(
+        this.getChildElement(goog.getCssName('overheadPerScope')),
+        (healthInfo.getOverheadPerScopeNs() / 1000) + '\u00B5s');
+    dom.setTextContent(
+        this.getChildElement(goog.getCssName('totalOverhead')),
+        wtf.util.formatSmallTime(healthInfo.getTotalOverheadMs()) + ' ' +
+        '(~' + healthInfo.getTotalOverheadPercent().toFixed(3) + '%)');
+  }
 
   var warningsDiv = this.getChildElement(goog.getCssName('warningsList'));
   var warnings = healthInfo.getWarnings();

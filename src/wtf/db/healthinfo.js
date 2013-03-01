@@ -15,7 +15,6 @@ goog.provide('wtf.db.HealthInfo');
 goog.provide('wtf.db.HealthWarning');
 
 goog.require('wtf.data.EventClass');
-goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.EventStatistics');
 goog.require('wtf.db.ScopeEventDataEntry');
 
@@ -42,6 +41,27 @@ wtf.db.HealthInfo = function(db, opt_eventStatistics) {
   this.isBad_ = false;
 
   /**
+   * Estimated overhead per scope, if available.
+   * @type {number}
+   * @private
+   */
+  this.overheadPerScopeNs_ = 0;
+
+  /**
+   * Total estimated overhead, in ms.
+   * @type {number}
+   * @private
+   */
+  this.totalOverheadMs_ = 0;
+
+  /**
+   * Total esitmated overhead, in %.
+   * @type {number}
+   * @private
+   */
+  this.totalOverheadPercent_ = 0;
+
+  /**
    * Generated warnings.
    * @type {!Array.<!wtf.db.HealthWarning>}
    * @private
@@ -61,6 +81,33 @@ wtf.db.HealthInfo = function(db, opt_eventStatistics) {
  */
 wtf.db.HealthInfo.prototype.isBad = function() {
   return this.isBad_;
+};
+
+
+/**
+ * Estimated amount of overhead per scope.
+ * @return {number} Overhead per scope, in nanoseconds.
+ */
+wtf.db.HealthInfo.prototype.getOverheadPerScopeNs = function() {
+  return this.overheadPerScopeNs_;
+};
+
+
+/**
+ * Total time of the trace that is overhead.
+ * @return {number} Overhead as a number of milliseconds.
+ */
+wtf.db.HealthInfo.prototype.getTotalOverheadMs = function() {
+  return this.totalOverheadMs_;
+};
+
+
+/**
+ * Total percentage of the trace that is overhead.
+ * @return {number} Overhead as a percentage of the trace time.
+ */
+wtf.db.HealthInfo.prototype.getTotalOverheadPercent = function() {
+  return this.totalOverheadPercent_;
 };
 
 
@@ -116,12 +163,6 @@ wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, eventStatistics) {
     counts.frameCount += frameList.getCount();
   }
 
-  // If the total event count is under 1000, skip all this - the trace can't
-  // be that bad.
-  if (counts.totalCount < 1000) {
-    return;
-  }
-
   // Generate counts.
   var entries = eventStatistics.getEntries();
   for (var n = 0; n < entries.length; n++) {
@@ -130,10 +171,10 @@ wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, eventStatistics) {
 
     switch (eventType.getClass()) {
       case wtf.data.EventClass.SCOPE:
-        counts.scopeCount++;
+        counts.scopeCount += entry.getCount();
         break;
       case wtf.data.EventClass.INSTANCE:
-        counts.instanceCount++;
+        counts.instanceCount += entry.getCount();
         break;
     }
 
@@ -159,6 +200,34 @@ wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, eventStatistics) {
         counts.avg10us += entry.getCount();
       }
     }
+  }
+
+  // Compute overheads.
+  this.overheadPerScopeNs_ = 0;
+  this.totalOverheadMs_ = 0;
+  this.totalOverheadPercent_ = 0;
+  var sources = db.getSources();
+  var overheadPerNow = 0;
+  if (sources.length) {
+    var metadata = sources[0].getMetadata();
+    overheadPerNow = metadata['now_time_ns'] || 0;
+  }
+  if (overheadPerNow) {
+    // Value was present - use it to compute the timings.
+    // This is a rough guess that seems to track pretty well across systems.
+    this.overheadPerScopeNs_ = overheadPerNow * 2 + overheadPerNow;
+    this.totalOverheadMs_ =
+        counts.scopeCount * this.overheadPerScopeNs_ +
+        counts.instanceCount * (overheadPerNow + overheadPerNow);
+    this.totalOverheadMs_ /= 1000 * 1000; // ns->us->ms
+    var totalTraceMs = db.getLastEventTime() - db.getFirstEventTime();
+    this.totalOverheadPercent_ = this.totalOverheadMs_ / totalTraceMs;
+  }
+
+  // If the total event count is under 1000, skip all this - the trace can't
+  // be that bad.
+  if (counts.totalCount < 1000) {
+    return;
   }
 
   // Generate warnings.
@@ -258,6 +327,15 @@ goog.exportSymbol(
 goog.exportProperty(
     wtf.db.HealthInfo.prototype, 'isBad',
     wtf.db.HealthInfo.prototype.isBad);
+goog.exportProperty(
+    wtf.db.HealthInfo.prototype, 'getOverheadPerScopeNs',
+    wtf.db.HealthInfo.prototype.getOverheadPerScopeNs);
+goog.exportProperty(
+    wtf.db.HealthInfo.prototype, 'getTotalOverheadMs',
+    wtf.db.HealthInfo.prototype.getTotalOverheadMs);
+goog.exportProperty(
+    wtf.db.HealthInfo.prototype, 'getTotalOverheadPercent',
+    wtf.db.HealthInfo.prototype.getTotalOverheadPercent);
 goog.exportProperty(
     wtf.db.HealthInfo.prototype, 'getWarnings',
     wtf.db.HealthInfo.prototype.getWarnings);
