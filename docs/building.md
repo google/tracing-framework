@@ -1,23 +1,5 @@
 # Building
 
-## Quickstart
-
-Just want the extension as fast as possible?
-
-    umask 0022
-    git clone git@github.com:google/tracing-framework.git
-    cd tracing-framework/
-    ./scripts/setup.sh # or setup.bat on Windows
-    source wtfrc && deployext
-    # At chrome://extensions load unpacked extension from
-    # build-bin/wtf-injector-chrome
-
-If you pull new changes, just rebuild:
-
-    git pull && git submodule update
-    anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy
-    # Reload from chrome://extensions
-
 ## Setup
 
     # You may need to do this on Linux
