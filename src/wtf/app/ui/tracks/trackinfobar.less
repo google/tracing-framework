@@ -24,12 +24,31 @@
     left: 0;
     right: 0;
     top: 0;
-    height: @headerHeight - 5px;
+    height: @headerHeight - 6px;
     border-bottom: 1px solid #ebebeb;
     padding-left: 5px;
     padding-top: 5px;
 
+    table {
+      width: 100%;
+      td {
+        vertical-align: top;
+      }
+      td:last-child {
+        width: 1%;
+      }
+    }
+
+    .searchBox {
+    }
     .kSearchField {
+      width: 100%;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    .kButtonBar {
+      margin-left: 6px;
     }
   }
 

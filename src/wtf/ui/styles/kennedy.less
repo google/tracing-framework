@@ -343,11 +343,15 @@
     display: inline-block;
     width: 7px;
     height: 7px;
-    background: url('../icons/arrow_dropdown.svg') center no-repeat;
+    background: url('app/icons/arrow_dropdown.svg') center no-repeat;
     .transition(all, 0.218s);
   }
   .kDisabled .kButtonDisclosure {
     opacity: 0.2;
+  }
+
+  .kMenuItems {
+    display: none;
   }
 
 
@@ -499,7 +503,7 @@
     -webkit-box-shadow: inset 1px 0px 0px rgba(0,0,0,0.14),
                         inset -1px -1px 0px rgba(0,0,0,0.07);
   }
-  .kSrollBarInner::-webkit-scrollbar-track:vertical {
+  .kScrollBarInner::-webkit-scrollbar-track:vertical {
     border-left: 6px solid transparent;
     border-right: 1px solid transparent;
   }
@@ -593,5 +597,56 @@
       top: -6px;
       left: -5px;
     }
+  }
+
+  .goog-menu {
+    position: absolute;
+    z-index: 20000;
+
+    cursor: default;
+
+    background-color: #FFFFFF;
+    outline: 1px solid rgba(0,0,0,0.2);
+    white-space: nowrap;
+
+    padding-top: 6px;
+    padding-bottom: 6px;
+
+    .boxShadow(0px, 2px, 4px, rgba(0,0,0,0.2));
+  }
+  .goog-menuitem {
+    display: block;
+    padding: 6px 44px 6px 16px;
+    position: relative;
+    background-color: #FFFFFF;
+    color: #333;
+    font-size: 13px;
+    font-weight: normal;
+    cursor: default;
+    margin: 0;
+    list-style: none;
+    white-space: nowrap;
+
+    padding-right: 72px;
+  }
+  .goog-menuitem-highlight {
+    background-color: #f1f1f1;
+    color: #222;
+    .transition(background, 0);
+  }
+  .goog-menuitem-active {
+  }
+  .goog-menuitem-content {
+    color: #000;
+    font: normal 13px Arial, sans-serif;
+  }
+  .goog-option {
+    padding-left: 30px;
+  }
+  .goog-option-selected {
+    background-image: url('app/icons/checkmark.svg');
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-position-x: 5px;
   }
 }

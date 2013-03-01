@@ -13,10 +13,12 @@
 
 goog.provide('wtf.app.ui.tracks.TrackInfoBar');
 
-goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
+goog.require('goog.positioning.Corner');
 goog.require('goog.soy');
-goog.require('goog.style');
+goog.require('goog.ui.Component');
+goog.require('goog.ui.MenuItem');
+goog.require('goog.ui.PopupMenu');
 goog.require('wtf');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.data.EventFlag');
@@ -68,14 +70,13 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   this.selection_.addListener(
       wtf.events.EventType.INVALIDATED, this.updateInfo_, this);
 
-  var headerEl = this.getChildElement(
-      goog.getCssName('header'));
   /**
    * Search text field.
    * @type {!wtf.ui.SearchControl}
    * @private
    */
-  this.searchControl_ = new wtf.ui.SearchControl(headerEl, dom);
+  this.searchControl_ = new wtf.ui.SearchControl(
+      this.getChildElement(goog.getCssName('searchBox')), dom);
   this.registerDisposable(this.searchControl_);
   this.searchControl_.setPlaceholderText('Partial name or /regex/');
 
@@ -86,30 +87,34 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
    */
   this.sortMode_ = wtf.db.SortMode.TOTAL_TIME;
 
-  // Add sort buttons.
-  // TODO(benvanik): fancy dropdown popup button thing.
+  // Setup sort buttons.
+  var menu = new goog.ui.PopupMenu(dom);
+  this.registerDisposable(menu);
+  menu.attach(
+      this.getChildElement(goog.getCssName('sortButton')),
+      goog.positioning.Corner.BOTTOM_LEFT);
+  menu.setToggleMode(true);
+  menu.addChild(new goog.ui.MenuItem(
+      'Sort by Total Time', wtf.db.SortMode.TOTAL_TIME, dom), true);
+  menu.addChild(new goog.ui.MenuItem(
+      'Sort by Mean Time', wtf.db.SortMode.MEAN_TIME, dom), true);
+  menu.addChild(new goog.ui.MenuItem(
+      'Sort by Count', wtf.db.SortMode.COUNT, dom), true);
+  menu.render();
   var eh = this.getHandler();
-  function addSortButton(title, tooltip, mode) {
-    var el = dom.createElement(goog.dom.TagName.A);
-    goog.style.setStyle(el, 'margin-left', '2px');
-    dom.setTextContent(el, title);
-    el.title = tooltip;
-    eh.listen(el, goog.events.EventType.CLICK, function(e) {
-      e.preventDefault();
-      this.sortMode_ = mode;
+  menu.forEachChild(function(item) {
+    item.setCheckable(true);
+    eh.listen(item, goog.ui.Component.EventType.ACTION, function(e) {
+      menu.forEachChild(function(otherItem) {
+        otherItem.setChecked(false);
+      });
+      item.setChecked(true);
+      this.searchControl_.focus();
+      this.sortMode_ = item.getModel();
       this.updateInfo_();
     });
-    dom.appendChild(headerEl, el);
-  };
-  addSortButton(
-      'count', 'Sort by total event count.',
-      wtf.db.SortMode.COUNT);
-  addSortButton(
-      'total', 'Sort by total event time.',
-      wtf.db.SortMode.TOTAL_TIME);
-  addSortButton(
-      'mean', 'Sort by average event duration.',
-      wtf.db.SortMode.MEAN_TIME);
+  });
+  menu.getChildAt(0).setChecked(true);
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
