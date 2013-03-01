@@ -42,18 +42,22 @@
         <!--[viewer info]-->
       </div>
       <div class="{css kButtonBar} {css kRight} {css buttons}">
-        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonOpen}" title="Open a trace file ({$system_key|noAutoescape}-o)">
-          Open
-        </a>
-        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonOpenDrive}" title="Open a trace file from Google Drive">
-          Open (Drive)
-        </a>
-        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonShare}" title="Share the trace">
-          Share
-        </a>
-        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonSave}" title="Save the current trace file ({$system_key|noAutoescape}-s)">
-          Save
-        </a>
+        <div class="{css kComboButton}">
+          <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonOpen}" title="Open a trace file ({$system_key|noAutoescape}-o)">
+            Open
+          </a>
+          <a class="{css kButton} {css kMenuButton} {css kMenuTrigger} {css buttonOpenDisclosure}">
+            <span class="{css kButtonDisclosure}"></span>
+          </a>
+        </div>
+        <div class="{css kComboButton}">
+          <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonSave}" title="Save the current trace file ({$system_key|noAutoescape}-s)">
+            Save
+          </a>
+          <a class="{css kButton} {css kMenuButton} {css kMenuTrigger} {css buttonSaveDisclosure}">
+            <span class="{css kButtonDisclosure}"></span>
+          </a>
+        </div>
         <a class="{css kButton} {css kMenuButton} {css buttonSettings}"
           title="Show Settings">
           <img alt="Settings" src="icons/settings.svg">

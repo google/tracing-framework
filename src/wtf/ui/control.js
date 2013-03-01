@@ -18,7 +18,13 @@ goog.require('goog.dom');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
+goog.require('goog.math.Box');
+goog.require('goog.positioning.Corner');
 goog.require('goog.style');
+goog.require('goog.ui.Component');
+goog.require('goog.ui.MenuItem');
+goog.require('goog.ui.PopupMenu');
+goog.require('wtf.events');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.ui.ModifierKey');
 /** @suppress {extraRequire} */
@@ -218,6 +224,41 @@ wtf.ui.Control.prototype.toggleButton = function(cssName, enabled) {
   if (el) {
     goog.dom.classes.enable(el, goog.getCssName('kDisabled'), !enabled);
   }
+};
+
+
+/**
+ * Sets up a button as a dropdown button.
+ * @param {string} buttonStyle CSS style name of the main button.
+ * @param {string} disclosureStyle CSS style name of the disclosure button.
+ * @param {!Array.<{name:string,command:string}>} items Items.
+ * @protected
+ */
+wtf.ui.Control.prototype.setupDropDownButton = function(
+    buttonStyle, disclosureStyle, items) {
+  var menu = new goog.ui.PopupMenu(this.dom_);
+  this.registerDisposable(menu);
+  var buttonWidth = goog.style.getSize(
+      this.getChildElement(buttonStyle)).width - 2;
+  menu.attach(
+      this.getChildElement(disclosureStyle),
+      goog.positioning.Corner.BOTTOM_LEFT,
+      undefined, undefined,
+      new goog.math.Box(0, 0, 0, -buttonWidth));
+  menu.setToggleMode(true);
+  for (var n = 0; n < items.length; n++) {
+    menu.addChild(new goog.ui.MenuItem(
+        items[n].name, items[n].command, this.dom_), true);
+  }
+  menu.render();
+
+  var eh = this.getHandler();
+  menu.forEachChild(function(item) {
+    eh.listen(item, goog.ui.Component.EventType.ACTION, function(e) {
+      var commandManager = wtf.events.getCommandManager();
+      commandManager.execute(item.getModel(), this, null);
+    });
+  });
 };
 
 

@@ -22,7 +22,6 @@ goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.Keyboard');
-goog.require('wtf.io.drive');
 goog.require('wtf.ui.Control');
 
 
@@ -37,6 +36,7 @@ goog.require('wtf.ui.Control');
  */
 wtf.app.ui.Toolbar = function(documentView, parentElement) {
   goog.base(this, parentElement, documentView.getDom());
+  var dom = this.getDom();
   var eh = this.getHandler();
 
   /**
@@ -60,15 +60,6 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       goog.events.EventType.CLICK,
       this.openClicked_, false);
   eh.listen(
-      this.getChildElement(
-          goog.getCssName('buttonOpenDrive')),
-      goog.events.EventType.CLICK,
-      this.openDriveClicked_, false);
-  eh.listen(
-      this.getChildElement(goog.getCssName('buttonShare')),
-      goog.events.EventType.CLICK,
-      this.shareClicked_, false);
-  eh.listen(
       this.getChildElement(goog.getCssName('buttonSave')),
       goog.events.EventType.CLICK,
       this.saveClicked_, false);
@@ -81,10 +72,25 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       goog.events.EventType.CLICK,
       this.helpClicked_, false);
 
+  // Setup dropdown buttons.
+  this.setupDropDownButton(
+      goog.getCssName('buttonOpen'),
+      goog.getCssName('buttonOpenDisclosure'), [
+        {
+          name: 'Open from Drive',
+          command: 'open_drive_trace'
+        }
+      ]);
+  this.setupDropDownButton(
+      goog.getCssName('buttonSave'),
+      goog.getCssName('buttonSaveDisclosure'), [
+        {
+          name: 'Save to Drive',
+          command: 'save_drive_trace'
+        }
+      ]);
+
   this.toggleButton(goog.getCssName('buttonOpen'), true);
-  this.toggleButton(goog.getCssName('buttonOpenDrive'),
-      wtf.io.drive.isSupported());
-  this.toggleButton(goog.getCssName('buttonShare'), false);
   this.toggleButton(goog.getCssName('buttonSave'), true);
   this.toggleButton(goog.getCssName('buttonSettings'), true);
   this.toggleButton(goog.getCssName('buttonHelp'), true);
@@ -198,30 +204,6 @@ wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('open_trace', this, null);
-};
-
-
-/**
- * Handles 'open drive' button clicks.
- * @param {!goog.events.BrowserEvent} e Event.
- * @private
- */
-wtf.app.ui.Toolbar.prototype.openDriveClicked_ = function(e) {
-  e.preventDefault();
-  var commandManager = wtf.events.getCommandManager();
-  commandManager.execute('open_drive_trace', this, null);
-};
-
-
-/**
- * Handles 'share' button clicks.
- * @param {!goog.events.BrowserEvent} e Event.
- * @private
- */
-wtf.app.ui.Toolbar.prototype.shareClicked_ = function(e) {
-  e.preventDefault();
-  var commandManager = wtf.events.getCommandManager();
-  commandManager.execute('share_trace', this, null);
 };
 
 

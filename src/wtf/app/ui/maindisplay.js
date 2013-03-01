@@ -127,7 +127,7 @@ wtf.app.ui.MainDisplay = function(
   this.commandManager_.registerSimpleCommand(
       'save_trace', this.saveTrace_, this);
   this.commandManager_.registerSimpleCommand(
-      'share_trace', this.shareTrace_, this);
+      'save_drive_trace', this.saveDriveTrace_, this);
   this.commandManager_.registerSimpleCommand(
       'show_settings', this.showSettings_, this);
   this.commandManager_.registerSimpleCommand(
@@ -632,6 +632,14 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
   // Hide the splash dialog if it's up.
   this.showSplashDialog_(false);
 
+  if (!wtf.io.drive.isSupported()) {
+    wtf.ui.ErrorDialog.show(
+        'Drive support not enabled',
+        'Drive is not supported in this build.',
+        this.getDom());
+    return;
+  }
+
   goog.result.wait(wtf.io.drive.showFilePicker({
     title: 'Select a trace file'
   }), function(filesResult) {
@@ -780,17 +788,29 @@ wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
 
 
 /**
- * Shares the current trace document, if any.
+ * Saves the current trace document to Drive, if any.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.shareTrace_ = function() {
+wtf.app.ui.MainDisplay.prototype.saveDriveTrace_ = function() {
   if (!this.documentView_) {
     return;
   }
 
-  _gaq.push(['_trackEvent', 'app', 'share_trace']);
+  if (!wtf.io.drive.isSupported()) {
+    wtf.ui.ErrorDialog.show(
+        'Drive support not enabled',
+        'Drive is not supported in this build.',
+        this.getDom());
+    return;
+  }
 
-  // TODO(benvanik): share trace.
+  _gaq.push(['_trackEvent', 'app', 'save_drive_trace']);
+
+  // TODO(benvanik): save to drive.
+  wtf.ui.ErrorDialog.show(
+      'Drive saving not implemented',
+      'Sorry, this isn\'t implemented yet!',
+      this.getDom());
 };
 
 
