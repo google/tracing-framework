@@ -81,9 +81,6 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
       json = '' + value;
     } else if (!value) {
       json = null;
-    } else if (typeof value == 'string') {
-      // TODO(benvanik): escape the string (at least quotes).
-      json = '"' + value + '"';
     } else {
       // JSON is faster and generates less garbage.
       if (goog.global.JSON) {

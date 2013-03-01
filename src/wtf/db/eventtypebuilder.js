@@ -61,7 +61,9 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
   }
 
   this.begin();
-  this.addScopeVariable('jsonParse', goog.global.JSON.parse);
+  this.addScopeVariable('jsonParse', function(str) {
+    return goog.global.JSON.parse(str);
+  });
   this.addArgument('buffer');
 
   // Storage for data.
