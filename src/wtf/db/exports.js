@@ -54,6 +54,8 @@ goog.require('wtf.db.Frame');
 /** @suppress {extraRequire} */
 goog.require('wtf.db.FrameList');
 /** @suppress {extraRequire} */
+goog.require('wtf.db.HealthInfo');
+/** @suppress {extraRequire} */
 goog.require('wtf.db.InstanceEventDataEntry');
 /** @suppress {extraRequire} */
 goog.require('wtf.db.Mark');

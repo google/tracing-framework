@@ -71,6 +71,11 @@ wtf.app.ui.Statusbar = function(documentView, parentElement) {
         e.preventDefault();
         commandManager.execute('select_visible', this, null);
       });
+  eh.listen(this.getChildElement('viewHealthLink'),
+      goog.events.EventType.CLICK, function(e) {
+        e.preventDefault();
+        commandManager.execute('view_trace_health', this, null);
+      });
 
   var db = this.documentView_.getDatabase();
   db.addListener(wtf.events.EventType.INVALIDATED, this.update_, this);

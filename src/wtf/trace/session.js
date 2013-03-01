@@ -213,6 +213,10 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer, opt_all) {
   buffer.writeUint32(longTimebase.getLowBits());
   buffer.writeUint32(longTimebase.getHighBits());
 
+  // Run the now() benchmark and stash that in metadata.
+  // This isn't in the format as it's just informational.
+  this.metadata_['now_time_ns'] = wtf.computeNowOverhead();
+
   // Write metadata.
   var metadataString = goog.json.serialize(this.metadata_);
   buffer.writeUtf8String(metadataString);
