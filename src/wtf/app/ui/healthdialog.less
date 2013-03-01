@@ -1,0 +1,48 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Health dialog CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+.appUiHealthDialog {
+  width: 550px;
+  height: 400px;
+  margin: 10px;
+
+  .listHeader {
+  }
+  .scrollArea {
+    position: absolute;
+    top: 100px;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+
+    border: 1px solid #EBEBEB;
+
+    padding: 5px;
+
+    overflow-y: scroll;
+  }
+  .list {
+    .allowSelect();
+  }
+
+  .warningsList {}
+  .offendersList {}
+
+  .warning {
+    margin-bottom: 5px;
+
+    div {
+      margin-bottom: 3px;
+    }
+  }
+}

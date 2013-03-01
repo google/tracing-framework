@@ -191,25 +191,6 @@ wtf.db.Database.prototype.invalidate_ = function() {
 
 
 /**
- * Gets the event type table.
- * @return {!wtf.db.EventTypeTable} Event type table.
- */
-wtf.db.Database.prototype.getEventTypeTable = function() {
-  return this.eventTypeTable_;
-};
-
-
-/**
- * Gets the event type for the given event name.
- * @param {string} name Event name.
- * @return {wtf.db.EventType?} Event type, if found.
- */
-wtf.db.Database.prototype.getEventType = function(name) {
-  return this.eventTypeTable_.getByName(name);
-};
-
-
-/**
  * Gets the trace data storage.
  * @return {wtf.db.DataStorage} Data storage, if enabled.
  */
@@ -388,6 +369,25 @@ wtf.db.Database.prototype.getZones = function() {
 
 
 /**
+ * Gets the event type table.
+ * @return {!wtf.db.EventTypeTable} Event type table.
+ */
+wtf.db.Database.prototype.getEventTypeTable = function() {
+  return this.eventTypeTable_;
+};
+
+
+/**
+ * Gets the event type for the given event name.
+ * @param {string} name Event name.
+ * @return {wtf.db.EventType?} Event type, if found.
+ */
+wtf.db.Database.prototype.getEventType = function(name) {
+  return this.eventTypeTable_.getByName(name);
+};
+
+
+/**
  * Gets the first frame list containing valid frames from any zone, if any.
  * @return {wtf.db.FrameList} Frame list, if any.
  */
@@ -500,12 +500,6 @@ goog.exportSymbol(
     'wtf.db.Database',
     wtf.db.Database);
 goog.exportProperty(
-    wtf.db.Database.prototype, 'getEventTypeTable',
-    wtf.db.Database.prototype.getEventTypeTable);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'getEventType',
-    wtf.db.Database.prototype.getEventType);
-goog.exportProperty(
     wtf.db.Database.prototype, 'getStorage',
     wtf.db.Database.prototype.getStorage);
 goog.exportProperty(
@@ -532,6 +526,12 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.Database.prototype, 'getZones',
     wtf.db.Database.prototype.getZones);
+goog.exportProperty(
+    wtf.db.Database.prototype, 'getEventTypeTable',
+    wtf.db.Database.prototype.getEventTypeTable);
+goog.exportProperty(
+    wtf.db.Database.prototype, 'getEventType',
+    wtf.db.Database.prototype.getEventType);
 goog.exportProperty(
     wtf.db.Database.prototype, 'getFirstFrameList',
     wtf.db.Database.prototype.getFirstFrameList);

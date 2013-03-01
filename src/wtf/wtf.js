@@ -175,6 +175,36 @@ wtf.now = (function() {
 })();
 
 
+/**
+ * Runs a microbenchmark to try to compute the overhead of a call to
+ * {@see wtf#now}.
+ * @return {number} Estimated overhead, in nanoseconds (1/1000 us).
+ */
+wtf.computeNowOverhead = function() {
+  // This is in a function so that v8 can JIT it easier.
+  // We then run it a few times to try to factor out the JIT time.
+  function computeInner(iterations) {
+    var dummy = 0;
+    for (var n = 0; n < iterations; n++) {
+      // We don't have to worry about this being entirely removed (yet), as
+      // JITs don't seem to consider now() as not having side-effects.
+      dummy += wtf.now();
+    }
+    return dummy;
+  };
+
+  var iterations = 100000;
+  var dummy = 0;
+  var duration = 0;
+  for (var n = 0; n < 10; n++) {
+    var startTime = wtf.now();
+    dummy += computeInner(iterations);
+    duration = wtf.now() - startTime;
+  }
+  return (duration * 1000 * 1000 / iterations) | 0; // ms -> us -> ns
+};
+
+
 goog.exportSymbol(
     'wtf.hasHighResolutionTimes',
     wtf.hasHighResolutionTimes);
@@ -184,3 +214,6 @@ goog.exportSymbol(
 goog.exportSymbol(
     'wtf.now',
     wtf.now);
+goog.exportSymbol(
+    'wtf.computeNowOverhead',
+    wtf.computeNowOverhead);

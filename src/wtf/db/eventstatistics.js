@@ -204,6 +204,16 @@ wtf.db.EventStatistics.prototype.getFilteredEventCount = function() {
 
 
 /**
+ * Gets all entries.
+ * The result should not be modified.
+ * @return {!Array.<!wtf.db.EventDataEntry>}
+ */
+wtf.db.EventStatistics.prototype.getEntries = function() {
+  return this.list_;
+};
+
+
+/**
  * Gets the entry for an event type, if it exists.
  * @param {string} eventName Event name.
  * @return {wtf.db.EventDataEntry} Event entry, if it exists.
@@ -318,6 +328,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.EventStatistics.prototype, 'getFilteredEventCount',
     wtf.db.EventStatistics.prototype.getFilteredEventCount);
+goog.exportProperty(
+    wtf.db.EventStatistics.prototype, 'getEntries',
+    wtf.db.EventStatistics.prototype.getEntries);
 goog.exportProperty(
     wtf.db.EventStatistics.prototype, 'getEventTypeEntry',
     wtf.db.EventStatistics.prototype.getEventTypeEntry);
