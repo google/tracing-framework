@@ -1,0 +1,45 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Loading dialog DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.ui.loadingdialog}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css appUiLoadingDialog}">
+    <h1 class="{css kRedLink}">
+      Loading trace...
+    </h1>
+    <div class="{css list}">
+    </div>
+  </div>
+{/template}
+
+
+/**
+ * Entry template.
+ * @param filename Filename.
+ */
+{template .entry}
+  <div class="{css progress}">
+    {if $filename}
+      <div class="{css filename} {css kSecondaryText}">{$filename}</div>
+    {/if}
+    <div class="{css kProgressBar}">
+      <div class="{css track} {css blue}"></div>
+    </div>
+    <p class="{css kProgressText}"><span class="{css percentComplete}">0</span>% complete.</p>
+  </div>
+{/template}

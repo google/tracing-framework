@@ -230,7 +230,7 @@ wtf.app.background.BackgroundPage.prototype.queueMessage_ = function(message) {
 
 /**
  * Handles incoming snapshot data events.
- * @param {string} contentType Snapshot content type.
+ * @param {!string} contentType Snapshot content type.
  * @param {!Uint8Array} data Snapshot data.
  * @private
  */
@@ -239,7 +239,7 @@ wtf.app.background.BackgroundPage.prototype.snapshotReceived_ = function(
   this.showWindow_(function() {
     this.queueMessage_({
       'command': 'snapshot',
-      'content_type': contentType,
+      'content_types': [contentType],
       'content_buffers': [data],
       'content_length': data.length
     });

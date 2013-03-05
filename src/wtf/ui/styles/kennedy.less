@@ -649,4 +649,44 @@
     background-repeat: no-repeat;
     background-position-x: 5px;
   }
+
+  .kProgressBar {
+    width: 320px;
+    border: 1px solid #999;
+    padding: 1px;
+    .track {
+      width: 0px;
+      height: 8px;
+
+      .boxShadow(0px, 1px, 1px, rgba(0,0,0,0.1));
+
+      background-repeat: repeat-x;
+      background-position: 0 0;
+      background-size: 20px 10px;
+
+      background-color: rgba(0,0,0,0.12);
+      background-image: -webkit-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      background-image: -moz-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      background-image: -ms-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      background-image: -o-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      background-image: linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+
+      .animation(kProgressBarAnimation, 0.8s, linear, infinite);
+    }
+    .blue {
+      background-color: #6188f5;
+    }
+  }
+  .kProgressText {
+    color: #999;
+  }
+}
+
+@-webkit-keyframes kProgressBarAnimation {
+  0% { background-position:0 0; }
+  100% { background-position:-20px 0; }
+}
+@keyframes kProgressBarAnimation {
+  0% { background-position:0 0; }
+  100% { background-position:-20px 0; }
 }

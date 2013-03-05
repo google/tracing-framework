@@ -22,6 +22,7 @@ goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.Keyboard');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
 
 
@@ -94,6 +95,14 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
   this.toggleButton(goog.getCssName('buttonSave'), true);
   this.toggleButton(goog.getCssName('buttonSettings'), true);
   this.toggleButton(goog.getCssName('buttonHelp'), true);
+
+  // Setup keyboard shortcuts.
+  var keyboard = wtf.events.getWindowKeyboard(dom);
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+  keyboardScope.addCommandShortcut('command+o', 'open_local_trace');
+  keyboardScope.addCommandShortcut('command+s', 'save_local_trace');
+  keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
 
   var db = documentView.getDatabase();
   db.addListener(
@@ -203,7 +212,7 @@ wtf.app.ui.Toolbar.prototype.viewHealthClicked_ = function(e) {
 wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
-  commandManager.execute('open_trace', this, null);
+  commandManager.execute('open_local_trace', this, null);
 };
 
 
@@ -215,7 +224,7 @@ wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
 wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
-  commandManager.execute('save_trace', this, null);
+  commandManager.execute('save_local_trace', this, null);
 };
 
 

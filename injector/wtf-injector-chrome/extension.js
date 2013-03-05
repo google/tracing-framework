@@ -637,7 +637,11 @@ Extension.prototype.showUi_ = function(options, opt_callback, opt_scope) {
     }
   } else {
     // Switch to existing tab.
-    chrome.tabs.reload(existingTabId);
+    // Note that we reset to the pageUrl in case we lost are arguments.
+    chrome.tabs.update(existingTabId, {
+      url: pageUrl,
+      active: true
+    });
     chrome.tabs.get(existingTabId, function(existingTab) {
       chrome.windows.update(existingTab.windowId, {
         focused: true,
@@ -667,9 +671,11 @@ Extension.prototype.showFileInUi_ = function(options, url) {
       var blob = new Blob([
         new Uint8Array(xhr.response)
       ], {
-        type: contentType
+        type: 'application/octet-stream'
       });
       var blobUrl = URL.createObjectURL(blob);
+      var contentTypes = [contentType];
+      var contentSources = [url];
       var contentUrls = [blobUrl];
       var contentLength = blob.size;
       this.showUi_(options, function(port) {
@@ -678,9 +684,11 @@ Extension.prototype.showFileInUi_ = function(options, url) {
           'wtf_ipc_connect_token': true,
           'data': {
             'command': 'snapshot',
-            'content_type': contentType,
+            'content_types': contentTypes,
+            'content_sources': contentSources,
             'content_urls': contentUrls,
-            'content_length': contentLength
+            'content_length': contentLength,
+            'revoke_blob_urls': true
           }
         }, '*');
       });
@@ -702,30 +710,38 @@ Extension.prototype.showFileEntriesInUi_ = function(options, fileEntries) {
   }
 
   var processFiles = (function(files) {
-    // Sniff the first file to get the MIME type.
-    var contentType = 'application/x-extension-wtf-trace';
-    var fileName = files[0].name;
-    var dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex != -1) {
-      extension = fileName.substring(dotIndex + 1);
-      contentType = 'application/x-extension-' + extension;
-    }
+    var contentTypes = [];
+    var contentSources = [];
+    var contentUrls = [];
+    var contentLength = 0;
+    for (var n = 0; n < files.length; n++) {
+      var contentType = 'application/x-extension-wtf-trace';
+      var fileName = files[0].name;
+      var dotIndex = fileName.lastIndexOf('.');
+      if (dotIndex != -1) {
+        extension = fileName.substring(dotIndex + 1);
+        contentType = 'application/x-extension-' + extension;
+      }
+      contentTypes.push(contentType);
 
-    var blob = new Blob(files, {
-      type: 'application/octet-stream'
-    });
-    var blobUrl = URL.createObjectURL(blob);
-    var contentUrls = [blobUrl];
-    var contentLength = blob.size;
+      var blob = new Blob([files[n]], {
+        type: 'application/octet-stream'
+      });
+      contentSources.push(fileName);
+      contentUrls.push(URL.createObjectURL(blob));
+      contentLength += blob.size;
+    }
     this.showUi_(options, function(port) {
       // NOTE: postMessage doesn't support transferrables here.
       port.postMessage({
         'wtf_ipc_connect_token': true,
         'data': {
           'command': 'snapshot',
-          'content_type': contentType,
+          'content_types': contentTypes,
+          'content_sources': contentSources,
           'content_urls': contentUrls,
-          'content_length': contentLength
+          'content_length': contentLength,
+          'revoke_blob_urls': true
         }
       }, '*');
     });
@@ -749,13 +765,15 @@ Extension.prototype.showFileEntriesInUi_ = function(options, fileEntries) {
  * Shows a snapshot in a new window.
  * @param {!Tab} sourceTab Source tab.
  * @param {string} pageUrl Page URL to open.
- * @param {string} contentType Data content type.
+ * @param {!Array.<string>} contentTypes Data content type.
+ * @param {!Array.<string>} contentSources Data content type.
  * @param {!Array.<string>} contentUrls Content URLs.
  * @param {number} contentLength Content length, in bytes.
  * @private
  */
 Extension.prototype.showSnapshot = function(
-    sourceTab, pageUrl, contentType, contentUrls, contentLength) {
+    sourceTab, pageUrl,
+    contentTypes, contentSources, contentUrls, contentLength) {
   this.showUi_({
     pageUrl: pageUrl,
     sourceTab: sourceTab
@@ -765,9 +783,11 @@ Extension.prototype.showSnapshot = function(
       'wtf_ipc_connect_token': true,
       'data': {
         'command': 'snapshot',
-        'content_type': contentType,
+        'content_types': contentTypes,
+        'content_sources': contentSources,
         'content_urls': contentUrls,
-        'content_length': contentLength
+        'content_length': contentLength,
+        'revoke_blob_urls': true
       }
     }, '*');
   });

@@ -71,6 +71,7 @@ wtf.app.ui.Selection = function(db) {
 
   db.addListener(
       wtf.events.EventType.INVALIDATED, this.invalidate_, this);
+  this.invalidate_();
 };
 goog.inherits(wtf.app.ui.Selection, wtf.events.EventEmitter);
 

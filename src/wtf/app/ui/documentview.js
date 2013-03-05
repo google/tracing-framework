@@ -35,6 +35,9 @@ goog.require('wtf.db.HealthInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.io');
+goog.require('wtf.io.drive');
+goog.require('wtf.pal');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
@@ -86,6 +89,8 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   // Rebuild health info.
   // We try to pass in our event statistics if we can (no filter).
+  // Note that we bind this handler as early as possible so that we run before
+  // other handlers setup by the UI.
   var db = doc.getDatabase();
   db.addListener(wtf.events.EventType.INVALIDATED, function() {
     var eventStatistics = null;
@@ -157,7 +162,7 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   // Show error dialogs.
   db.addListener(wtf.db.Database.EventType.SOURCE_ERROR,
-      function(message, opt_detail) {
+      function(source, message, opt_detail) {
         goog.global.console.log(message, opt_detail);
         wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
         _gaq.push(['_trackEvent', 'app', 'source_error', message]);
@@ -165,11 +170,9 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   // Zoom to fit when the database changes.
   // This should be changed to track the most recent events if streaming.
-  db.addListener(wtf.events.EventType.INVALIDATED, function() {
-    var firstEventTime = db.getFirstEventTime();
-    var lastEventTime = db.getLastEventTime();
-    this.localView_.setVisibleRange(firstEventTime, lastEventTime, true);
-  }, this);
+  db.addListener(
+      wtf.events.EventType.INVALIDATED, this.databaseInvalidated_, this);
+  this.databaseInvalidated_();
 };
 goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
 
@@ -179,6 +182,8 @@ goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
  */
 wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
+  commandManager.unregisterCommand('save_local_trace');
+  commandManager.unregisterCommand('save_drive_trace');
   commandManager.unregisterCommand('view_trace_health');
   commandManager.unregisterCommand('navigate');
   commandManager.unregisterCommand('select_all');
@@ -210,6 +215,11 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
   var selection = this.selection_;
 
   var commandManager = wtf.events.getCommandManager();
+
+  commandManager.registerSimpleCommand(
+      'save_local_trace', this.saveLocalTrace_, this);
+  commandManager.registerSimpleCommand(
+      'save_drive_trace', this.saveDriveTrace_, this);
 
   commandManager.registerSimpleCommand(
       'view_trace_health', function() {
@@ -399,6 +409,18 @@ wtf.app.ui.DocumentView.prototype.getTabbar = function() {
 
 
 /**
+ * Handles database invalidation.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.databaseInvalidated_ = function() {
+  var db = this.getDatabase();
+  var firstEventTime = db.getFirstEventTime();
+  var lastEventTime = db.getLastEventTime();
+  this.localView_.setVisibleRange(firstEventTime, lastEventTime, true);
+};
+
+
+/**
  * @override
  */
 wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
@@ -443,15 +465,77 @@ wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
     return;
   }
 
-  // if (!this.viewports_.length) {
-  //   return;
-  // }
-  // var viewport = this.viewports_[0];
-  // var width = viewport.getScreenWidth();
-  // viewport.set(-1000, 0, width / (lastEventTime - firstEventTime + 2000));
+  var commandManager = wtf.events.getCommandManager();
+  commandManager.execute('goto_range', this, null,
+      firstEventTime, lastEventTime, true);
+};
 
-  // TODO(benvanik): bind viewports to the local view correctly - right now they
-  //     are inverted and this doesn't work as it should.
-  // var view = this.localView_;
-  // view.setVisibleRange(firstEventTime, lastEventTime);
+
+/**
+ * Saves the current trace document, if any.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
+  var doc = this.getDocument();
+  var sources = doc.getDatabase().getSources();
+  if (!sources.length) {
+    return;
+  }
+  // Just pick the first source for naming.
+  var contextInfo = sources[0].getContextInfo();
+  var filename = contextInfo.getFilename();
+
+  // prefix-YYYY-MM-DDTHH-MM-SS
+  var dt = new Date();
+  var filenameSuffix = '-' +
+      dt.getFullYear() +
+      goog.string.padNumber(dt.getMonth() + 1, 2) +
+      goog.string.padNumber(dt.getDate(), 2) + 'T' +
+      goog.string.padNumber(dt.getHours(), 2) +
+      goog.string.padNumber(dt.getMinutes(), 2) +
+      goog.string.padNumber(dt.getSeconds(), 2);
+  filename += filenameSuffix;
+
+  var storage = doc.getStorage();
+  var dataStreams = storage.snapshotDataStreamBuffers();
+  var contentLength = 0;
+  for (var n = 0; n < dataStreams.length; n++) {
+    var dataStream = dataStreams[n];
+    var streamFilename = filename;
+    if (dataStreams.length > 1) {
+      streamFilename += '-' + n;
+    }
+    switch (dataStream.type) {
+      case 'application/x-extension-wtf-trace':
+        streamFilename += wtf.io.FILE_EXTENSION;
+        break;
+    }
+    var platform = wtf.pal.getPlatform();
+    platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
+    contentLength += dataStream.data.length;
+  }
+  _gaq.push(['_trackEvent', 'app', 'save_trace', null, contentLength]);
+};
+
+
+/**
+ * Saves the current trace document to Drive, if any.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.saveDriveTrace_ = function() {
+  if (!wtf.io.drive.isSupported()) {
+    wtf.ui.ErrorDialog.show(
+        'Drive support not enabled',
+        'Drive is not supported in this build.',
+        this.getDom());
+    return;
+  }
+
+  _gaq.push(['_trackEvent', 'app', 'save_drive_trace']);
+
+  // TODO(benvanik): save to drive.
+  wtf.ui.ErrorDialog.show(
+      'Drive saving not implemented',
+      'Sorry, this isn\'t implemented yet!',
+      this.getDom());
 };

@@ -182,14 +182,9 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   // TODO(benvanik): remove view widget when the view is removed.
 
   // Reset all painters on database change.
-  db.addListener(wtf.events.EventType.INVALIDATED, function() {
-    var firstEventTime = db.getFirstEventTime();
-    var lastEventTime = db.getLastEventTime();
-    for (var n = 0; n < this.timePainters_.length; n++) {
-      this.timePainters_[n].setTimeRange(firstEventTime, lastEventTime);
-    }
-    this.requestRepaint();
-  }, this);
+  db.addListener(
+      wtf.events.EventType.INVALIDATED, this.databaseInvalidated_, this);
+  this.databaseInvalidated_();
 
   this.requestRepaint();
 };
@@ -238,6 +233,21 @@ wtf.app.ui.nav.Navbar.MAX_GRANULARITY_ =
 wtf.app.ui.nav.Navbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.app.ui.nav.navbar.control, undefined, undefined, dom));
+};
+
+
+/**
+ * Handles database invalidations.
+ * @private
+ */
+wtf.app.ui.nav.Navbar.prototype.databaseInvalidated_ = function() {
+  var db = this.db_;
+  var firstEventTime = db.getFirstEventTime();
+  var lastEventTime = db.getLastEventTime();
+  for (var n = 0; n < this.timePainters_.length; n++) {
+    this.timePainters_[n].setTimeRange(firstEventTime, lastEventTime);
+  }
+  this.requestRepaint();
 };
 
 

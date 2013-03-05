@@ -5,3 +5,4 @@
 alias anvil='./third_party/anvil-build/anvil-local.sh'
 
 alias deployext='anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy'
+alias deployzip='anvil deploy -o build-bin/ :injector'

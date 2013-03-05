@@ -187,7 +187,8 @@ InjectedTab.prototype.messageReceived_ = function(data, port) {
       this.extension_.showSnapshot(
           tab,
           data['page_url'],
-          data['content_type'],
+          data['content_types'],
+          data['content_sources'],
           data['content_urls'],
           data['content_length']);
       break;
