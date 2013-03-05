@@ -106,9 +106,23 @@ wtf.ui.Tooltip.prototype.isVisible = function() {
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var el = this.rootElement_;
   goog.dom.setTextContent(el, content);
+
+  var offset = 5;
+
+  // Try to keep the tooltip on the screen.
+  var size = goog.style.getSize(el);
+  var left = x + offset;
+  var top = y + offset;
+  if (left + size.width > window.innerWidth) {
+    left = x - offset - size.width;
+  }
+  if (top + size.height > window.innerHeight) {
+    top = y - offset - size.height;
+  }
+
   goog.style.setStyle(el, {
-    'left': x + 10 + 'px',
-    'top': y + 10 + 'px'
+    'left': left + 'px',
+    'top': top + 'px'
   });
   goog.style.showElement(el, true);
 
