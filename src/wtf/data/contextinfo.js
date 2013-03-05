@@ -91,6 +91,13 @@ wtf.data.ContextInfo.prototype.write = function(buffer) {
 
 
 /**
+ * Gets a human-readable version of the context info.
+ * @return {string} String version.
+ */
+wtf.data.ContextInfo.prototype.toString = goog.abstractMethod;
+
+
+/**
  * Parses context information from the given buffer.
  * The appropriate subclass type will be returned.
  * @param {!wtf.io.Buffer} buffer Source buffer.
@@ -414,4 +421,12 @@ wtf.data.ScriptContextInfo.prototype.serialize = function() {
       'device': this.userAgent.device
     }
   };
+};
+
+
+/**
+ * @override
+ */
+wtf.data.ScriptContextInfo.prototype.toString = function() {
+  return this.title || this.uri;
 };

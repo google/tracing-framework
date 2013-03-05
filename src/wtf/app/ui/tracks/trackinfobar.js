@@ -147,6 +147,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   db.addListener(wtf.events.EventType.INVALIDATED, function() {
     this.updateInfo_();
   }, this);
+  this.updateInfo_();
 };
 goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.ResizableControl);
 

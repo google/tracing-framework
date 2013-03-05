@@ -33,7 +33,7 @@ goog.inherits(wtf.app.background.ServiceEndpoint, wtf.events.EventEmitter);
 
 /**
  * Emits a new snapshot.
- * @param {string} contentType Snapshot content type.
+ * @param {!string} contentType Snapshot content type.
  * @param {!Uint8Array} data Snapshot data.
  * @protected
  */

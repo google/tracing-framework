@@ -16,36 +16,21 @@ goog.provide('wtf.app.ui.MainDisplay');
 goog.require('goog.Uri');
 goog.require('goog.array');
 goog.require('goog.asserts');
-goog.require('goog.async.Deferred');
-goog.require('goog.async.DeferredList');
 goog.require('goog.dom');
-goog.require('goog.dom.TagName');
-goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.fs.FileReader');
-goog.require('goog.net.EventType');
-goog.require('goog.net.XhrIo');
-goog.require('goog.result');
 goog.require('goog.soy');
-goog.require('goog.string');
 goog.require('wtf.app.ui.DocumentView');
 goog.require('wtf.app.ui.HelpDialog');
+goog.require('wtf.app.ui.Loader');
 goog.require('wtf.app.ui.SplashDialog');
 goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
-goog.require('wtf.events');
 goog.require('wtf.events.CommandManager');
-goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ext');
-goog.require('wtf.io');
-goog.require('wtf.io.drive');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
-goog.require('wtf.pal');
-goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.Dialog');
-goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.SettingsDialog');
 
 
@@ -105,6 +90,14 @@ wtf.app.ui.MainDisplay = function(
   this.documentView_ = null;
 
   /**
+   * Tracing loading utility.
+   * @type {!wtf.app.ui.Loader}
+   * @private
+   */
+  this.loader_ = new wtf.app.ui.Loader(this);
+  this.registerDisposable(this.loader_);
+
+  /**
    * Parent window channel, if one exists.
    * @type {wtf.ipc.Channel}
    * @private
@@ -121,29 +114,14 @@ wtf.app.ui.MainDisplay = function(
 
   // Setup command manager.
   this.commandManager_.registerSimpleCommand(
-      'open_trace', this.requestTraceLoad, this);
+      'open_local_trace', this.requestLocalTraceLoad, this);
   this.commandManager_.registerSimpleCommand(
       'open_drive_trace', this.requestDriveTraceLoad, this);
-  this.commandManager_.registerSimpleCommand(
-      'save_trace', this.saveTrace_, this);
-  this.commandManager_.registerSimpleCommand(
-      'save_drive_trace', this.saveDriveTrace_, this);
   this.commandManager_.registerSimpleCommand(
       'show_settings', this.showSettings_, this);
   this.commandManager_.registerSimpleCommand(
       'toggle_help', this.toggleHelpDialog_, this);
 
-  // Setup keyboard shortcuts.
-  var keyboard = wtf.events.getWindowKeyboard(dom);
-  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
-  this.registerDisposable(keyboardScope);
-  keyboardScope.addCommandShortcut('command+o', 'open_trace');
-  keyboardScope.addCommandShortcut('command+s', 'save_trace');
-  keyboardScope.addCommandShortcut('shift+/', 'toggle_help');
-
-  if (wtf.io.drive.isSupported()) {
-    wtf.io.drive.prepare();
-  }
   this.setupDragDropLoading_();
 
   // Look for launch arguments.
@@ -156,7 +134,7 @@ wtf.app.ui.MainDisplay = function(
     var urls = queryData.get('url');
     if (urls && urls.length) {
       _gaq.push(['_trackEvent', 'app', 'open_querystring_files']);
-      this.loadNetworkTraces(urls.split(','));
+      this.loader_.loadUrls(urls.split(','));
       startupLoad = true;
     }
   } else if (queryData.containsKey('expect_data')) {
@@ -228,9 +206,12 @@ wtf.app.ui.MainDisplay.prototype.setupDragDropLoading_ = function() {
       e.stopPropagation();
       e.preventDefault();
 
+      // Hide the splash dialog if it's up.
+      this.showSplashDialog_(false);
+
       _gaq.push(['_trackEvent', 'app', 'open_drag_files']);
 
-      this.loadTraceFiles(browserEvent.dataTransfer.files);
+      this.loader_.loadFiles(browserEvent.dataTransfer.files);
     }
   }, false, this);
 };
@@ -240,9 +221,8 @@ wtf.app.ui.MainDisplay.prototype.setupDragDropLoading_ = function() {
  * Sets the title of the tab.
  * This portion is used as the suffix after the application name.
  * @param {string?} value New value, or null to clear.
- * @private
  */
-wtf.app.ui.MainDisplay.prototype.setTitle_ = function(value) {
+wtf.app.ui.MainDisplay.prototype.setTitle = function(value) {
   var title = 'Web Tracing Framework';
   if (!COMPILED) {
     title += ' (DEBUG)';
@@ -252,25 +232,6 @@ wtf.app.ui.MainDisplay.prototype.setTitle_ = function(value) {
   }
   var doc = this.getDom().getDocument();
   doc.title = title;
-};
-
-
-/**
- * Sets the title of the tab from the given filenames.
- * @param {!Array.<string>} filenames A list of filenames (paths/URLs allowed).
- * @private
- */
-wtf.app.ui.MainDisplay.prototype.setTitleFromFilenames_ = function(filenames) {
-  var title = '';
-  for (var n = 0; n < filenames.length; n++) {
-    var filename = filenames[n];
-    var lastSlash = filename.lastIndexOf('/');
-    if (lastSlash != -1) {
-      filename = filename.substr(lastSlash + 1);
-    }
-    title += filename;
-  }
-  this.setTitle_(title);
 };
 
 
@@ -286,8 +247,11 @@ wtf.app.ui.MainDisplay.prototype.getDocumentView = function() {
 /**
  * Sets the active document view, disposing any previous one.
  * @param {wtf.app.ui.DocumentView} documentView New document view.
+ * @param {boolean=} opt_preventSplash True to prevent the splash screen from
+ *     being shown.
  */
-wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
+wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView,
+    opt_preventSplash) {
   if (this.documentView_ == documentView) {
     return;
   }
@@ -296,13 +260,15 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
   this.documentView_ = null;
 
   // Show the splash dialog if needed.
-  this.showSplashDialog_(!documentView);
+  if (!opt_preventSplash) {
+    this.showSplashDialog_(!documentView);
+  }
 
   if (documentView) {
     // TODO(benvanik): notify of change?
     this.documentView_ = documentView;
   } else {
-    this.setTitle_(null);
+    this.setTitle(null);
   }
 };
 
@@ -310,16 +276,17 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView) {
 /**
  * Sets up a new document view for the given document and switches to it.
  * @param {!wtf.doc.Document} doc Document.
+ * @return {!wtf.app.ui.DocumentView} The new document view.
  */
 wtf.app.ui.MainDisplay.prototype.openDocument = function(doc) {
   _gaq.push(['_trackEvent', 'app', 'open_document']);
 
-  this.setDocumentView(null);
   var documentView = new wtf.app.ui.DocumentView(
       this.getChildElement(goog.getCssName('appUiMainDocumentView')),
       this.getDom(),
       doc);
   this.setDocumentView(documentView);
+  return documentView;
 };
 
 
@@ -349,82 +316,7 @@ wtf.app.ui.MainDisplay.prototype.channelMessage_ = function(data) {
  * @private
  */
 wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
-  var contentType = data['content_type'];
-  var contentLength = data['content_length'];
-  _gaq.push(['_trackEvent', 'app', 'open_snapshot', null, contentLength]);
-
-  // TODO(benvanik): get from document? or in snapshot command?
-  this.setTitle_('snapshot');
-
-  // Create document with snapshot data.
-  var doc = new wtf.doc.Document(this.platform_);
-  this.openDocument(doc);
-
-  // This supports either 'content_buffers' with arrays/arraybuffers or
-  // 'content_urls' with a blob URLs with binary data.
-  if (data['content_buffers']) {
-    var datas = data['content_buffers'];
-    if (!datas.length) {
-      return;
-    }
-
-    // Convert data from Arrays to ensure we are typed all the way through.
-    for (var n = 0; n < datas.length; n++) {
-      if (goog.isArray(datas[n])) {
-        datas[n] = wtf.io.createByteArrayFromArray(datas[n]);
-      } else if (goog.isString(datas[n])) {
-        datas[n] = wtf.io.stringToNewByteArray(datas[n]);
-      }
-    }
-
-    // Append data after a bit - gives the UI time to setup.
-    wtf.timing.setImmediate(function() {
-      // Add all sources.
-      doc.addEventSources(datas, contentType);
-
-      // Zoom to fit.
-      // TODO(benvanik): remove setTimeout when zoomToFit is based on view
-      wtf.timing.setTimeout(50, function() {
-        this.documentView_.zoomToFit();
-      }, this);
-    }, this);
-  } else if (data['content_urls']) {
-    var blobUrls = data['content_urls'];
-
-    var deferreds = goog.array.map(blobUrls, function(blobUrl) {
-      var deferred = new goog.async.Deferred();
-      var xhr = new goog.net.XhrIo();
-      xhr.setResponseType(goog.net.XhrIo.ResponseType.ARRAY_BUFFER);
-      goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
-        if (xhr.isSuccess()) {
-          var data = xhr.getResponse();
-          goog.asserts.assert(data);
-          deferred.callback(data);
-        } else {
-          deferred.errback('Failed to fetch');
-        }
-      });
-      xhr.send(blobUrl);
-      return deferred;
-    }, this);
-    goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
-        function(datas) {
-          // Add all sources.
-          doc.addEventSources(datas, contentType);
-
-          // Zoom to fit.
-          // TODO(benvanik): remove setTimeout when zoomToFit is based on view
-          wtf.timing.setTimeout(50, function() {
-            this.documentView_.zoomToFit();
-          }, this);
-        },
-        function(args) {
-          wtf.ui.ErrorDialog.show(
-              'Unable to load snapshot',
-              'A blob from the source page could not be fetched.',
-              this.getDom());
-        }, this);
-  }
+  this.loader_.loadSnapshot(data);
 };
 
 
@@ -441,7 +333,7 @@ wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
   _gaq.push(['_trackEvent', 'app', 'open_stream']);
 
   // TODO(benvanik): get from document? or in stream command?
-  this.setTitle_('streaming');
+  this.setTitle('streaming');
 
   // TODO(benvanik): support multiple streams into the same trace/etc
   var doc = new wtf.doc.Document(this.platform_);
@@ -473,155 +365,11 @@ wtf.app.ui.MainDisplay.prototype.handleStreamAppendedCommand_ = function(data) {
 /**
  * Requests a load of a trace file.
  */
-wtf.app.ui.MainDisplay.prototype.requestTraceLoad = function() {
-  var dom = this.getDom();
-  var inputElement = dom.createElement(goog.dom.TagName.INPUT);
-  inputElement['type'] = 'file';
-  inputElement['multiple'] = true;
-  inputElement['accept'] = [
-    '.wtf-trace,application/x-extension-wtf-trace',
-    '.wtf-json,application/x-extension-wtf-json',
-    '.wtf-calls,application/x-extension-wtf-calls',
-    '.part,application/x-extension-part'
-  ].join(',');
-  inputElement.click();
-  goog.events.listenOnce(inputElement, goog.events.EventType.CHANGE,
-      function(e) {
-        _gaq.push(['_trackEvent', 'app', 'open_local_files']);
-        this.loadTraceFiles(inputElement.files);
-      }, false, this);
-};
-
-
-/**
- * Loads a list of trace files.
- * Multiple files are merged into a single trace session. The name will be
- * based on the first file found.
- * @param {!Array.<!File>} traceFiles Files to load.
- */
-wtf.app.ui.MainDisplay.prototype.loadTraceFiles = function(traceFiles) {
-  var entries = [];
-  for (var n = 0; n < traceFiles.length; n++) {
-    var file = traceFiles[n];
-    if (goog.string.endsWith(file.name, '.wtf-trace') ||
-        goog.string.endsWith(file.name, '.bin.part') ||
-        file.type == 'application/x-extension-wtf-trace') {
-      entries.push({
-        source: file,
-        filename: file.name,
-        mimeType: 'application/x-extension-wtf-trace'
-      });
-    } else if (goog.string.endsWith(file.name, '.wtf-json') ||
-        file.type == 'application/x-extension-wtf-json') {
-      entries.push({
-        source: file,
-        filename: file.name,
-        mimeType: 'application/x-extension-wtf-json'
-      });
-    } else if (goog.string.endsWith(file.name, '.wtf-calls') ||
-        file.type == 'application/x-extension-wtf-calls') {
-      entries.push({
-        source: file,
-        filename: file.name,
-        mimeType: 'application/x-extension-wtf-calls'
-      });
-    }
-  }
-  if (!entries.length) {
-    return;
-  }
-
-  // TODO(benvanik): move into wtf.db?
-  var deferreds = [];
-  for (var n = 0; n < entries.length; n++) {
-    var entry = entries[n];
-    switch (entry.mimeType) {
-      case 'application/x-extension-wtf-trace':
-      case 'application/x-extension-wtf-calls':
-        deferreds.push(goog.fs.FileReader.readAsArrayBuffer(entry.source));
-        break;
-      case 'application/x-extension-wtf-json':
-        deferreds.push(goog.fs.FileReader.readAsText(entry.source));
-        break;
-    }
-  }
-  this.openDeferredSources_(entries, deferreds);
-};
-
-
-/**
- * Load trace files by url.
- * @param {!Array.<!string>} urls Array of resources to load.
- */
-wtf.app.ui.MainDisplay.prototype.loadNetworkTraces = function(urls) {
-  var entries = [];
-  for (var n = 0; n < urls.length; n++) {
-    var url = urls[n];
-    if (goog.string.endsWith(url, '.wtf-trace') ||
-        goog.string.endsWith(url, '.bin.part')) {
-      entries.push({
-        source: url,
-        filename: url,
-        mimeType: 'application/x-extension-wtf-trace'
-      });
-    } else if (goog.string.endsWith(url, '.wtf-json')) {
-      entries.push({
-        source: url,
-        filename: url,
-        mimeType: 'application/x-extension-wtf-json'
-      });
-    } else if (goog.string.endsWith(url, '.wtf-calls')) {
-      entries.push({
-        source: url,
-        filename: url,
-        mimeType: 'application/x-extension-wtf-calls'
-      });
-    } else {
-      wtf.ui.ErrorDialog.show(
-          'Unsupported input URL',
-          'Only .wtf-trace, .wtf-json, and .wtf-calls inputs are supported.',
-          this.getDom());
-    }
-  }
-  if (!entries.length) {
-    return;
-  }
-
-  function loadUrl(url, responseType) {
-    var deferred = new goog.async.Deferred();
-
-    var xhr = new goog.net.XhrIo();
-    xhr.setResponseType(responseType);
-    goog.events.listen(xhr, goog.net.EventType.COMPLETE, function() {
-      if (xhr.isSuccess()) {
-        var data = xhr.getResponse();
-        goog.asserts.assert(data);
-        deferred.callback(data);
-      } else {
-        deferred.errback('Failed to load');
-      }
-    });
-    xhr.send(url);
-
-    return deferred;
-  }
-
-  var deferreds = [];
-  for (var n = 0; n < entries.length; n++) {
-    var entry = entries[n];
-    switch (entry.mimeType) {
-      case 'application/x-extension-wtf-trace':
-      case 'application/x-extension-wtf-calls':
-        deferreds.push(loadUrl(entry.source,
-            goog.net.XhrIo.ResponseType.ARRAY_BUFFER));
-        break;
-      case 'application/x-extension-wtf-json':
-        deferreds.push(loadUrl(entry.source,
-            goog.net.XhrIo.ResponseType.TEXT));
-        break;
-    }
-  }
-  this.openDeferredSources_(entries, deferreds);
+wtf.app.ui.MainDisplay.prototype.requestLocalTraceLoad = function() {
+  this.loader_.requestLocalOpenDialog(function selected() {
+    // Hide the splash dialog if it's up.
+    this.showSplashDialog_(false);
+  }, this);
 };
 
 
@@ -632,185 +380,13 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
   // Hide the splash dialog if it's up.
   this.showSplashDialog_(false);
 
-  if (!wtf.io.drive.isSupported()) {
-    wtf.ui.ErrorDialog.show(
-        'Drive support not enabled',
-        'Drive is not supported in this build.',
-        this.getDom());
-    return;
-  }
-
-  goog.result.wait(wtf.io.drive.showFilePicker({
-    title: 'Select a trace file'
-  }), function(filesResult) {
-    var files = filesResult.getValue();
-    if (!files || !files.length) {
-      // Cancelled.
-      // If nothing is displayed, show the splash dialog.
-      if (!this.documentView_) {
-        this.showSplashDialog_(true);
-      }
-      return;
+  this.loader_.requestDriveOpenDialog(function cancelled() {
+    // Cancelled.
+    // If nothing is displayed, show the splash dialog.
+    if (!this.documentView_) {
+      this.showSplashDialog_(true);
     }
-
-    _gaq.push(['_trackEvent', 'app', 'open_drive_files']);
-
-    var deferreds = [];
-
-    var entries = [];
-    for (var n = 0; n < files.length; n++) {
-      var fileName = files[n][0];
-      var fileId = files[n][1];
-      var entry = {
-        source: fileId,
-        filename: fileName,
-        mimeType: 'application/x-extension-wtf-trace'
-      };
-      entries.push(entry);
-      var fileDeferred = new goog.async.Deferred();
-      deferreds.push(fileDeferred);
-      goog.result.wait(wtf.io.drive.downloadFile(fileId), function(result) {
-        var driveFile = result.getValue();
-        if (driveFile) {
-          entry.filename = driveFile.filename;
-          fileDeferred.callback(driveFile.contents);
-        } else {
-          fileDeferred.errback(result.getError());
-        }
-      }, this);
-    }
-
-    this.openDeferredSources_(entries, deferreds);
   }, this);
-};
-
-
-/**
- * Creates a document and adds sources for a set of deferred items. Each
- * deferred should provide a ArrayBuffer of binary source data or a string
- * of json data.
- * @param {!Array.<{
- *   source: *,
- *   filename: string,
- *   mimeType: string
- * }>} entries The list of deferred entries being opened. This must match up
- *     1:1 with the deferreds list.
- * @param {!Array.<!goog.async.Deferred>} deferreds a List of deferreds to wait
- *     on. Each should return an array buffer (for binary sources) or a string
- *     (for json sources).
- * @private
- */
-wtf.app.ui.MainDisplay.prototype.openDeferredSources_ = function(
-    entries, deferreds) {
-  var doc = new wtf.doc.Document(this.platform_);
-  this.openDocument(doc);
-
-  goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
-      function(datas) {
-        var filenames = [];
-        var mimeTypes = [];
-        for (var n = 0; n < entries.length; n++) {
-          filenames.push(entries[n].filename);
-          mimeTypes.push(entries[n].mimeType);
-        }
-
-        // Add all data.
-        var contentLength = doc.addEventSources(datas, mimeTypes);
-        _gaq.push(['_trackEvent', 'app', 'open_files', null, contentLength]);
-
-        // Set title.
-        this.setTitleFromFilenames_(filenames);
-
-        // Zoom to fit.
-        // TODO(benvanik): remove setTimeout when zoomToFit is based on view
-        wtf.timing.setTimeout(50, function() {
-          this.documentView_.zoomToFit();
-        }, this);
-      },
-      function(arg) {
-        wtf.ui.ErrorDialog.show(
-            'Unable to load files',
-            'An input file could not be read.',
-            this.getDom());
-      }, this);
-};
-
-
-/**
- * Saves the current trace document, if any.
- * @private
- */
-wtf.app.ui.MainDisplay.prototype.saveTrace_ = function() {
-  if (!this.documentView_) {
-    return;
-  }
-
-  var doc = this.documentView_.getDocument();
-  var sources = doc.getDatabase().getSources();
-  if (!sources.length) {
-    return;
-  }
-  // Just pick the first source for naming.
-  var contextInfo = sources[0].getContextInfo();
-  var filename = contextInfo.getFilename();
-
-  // prefix-YYYY-MM-DDTHH-MM-SS
-  var dt = new Date();
-  var filenameSuffix = '-' +
-      dt.getFullYear() +
-      goog.string.padNumber(dt.getMonth() + 1, 2) +
-      goog.string.padNumber(dt.getDate(), 2) + 'T' +
-      goog.string.padNumber(dt.getHours(), 2) +
-      goog.string.padNumber(dt.getMinutes(), 2) +
-      goog.string.padNumber(dt.getSeconds(), 2);
-  filename += filenameSuffix;
-
-  var storage = doc.getStorage();
-  var dataStreams = storage.snapshotDataStreamBuffers();
-  var contentLength = 0;
-  for (var n = 0; n < dataStreams.length; n++) {
-    var dataStream = dataStreams[n];
-    var streamFilename = filename;
-    if (dataStreams.length > 1) {
-      streamFilename += '-' + n;
-    }
-    switch (dataStream.type) {
-      case 'application/x-extension-wtf-trace':
-        streamFilename += wtf.io.FILE_EXTENSION;
-        break;
-    }
-    var platform = wtf.pal.getPlatform();
-    platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
-    contentLength += dataStream.data.length;
-  }
-  _gaq.push(['_trackEvent', 'app', 'save_trace', null, contentLength]);
-};
-
-
-/**
- * Saves the current trace document to Drive, if any.
- * @private
- */
-wtf.app.ui.MainDisplay.prototype.saveDriveTrace_ = function() {
-  if (!this.documentView_) {
-    return;
-  }
-
-  if (!wtf.io.drive.isSupported()) {
-    wtf.ui.ErrorDialog.show(
-        'Drive support not enabled',
-        'Drive is not supported in this build.',
-        this.getDom());
-    return;
-  }
-
-  _gaq.push(['_trackEvent', 'app', 'save_drive_trace']);
-
-  // TODO(benvanik): save to drive.
-  wtf.ui.ErrorDialog.show(
-      'Drive saving not implemented',
-      'Sorry, this isn\'t implemented yet!',
-      this.getDom());
 };
 
 

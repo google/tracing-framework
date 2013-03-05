@@ -52,17 +52,22 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
   goog.base(this, parentElement, opt_dom);
   var dom = this.getDom();
 
+  var clickToClose = goog.isDef(options.clickToClose) ?
+      options.clickToClose : true;
+
   // Setup keyboard handlers for closing/etc.
   var keyboard = wtf.events.getWindowKeyboard(dom);
   // TODO(benvanik): suppress all other scopes
   var keyboardScope = new wtf.events.KeyboardScope(keyboard);
   this.registerDisposable(keyboardScope);
-  keyboardScope.addShortcut('esc', this.close, this);
+  if (clickToClose) {
+    keyboardScope.addShortcut('esc', function() {
+      this.close();
+    }, this);
+  }
 
   if (options.modal) {
     // Add shield.
-    var clickToClose = goog.isDef(options.clickToClose) ?
-        options.clickToClose : true;
     var shield = new wtf.ui.Dialog.Shield_(this, clickToClose);
     this.registerDisposable(shield);
   }
@@ -97,20 +102,10 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   // Add dialog DOM to parent element instead of root user element.
   dom.appendChild(parentElement, el);
 
-  function recenter() {
-    var viewportSize = dom.getViewportSize();
-    var size = goog.style.getSize(rootElement);
-    goog.style.setStyle(el, {
-      'left': Math.floor(viewportSize.width / 2) + 'px',
-      'top': Math.floor(viewportSize.height / 2) + 'px',
-      'margin-left': -Math.floor(size.width / 2) + 'px',
-      'margin-top': -Math.floor(size.height / 2) + 'px'
-    });
-  };
   var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
   this.getHandler().listen(
-      vsm, goog.events.EventType.RESIZE, recenter, false);
-  recenter();
+      vsm, goog.events.EventType.RESIZE, this.center, false);
+  this.center();
 
   // Add after layout to prevent sliding.
   goog.dom.classes.add(el, goog.getCssName('uiDialogPoppedIn'));
@@ -118,9 +113,30 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
 
 
 /**
- * Closes the dialog.
+ * Centers the dialog.
  */
-wtf.ui.Dialog.prototype.close = function() {
+wtf.ui.Dialog.prototype.center = function() {
+  var dom = this.getDom();
+  var rootElement = this.getRootElement();
+  var el = dom.getParentElement(rootElement);
+  var viewportSize = dom.getViewportSize();
+  var size = goog.style.getSize(rootElement);
+  goog.style.setStyle(el, {
+    'left': Math.floor(viewportSize.width / 2) + 'px',
+    'top': Math.floor(viewportSize.height / 2) + 'px',
+    'margin-left': -Math.floor(size.width / 2) + 'px',
+    'margin-top': -Math.floor(size.height / 2) + 'px'
+  });
+};
+
+
+/**
+ * Closes the dialog.
+ * @param {function(this:T)=} opt_callback Callback when the dialog is closed.
+ * @param {T=} opt_scope Scope for the callback.
+ * @template T
+ */
+wtf.ui.Dialog.prototype.close = function(opt_callback, opt_scope) {
   // Remove the dialog DOM root.
   var dom = this.getDom();
   var rootElement = this.getRootElement();
@@ -131,6 +147,9 @@ wtf.ui.Dialog.prototype.close = function() {
       dom.removeNode(el);
       this.emitEvent(wtf.ui.Dialog.EventType.CLOSED);
       goog.dispose(this);
+      if (opt_callback) {
+        opt_callback.call(opt_scope);
+      }
     }, this);
   }
 };

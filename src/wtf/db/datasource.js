@@ -12,10 +12,48 @@
  */
 
 goog.provide('wtf.db.DataSource');
+goog.provide('wtf.db.DataSourceInfo');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('wtf.data.formats.FileFlags');
+
+
+
+/**
+ * Source information about a data source.
+ * @param {string} filename Filename or URL.
+ * @param {string} contentType MIME type.
+ * @constructor
+ */
+wtf.db.DataSourceInfo = function(filename, contentType) {
+  /**
+   * @type {string}
+   */
+  this.filename = filename;
+
+  /**
+   * @type {string}
+   */
+  this.contentType = contentType;
+};
+
+
+/**
+ * Gets a value indicating whether the source data is binary (vs. text).
+ * @return {boolean} True if binary, false if text.
+ */
+wtf.db.DataSourceInfo.prototype.isBinary = function() {
+  // Guess the response type from the content type.
+  switch (this.contentType) {
+    default:
+    case 'application/x-extension-wtf-trace':
+    case 'application/x-extension-wtf-calls':
+      return true;
+    case 'application/x-extension-wtf-json':
+      return false;
+  }
+};
 
 
 

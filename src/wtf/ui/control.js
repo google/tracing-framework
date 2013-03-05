@@ -160,11 +160,13 @@ wtf.ui.Control.prototype.getRootElement = function() {
 /**
  * Gets the first child element with the given class name.
  * @param {string} className CSS class name.
+ * @param {Element=} opt_root Root element.
  * @return {!Element} Element.
  * @protected
  */
-wtf.ui.Control.prototype.getChildElement = function(className) {
-  var value = this.dom_.getElementByClass(className, this.rootElement_);
+wtf.ui.Control.prototype.getChildElement = function(className, opt_root) {
+  var value = this.dom_.getElementByClass(
+      className, opt_root || this.rootElement_);
   goog.asserts.assert(value);
   return /** @type {!Element} */ (value);
 };
