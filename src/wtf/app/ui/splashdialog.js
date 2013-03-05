@@ -18,6 +18,7 @@ goog.require('goog.soy');
 goog.require('wtf.app.ui.splashdialog');
 goog.require('wtf.events');
 goog.require('wtf.events.Keyboard');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.io.drive');
 goog.require('wtf.ui.Dialog');
 goog.require('wtf.version');
@@ -38,13 +39,20 @@ wtf.app.ui.SplashDialog = function(parentElement, opt_dom) {
     clickToClose: false
   }, parentElement, opt_dom);
 
+  var dom = this.getDom();
   var commandManager = wtf.events.getCommandManager();
+
+  // Setup keyboard shortcuts.
+  var keyboard = wtf.events.getWindowKeyboard(dom);
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+  keyboardScope.addCommandShortcut('command+o', 'open_local_trace');
 
   var eh = this.getHandler();
   eh.listen(this.getChildElement(goog.getCssName('openButton')),
       goog.events.EventType.CLICK, function(e) {
         e.preventDefault();
-        commandManager.execute('open_trace', this, null);
+        commandManager.execute('open_local_trace', this, null);
       }, false);
   if (wtf.io.drive.isSupported()) {
     eh.listen(this.getChildElement(goog.getCssName('openDriveButton')),

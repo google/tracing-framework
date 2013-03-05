@@ -389,6 +389,9 @@ wtf.app.ui.tracks.TracksPanel.prototype.viewportChanged_ = function() {
 
   // Update from viewport.
   var width = this.viewport_.getScreenWidth();
+  if (width <= 1) {
+    return;
+  }
   var timeLeft = this.viewport_.screenToScene(0, 0).x;
   var timeRight = this.viewport_.screenToScene(width, 0).x;
   timeLeft += firstEventTime;

@@ -265,7 +265,7 @@ wtf.io.drive.showFilePicker = function(options) {
  *   filename: string,
  *   fileExtension: string,
  *   mimeType: string,
- *   contents: (ArrayBuffer|string)
+ *   xhr: !XMLHttpRequest
  * }}
  */
 wtf.io.drive.DriveFile;
@@ -281,7 +281,10 @@ wtf.io.drive.downloadFileLoadResult_ = null;
 
 
 /**
- * Downloads a file from Drive.
+ * Begins downloading a file from Drive.
+ * The async result from this is an XHR that is about to start downloading. Just
+ * call {@code send()} on it to kick off the process. This allows you to listen
+ * for any progress events you require.
  * @param {string} fileId Drive file ID.
  * @return {!goog.result.Result} Async result. The value will be a
  *     {@see wtf.io.drive.DriveFile} object.
@@ -359,19 +362,15 @@ wtf.io.drive.downloadFile = function(fileId) {
 
     xhr.open('GET', downloadUrl, true);
     xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
-    xhr.onload = function() {
-      if (xhr.status != 200) {
-        result.setError();
-        return;
-      }
-
-      driveFile.contents = xhr.response;
-      result.setValue(driveFile);
-    };
     xhr.onerror = function() {
       result.setError();
     };
-    xhr.send(null);
+
+    // We don't send here, as we let the caller do it.
+    // xhr.send(null);
+    driveFile.xhr = xhr;
+
+    result.setValue(driveFile);
   };
 
   return result;

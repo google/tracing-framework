@@ -232,8 +232,9 @@ wtf.db.Database.prototype.addStreamingSource = function(stream) {
 /**
  * Adds a binary data source as an immediately-available stream.
  * @param {!wtf.io.ByteArray} data Input data.
+ * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
-wtf.db.Database.prototype.addBinarySource = function(data) {
+wtf.db.Database.prototype.addBinarySource = function(data, opt_sourceInfo) {
   // Create a stream wrapper for the input data.
   var stream = new wtf.io.MemoryReadStream();
   stream.addData(data);
@@ -250,8 +251,9 @@ wtf.db.Database.prototype.addBinarySource = function(data) {
 /**
  * Adds a JSON data source as an immediately-available stream.
  * @param {string|!Array|!Object} data Input data.
+ * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
-wtf.db.Database.prototype.addJsonSource = function(data) {
+wtf.db.Database.prototype.addJsonSource = function(data, opt_sourceInfo) {
   // TODO(benvanik): send to storage so that saves work
 
   this.addDataSource(new wtf.db.sources.JsonDataSource(this, data));
@@ -261,8 +263,9 @@ wtf.db.Database.prototype.addJsonSource = function(data) {
 /**
  * Adds a binary instrumented call source as an immediately-available stream.
  * @param {!wtf.io.ByteArray} data Input data.
+ * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
-wtf.db.Database.prototype.addCallsSource = function(data) {
+wtf.db.Database.prototype.addCallsSource = function(data, opt_sourceInfo) {
   // TODO(benvanik): support mimetype storage?
   // Send to storage, if needed.
   // if (this.storage_) {

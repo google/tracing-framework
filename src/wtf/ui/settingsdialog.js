@@ -90,7 +90,9 @@ wtf.ui.SettingsDialog = function(options, title, parentElement, opt_dom) {
       }, false, this);
   eh.listen(
       this.getChildElement(goog.getCssName('buttonCancel')),
-      goog.events.EventType.CLICK, this.close, false, this);
+      goog.events.EventType.CLICK, function() {
+        this.close();
+      }, false, this);
 };
 goog.inherits(wtf.ui.SettingsDialog, wtf.ui.Dialog);
 
