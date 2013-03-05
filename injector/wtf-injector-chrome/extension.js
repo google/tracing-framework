@@ -580,6 +580,7 @@ Extension.ShowOptions;
 Extension.prototype.showUi_ = function(options, opt_callback, opt_scope) {
   var pageUrl = (options ? options.pageUrl : null) ||
       chrome.extension.getURL('app/maindisplay.html');
+  var newWindow = options ? options.newWindow : false;
   var sourceTab = options ? options.sourceTab : null;
   var targetTab = options ? options.targetTab : null;
 
@@ -612,6 +613,10 @@ Extension.prototype.showUi_ = function(options, opt_callback, opt_scope) {
   window.addEventListener('message', waiter, true);
 
   var existingTabId = sourceTab ? this.popupWindows_[sourceTab.id] : undefined;
+  if (newWindow) {
+    // Force a new tab if requested.
+    existingTabId = undefined;
+  }
   if (existingTabId === undefined) {
     // New tab needed.
     if (targetTab) {
@@ -765,6 +770,7 @@ Extension.prototype.showFileEntriesInUi_ = function(options, fileEntries) {
  * Shows a snapshot in a new window.
  * @param {!Tab} sourceTab Source tab.
  * @param {string} pageUrl Page URL to open.
+ * @param {boolean} newWindow Whether to show in a new window.
  * @param {!Array.<string>} contentTypes Data content type.
  * @param {!Array.<string>} contentSources Data content type.
  * @param {!Array.<string>} contentUrls Content URLs.
@@ -772,10 +778,11 @@ Extension.prototype.showFileEntriesInUi_ = function(options, fileEntries) {
  * @private
  */
 Extension.prototype.showSnapshot = function(
-    sourceTab, pageUrl,
+    sourceTab, pageUrl, newWindow,
     contentTypes, contentSources, contentUrls, contentLength) {
   this.showUi_({
     pageUrl: pageUrl,
+    newWindow: newWindow,
     sourceTab: sourceTab
   }, function(port) {
     // NOTE: postMessage doesn't support transferrables here.
