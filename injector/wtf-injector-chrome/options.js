@@ -300,7 +300,8 @@ Options.prototype.getDefaultPageOptions = function(url) {
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
     'wtf.extensions': extensions,
-    'wtf.trace.provider.chromeDebug': true
+    'wtf.trace.provider.chromeDebug.present': true,
+    'wtf.trace.provider.chromeDebug.tracing': false
   };
 
   // TODO(benvanik): make a different page action setting?
@@ -336,7 +337,8 @@ Options.prototype.getPageOptions = function(url) {
         case 'wtf.hud.app.mode':
         case 'wtf.hud.app.endpoint':
         case 'wtf.extensions':
-        case 'wtf.trace.provider.chromeDebug':
+        case 'wtf.trace.provider.chromeDebug.present':
+        case 'wtf.trace.provider.chromeDebug.tracing':
           continue;
       }
       options[key] = storedOptions[key];

@@ -53,8 +53,8 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
    */
   this.available_ = false;
 
-  var level = options.getNumber('wtf.trace.provider.chromeDebug', 1);
-  if (!level) {
+  if (!options.getNumber('wtf.trace.provider.chromeDebug', 0) ||
+      !options.getBoolean('wtf.trace.provider.chromeDebug.present', false)) {
     return;
   }
 
