@@ -129,7 +129,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
    * @private
    */
   this.trackCanvas_ = /** @type {!HTMLCanvasElement} */ (
-      this.getChildElement(goog.getCssName('canvas')));
+      this.getChildElement(goog.getCssName('tracksCanvas')));
 
   var tooltip = new wtf.ui.Tooltip(this.getDom());
   this.registerDisposable(tooltip);
@@ -370,7 +370,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
   var canvasOuter = goog.dom.getParentElement(canvas);
 
   var infobarWidth = this.infobar_.getSplitterSize();
-  goog.style.setStyle(canvasOuter, 'margin-right', (infobarWidth + 1) + 'px');
+  goog.style.setStyle(canvasOuter, 'margin-right', (infobarWidth + 2) + 'px');
 
   var currentSize = goog.style.getSize(canvasOuter);
   this.viewport_.setScreenSize(currentSize.width, currentSize.height);
