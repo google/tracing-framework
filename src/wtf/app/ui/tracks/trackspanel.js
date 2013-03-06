@@ -374,6 +374,8 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
 
   var currentSize = goog.style.getSize(canvasOuter);
   this.viewport_.setScreenSize(currentSize.width, currentSize.height);
+
+  this.infobar_.layout();
 };
 
 
