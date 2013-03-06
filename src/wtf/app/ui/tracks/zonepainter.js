@@ -339,11 +339,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
     return false;
   }
 
-  // TODO(benvanik): escape other characters?
-  var newFilterString = '/^' +
-      it.getType().name.replace(/([\.\$\-\*\+])/g, '\\$1') +
-      '$/';
-
   var commandManager = wtf.events.getCommandManager();
   if (modifiers & wtf.ui.ModifierKey.SHIFT) {
     // Shift-clicking a scope selects it and zooms to fit.
@@ -354,7 +349,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
       commandManager.execute('select_range', this, null, timeStart, timeEnd);
     }
   } else {
-    commandManager.execute('filter_events', this, null, newFilterString);
+    var filterString = it.getType().name;
+    commandManager.execute('filter_events', this, null, filterString, true);
   }
 
   return true;

@@ -36,28 +36,12 @@
         </tr>
       </table>
     </div>
-    <div class="{css kScrollBarInner} {css content}">
+    <div class="{css content}">
+      <div class="{css resultsOuter}">
+        <div class="{css results}">
+        </div>
+      </div>
     </div>
     <div class="{css splitter}"></div>
-  </div>
-{/template}
-
-
-/**
- * An entry in the data table.
- * @param title Event title.
- * @param value Sort value (time/etc).
- * @param content Content line value.
- */
-{template .entry}
-  <div class="{css entry}">
-    <div class="{css header}">
-      <div class="{css value}">{$value}</div>
-      <div class="{css title}">{$title}</div>
-    </div>
-    <div class="{css content}"
-        title="total count / total time / user time / average time">
-      {$content}
-    </div>
   </div>
 {/template}
