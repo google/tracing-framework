@@ -93,7 +93,7 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.paintRowRange = function(
   // Gutter.
   // TODO(benvanik): move into table as an option?
   var gutterWidth = 70;
-  ctx.fillStyle = '#fcfcfc';
+  ctx.fillStyle = '#fafafa';
   ctx.fillRect(0, 0, gutterWidth, bounds.height);
   var y = rowOffset;
   for (var n = first; n <= last; n++, y += rowHeight) {
