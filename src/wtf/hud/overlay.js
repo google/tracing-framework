@@ -18,10 +18,12 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
+goog.require('goog.events.BrowserEvent');
 goog.require('goog.fs');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
+goog.require('goog.userAgent');
 goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ext');
@@ -77,6 +79,13 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
       dom.getDocument(),
       'WtfContentScriptEvent');
   this.registerDisposable(this.extensionChannel_);
+
+  /**
+   * The last name used when opening a popup window.
+   * @type {string}
+   * @private
+   */
+  this.lastWindowName_ = 'wtf_ui';
 
   /**
    * Tracing session.
@@ -138,7 +147,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.addButton_(
       true,
       '/assets/icons/popout_white.svg',
-      'Send to UI', 'f9',
+      'Send to UI (middle click for new tab)', 'f9',
       this.sendSnapshotClicked_, this);
   this.addButton_(
       true,
@@ -376,7 +385,7 @@ wtf.hud.Overlay.prototype.advance = function(opt_time) {
  *   title: string,
  *   icon: string,
  *   shortcut: string?,
- *   callback: function(),
+ *   callback: function(Event=),
  *   scope: (Object|undefined)
  * }}
  */
@@ -405,7 +414,8 @@ wtf.hud.Overlay.prototype.insertButton = function(info) {
  * @param {string} icon Data URI of an icon file or a CSS class name.
  * @param {string} title Title name for tooltips.
  * @param {string?} shortcut Shortcut key or null if not used.
- * @param {!function(this:T)} callback Callback when the action is invoked.
+ * @param {!function(this:T, Event=)} callback Callback when the action is
+ *     invoked.
  * @param {T=} opt_scope Callback scope.
  * @template T
  * @private
@@ -443,8 +453,8 @@ wtf.hud.Overlay.prototype.addButton_ = function(
 
   // Click handler.
   // We add this event directly to ensure we don't accidentally log it.
-  el.onclick = wtf.trace.ignoreListener(function() {
-    callback.call(opt_scope);
+  el.onclick = wtf.trace.ignoreListener(function(e) {
+    callback.call(opt_scope, e);
   });
 
   // Measure and update extents.
@@ -458,9 +468,10 @@ wtf.hud.Overlay.prototype.addButton_ = function(
 
 /**
  * Handles clicks on the clear snapshot button.
+ * @param {Event=} opt_e Event, if this came from a click.
  * @private
  */
-wtf.hud.Overlay.prototype.clearSnapshotClicked_ = function() {
+wtf.hud.Overlay.prototype.clearSnapshotClicked_ = function(opt_e) {
   // Clear the current snapshot by restarting the session.
   wtf.trace.reset();
 };
@@ -468,28 +479,42 @@ wtf.hud.Overlay.prototype.clearSnapshotClicked_ = function() {
 
 /**
  * Handles clicks on the send to UI button.
+ * @param {Event=} opt_e Event, if this came from a click.
  * @private
  */
-wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function() {
+wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function(opt_e) {
   // Send snapshot.
-  this.sendSnapshot_();
+  var newWindow = false;
+  if (opt_e) {
+    if (goog.userAgent.MAC) {
+      newWindow = opt_e.metaKey;
+    } else {
+      newWindow = opt_e.ctrlKey;
+    }
+    if (opt_e.button == goog.events.BrowserEvent.MouseButton.MIDDLE) {
+      newWindow = true;
+    }
+  }
+  this.sendSnapshot_(newWindow);
 };
 
 
 /**
  * Handles clicks on the save button.
+ * @param {Event=} opt_e Event, if this came from a click.
  * @private
  */
-wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function() {
+wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function(opt_e) {
   wtf.trace.snapshot();
 };
 
 
 /**
  * Handles clicks on the settings UI button.
+ * @param {Event=} opt_e Event, if this came from a click.
  * @private
  */
-wtf.hud.Overlay.prototype.settingsClicked_ = function() {
+wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
   // Show settings dialog.
   var dom = this.getDom();
   var body = dom.getDocument().body;
@@ -572,15 +597,16 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function() {
 
 /**
  * Sends a snapshot to the UI.
+ * @param {boolean=} opt_newWindow Force into a new window.
  * @private
  */
-wtf.hud.Overlay.prototype.sendSnapshot_ = function() {
+wtf.hud.Overlay.prototype.sendSnapshot_ = function(opt_newWindow) {
   var mode = this.options_.getString('wtf.hud.app.mode', 'page');
   var endpoint = this.options_.getOptionalString('wtf.hud.app.endpoint');
   switch (mode) {
     default:
     case 'page':
-      this.sendSnapshotToPage_(endpoint);
+      this.sendSnapshotToPage_(endpoint, opt_newWindow);
       break;
     case 'remote':
       this.sendSnapshotToRemote_(endpoint);
@@ -592,9 +618,11 @@ wtf.hud.Overlay.prototype.sendSnapshot_ = function() {
 /**
  * Sends a snapshot to a webpage via message channel.
  * @param {string=} opt_endpoint Target URL.
+ * @param {boolean=} opt_newWindow Force into a new window.
  * @private
  */
-wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
+wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
+    opt_endpoint, opt_newWindow) {
   // Capture snapshot into memory buffers.
   // Sending may take a bit, so doing this now ensures we get the snapshot
   // immediately when requested.
@@ -626,6 +654,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',
         'page_url': endpoint,
+        'new_window': opt_newWindow || false,
         'content_types': ['application/x-extension-wtf-trace'],
         'content_sources': [contentSource],
         'content_urls': blobUrls,
@@ -633,7 +662,12 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(opt_endpoint) {
       });
     } else {
       // Create window and show.
-      var target = window.open(endpoint + '?expect_data', 'wtf_ui');
+      var windowName = this.lastWindowName_;
+      if (opt_newWindow) {
+        windowName = 'wtf_ui' + Date.now();
+      }
+      this.lastWindowName_ = windowName;
+      var target = window.open(endpoint + '?expect_data', windowName);
 
       var contentTypes = [];
       var contentSources = [];
