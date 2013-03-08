@@ -144,7 +144,7 @@ function transformCode(moduleId, url, sourceCode) {
   };
 
   // Walk the entire document instrumenting functions.
-  var nextFnId = moduleId << 24 + 1;
+  var nextFnId = (moduleId << 24) + 1;
   var nextAnonymousName = 0;
   var fns = [];
   var targetCode = falafel(sourceCode, function(node) {
