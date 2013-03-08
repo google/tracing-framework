@@ -114,13 +114,9 @@ function transformCode(moduleId, url, sourceCode) {
     // foo = function() {};
     // Bar.foo = function() {};
     //
-    if (node.parent.type = 'AssignmentExpression') {
+    if (node.parent.type == 'AssignmentExpression') {
       // We are the RHS, LHS is something else.
       var left = node.parent.left;
-      if (!left) {
-        // This happens if it's (function(){})();
-        return null;
-      }
       if (left.type == 'MemberExpression') {
         // Bar.foo = function() {};
         // left.object {type: 'Identifier', name: 'Bar'}
@@ -137,7 +133,7 @@ function transformCode(moduleId, url, sourceCode) {
       return null;
     }
 
-    console.log('unknown fn construct', node);
+    //console.log('unknown fn construct', node);
 
     // TODO(benvanik): support jscompiler prototype alias:
     // _.$JSCompiler_prototypeAlias$$ = _.$something;
@@ -148,7 +144,7 @@ function transformCode(moduleId, url, sourceCode) {
   };
 
   // Walk the entire document instrumenting functions.
-  var nextFnId = moduleId << 24 + 1;
+  var nextFnId = (moduleId << 24) + 1;
   var nextAnonymousName = 0;
   var fns = [];
   var targetCode = falafel(sourceCode, function(node) {
