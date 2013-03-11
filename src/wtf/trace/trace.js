@@ -556,6 +556,7 @@ wtf.trace.nextTimeRange_ = 0;
  *
  * @param {string} name Time range name.
  * @param {*=} opt_value Optional data value.
+ * @param {number=} opt_time Time for the stamp; omit to use the current time.
  * @return {wtf.trace.TimeRange} Time range handle.
  */
 wtf.trace.beginTimeRange = function(name, opt_value, opt_time) {

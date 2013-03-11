@@ -15,7 +15,6 @@ goog.provide('wtf.app.ui.nav.HeatmapPainter');
 
 goog.require('goog.array');
 goog.require('wtf.db.Database');
-goog.require('wtf.db.EventIndex');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimePainter');
 
@@ -206,7 +205,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes,
  * @private
  */
 wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.addZoneIndex_ = function(zone) {
-  this.indices_.push(new wtf.db.EventIndex(zone, this.eventTypes_));
+  this.indices_.push(zone.getSharedIndex(this.eventTypes_));
 };
 
 
