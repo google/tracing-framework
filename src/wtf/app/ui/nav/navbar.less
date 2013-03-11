@@ -29,8 +29,9 @@
     left: 0;
     right: 0;
     height: 100%;
-    margin-right: @infoWidth;
+    margin-right: @infoWidth + 1;
     border-right: 1px solid #ebebeb;
+    overflow: hidden;
 
     & .canvas {
       cursor: crosshair;
@@ -53,20 +54,19 @@
     }
   }
 
-  & .infoOuter {
+  & .boxesOuter {
     position: absolute;
     top: 0;
     bottom: 0;
     right: 0;
     width: @infoWidth;
 
-    & .info {
+    & .boxes {
       position: absolute;
       left: 0;
       right: 0;
       top: 0;
       bottom: 0;
-      padding: 3px;
       overflow-x: hidden;
       overflow-y: auto;
     }

@@ -1,0 +1,84 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Stats box CSS.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+/* Stats box root. */
+.appUiNavbarStatsBox {
+  @numbersWidth: 150px;
+  @height: 70px;
+
+  position: relative;
+  height: @height - 1;
+  border-bottom: 1px solid #DDDDDD;
+
+  & .title {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-family: monospace;
+    font-weight: bold;
+    cursor: default;
+  }
+
+  .graphOuter {
+    height: 100%;
+    margin-right: @numbersWidth;
+    overflow: hidden;
+    cursor: default;
+
+    & .graphCanvas {
+    }
+    & .todo {
+      color: lightgray;
+      position: absolute;
+      top: 30px;
+      left: 50px;
+    }
+  }
+
+  .numbersOuter {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: @numbersWidth - 1;
+    height: 100%;
+    border-left: 1px solid #EEEEEE;
+
+    & .numbersTable {
+      width: 100%;
+      margin: 3px;
+      padding-top: 5px;
+
+      td:first-child {
+        width: 53px;
+        /*width: 1%;*/
+
+        white-space: nowrap;
+        text-align: right;
+        padding-right: 5px;
+      }
+      td:last-child {
+        /*width: 100%;*/
+
+        white-space: nowrap;
+      }
+      td {
+        .allowSelect();
+      }
+    }
+
+    .empty {
+      color: lightgray;
+      cursor: default;
+    }
+  }
+}

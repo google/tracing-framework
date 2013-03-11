@@ -14,7 +14,9 @@
 goog.provide('wtf.db.Zone');
 
 goog.require('goog.Disposable');
+goog.require('goog.array');
 goog.require('wtf');
+goog.require('wtf.db.EventIndex');
 goog.require('wtf.db.EventIterator');
 goog.require('wtf.db.EventList');
 goog.require('wtf.db.Filter');
@@ -99,8 +101,29 @@ wtf.db.Zone = function(db, name, type, location) {
    */
   this.timeRangeList_ = new wtf.db.TimeRangeList(this);
   this.registerDisposable(this.timeRangeList_);
+
+  /**
+   * A list of all shared indices that have been created for this zone.
+   * Users need not share the indices if they plan on throwing them away
+   * after use, but for certain hot indices it's a good idea to keep them
+   * cached. For example, an index tracking GCs is useful in many places.
+   * It's up to the caller how it manages these.
+   * Indices are disposed when the zone is disposed.
+   * @type {!Array.<!wtf.db.EventIndex>}
+   * @private
+   */
+  this.indices_ = [];
 };
 goog.inherits(wtf.db.Zone, goog.Disposable);
+
+
+/**
+ * @override
+ */
+wtf.db.Zone.prototype.disposeInternal = function() {
+  goog.disposeAll(this.indices_);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -217,6 +240,29 @@ wtf.db.Zone.prototype.getTimeRangeList = function() {
 
 
 /**
+ * Gets an event index with the given event types.
+ * If the index has already been created the existing one will be returned.
+ * The index is disposed with the zone. When requesting an index ensure that
+ * the event names are always in the same order.
+ * @param {!Array.<string>} eventNames A list of event type names.
+ * @return {!wtf.db.EventIndex} Event index.
+ */
+wtf.db.Zone.prototype.getSharedIndex = function(eventNames) {
+  // Search for an existing index.
+  for (var n = 0; n < this.indices_.length; n++) {
+    if (goog.array.equals(this.indices_[n].getEventNames(), eventNames)) {
+      return this.indices_[n];
+    }
+  }
+
+  // Create a new index.
+  var index = new wtf.db.EventIndex(this, eventNames);
+  this.indices_.push(index);
+  return index;
+};
+
+
+/**
  * Queries the zone.
  * Throws errors if the expression could not be parsed.
  * @param {string} expr Query string.
@@ -328,6 +374,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.Zone.prototype, 'getTimeRangeList',
     wtf.db.Zone.prototype.getTimeRangeList);
+goog.exportProperty(
+    wtf.db.Zone.prototype, 'getSharedIndex',
+    wtf.db.Zone.prototype.getSharedIndex);
 goog.exportProperty(
     wtf.db.Zone.prototype, 'query',
     wtf.db.Zone.prototype.query);
