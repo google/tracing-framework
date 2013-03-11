@@ -259,7 +259,7 @@ wtf.db.sources.BinaryDataSource.prototype.readTraceHeader_ =
 
   // Initialize the trace source.
   // Only call when all other parsing has been successful.
-  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
+  this.initialize(contextInfo, flags, 0, metadata, timebase, timeDelay);
 
   // Add builtin events for this version.
   switch (formatVersion) {

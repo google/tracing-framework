@@ -431,7 +431,7 @@ wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
   goog.style.setHeight(this.tabbar_.getRootElement(), tabbarHeight);
 
   // Reset limits and keep the splitter above the fold when resizing the window.
-  var navbarMinHeight = wtf.app.ui.nav.Navbar.MIN_HEIGHT;
+  var navbarMinHeight = this.navbar_.getMinimumSize();
   var navbarMaxHeight = wtf.app.ui.nav.Navbar.MAX_HEIGHT;
   this.navbar_.setSplitterLimits(
       navbarMinHeight, Math.min(navbarMaxHeight, currentSize.height));

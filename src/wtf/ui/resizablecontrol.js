@@ -58,7 +58,7 @@ wtf.ui.ResizableControl = function(orientation, splitterClassName,
    * @type {number}
    * @private
    */
-  this.currentSize_ = 0;
+  this.currentSize_ = -1;
   wtf.timing.setImmediate(function() {
     var currentSize = goog.style.getSize(this.getRootElement());
     switch (orientation) {
@@ -231,6 +231,24 @@ wtf.ui.ResizableControl.prototype.setSizeFrom = function(value) {
       }
       break;
   }
+};
+
+
+/**
+ * Gets the minimum size of the control.
+ * @return {number|undefined} Minimum size or undefined if none specified.
+ */
+wtf.ui.ResizableControl.prototype.getMinimumSize = function() {
+  return this.minimumSize_;
+};
+
+
+/**
+ * Gets the maximum size of the control.
+ * @return {number|undefined} Maximum size or undefined if none specified.
+ */
+wtf.ui.ResizableControl.prototype.getMaximumSize = function() {
+  return this.maximumSize_;
 };
 
 

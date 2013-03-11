@@ -26,6 +26,7 @@ goog.require('wtf.app.ui.nav.TimelinePainter');
 goog.require('wtf.app.ui.nav.navbar');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.Granularity');
+goog.require('wtf.db.PresentationHint');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.ListEventType');
 goog.require('wtf.math');
@@ -70,6 +71,27 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
    * @private
    */
   this.db_ = db;
+
+  /**
+   * Whether the navbar is enabled.
+   * Some data sources disable us because they have nothing interesting to show.
+   * @type {boolean}
+   * @private
+   */
+  this.enabled_ = false;
+  var dataSources = db.getSources();
+  for (var n = 0; n < dataSources.length; n++) {
+    var presentationHints = dataSources[n].getPresentationHints();
+    // If any datasource is not bare, show the UI.
+    if (!(presentationHints & wtf.db.PresentationHint.BARE)) {
+      this.enabled_ = true;
+    }
+  }
+  if (!this.enabled_) {
+    this.setSplitterLimits(0, undefined);
+    this.setSplitterSize(0);
+    return;
+  }
 
   /**
    * Navbar canvas.
