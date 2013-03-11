@@ -79,6 +79,15 @@ wtf.db.EventIndex.prototype.getZone = function() {
 
 
 /**
+ * Gets the list of event names this index is tracking.
+ * @return {!Array.<string>} Event names. Do not modify.
+ */
+wtf.db.EventIndex.prototype.getEventNames = function() {
+  return this.eventNames_;
+};
+
+
+/**
  * Gets the total number of events.
  * @return {number} Event count.
  */
@@ -132,6 +141,9 @@ wtf.db.EventIndex.prototype.endRebuild = function() {
 goog.exportProperty(
     wtf.db.EventIndex.prototype, 'getZone',
     wtf.db.EventIndex.prototype.getZone);
+goog.exportProperty(
+    wtf.db.EventIndex.prototype, 'getEventNames',
+    wtf.db.EventIndex.prototype.getEventNames);
 goog.exportProperty(
     wtf.db.EventIndex.prototype, 'getCount',
     wtf.db.EventIndex.prototype.getCount);
