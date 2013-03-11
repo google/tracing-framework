@@ -33,7 +33,7 @@ var falafel = require('falafel');
  * @param {string} sourceCode Source code.
  * @return {string} Transformed code.
  */
-function transformCode(moduleId, url, sourceCode) {
+function transformCode(moduleId, url, sourceCode, trackHeap) {
   console.log('Instrumenting ' + url + ' (' + sourceCode.length + 'b)...');
   var startTime = Date.now();
 
@@ -41,10 +41,31 @@ function transformCode(moduleId, url, sourceCode) {
   // It cannot capture any state.
   // TODO(benvanik): clean up, make support nodejs too.
   // TODO(benvanik): put in an external file, have a HUD, etc.
-  var sharedInitCode = '(' + (function(global) {
+  var sharedInitCode = '(' + (function(global, trackHeap) {
+    var dataMagnitude = 26; // 2^26 = 67 million records
+    var dataSize = 1 << dataMagnitude;
+    var dataMask = dataSize - 1;
     global.__wtfm = window.__wtfm || {};
-    global.__wtfd = window.__wtfd || new Int32Array(64 * 1024 * 1024);
+    global.__wtfd = window.__wtfd || new Int32Array(1 << dataMagnitude);
     global.__wtfi = window.__wtfi || 0;
+    if (trackHeap) {
+      var getHeapUsage = new Function('return %GetHeapUsage()');
+      global.__wtfEnter = function(id) {
+        __wtfd[__wtfi++ & dataMask] = id;
+        __wtfd[__wtfi++ & dataMask] = getHeapUsage();
+      };
+      global.__wtfExit = function(id) {
+        __wtfd[__wtfi++ & dataMask] = -id;
+        __wtfd[__wtfi++ & dataMask] = getHeapUsage();
+      };
+    } else {
+      global.__wtfEnter = function(id) {
+        __wtfd[__wtfi++ & dataMask] = id;
+      };
+      global.__wtfExit = function(id) {
+        __wtfd[__wtfi++ & dataMask] = -id;
+      };
+    }
     global.__resetTrace = function() {
       global.__wtfi = 0;
     };
@@ -55,10 +76,13 @@ function transformCode(moduleId, url, sourceCode) {
       var euri = window.location.href;
       var etitle =
           window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
+      var attributes = trackHeap ? '[{"name": "heapSize", "units": "bytes"}]' : '[]';
       var headerText = '{' +
           '"version": 1,' +
           '"context": {"uri": "' + euri + '", "title": "' + etitle + '"},' +
-          '"metadata": {},' +
+          '"metadata": {' +
+          '  "attributes": ' + attributes +
+          '},' +
           '"modules": ' + JSON.stringify(global.__wtfm) + '}';
       var headerLength = headerText.length;
       var header = new Uint8Array(4 + headerLength);
@@ -92,7 +116,7 @@ function transformCode(moduleId, url, sourceCode) {
           false, false, false, false, 0, null);
       a.dispatchEvent(e);
     };
-  }).toString() + ')(window);';
+  }).toString() + ')(window, ' + trackHeap + ');';
 
   // Attempt to guess the names of functions.
   function getFunctionName(node) {
@@ -147,6 +171,12 @@ function transformCode(moduleId, url, sourceCode) {
   var nextFnId = (moduleId << 24) + 1;
   var nextAnonymousName = 0;
   var fns = [];
+  // We have two modes of rewriting - wrapping the whole function in a try/catch
+  // and explicitly handling all return statements. The try/catch mode is more
+  // generally correct (since it means we'll always have an "exit" entry), but
+  // can't be used in heap tracking mode because try/catch disables
+  // optimization, which drammatically changes memory generation behavior.
+  var tryCatchMode = !trackHeap;
   var targetCode = falafel(sourceCode, function(node) {
     if (node.type == 'BlockStatement') {
       var parent = node.parent;
@@ -178,13 +208,34 @@ function transformCode(moduleId, url, sourceCode) {
       fns.push(node.range[0]);
       fns.push(node.range[1]);
 
-      node.update([
-        '{',
-        '__wtfd[__wtfi++]=' + fnId + ';',
-        'try{' + node.source() + '}finally{',
-        '__wtfd[__wtfi++]=-' + fnId + ';',
-        '}}'
-      ].join(''));
+      if (tryCatchMode) {
+        node.update([
+          '{',
+          '__wtfEnter(' + fnId + ');',
+          'try{' + node.source() + '}finally{',
+          '__wtfExit(' + fnId + ');',
+          '}}'
+        ].join(''));
+      } else {
+        node.update([
+          '{',
+          'var __wtfId=' + fnId + ',__wtfRet;__wtfEnter(__wtfId);',
+          node.source(),
+          '__wtfExit(__wtfId);',
+          '}'
+        ].join(''));
+      }
+    } else if (!tryCatchMode && node.type == 'ReturnStatement') {
+      if (node.argument) {
+        node.update([
+          '__wtfRet=',
+          node.argument.source(),
+          '; __wtfExit(__wtfId);',
+          'return __wtfRet;'
+        ].join(''));
+      } else {
+        node.update('__wtfExit(__wtfId); return;');
+      }
     } else if (node.type == 'Program') {
       node.update([
         node.source(),
@@ -208,10 +259,11 @@ function transformCode(moduleId, url, sourceCode) {
 
 /**
  * Processes a single input file.
+ * @param {boolean} trackHeap Use heap tracking mode.
  * @param {string} inputPath Input file path.
  * @param {string=} opt_outputPath Output file path.
  */
-function processFile(inputPath, opt_outputPath) {
+function processFile(trackHeap, inputPath, opt_outputPath) {
   // Setup output path.
   var outputPath = opt_outputPath;
   if (!opt_outputPath) {
@@ -227,7 +279,7 @@ function processFile(inputPath, opt_outputPath) {
   var sourceCode = fs.readFileSync(inputPath).toString();
 
   // TODO(benvanik): support setting the module ID?
-  var targetCode = transformCode(0, inputPath, sourceCode);
+  var targetCode = transformCode(0, inputPath, sourceCode, trackHeap);
 
   console.log('Writing ' + outputPath + '...');
   fs.writeFileSync(outputPath, targetCode);
@@ -237,11 +289,12 @@ function processFile(inputPath, opt_outputPath) {
 
 /**
  * Launches a proxy server.
+ * @param {boolean} trackHeap Use heap tracking mode.
  * @param {number} httpPort HTTP port.
  * @param {number} httpsPort HTTPS port.
  * @param {{privateKey: string, certificate: string}} certs Certificates.
  */
-function startServer(httpPort, httpsPort, certs) {
+function startServer(trackHeap, httpPort, httpsPort, certs) {
   console.log('Launching proxy server...');
   console.log('   http: ' + httpPort);
   console.log('  https: ' + httpsPort);
@@ -260,7 +313,7 @@ function startServer(httpPort, httpsPort, certs) {
       sourceCode += chunk;
     });
     source.on('end', function() {
-      var targetCode = transformCode(moduleId, url, sourceCode);
+      var targetCode = transformCode(moduleId, url, sourceCode, trackHeap);
       target.end(targetCode);
     });
   };
@@ -408,17 +461,26 @@ function getHttpsCerts(callback) {
 function main(argv) {
   if (argv.length < 3) {
     console.log('usage:');
-    console.log('  wtf-instrument --server');
-    console.log('  wtf-instrument source.js [source.instrumented.js]');
+    console.log('  wtf-instrument --server [--trackheap]');
+    console.log('  wtf-instrument [--trackheap] source.js [source.instrumented.js]');
     return;
   }
 
   var isServer = false;
-  for (var n = 2; n < argv.length; n++) {
+  var trackHeap = false;
+  var n = 2;
+  for (; n < argv.length && argv[n].indexOf('--') == 0; n++) {
     if (argv[n] == '--server') {
       isServer = true;
+    } else if (argv[n] == '--trackheap') {
+      trackHeap = true;
+    } else {
+      console.log('Unkown arg: "' + argv[n] +
+                  '", valid args: "--server", "--trackheap"');
+      process.exit(1);
     }
   }
+  console.log('n = ' + n)
 
   if (isServer) {
     // TODO(benvanik): read ports from args/etc
@@ -426,7 +488,7 @@ function main(argv) {
       startServer(8081, 8082, certs);
     });
   } else {
-    processFile(argv[2], argv[3]);
+    processFile(trackHeap, argv[n], argv[n + 1]);
   }
 };
 
