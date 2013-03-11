@@ -321,7 +321,7 @@ wtf.db.sources.JsonDataSource.prototype.parseHeader_ = function(entry) {
   var contextInfo = new wtf.data.ScriptContextInfo();
 
   var timeDelay = db.computeTimeDelay(timebase);
-  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
+  this.initialize(contextInfo, flags, 0, metadata, timebase, timeDelay);
 
   return true;
 };

@@ -20,6 +20,7 @@ goog.require('wtf.data.formats.BinaryCalls');
 goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
+goog.require('wtf.db.PresentationHint');
 goog.require('wtf.io');
 goog.require('wtf.util');
 
@@ -119,7 +120,13 @@ wtf.db.sources.CallsDataSource.prototype.start = function() {
     metadata = {};
   }
 
-  this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
+  // Assume we are always special. In the future the file can specify this.
+  var presentationHints = 0;
+  presentationHints |= wtf.db.PresentationHint.NO_RENDER_DATA;
+  presentationHints |= wtf.db.PresentationHint.BARE;
+
+  this.initialize(
+      contextInfo, flags, presentationHints, metadata, timebase, timeDelay);
 
   // Setup some builtin event types.
   var leaveEventType = eventTypeTable.defineType(

@@ -13,6 +13,7 @@
 
 goog.provide('wtf.db.DataSource');
 goog.provide('wtf.db.DataSourceInfo');
+goog.provide('wtf.db.PresentationHint');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
@@ -53,6 +54,27 @@ wtf.db.DataSourceInfo.prototype.isBinary = function() {
     case 'application/x-extension-wtf-json':
       return false;
   }
+};
+
+
+/**
+ * Bitmask values indicating hints to the UI displaying the data.
+ * The UI is free to ignore any of these.
+ * @enum {number}
+ */
+wtf.db.PresentationHint = {
+  /**
+   * The data in the source should disable most (if not all) of the higher
+   * level navigation structures such as frames and features like heatmaps as
+   * the data doesn't contain the events needed to build such tables.
+   */
+  BARE: 1 << 0,
+
+  /**
+   * The data source contains no rendering data, such as frames.
+   * This can be used to hide UI elements related to frames, timing, etc.
+   */
+  NO_RENDER_DATA: 1 << 1
 };
 
 
@@ -103,6 +125,14 @@ wtf.db.DataSource = function(db) {
    * @private
    */
   this.flags_ = 0;
+
+  /**
+   * Hints to the UI that can help it decide what kind of view to show.
+   * These may be ignored. A bitmask of values of
+   * {@see wtf.db.PresentationHint}.
+   * @type {number}
+   */
+  this.presentationHints_ = 0;
 
   /**
    * File metadata.
@@ -178,6 +208,16 @@ wtf.db.DataSource.prototype.hasHighResolutionTimes = function() {
 
 
 /**
+ * Gets the bitmask of {@see wtf.db.PresentationHint} values that can be used to
+ * help a UI decide what to draw.
+ * @return {number} Bitmask.
+ */
+wtf.db.DataSource.prototype.getPresentationHints = function() {
+  return this.presentationHints_;
+};
+
+
+/**
  * Gets embedded file metadata.
  * @return {!Object} Metadata.
  */
@@ -218,18 +258,20 @@ wtf.db.DataSource.prototype.start = goog.nullFunction;
  * the trace source.
  * @param {!wtf.data.ContextInfo} contextInfo Context information.
  * @param {number} flags A bitmask of {@see wtf.data.formats.FileFlags} values.
+ * @param {number} presentationHints Bitmask of presentation hints.
  * @param {!Object} metadata File metadata.
  * @param {number} timebase Time base for all time values read.
  * @param {number} timeDelay Estimated time delay.
  * @protected
  */
 wtf.db.DataSource.prototype.initialize = function(
-    contextInfo, flags, metadata, timebase, timeDelay) {
+    contextInfo, flags, presentationHints, metadata, timebase, timeDelay) {
   goog.asserts.assert(!this.isInitialized_);
   this.isInitialized_ = true;
 
   this.contextInfo_ = contextInfo;
   this.flags_ = flags;
+  this.presentationHints_ = presentationHints;
   this.metadata_ = metadata;
   this.timebase_ = timebase;
   this.timeDelay_ = timeDelay;
@@ -245,6 +287,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.DataSource.prototype, 'hasHighResolutionTimes',
     wtf.db.DataSource.prototype.hasHighResolutionTimes);
+goog.exportProperty(
+    wtf.db.DataSource.prototype, 'getPresentationHints',
+    wtf.db.DataSource.prototype.getPresentationHints);
 goog.exportProperty(
     wtf.db.DataSource.prototype, 'getMetadata',
     wtf.db.DataSource.prototype.getMetadata);
