@@ -118,6 +118,7 @@ wtf.db.sources.CallsDataSource.prototype.start = function() {
   if (!goog.isObject(metadata)) {
     metadata = {};
   }
+  var attributes = metadata['attributes'] || [];
 
   this.initialize(contextInfo, flags, metadata, timebase, timeDelay);
 
@@ -141,6 +142,8 @@ wtf.db.sources.CallsDataSource.prototype.start = function() {
       var fnName = fns[n + 1];
       var fnStart = fns[n + 2];
       var fnEnd = fns[n + 3];
+      // TODO(rsturgell): Add any additional non-time attributes to the
+      // eventtype (and write them in the loop below).
       eventTypes[fnId] = eventTypeTable.defineType(
           wtf.db.EventType.createScope(fnName));
       // TODO(benvanik): stash range/etc
@@ -152,19 +155,33 @@ wtf.db.sources.CallsDataSource.prototype.start = function() {
     i += 4 - (i % 4);
   }
 
+  var intsPerEntry = 1 + attributes.length;
+  var bytesPerEntry = 4 * intsPerEntry;
+
   // Reallocate the event list to prevent resizes during addition.
   var eventList = this.zone_.getEventList();
-  eventList.expandCapacity((inputBuffer.length - i) / 4);
+  eventList.expandCapacity((inputBuffer.length - i) / bytesPerEntry);
+
+  var t = 0;
+  var callBuffer = new Int32Array(inputBuffer.buffer, i);
+  var prevSample = -1;
+  var implicitTime = attributes.length == 0;
 
   // Insert event data.
   db.beginInsertingEvents(this);
-  var callBuffer = new Int32Array(inputBuffer.buffer, i);
-  var t = 0;
-  for (var n = 0; n < callBuffer.length; n++) {
+  for (var n = 0; n < callBuffer.length; n += intsPerEntry) {
     var id = callBuffer[n];
+    if (!implicitTime) {
+      var sample = callBuffer[n + 1];
+      var delta = (prevSample >= 0) ? (sample - prevSample) : 0;
+      if (delta > 0) t += delta;
+      prevSample = sample;
+    }
     if (id > 0) {
       eventList.insert(eventTypes[id], t);
-      t += 1;
+      if (implicitTime) {
+        t++;
+      }
     } else {
       eventList.insert(leaveEventType, t);
     }
