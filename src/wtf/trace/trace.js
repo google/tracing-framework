@@ -347,7 +347,23 @@ wtf.trace.popZone = function() {
 
 
 /**
- * Enters a scope.
+ * Enters a scope by name.
+ * This must be matched with a {@see #leaveScope} that takes the return value.
+ *
+ * It is strongly recommended that a custom enter scope event should be used
+ * instead of this, as the overhead required to write the scope name is
+ * non-trivial. Only use this when the name changes many times at runtime or
+ * you're hacking something together. See {@see wtf.trace.events.createScope}.
+ *
+ * Example:
+ * <code>
+ * function myFunction() {
+ *   var scope = wtf.trace.enterScope('myFunction');
+ *   var result = ...;
+ *   return wtf.trace.leaveScope(scope, result);
+ * }
+ * </code>
+ *
  * @param {string} name Scope name.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  * @return {!wtf.trace.Scope} An initialized scope object.
@@ -367,7 +383,8 @@ wtf.trace.enterTracingScope = wtf.trace.BuiltinEvents.enterTracingScope;
 
 /**
  * Leaves a scope.
- * @param {wtf.trace.Scope} scope Scope to leave.
+ * @param {wtf.trace.Scope} scope Scope to leave. This is the result of a
+ *     previous call to {@see #enterScope} or a custom enter scope function.
  * @param {T=} opt_result Optional result to chain.
  * @param {number=} opt_time Time for the leave; omit to use the current time.
  * @return {T|undefined} The value of the {@code opt_result} parameter.
@@ -378,9 +395,27 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
 
 /**
  * Appends a named argument of any type to the current scope.
+ * The data added is keyed by name, and existing data with the same name will
+ * be overwritten.
  * This is slow and should only be used for very infrequent appends.
  * Prefer instead to use a custom instance event with the
  * {@see wtf.data.EventFlag#APPEND_SCOPE_DATA} flag set.
+ *
+ * No, really, this JSON stringifies whatever is passed to it and will skew
+ * your results. Don't use it.
+ *
+ * Example:
+ * <code>
+ * my.Type.protoype.someMethod = function() {
+ *   // This method is traced automatically by traceMethods, but more data
+ *   // is needed:
+ *   wtf.trace.appendScopeData('bar', 123);
+ *   wtf.trace.appendScopeData('foo', {
+ *     'complex': ['data']
+ *   });
+ * };
+ * wtf.trace.instrumentType(...my.Type...);
+ * </code>
  *
  * @param {string} name Argument name. Must be ASCII.
  * @param {*} value Value. Will be JSON stringified.
@@ -453,7 +488,15 @@ wtf.trace.spanFlow = wtf.trace.Flow.span;
 /**
  * Marks the stream with a named bookmark.
  * This is used by the UI to construct a simple navigation structure.
- * It's best to use custom events that make filtering easier, if possible.
+ * Each mark is then turned into a navigation point in a table of contents.
+ * This should only be used for modal application state changes, such as
+ * initial load, entry into a modal dialog or mode, etc. There is only ever one
+ * marked range active at a time and if you are calling this more frequently
+ * than 1s you should use something else.
+ *
+ * For high-frequency time stamps instead use {@see #timeStamp} and for async
+ * timers use {@see #beginTimeRange}.
+ *
  * @param {string} name Marker name.
  * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the mark; omit to use the current time.
@@ -465,7 +508,10 @@ wtf.trace.mark = wtf.trace.BuiltinEvents.mark;
  * Adds a timestamped event to the stream.
  * This is synonymous to {@code console.timeStamp}, and can be used to place
  * simple arg-less instance events in the timeline.
- * Prefer using custom events for faster, more flexible events.
+ * Prefer using custom events for faster, more flexible events. This needs to
+ * write a string name and will be an order of magnitude or more slower. See
+ * {@see wtf.trace.events.createInstance} for the proper way.
+ *
  * @param {string} name Time stamp name.
  * @param {*=} opt_value Optional data value.
  * @param {number=} opt_time Time for the stamp; omit to use the current time.
@@ -488,12 +534,28 @@ wtf.trace.nextTimeRange_ = 0;
 
 
 /**
- * Begins a time range.
- * Time ranges can overlap and will be displayed in the UI on top of the zone
- * they were created in.
+ * Begins an async time range.
+ * This tracks time outside of normal scope flow control, and should be limited
+ * to only those events that span frames or Javascript ticks.
+ * If you're trying to track call flow instead use {@see #traceMethods}.
+ *
+ * A limited number of active timers will be displayed in the UI. Do not abuse
+ * this feature by adding timers for everything (like network requests). Prefer
+ * to use flows to track complex async operations.
+ *
+ * Example:
+ * <code>
+ * my.Type.startJob = function(actionName) {
+ *   var job = {...};
+ *   job.tracingRange = wtf.trace.beginTimeRange('my.Type:job', actionName);
+ * };
+ * my.Type.endJob = function(job) {
+ *   wtf.trace.endTimeRange(job.tracingRange);
+ * };
+ * </code>
+ *
  * @param {string} name Time range name.
  * @param {*=} opt_value Optional data value.
- * @param {number=} opt_time Time for the stamp; omit to use the current time.
  * @return {wtf.trace.TimeRange} Time range handle.
  */
 wtf.trace.beginTimeRange = function(name, opt_value, opt_time) {
@@ -504,7 +566,7 @@ wtf.trace.beginTimeRange = function(name, opt_value, opt_time) {
 
 
 /**
- * Ends a time range.
+ * Ends an async time range previously started with {@see #beginTimeRange}.
  * @param {wtf.trace.TimeRange} timeRange Time range handle.
  * @param {number=} opt_time Time for the stamp; omit to use the current time.
  */
@@ -514,6 +576,17 @@ wtf.trace.endTimeRange = wtf.trace.BuiltinEvents.endTimeRange;
 /**
  * Marks an event listener as being ignored, meaning that it will not show up
  * in traces.
+ * This should only be used by debugging code as it will cause weird
+ * gaps in timing data. Alternatively one could use {@see #enterTracingScope}
+ * so that the time is properly shown as inside tracing code.
+ *
+ * Example:
+ * <code>
+ * myElement.onclick = WTF.trace.ignoreListener(function(e) {
+ *   // This callback will not be auto-traced.
+ * });
+ * </code>
+ *
  * @param {!T} listener Event listener.
  * @return {!T} The parameter, for chaining.
  * @template T
@@ -532,7 +605,15 @@ wtf.trace.ignoreDomTree = wtf.trace.util.ignoreDomTree;
 /**
  * Initializes on* event properties on the given DOM element and optionally
  * for all children.
- * This must be called to ensure the properties work correctly.
+ * This must be called to ensure the properties work correctly. It can be
+ * called repeatedly on the same elements (but you should avoid that). Try
+ * calling it after any new DOM tree is added recursively on the root of the
+ * tree.
+ *
+ * If this method is not called not all browsers will report events registered
+ * via their on* properties. Events registered with addEventListener will always
+ * be traced.
+ *
  * @param {!Element} target Target DOM element.
  * @param {boolean=} opt_recursive Also initialize for all children.
  */

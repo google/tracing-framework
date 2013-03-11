@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WTF Test (normal JS)</title>
+  <script src="../wtf_trace_web_js_compiled.js"></script>
+  <script src="../shims/wtf-trace.js"></script>
+</head>
+<body>
+  <script>
+    var options = {
+      'wtf.trace.target': 'file://test'
+    };
+    wtf.trace.prepare(options);
+    wtf.hud.prepare();
+    wtf.trace.start();
+  </script>
+
+  <br/>
+  <br/>
+  <br/>
+  <a id="someLink" href="">Click!</a>
+  <a id="otherLink" href="">Click2!</a>
+  <div style="height: 2000px"></div>
+  <script>
+    WTF.trace.mark('body load');
+    window.onload = function() {
+      WTF.trace.mark('onload');
+      var arrayEvent = WTF.trace.events.createInstance('arrayEvent(uint8[] v)');
+      var appendScopeData = WTF.trace.events.createInstance(
+          'customAppendScopeData(uint32 xxx)',
+          WTF.data.EventFlag.APPEND_SCOPE_DATA);
+      var appendFlowData = WTF.trace.events.createInstance(
+          'customAppendFlowData(flowId id, int32 a)',
+          WTF.data.EventFlag.APPEND_FLOW_DATA);
+      var someLink = document.getElementById('someLink');
+      someLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        WTF.trace.mark('click');
+
+        var rangeA = WTF.trace.beginTimeRange('a');
+        var rangeB = WTF.trace.beginTimeRange('b', 'some value');
+
+        // Enter scope
+        var scope = WTF.trace.enterScope('onclick');
+
+        WTF.trace.appendScopeData('hello', 'world');
+        appendScopeData(12345);
+
+        arrayEvent(new Uint8Array([1, 2, 3]));
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'test-uncompiled.html?random=' + Math.random(), true);
+        xhr.onreadystatechange = function() {
+          console.log('xhr', xhr.readyState);
+        };
+        xhr.send(null);
+
+        // Start flow...
+        var flow = WTF.trace.branchFlow('click');
+        WTF.trace.extendFlow(flow);
+        WTF.trace.appendFlowData(flow, 'x', 123);
+        appendFlowData(flow, 456);
+        window.setTimeout(function() {
+          WTF.trace.endTimeRange(rangeA);
+
+          // Enter scope, resume flow
+          var scope = WTF.trace.enterScope('setTimeout callback');
+          WTF.trace.extendFlow(flow, 'timeout');
+
+          WTF.trace.timeStamp('hello1', 'a');
+          WTF.trace.timeStamp('hello2', 'b');
+
+          var scope2 = WTF.trace.enterScope('xx');
+          var t = WTF.now();
+          WTF.trace.timeStamp('hello3a', t);
+          WTF.trace.timeStamp('hello3b', t);
+          WTF.trace.leaveScope(scope2);
+
+          console.log('hi');
+
+          WTF.trace.terminateFlow(flow);
+          WTF.trace.leaveScope(scope);
+
+          WTF.trace.endTimeRange(rangeB);
+          WTF.trace.mark('click done');
+        }, 0);
+
+        WTF.trace.leaveScope(scope);
+      });
+
+      var el = document.createElement('a');
+      el.innerText = 'aaa';
+      document.body.appendChild(el);
+      console.log(el);
+      el.onclick = function() {
+        console.log('woo');
+      };
+
+      function goog_inherits(childCtor, parentCtor) {
+        function tempCtor() {};
+        tempCtor.prototype = parentCtor.prototype;
+        childCtor.superClass_ = parentCtor.prototype;
+        childCtor.prototype = new tempCtor();
+        childCtor.prototype.constructor = childCtor;
+      };
+
+      var foo = {};
+      foo.MyBaseType = function(x) {
+        this.x = x;
+      };
+      foo.MyBaseType.prototype.doSomething = function() {
+        return this.x;
+      };
+      foo.MyBaseType = WTF.trace.instrumentType(
+          foo.MyBaseType, 'foo.MyBaseType(uint32 x)', {
+            doSomething: 'doSomething()'
+          });
+
+      foo.MyType = function(x, y) {
+        foo.MyBaseType.call(this, x);
+        this.y = y;
+      };
+      goog_inherits(foo.MyType, foo.MyBaseType);
+      foo.MyType.staticMethod = function(x) {
+        return x + 5;
+      };
+      foo.MyType.prototype.doSomething = function() {
+        return foo.MyBaseType.prototype.doSomething.call(this, 'doSomething') + this.y;
+      };
+      foo.MyType = WTF.trace.instrumentType(
+          foo.MyType, 'foo.MyType(uint32 x, uint32 y)', {
+            doSomething: 'doSomething()'
+          });
+
+
+      var otherLink = document.getElementById('otherLink');
+      otherLink.onclick = function(e) {
+        e.preventDefault();
+
+        console.log(foo.MyType.staticMethod(5));
+        var mt = new foo.MyType(1, 2);
+        console.log(mt.doSomething());
+      };
+
+      WTF.trace.initializeDomEventProperties(document.body, true);
+    };
+
+    WTF.trace.initializeDomEventProperties(document.body, true);
+  </script>
+</body>
+</html>

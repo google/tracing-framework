@@ -36,6 +36,7 @@ wtf.CHROME_EXTENSION =
 
 /**
  * Whether the runtime can provide high-resolution times.
+ * If this is false times are likely in milliseconds and largely useless.
  * @type {boolean}
  */
 wtf.hasHighResolutionTimes =
