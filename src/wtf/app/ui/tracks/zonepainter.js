@@ -263,7 +263,11 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
   var it = eventList.beginTimeRange(timeLeft, timeRight, true);
   for (; !it.done(); it.nextInstance()) {
     // Ignore internal events.
-    if (it.getTypeFlags() & wtf.data.EventFlag.INTERNAL) {
+    var flags = it.getTypeFlags();
+    if (flags & (
+        wtf.data.EventFlag.INTERNAL |
+        wtf.data.EventFlag.APPEND_SCOPE_DATA |
+        wtf.data.EventFlag.APPEND_FLOW_DATA)) {
       continue;
     }
 

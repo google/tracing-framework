@@ -142,12 +142,12 @@ wtf.trace.BuiltinEvents = {
    */
   beginTimeRange: wtf.trace.events.createInstance(
       'wtf.timeRange#begin(uint32 id, ascii name, any value)',
-      wtf.data.EventFlag.BUILTIN),
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 
   /**
    * Ends a time range.
    */
   endTimeRange: wtf.trace.events.createInstance(
       'wtf.timeRange#end(uint32 id)',
-      wtf.data.EventFlag.BUILTIN)
+      wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL)
 };
