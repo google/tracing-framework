@@ -96,11 +96,6 @@ wtf.ui.RangePainter.DrawStyle = {
   SCOPE: 0,
 
   /**
-   * Draw lines as instances - smaller vertically aligned bars.
-   */
-  INSTANCE: 1,
-
-  /**
    * Draw lines as time spans - thin bars.
    */
   TIME_SPAN: 2
@@ -211,9 +206,6 @@ wtf.ui.RangePainter.prototype.endRenderingRanges = function(
   var labelBackground = null;
   var labelForeground = '#FFFFFF';
   switch (this.drawStyle_) {
-    case wtf.ui.RangePainter.DrawStyle.INSTANCE:
-      insetH = rowHeight * 0.3;
-      break;
     case wtf.ui.RangePainter.DrawStyle.TIME_SPAN:
       insetY = insetH = rowHeight / 4;
       labelBackground = '#FFFFFF';

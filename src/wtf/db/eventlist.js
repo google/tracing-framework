@@ -310,7 +310,8 @@ wtf.db.EventList.prototype.insert = function(eventType, time, opt_argData) {
   var eventData = this.eventData;
   var o = this.count * wtf.db.EventStruct.STRUCT_SIZE;
   eventData[o + wtf.db.EventStruct.ID] = this.count;
-  eventData[o + wtf.db.EventStruct.TYPE] = eventType.id;
+  eventData[o + wtf.db.EventStruct.TYPE] =
+      eventType.id | (eventType.flags << 16);
   eventData[o + wtf.db.EventStruct.PARENT] = -1;
   eventData[o + wtf.db.EventStruct.TIME] = time;
 
@@ -475,7 +476,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
     }
     eventData[o + wtf.db.EventStruct.NEXT_SIBLING] = nextEventId;
 
-    var typeId = eventData[o + wtf.db.EventStruct.TYPE];
+    var typeId = eventData[o + wtf.db.EventStruct.TYPE] & 0xFFFF;
     var deleteArgs = false;
     if (typeId == scopeEnterId) {
       // Generic scope enter.
@@ -489,7 +490,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
             wtf.db.EventType.createScope(name));
       }
       typeId = newEventType.id;
-      eventData[o + wtf.db.EventStruct.TYPE] = newEventType.id;
+      eventData[o + wtf.db.EventStruct.TYPE] =
+          newEventType.id | (newEventType.flags << 16);
       stack[++stackTop] = eventData[o + wtf.db.EventStruct.ID];
       typeStack[stackTop] = newEventType;
       stackMax = Math.max(stackMax, stackTop);
@@ -545,7 +547,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
             wtf.db.EventType.createInstance(name));
       }
       typeId = newEventType.id;
-      eventData[o + wtf.db.EventStruct.TYPE] = newEventType.id;
+      eventData[o + wtf.db.EventStruct.TYPE] =
+          newEventType.id | (newEventType.flags << 16);
       deleteArgs = true;
       statistics.genericTimeStamp++;
     } else {
@@ -671,7 +674,7 @@ wtf.db.EventList.prototype.rebuildAncillaryLists_ = function(lists) {
   var eventData = this.eventData;
   var it = new wtf.db.EventIterator(this, 0, this.count - 1, 0);
   for (var n = 0, o = 0; n < this.count; n++) {
-    var typeId = eventData[o + wtf.db.EventStruct.TYPE];
+    var typeId = eventData[o + wtf.db.EventStruct.TYPE] & 0xFFFF;
     var handlers = typeMap[typeId];
     if (handlers) {
       for (var m = 0; m < handlers.length; m++) {
