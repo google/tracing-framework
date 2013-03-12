@@ -31,6 +31,7 @@ var falafel = require('falafel');
  * @param {number} moduleId Module ID, [0-126].
  * @param {string} url URL of the source code.
  * @param {string} sourceCode Source code.
+ * @param {boolean} trackHeap Track heap usage.
  * @return {string} Transformed code.
  */
 function transformCode(moduleId, url, sourceCode, trackHeap) {
@@ -228,13 +229,13 @@ function transformCode(moduleId, url, sourceCode, trackHeap) {
     } else if (!tryCatchMode && node.type == 'ReturnStatement') {
       if (node.argument) {
         node.update([
-          '__wtfRet=',
+          '{__wtfRet=(',
           node.argument.source(),
-          '; __wtfExit(__wtfId);',
-          'return __wtfRet;'
+          '); __wtfExit(__wtfId);',
+          'return __wtfRet;}'
         ].join(''));
       } else {
-        node.update('__wtfExit(__wtfId); return;');
+        node.update('{__wtfExit(__wtfId); return;}');
       }
     } else if (node.type == 'Program') {
       node.update([
@@ -480,12 +481,11 @@ function main(argv) {
       process.exit(1);
     }
   }
-  console.log('n = ' + n)
 
   if (isServer) {
     // TODO(benvanik): read ports from args/etc
     getHttpsCerts(function(certs) {
-      startServer(8081, 8082, certs);
+      startServer(trackHeap, 8081, 8082, certs);
     });
   } else {
     processFile(trackHeap, argv[n], argv[n + 1]);
