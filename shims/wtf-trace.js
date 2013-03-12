@@ -52,15 +52,6 @@ function identifyFunction(a) { return a; };
 
 
 /**
- * @define {boolean} True if WTF is enabled.
- * This should be defined to false in release builds to ensure that WTF is not
- * compiled in at all. It flips all functions to nullFunction (or some
- * equivalent) and will allow the compiler to strip them out.
- */
-WTF.ENABLED = true;
-
-
-/**
  * The API version expected by the shim.
  * If WTF is present but its {@code wtf.trace.API_VERSION} does not match
  * this value it will be ignored. This allows code instrumented with older
@@ -83,9 +74,8 @@ WTF.EXPECTED_API_VERSION_ = 2;
  * @type {boolean}
  * @const
  */
-WTF.PRESENT = WTF.ENABLED && !!global['wtf'] &&
-    (global['wtf']['trace']['API_VERSION'] ==
-        WTF.EXPECTED_API_VERSION_);
+WTF.PRESENT = !!global['wtf'] &&
+    (global['wtf']['trace']['API_VERSION'] == WTF.EXPECTED_API_VERSION_);
 
 
 /**
