@@ -56,15 +56,15 @@ goog.inherits(
 
 /**
  * Updates the source with the given event statistics table.
- * @param {!wtf.db.EventStatistics} eventStatistics Event statistics table.
+ * @param {!wtf.db.EventStatistics.Table} table Event statistics table.
  * @param {wtf.db.SortMode} sortMode Table sort mode.
  */
 wtf.app.ui.tracks.StatisticsTableSource.prototype.update = function(
-    eventStatistics, sortMode) {
+    table, sortMode) {
   this.sortMode_ = sortMode;
 
   var allRows = [];
-  eventStatistics.forEach(function(entry) {
+  table.forEach(function(entry) {
     // Ignore system events.
     if (entry.eventType.flags & wtf.data.EventFlag.INTERNAL) {
       return;

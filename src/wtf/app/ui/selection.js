@@ -63,11 +63,12 @@ wtf.app.ui.Selection = function(db) {
   this.registerDisposable(this.eventStatistics_);
 
   /**
-   * Whether the event data table is dirty and needs to be regenerated.
-   * @type {boolean}
+   * The statistics table for the current selection filtered by the current
+   * filter, if needed.
+   * @type {wtf.db.EventStatistics.Table}
    * @private
    */
-  this.eventStatisticsDirty_ = true;
+  this.filteredTable_ = null;
 
   db.addListener(
       wtf.events.EventType.INVALIDATED, this.invalidate_, this);
@@ -227,19 +228,32 @@ wtf.app.ui.Selection.prototype.getFilterEvaluator = function() {
 
 
 /**
+ * Computes an event data table for the full database.
+ * This will return the same value on subsequent calls if the database has
+ * not changed. Do not retain the returned value beyond the calling scope.
+ * @return {!wtf.db.EventStatistics.Table} Event data table.
+ */
+wtf.app.ui.Selection.prototype.getFullStatistics = function() {
+  return this.eventStatistics_.getTable();
+};
+
+
+/**
  * Computes an event data table for the current selection.
  * This will return the same value on subsequent calls if the selection has
  * not changed. Do not retain the returned value beyond the calling scope.
- * @return {!wtf.db.EventStatistics} Event data table.
+ * @return {!wtf.db.EventStatistics.Table} Event data table.
  */
-wtf.app.ui.Selection.prototype.computeEventStatistics = function() {
-  if (this.eventStatisticsDirty_) {
-    this.eventStatistics_.rebuild(
-        this.timeStart_, this.timeEnd_,
-        this.filter_.getEvaluator());
-    this.eventStatisticsDirty_ = false;
+wtf.app.ui.Selection.prototype.getSelectionStatistics = function() {
+  if (!this.filteredTable_) {
+    var table = this.eventStatistics_.getTable(this.timeStart_, this.timeEnd_);
+    if (this.hasFilterSpecified()) {
+      this.filteredTable_ = table.filter(this.filter_);
+    } else {
+      this.filteredTable_ = table;
+    }
   }
-  return this.eventStatistics_;
+  return this.filteredTable_;
 };
 
 
@@ -248,6 +262,6 @@ wtf.app.ui.Selection.prototype.computeEventStatistics = function() {
  * @private
  */
 wtf.app.ui.Selection.prototype.invalidate_ = function() {
-  this.eventStatisticsDirty_ = true;
+  this.filteredTable_ = null;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };

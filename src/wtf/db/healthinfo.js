@@ -15,7 +15,6 @@ goog.provide('wtf.db.HealthInfo');
 goog.provide('wtf.db.HealthWarning');
 
 goog.require('wtf.data.EventClass');
-goog.require('wtf.db.EventStatistics');
 goog.require('wtf.db.ScopeEventDataEntry');
 
 
@@ -26,13 +25,11 @@ goog.require('wtf.db.ScopeEventDataEntry');
  * to track things like tracing overhead.
  *
  * @param {!wtf.db.Database} db Database.
- * @param {wtf.db.EventStatistics=} opt_eventStatistics An event statistics
- *     table to reuse for generating the health report. If not provided a new
- *     one is computed. If you're already computing a table on startup, pass it
- *     in here.
+ * @param {!wtf.db.EventStatistics.Table} table An event statistics
+ *     table to use for generating the health report.
  * @constructor
  */
-wtf.db.HealthInfo = function(db, opt_eventStatistics) {
+wtf.db.HealthInfo = function(db, table) {
   /**
    * Whether the trace is 'bad'.
    * @type {boolean}
@@ -68,8 +65,7 @@ wtf.db.HealthInfo = function(db, opt_eventStatistics) {
    */
   this.warnings_ = [];
 
-  var eventStatistics = opt_eventStatistics || new wtf.db.EventStatistics(db);
-  this.analyzeStatistics_(db, eventStatistics);
+  this.analyzeStatistics_(db, table);
 };
 
 
@@ -124,10 +120,10 @@ wtf.db.HealthInfo.prototype.getWarnings = function() {
 /**
  * Analyzes event statistics to try to gauge the badness of the database.
  * @param {!wtf.db.Database} db Database.
- * @param {!wtf.db.EventStatistics} eventStatistics Event statistics.
+ * @param {!wtf.db.EventStatistics.Table} table Event statistics table.
  * @private
  */
-wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, eventStatistics) {
+wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, table) {
   var counts = {
     totalCount: 0,
     frameCount: 0,
@@ -164,7 +160,7 @@ wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, eventStatistics) {
   }
 
   // Generate counts.
-  var entries = eventStatistics.getEntries();
+  var entries = table.getEntries();
   for (var n = 0; n < entries.length; n++) {
     var entry = entries[n];
     var eventType = entry.getEventType();

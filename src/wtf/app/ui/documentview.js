@@ -85,7 +85,8 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @type {!wtf.db.HealthInfo}
    * @private
    */
-  this.healthInfo_ = new wtf.db.HealthInfo(doc.getDatabase());
+  this.healthInfo_ = new wtf.db.HealthInfo(
+      doc.getDatabase(), this.selection_.getFullStatistics());
 
   // Rebuild health info.
   // We try to pass in our event statistics if we can (no filter).
@@ -93,11 +94,8 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   // other handlers setup by the UI.
   var db = doc.getDatabase();
   db.addListener(wtf.events.EventType.INVALIDATED, function() {
-    var eventStatistics = null;
-    if (!this.selection_.hasFilterSpecified()) {
-      eventStatistics = this.selection_.computeEventStatistics();
-    }
-    this.healthInfo_ = new wtf.db.HealthInfo(db, eventStatistics);
+    this.healthInfo_ = new wtf.db.HealthInfo(
+        db, this.selection_.getFullStatistics());
   }, this);
 
   /**

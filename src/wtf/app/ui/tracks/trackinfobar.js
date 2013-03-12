@@ -209,7 +209,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.layoutInternal = function() {
  */
 wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   var beginTime = wtf.now();
-  var table = this.selection_.computeEventStatistics();
+  var table = this.selection_.getSelectionStatistics();
   var updateDuration = wtf.now() - beginTime;
   //goog.global.console.log('update info', updateDuration);
 
