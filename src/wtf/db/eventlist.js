@@ -449,6 +449,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
   var MAX_CALLSTACK_SIZE = 1024;
   var stack = new Uint32Array(MAX_CALLSTACK_SIZE);
   var typeStack = new Array(MAX_CALLSTACK_SIZE);
+  var maxDepthStack = new Uint32Array(MAX_CALLSTACK_SIZE);
   var childTimeStack = new Uint32Array(MAX_CALLSTACK_SIZE);
   var systemTimeStack = new Uint32Array(MAX_CALLSTACK_SIZE);
   var stackTop = 0;
@@ -465,7 +466,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       n++, o += wtf.db.EventStruct.STRUCT_SIZE) {
     var parentId = stack[stackTop];
     eventData[o + wtf.db.EventStruct.PARENT] = parentId;
-    eventData[o + wtf.db.EventStruct.DEPTH] = stackTop;
+    eventData[o + wtf.db.EventStruct.DEPTH] = stackTop | (stackTop << 16);
 
     // Set the next sibling to the next event.
     // If this is an scope enter then the leave will fix it up.
@@ -494,6 +495,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
           newEventType.id | (newEventType.flags << 16);
       stack[++stackTop] = eventData[o + wtf.db.EventStruct.ID];
       typeStack[stackTop] = newEventType;
+      maxDepthStack[stackTop] = stackTop - 1;
       stackMax = Math.max(stackMax, stackTop);
       deleteArgs = true;
       statistics.genericEnterScope++;
@@ -503,11 +505,20 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       if (stackTop) {
         stackTop--;
 
+        // Adjust end time of the scope being left.
         var scopeOffset = parentId * wtf.db.EventStruct.STRUCT_SIZE;
         eventData[scopeOffset + wtf.db.EventStruct.NEXT_SIBLING] = nextEventId;
         var time = eventData[o + wtf.db.EventStruct.TIME];
         var duration = time - eventData[scopeOffset + wtf.db.EventStruct.TIME];
         eventData[scopeOffset + wtf.db.EventStruct.END_TIME] = time;
+
+        // Adjust the max descendant depth of the parent of the scope.
+        if (maxDepthStack[stackTop] < maxDepthStack[stackTop + 1]) {
+          maxDepthStack[stackTop] = maxDepthStack[stackTop + 1];
+        }
+        var scopeDepth = eventData[scopeOffset + wtf.db.EventStruct.DEPTH];
+        eventData[scopeOffset + wtf.db.EventStruct.DEPTH] =
+            (scopeDepth & 0xFFFF) | (maxDepthStack[stackTop + 1] << 16);
 
         // Accumulate timing data.
         // Computed on the stack so we don't have to rewalk events.
@@ -558,6 +569,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
         // Scope enter.
         stack[++stackTop] = eventData[o + wtf.db.EventStruct.ID];
         typeStack[stackTop] = type;
+        maxDepthStack[stackTop] = stackTop - 1;
         if (stackTop > stackMax) {
           stackMax = stackTop;
         }
@@ -827,7 +839,7 @@ wtf.db.EventList.prototype.getIndexOfRootScopeIncludingTime = function(time) {
   while (i >= 0) {
     // Move to the root scope.
     var o = i * wtf.db.EventStruct.STRUCT_SIZE;
-    var depth = eventData[o + wtf.db.EventStruct.DEPTH];
+    var depth = eventData[o + wtf.db.EventStruct.DEPTH] & 0xFFFF;
     while (depth-- > 0) {
       o = i * wtf.db.EventStruct.STRUCT_SIZE;
       i = eventData[o + wtf.db.EventStruct.PARENT];

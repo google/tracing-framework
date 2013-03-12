@@ -51,7 +51,9 @@ wtf.ui.ErrorDialog = function(message, detail, opt_dom) {
   var eh = this.getHandler();
   eh.listen(
       this.getChildElement(goog.getCssName('buttonClose')),
-      goog.events.EventType.CLICK, this.close, false, this);
+      goog.events.EventType.CLICK, function() {
+        this.close();
+      }, false, this);
 };
 goog.inherits(wtf.ui.ErrorDialog, wtf.ui.Dialog);
 

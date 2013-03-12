@@ -375,7 +375,17 @@ wtf.db.EventIterator.prototype.getParentEndTime = function() {
  * @return {number} Scope depth.
  */
 wtf.db.EventIterator.prototype.getDepth = function() {
-  return this.eventData_[this.offset_ + wtf.db.EventStruct.DEPTH];
+  return this.eventData_[this.offset_ + wtf.db.EventStruct.DEPTH] & 0xFFFF;
+};
+
+
+/**
+ * Gets the maximum depth (distance from root) of an descendant of this
+ * event.
+ * @return {number} Scope depth.
+ */
+wtf.db.EventIterator.prototype.getMaxDescendantDepth = function() {
+  return this.eventData_[this.offset_ + wtf.db.EventStruct.DEPTH] >>> 16;
 };
 
 

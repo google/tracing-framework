@@ -167,13 +167,19 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawEvents_ = function(
 
   var instanceTimeWidth = wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
 
-  for (; !it.done(); it.next()) {
+  // Minimum width of a scope, in screen-space pixels, before it is shown
+  // with a grey box. The smaller this value is the slower large traces will
+  // render.
+  var MIN_SCOPE_WIDTH = 0.05;
+
+  while (!it.done()) {
     // Ignore internal events.
     var flags = it.getTypeFlags();
     if (flags & (
         wtf.data.EventFlag.INTERNAL |
         wtf.data.EventFlag.APPEND_SCOPE_DATA |
         wtf.data.EventFlag.APPEND_FLOW_DATA)) {
+      it.next();
       continue;
     }
 
@@ -211,7 +217,22 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawEvents_ = function(
       screenRight = right;
     }
     if (screenLeft >= screenRight) {
+      it.next();
       continue;
+    }
+
+    // If we are under the draw size, draw a proxy.
+    var depth = it.getDepth();
+    if (isScope) {
+      var maxDepth = it.getMaxDescendantDepth();
+      if (depth < maxDepth && screenWidth < MIN_SCOPE_WIDTH) {
+        // Draw a proxy from here down to the max depth of any descendant.
+        for (var n = depth; n <= maxDepth; n++) {
+          this.drawRange(n, screenLeft, screenRight, 0x999999, 0.3);
+        }
+        it.nextSibling();
+        continue;
+      }
     }
 
     var alpha = 1;
@@ -243,7 +264,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawEvents_ = function(
       it.setTag(color);
     }
 
-    var depth = it.getDepth();
     this.drawRange(depth, screenLeft, screenRight, color, alpha);
 
     if (screenWidth > 15) {
@@ -255,6 +275,8 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawEvents_ = function(
       this.drawRangeLabel(
           bounds, left, right, screenLeft, screenRight, y, name);
     }
+
+    it.next();
   }
 };
 
