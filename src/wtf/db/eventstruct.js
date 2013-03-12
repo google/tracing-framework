@@ -25,8 +25,13 @@ wtf.db.EventStruct = {
   ID: 0,
 
   /**
-   * Event type ID.
+   * Event type ID and type flags.
    * Retrieve the {@see wtf.db.EventType} via the {@see wtf.db.EventTypeTable}.
+   * The flags are in the upper 16bits, the ID is in the lower.
+   * <code>
+   * var typeId = data[TYPE] & 0xFFFF;
+   * var flags = data[TYPE] >>> 16;
+   * </code>
    */
   TYPE: 1,
 

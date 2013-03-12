@@ -273,7 +273,7 @@ wtf.db.EventIterator.prototype.getId = function() {
  * @return {number} Type ID.
  */
 wtf.db.EventIterator.prototype.getTypeId = function() {
-  return this.eventData_[this.offset_ + wtf.db.EventStruct.TYPE];
+  return this.eventData_[this.offset_ + wtf.db.EventStruct.TYPE] & 0xFFFF;
 };
 
 
@@ -283,7 +283,7 @@ wtf.db.EventIterator.prototype.getTypeId = function() {
  */
 wtf.db.EventIterator.prototype.getType = function() {
   // TODO(benvanik): cache until move
-  var typeId = this.eventData_[this.offset_ + wtf.db.EventStruct.TYPE];
+  var typeId = this.eventData_[this.offset_ + wtf.db.EventStruct.TYPE] & 0xFFFF;
   return /** @type {!wtf.db.EventType} */ (
       this.eventList_.eventTypeTable.getById(typeId));
 };
@@ -304,10 +304,7 @@ wtf.db.EventIterator.prototype.getName = function() {
  * @return {number} A bitmask of {@see wtf.data.EventFlag}.
  */
 wtf.db.EventIterator.prototype.getTypeFlags = function() {
-  // TODO(benvanik): inline this into the structure? It's called during a lot of
-  //     entire-db scans.
-  var type = this.getType();
-  return type.flags;
+  return this.eventData_[this.offset_ + wtf.db.EventStruct.TYPE] >>> 16;
 };
 
 
@@ -356,6 +353,20 @@ wtf.db.EventIterator.prototype.getParent = function(opt_fast) {
     }
   }
   return null;
+};
+
+
+/**
+ * Gets the end time of the parent scope, or zero if this event is in the root.
+ * @return {number} End time of the parent or zero.
+ */
+wtf.db.EventIterator.prototype.getParentEndTime = function() {
+  var parentIndex = this.eventData_[this.offset_ + wtf.db.EventStruct.PARENT];
+  if (parentIndex >= 0) {
+    var parentOffset = parentIndex * wtf.db.EventStruct.STRUCT_SIZE;
+    return this.eventData_[parentOffset + wtf.db.EventStruct.END_TIME];
+  }
+  return 0;
 };
 
 
