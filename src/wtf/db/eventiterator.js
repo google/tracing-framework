@@ -178,7 +178,61 @@ wtf.db.EventIterator.prototype.nextInstance = function() {
  * Moves the iterator to the next sibling event, skipping all descendants.
  */
 wtf.db.EventIterator.prototype.nextSibling = function() {
-  this.seek(this.eventData_[this.offset_ + wtf.db.EventStruct.NEXT_SIBLING]);
+  var nextId = this.eventData_[this.offset_ + wtf.db.EventStruct.NEXT_SIBLING];
+  if (!nextId) {
+    nextId = this.lastIndex_ + 1;
+  }
+  this.seek(nextId);
+};
+
+
+/**
+ * Moves the iterator to the next sibling scope, skipping all descendants.
+ */
+wtf.db.EventIterator.prototype.nextSiblingScope = function() {
+  // Find th enext sibling ID and seek to it.
+  // Note that it may be zero, in which case we just end.
+  var eventData = this.eventData_;
+  var nextId = eventData[this.offset_ + wtf.db.EventStruct.NEXT_SIBLING];
+  if (!nextId) {
+    nextId = this.lastIndex_ + 1;
+  }
+  this.seek(nextId);
+
+  // The next sibling may not be a scope - if we haven't run off the end see if
+  // it isn't and move until we find it.
+  if (this.index_ <= this.lastIndex_ &&
+      !eventData[this.offset_ + wtf.db.EventStruct.END_TIME]) {
+    this.nextScope();
+  }
+};
+
+
+/**
+ * Moves to the first scope event in the iterator.
+ * If there are no scope events this is set to done.
+ */
+wtf.db.EventIterator.prototype.moveToFirstScope = function() {
+  this.seek(this.firstIndex_);
+  if (this.index_ <= this.lastIndex_) {
+    if (!this.isScope()) {
+      this.nextScope();
+    }
+  }
+};
+
+
+/**
+ * Moves to the first instance event in the iterator.
+ * If there are no instance events this is set to done.
+ */
+wtf.db.EventIterator.prototype.moveToFirstInstance = function() {
+  this.seek(this.firstIndex_);
+  if (this.index_ <= this.lastIndex_) {
+    if (!this.isInstance()) {
+      this.nextInstance();
+    }
+  }
 };
 
 

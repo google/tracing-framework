@@ -161,8 +161,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
 
-  // Draw all scopes.
+  // Draw all scopes. Eat up events until we find the first enter scope.
   var it = eventList.beginTimeRange(timeLeft, timeRight, true);
+  it.moveToFirstScope();
   for (; !it.done(); it.nextScope()) {
     var enterTime = it.getTime();
     var leaveTime = it.getEndTime();
@@ -259,8 +260,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
 
   var instanceTimeWidth = wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
 
-  // Draw all events.
+  // Draw all instance events. Eat up scopes until the first instance.
   var it = eventList.beginTimeRange(timeLeft, timeRight, true);
+  it.moveToFirstInstance();
   for (; !it.done(); it.nextInstance()) {
     // Ignore internal events.
     var flags = it.getTypeFlags();
