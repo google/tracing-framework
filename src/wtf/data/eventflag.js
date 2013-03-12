@@ -17,6 +17,9 @@ goog.provide('wtf.data.EventFlag');
 /**
  * Event behavior flag bitmask.
  * Values can be ORed together to indicate different behaviors an event has.
+ *
+ * NOTE: the database currently stores this as a 16bit value. Don't use more!
+ *
  * @enum {number}
  */
 wtf.data.EventFlag = {
