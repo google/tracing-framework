@@ -98,7 +98,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   var eventList = this.zone_.getEventList();
-  var maxDepth = eventList.getMaximumScopeDepth() + 1;
+  var maxDepth = eventList.getMaximumScopeDepth() + 2;
   var scopeHeight = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
   newBounds.height = maxDepth * scopeHeight;
   return newBounds;
@@ -128,14 +128,21 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
   ctx.fillStyle = 'rgb(200,200,200)';
   ctx.fillRect(bounds.left, bounds.top, bounds.width, 1);
 
-  // Draw scopes first.
-  this.drawScopes_(bounds, timeLeft, timeRight, matchedEventTypes);
+  var eventList = this.zone_.getEventList();
+  var maxDepth = eventList.getMaximumScopeDepth();
+  this.beginRenderingRanges(bounds, maxDepth);
+
+  // Draw events first.
+  var it = eventList.beginTimeRange(timeLeft, timeRight, true);
+  this.drawEvents_(it, bounds, timeLeft, timeRight, matchedEventTypes);
+
+  // Now blit the nicely rendered ranges onto the screen.
+  var y = 1;
+  var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+  this.endRenderingRanges(bounds, y, h);
 
   // Draw flow lines.
   // TODO(benvanik): draw flow lines/arrows/etc.
-
-  // Draw instance events.
-  this.drawInstanceEvents_(bounds, timeLeft, timeRight, matchedEventTypes);
 
   var repaintDuration = wtf.now() - repaintStartTime;
   //goog.global.console.log('zone paint', repaintDuration);
@@ -143,30 +150,45 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
 
 
 /**
- * Draw scopes.
+ * Draw events to the range renderers.
+ * @param {!wtf.db.EventIterator} it Event iterator.
  * @param {!goog.math.Rect} bounds Draw bounds.
  * @param {number} timeLeft Left-most visible time.
  * @param {number} timeRight Right-most visible time.
  * @param {Object.<number, boolean>} matchedEventTypes Filtered event types.
  * @private
  */
-wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
-    bounds, timeLeft, timeRight, matchedEventTypes) {
+wtf.app.ui.tracks.ZonePainter.prototype.drawEvents_ = function(
+    it, bounds, timeLeft, timeRight, matchedEventTypes) {
   var palette = this.palette_;
-
-  var eventList = this.zone_.getEventList();
-
-  this.beginRenderingRanges(bounds, eventList.getMaximumScopeDepth());
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
 
-  // Draw all scopes. Eat up events until we find the first enter scope.
-  var it = eventList.beginTimeRange(timeLeft, timeRight, true);
-  it.moveToFirstScope();
-  for (; !it.done(); it.nextScope()) {
+  var instanceTimeWidth = wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
+
+  for (; !it.done(); it.next()) {
+    // Ignore internal events.
+    var flags = it.getTypeFlags();
+    if (flags & (
+        wtf.data.EventFlag.INTERNAL |
+        wtf.data.EventFlag.APPEND_SCOPE_DATA |
+        wtf.data.EventFlag.APPEND_FLOW_DATA)) {
+      continue;
+    }
+
     var enterTime = it.getTime();
     var leaveTime = it.getEndTime();
+    var isScope = !!leaveTime;
+
+    if (!isScope) {
+      // Snap the end time to the parent.
+      leaveTime = enterTime + instanceTimeWidth;
+      var parentEndTime = it.getParentEndTime();
+      if (parentEndTime && parentEndTime < leaveTime) {
+        leaveTime = parentEndTime;
+      }
+    }
 
     // Compute screen size.
     var left = wtf.math.remap(enterTime,
@@ -192,15 +214,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
       continue;
     }
 
-    // Get color in the palette used for filling.
-    // Cache this on the event so we don't have to do it each time.
-    var name = it.getName();
-    var color = it.getTag();
-    if (!color) {
-      color = palette.getColorForString(name).toValue();
-      it.setTag(color);
-    }
-
     var alpha = 1;
     if (enterTime >= selectionEnd || leaveTime <= selectionStart) {
       // Outside of range, deemphasize.
@@ -220,118 +233,29 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawScopes_ = function(
       }
     }
 
-    var depth = it.getDepth();
-    this.drawRange(depth, screenLeft, screenRight, color, alpha);
-
-    if (screenWidth > 15) {
-      var y = depth * wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-      var label = name;
-      this.drawRangeLabel(
-          bounds, left, right, screenLeft, screenRight, y, label);
-    }
-  }
-
-  // Now blit the nicely rendered ranges onto the screen.
-  var y = 1;
-  var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-  this.endRenderingRanges(bounds, y, h);
-};
-
-
-/**
- * Draw instance events.
- * @param {!goog.math.Rect} bounds Draw bounds.
- * @param {number} timeLeft Left-most visible time.
- * @param {number} timeRight Right-most visible time.
- * @param {Object.<number, boolean>} matchedEventTypes Filtered event types.
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.prototype.drawInstanceEvents_ = function(
-    bounds, timeLeft, timeRight, matchedEventTypes) {
-  var palette = this.palette_;
-
-  var eventList = this.zone_.getEventList();
-
-  this.beginRenderingRanges(bounds, eventList.getMaximumScopeDepth(),
-      wtf.ui.RangePainter.DrawStyle.INSTANCE);
-
-  var selectionStart = this.selection_.getTimeStart();
-  var selectionEnd = this.selection_.getTimeEnd();
-
-  var instanceTimeWidth = wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
-
-  // Draw all instance events. Eat up scopes until the first instance.
-  var it = eventList.beginTimeRange(timeLeft, timeRight, true);
-  it.moveToFirstInstance();
-  for (; !it.done(); it.nextInstance()) {
-    // Ignore internal events.
-    var flags = it.getTypeFlags();
-    if (flags & (
-        wtf.data.EventFlag.INTERNAL |
-        wtf.data.EventFlag.APPEND_SCOPE_DATA |
-        wtf.data.EventFlag.APPEND_FLOW_DATA)) {
-      continue;
-    }
-
-    // Snap the end time to the parent.
-    // TODO(benvanik): speed this up so that a parent iterator is not required.
-    var time = it.getTime();
-    var depth = it.getDepth();
-    var endTime = time + instanceTimeWidth;
-    if (depth) {
-      var parentIt = it.getParent(true);
-      endTime = Math.min(endTime, parentIt.getEndTime());
-    }
-
-    // Compute screen offset.
-    var left = wtf.math.remap(time,
-        timeLeft, timeRight,
-        bounds.left, bounds.left + bounds.width);
-    var right = wtf.math.remap(endTime,
-        timeLeft, timeRight,
-        bounds.left, bounds.left + bounds.width);
-    var screenWidth = right - left;
-
+    // Get color in the palette used for filling.
     // Cache this on the event so we don't have to do it each time.
-    var name = it.getName();
-    var color = /** @type {!wtf.ui.color.RgbColorValue} */ (it.getTag());
+    var name = undefined;
+    var color = it.getTag();
     if (!color) {
+      name = it.getName();
       color = palette.getColorForString(name).toValue();
       it.setTag(color);
     }
 
-    var screenLeft = Math.max(bounds.left, left);
-    var screenRight = Math.min((bounds.left + bounds.width) - 0.999, right);
-    if (screenLeft >= screenRight) {
-      continue;
-    }
-
-    var alpha = 1;
-    if (time > selectionEnd || time < selectionStart) {
-      // Outside of range, deemphasize.
-      alpha = 0.3;
-    } else if (matchedEventTypes) {
-      // Overlaps range and we have a filter, test the event.
-      var selected = matchedEventTypes[it.getTypeId()];
-      if (!selected) {
-        alpha = 0.3;
-      } else if (screenRight - screenLeft < 1) {
-        // Provide an alpha bump to tiny selected zones. By making these
-        // ranges more than 100% alpha they will remain fully opaque even
-        // with the antialiasing done in RangeRenderer.
-        alpha = 1 / (screenRight - screenLeft);
-      } else {
-        alpha = 1;
-      }
-    }
-
+    var depth = it.getDepth();
     this.drawRange(depth, screenLeft, screenRight, color, alpha);
-  }
 
-  // Now blit the nicely rendered ranges onto the screen.
-  var y = 1;
-  var h = wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
-  this.endRenderingRanges(bounds, y, h);
+    if (screenWidth > 15) {
+      name = name || it.getName();
+      if (!isScope) {
+        name = '[' + name + ']';
+      }
+      var y = depth * wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_;
+      this.drawRangeLabel(
+          bounds, left, right, screenLeft, screenRight, y, name);
+    }
+  }
 };
 
 
@@ -414,11 +338,12 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(x, y, bounds) {
       return it;
     }
   } else {
-    var parentIt = it.getParent();
+    // Snap the end time to the parent.
     var timeEnd =
         it.getTime() + wtf.app.ui.tracks.ZonePainter.INSTANCE_TIME_WIDTH_;
-    if (parentIt && timeEnd > parentIt.getEndTime()) {
-      timeEnd = parentIt.getEndTime();
+    var parentEndTime = it.getParentEndTime();
+    if (parentEndTime && parentEndTime < timeEnd) {
+      timeEnd = parentEndTime;
     }
     if (it.getTime() <= time && timeEnd >= time) {
       return it;

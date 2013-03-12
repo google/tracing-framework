@@ -48,14 +48,15 @@ wtf.ui.RangeRenderer.prototype.reset = function(width) {
     this.buffer_ = new Float32Array(width * 4);
     this.width_ = width;
   }
+  var buff = this.buffer_;
   for (var i = 0; i < width; i++) {
-    this.buffer_[4 * i + 0] = 0;
-    this.buffer_[4 * i + 1] = 0;
-    this.buffer_[4 * i + 2] = 0;
+    buff[4 * i + 0] = 0;
+    buff[4 * i + 1] = 0;
+    buff[4 * i + 2] = 0;
     // Initializing alpha to a very small value allows a uniform
     // un-premultiply in getPixels because we won't have to worry about
     // dividing by 0.
-    this.buffer_[4 * i + 3] = .00001;
+    buff[4 * i + 3] = .00001;
   }
 };
 
@@ -95,10 +96,11 @@ wtf.ui.RangeRenderer.prototype.drawRange = function(left, right, color, alpha) {
  * @private
  */
 wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
-  this.buffer_[x * 4 + 0] = alpha * (color & 0xFF);
-  this.buffer_[x * 4 + 1] = alpha * ((color >> 8) & 0xFF);
-  this.buffer_[x * 4 + 2] = alpha * ((color >> 16) & 0xFF);
-  this.buffer_[x * 4 + 3] = alpha;
+  var buff = this.buffer_;
+  buff[x * 4 + 0] = alpha * (color & 0xFF);
+  buff[x * 4 + 1] = alpha * ((color >>> 8) & 0xFF);
+  buff[x * 4 + 2] = alpha * ((color >>> 16) & 0xFF);
+  buff[x * 4 + 3] = alpha;
 };
 
 
@@ -111,10 +113,11 @@ wtf.ui.RangeRenderer.prototype.setPx_ = function(x, color, alpha) {
  * @private
  */
 wtf.ui.RangeRenderer.prototype.accumPx_ = function(x, d, color, alpha) {
-  this.buffer_[x * 4 + 0] += d * alpha * (color & 0xFF);
-  this.buffer_[x * 4 + 1] += d * alpha * ((color >> 8) & 0xFF);
-  this.buffer_[x * 4 + 2] += d * alpha * ((color >> 16) & 0xFF);
-  this.buffer_[x * 4 + 3] += d * alpha;
+  var buff = this.buffer_;
+  buff[x * 4 + 0] += d * alpha * (color & 0xFF);
+  buff[x * 4 + 1] += d * alpha * ((color >>> 8) & 0xFF);
+  buff[x * 4 + 2] += d * alpha * ((color >>> 16) & 0xFF);
+  buff[x * 4 + 3] += d * alpha;
 };
 
 

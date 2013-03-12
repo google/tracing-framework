@@ -174,7 +174,7 @@ wtf.io.Buffer.prototype.writeInt16 = function(value) {
   this.ensureCapacity_(2);
   var data = this.data;
   var offset = this.offset;
-  data[offset++] = (value >> 8) & 0xFF;
+  data[offset++] = (value >>> 8) & 0xFF;
   data[offset++] = value & 0xFF;
   this.offset = offset;
 };
@@ -206,9 +206,9 @@ wtf.io.Buffer.prototype.writeInt32 = function(value) {
   this.ensureCapacity_(4);
   var data = this.data;
   var offset = this.offset;
-  data[offset++] = (value >> 24) & 0xFF;
-  data[offset++] = (value >> 16) & 0xFF;
-  data[offset++] = (value >> 8) & 0xFF;
+  data[offset++] = (value >>> 24) & 0xFF;
+  data[offset++] = (value >>> 16) & 0xFF;
+  data[offset++] = (value >>> 8) & 0xFF;
   data[offset++] = value & 0xFF;
   this.offset = offset;
 };
@@ -257,7 +257,7 @@ wtf.io.Buffer.prototype.writeUint16 = function(value) {
   this.ensureCapacity_(2);
   var data = this.data;
   var offset = this.offset;
-  data[offset++] = (value >> 8) & 0xFF;
+  data[offset++] = (value >>> 8) & 0xFF;
   data[offset++] = value & 0xFF;
   this.offset = offset;
 };
@@ -288,9 +288,9 @@ wtf.io.Buffer.prototype.writeUint32 = function(value) {
   this.ensureCapacity_(4);
   var data = this.data;
   var offset = this.offset;
-  data[offset++] = (value >> 24) & 0xFF;
-  data[offset++] = (value >> 16) & 0xFF;
-  data[offset++] = (value >> 8) & 0xFF;
+  data[offset++] = (value >>> 24) & 0xFF;
+  data[offset++] = (value >>> 16) & 0xFF;
+  data[offset++] = (value >>> 8) & 0xFF;
   data[offset++] = value & 0xFF;
   this.offset = offset;
 };
