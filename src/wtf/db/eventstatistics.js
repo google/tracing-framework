@@ -23,6 +23,7 @@ goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.Filter');
+goog.require('wtf.events.EventType');
 
 
 /**
@@ -60,11 +61,10 @@ goog.exportProperty(
  * Caches detailed aggregate information about events.
  *
  * @param {!wtf.db.Database} db Event database.
- * @param {?(wtf.db.Filter|wtf.db.FilterFunction)=} opt_filter Initial filter.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.db.EventStatistics = function(db, opt_filter) {
+wtf.db.EventStatistics = function(db) {
   goog.base(this);
 
   /**
@@ -73,6 +73,129 @@ wtf.db.EventStatistics = function(db, opt_filter) {
    * @private
    */
   this.db_ = db;
+
+  /**
+   * The cached full table for the entire database.
+   * Since it's a common operation to select everything this is kept around.
+   * @type {wtf.db.EventStatistics.Table}
+   * @private
+   */
+  this.fullTable_ = null;
+
+  /**
+   * A cache dtable for a time range.
+   * Currently we only stash one of these, but we could do many if there is
+   * regular thrashing.
+   * This is populated on-demand by {@see #getTable}.
+   * @type {wtf.db.EventStatistics.Table}
+   * @private
+   */
+  this.selectedTable_ = null;
+
+  db.addListener(wtf.events.EventType.INVALIDATED, function() {
+    this.fullTable_ = null;
+    this.selectedTable_ = null;
+  }, this);
+};
+goog.inherits(wtf.db.EventStatistics, goog.Disposable);
+
+
+/**
+ * Gets a table covering the requested time range or, if the times are omitted,
+ * the entire database.
+ * @param {number=} opt_startTime Starting time.
+ * @param {number=} opt_endTime Ending time.
+ * @return {!wtf.db.EventStatistics.Table} A table covering the requested time
+ *     range.
+ */
+wtf.db.EventStatistics.prototype.getTable = function(
+    opt_startTime, opt_endTime) {
+  var startTime = goog.isDef(opt_startTime) ? opt_startTime : Number.MIN_VALUE;
+  var endTime = goog.isDef(opt_endTime) ? opt_endTime : Number.MAX_VALUE;
+  if (startTime == Number.MIN_VALUE && endTime == Number.MAX_VALUE) {
+    if (!this.fullTable_) {
+      this.fullTable_ = new wtf.db.EventStatistics.Table(
+          Number.MIN_VALUE, Number.MAX_VALUE);
+      this.fullTable_.rebuild(this.db_);
+    }
+    return this.fullTable_;
+  } else {
+    if (this.selectedTable_) {
+      if (this.selectedTable_.getStartTime() == startTime &&
+          this.selectedTable_.getEndTime() == endTime) {
+        return this.selectedTable_;
+      }
+    }
+    this.selectedTable_ = new wtf.db.EventStatistics.Table(startTime, endTime);
+    this.selectedTable_.rebuild(this.db_);
+    return this.selectedTable_;
+  }
+};
+
+
+/**
+ * Gets all of the event type names found in all of the given tables.
+ * @param {!Array.<!wtf.db.EventStatistics.Table>} tables Tables.
+ * @param {wtf.data.EventClass=} opt_eventClass Class to limit to.
+ * @return {!Array.<string>} All event type names.
+ */
+wtf.db.EventStatistics.getAllEventTypeNames = function(tables, opt_eventClass) {
+  var names = {};
+  for (var n = 0; n < tables.length; n++) {
+    var table = tables[n];
+    for (var m = 0; m < table.list_.length; m++) {
+      var eventType = table.list_[m].eventType;
+      if (opt_eventClass === undefined ||
+          eventType.eventClass == opt_eventClass) {
+        names[eventType.name] = true;
+      }
+    }
+  }
+  return goog.object.getKeys(names);
+};
+
+
+goog.exportSymbol(
+    'wtf.db.EventStatistics',
+    wtf.db.EventStatistics);
+goog.exportProperty(
+    wtf.db.EventStatistics.prototype, 'getTable',
+    wtf.db.EventStatistics.prototype.getTable);
+goog.exportSymbol(
+    'wtf.db.EventStatistics.getAllEventTypeNames',
+    wtf.db.EventStatistics.getAllEventTypeNames);
+
+
+
+/**
+ * A result table generated from an event statistics build.
+ * The results of the table can be retreived in any order or with a filter
+ * very quickly, but a new table must be generated to change the time range.
+ * @param {number} startTime Starting time.
+ * @param {number} endTime Ending time.
+ * @constructor
+ */
+wtf.db.EventStatistics.Table = function(startTime, endTime) {
+  /**
+   * Starting time.
+   * @type {number}
+   * @private
+   */
+  this.startTime_ = startTime;
+
+  /**
+   * Ending time.
+   * @type {number}
+   * @private
+   */
+  this.endTime_ = endTime;
+
+  /**
+   * Total number of events.
+   * @type {number}
+   * @private
+   */
+  this.eventCount_ = 0;
 
   /**
    * Event data keyed on event name.
@@ -95,52 +218,28 @@ wtf.db.EventStatistics = function(db, opt_filter) {
    * @private
    */
   this.listSortMode_ = wtf.db.SortMode.ANY;
-
-  /**
-   * Total number of filtered events.
-   * @type {number}
-   * @private
-   */
-  this.filteredEventCount_ = 0;
-
-  this.rebuild(Number.MIN_VALUE, Number.MAX_VALUE, opt_filter);
 };
-goog.inherits(wtf.db.EventStatistics, goog.Disposable);
 
 
 /**
- * Rebuilds the event data table.
- * @param {number} startTime Starting time.
- * @param {number} endTime Ending time.
- * @param {?(wtf.db.Filter|wtf.db.FilterFunction)=} opt_filter Event filter.
+ * Rebuilds from the database.
+ * @param {!wtf.db.Database} db Database.
+ * @protected
  */
-wtf.db.EventStatistics.prototype.rebuild = function(
-    startTime, endTime, opt_filter) {
+wtf.db.EventStatistics.Table.prototype.rebuild = function(db) {
   var rebuildStartTime = wtf.now();
 
-  this.filteredEventCount_ = 0;
+  this.eventCount_ = 0;
   var tableById = {};
   var list = [];
 
-  var filterFn = null;
-  if (opt_filter instanceof wtf.db.Filter) {
-    filterFn = opt_filter.getEvaluator();
-  } else {
-    filterFn = opt_filter || null;
-  }
-
   // Setup entries for everything.
-  // We do this here so that the expensive work/filtering happens per-type and
+  // We do this here so that the expensive work happens per-type and
   // not per-event.
-  var eventTypeTable = this.db_.getEventTypeTable();
+  var eventTypeTable = db.getEventTypeTable();
   var eventTypeList = eventTypeTable.getAll();
   for (var n = 0; n < eventTypeList.length; n++) {
     var type = eventTypeList[n];
-
-    // Test.
-    if (filterFn && !filterFn(type)) {
-      continue;
-    }
 
     // Skip system events/etc.
     if (type.flags & wtf.data.EventFlag.INTERNAL ||
@@ -159,16 +258,16 @@ wtf.db.EventStatistics.prototype.rebuild = function(
   }
 
   // Find all events that match.
-  var zones = this.db_.getZones();
+  var zones = db.getZones();
   for (var n = 0; n < zones.length; n++) {
     var eventList = zones[n].getEventList();
-    var it = eventList.beginTimeRange(startTime, endTime);
+    var it = eventList.beginTimeRange(this.startTime_, this.endTime_);
     for (; !it.done(); it.next()) {
       var typeId = it.getTypeId();
       var entry = tableById[typeId];
       if (entry) {
         entry.appendEvent(it);
-        this.filteredEventCount_++;
+        this.eventCount_++;
       }
     }
   }
@@ -195,11 +294,29 @@ wtf.db.EventStatistics.prototype.rebuild = function(
 
 
 /**
+ * Gets the time the table starts at.
+ * @return {number} Starting time. May be MIN_VALUE to indicate a min.
+ */
+wtf.db.EventStatistics.Table.prototype.getStartTime = function() {
+  return this.startTime_;
+};
+
+
+/**
+ * Gets the time the table ends at.
+ * @return {number} Ending time. May be MAX_VALUE to indicate a max.
+ */
+wtf.db.EventStatistics.Table.prototype.getEndTime = function() {
+  return this.endTime_;
+};
+
+
+/**
  * Gets the total number of events included in the table.
  * @return {number} Event count.
  */
-wtf.db.EventStatistics.prototype.getFilteredEventCount = function() {
-  return this.filteredEventCount_;
+wtf.db.EventStatistics.Table.prototype.getEventCount = function() {
+  return this.eventCount_;
 };
 
 
@@ -208,7 +325,7 @@ wtf.db.EventStatistics.prototype.getFilteredEventCount = function() {
  * The result should not be modified.
  * @return {!Array.<!wtf.db.EventDataEntry>}
  */
-wtf.db.EventStatistics.prototype.getEntries = function() {
+wtf.db.EventStatistics.Table.prototype.getEntries = function() {
   return this.list_;
 };
 
@@ -218,7 +335,7 @@ wtf.db.EventStatistics.prototype.getEntries = function() {
  * @param {string} eventName Event name.
  * @return {wtf.db.EventDataEntry} Event entry, if it exists.
  */
-wtf.db.EventStatistics.prototype.getEventTypeEntry = function(eventName) {
+wtf.db.EventStatistics.Table.prototype.getEventTypeEntry = function(eventName) {
   return this.table_[eventName] || null;
 };
 
@@ -229,7 +346,8 @@ wtf.db.EventStatistics.prototype.getEventTypeEntry = function(eventName) {
  * @return {!Object.<!wtf.db.EventDataEntry>} All entries of the given
  *     class, keyed by event type name.
  */
-wtf.db.EventStatistics.prototype.getEntriesByClass = function(eventClass) {
+wtf.db.EventStatistics.Table.prototype.getEntriesByClass = function(
+    eventClass) {
   var result = {};
   for (var n = 0; n < this.list_.length; n++) {
     var entry = this.list_[n];
@@ -249,11 +367,11 @@ wtf.db.EventStatistics.prototype.getEntriesByClass = function(eventClass) {
  * @param {wtf.db.SortMode=} opt_sortMode Sort mode.
  * @template T
  */
-wtf.db.EventStatistics.prototype.forEach = function(
+wtf.db.EventStatistics.Table.prototype.forEach = function(
     callback, opt_scope, opt_sortMode) {
+  // Sort before enumerating if the sort order does not match the cached
+  // value.
   if (opt_sortMode && this.listSortMode_ != opt_sortMode) {
-    // Sort before enumerating if the sort order does not match the cached
-    // value.
     this.listSortMode_ = opt_sortMode;
     switch (this.listSortMode_) {
       case wtf.db.SortMode.COUNT:
@@ -291,6 +409,7 @@ wtf.db.EventStatistics.prototype.forEach = function(
         break;
     }
   }
+
   for (var n = 0; n < this.list_.length; n++) {
     callback.call(opt_scope, this.list_[n]);
   }
@@ -298,51 +417,55 @@ wtf.db.EventStatistics.prototype.forEach = function(
 
 
 /**
- * Gets all of the event type names found in all of the given tables.
- * @param {!Array.<!wtf.db.EventStatistics>} tables Tables.
- * @param {wtf.data.EventClass=} opt_eventClass Class to limit to.
- * @return {!Array.<string>} All event type names.
+ * Filters the event entries in the table based on the given filter.
+ * @param {?(wtf.db.Filter|wtf.db.FilterFunction)} filter Filter.
+ * @return {!wtf.db.EventStatistics.Table} New table.
  */
-wtf.db.EventStatistics.getAllEventTypeNames = function(tables, opt_eventClass) {
-  var names = {};
-  for (var n = 0; n < tables.length; n++) {
-    var table = tables[n];
-    for (var m = 0; m < table.list_.length; m++) {
-      var eventType = table.list_[m].eventType;
-      if (opt_eventClass === undefined ||
-          eventType.eventClass == opt_eventClass) {
-        names[eventType.name] = true;
-      }
+wtf.db.EventStatistics.Table.prototype.filter = function(filter) {
+  // Grab the filter.
+  var filterFn;
+  if (filter instanceof wtf.db.Filter) {
+    filterFn = filter.getEvaluator();
+  } else {
+    filterFn = filter || null;
+  }
+  if (!filter) {
+    return this;
+  }
+
+  // Build the new table and place the matching entries in it.
+  var newTable = new wtf.db.EventStatistics.Table(
+      this.startTime_, this.endTime_);
+  for (var n = 0; n < this.list_.length; n++) {
+    var entry = this.list_[n];
+    if (filterFn(entry.eventType)) {
+      newTable.eventCount_ += entry.count;
+      newTable.table_[entry.eventType.name] = entry;
+      newTable.list_.push(entry);
     }
   }
-  return goog.object.getKeys(names);
+  return newTable;
 };
 
 
-goog.exportSymbol(
-    'wtf.db.EventStatistics',
-    wtf.db.EventStatistics);
 goog.exportProperty(
-    wtf.db.EventStatistics.prototype, 'rebuild',
-    wtf.db.EventStatistics.prototype.rebuild);
+    wtf.db.EventStatistics.Table.prototype, 'getEventCount',
+    wtf.db.EventStatistics.Table.prototype.getEventCount);
 goog.exportProperty(
-    wtf.db.EventStatistics.prototype, 'getFilteredEventCount',
-    wtf.db.EventStatistics.prototype.getFilteredEventCount);
+    wtf.db.EventStatistics.Table.prototype, 'getEntries',
+    wtf.db.EventStatistics.Table.prototype.getEntries);
 goog.exportProperty(
-    wtf.db.EventStatistics.prototype, 'getEntries',
-    wtf.db.EventStatistics.prototype.getEntries);
+    wtf.db.EventStatistics.Table.prototype, 'getEventTypeEntry',
+    wtf.db.EventStatistics.Table.prototype.getEventTypeEntry);
 goog.exportProperty(
-    wtf.db.EventStatistics.prototype, 'getEventTypeEntry',
-    wtf.db.EventStatistics.prototype.getEventTypeEntry);
+    wtf.db.EventStatistics.Table.prototype, 'getEntriesByClass',
+    wtf.db.EventStatistics.Table.prototype.getEntriesByClass);
 goog.exportProperty(
-    wtf.db.EventStatistics.prototype, 'getEntriesByClass',
-    wtf.db.EventStatistics.prototype.getEntriesByClass);
+    wtf.db.EventStatistics.Table.prototype, 'forEach',
+    wtf.db.EventStatistics.Table.prototype.forEach);
 goog.exportProperty(
-    wtf.db.EventStatistics.prototype, 'forEach',
-    wtf.db.EventStatistics.prototype.forEach);
-goog.exportSymbol(
-    'wtf.db.EventStatistics.getAllEventTypeNames',
-    wtf.db.EventStatistics.getAllEventTypeNames);
+    wtf.db.EventStatistics.Table.prototype, 'filter',
+    wtf.db.EventStatistics.Table.prototype.filter);
 
 
 

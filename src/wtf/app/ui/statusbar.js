@@ -123,8 +123,8 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
     totalEventCount += eventList.getTotalEventCount();
   }
 
-  var table = selection.computeEventStatistics();
-  var filteredEventCount = table.getFilteredEventCount();
+  var table = selection.getSelectionStatistics();
+  var filteredEventCount = table.getEventCount();
 
   var selectionCounts = [
     filteredEventCount,

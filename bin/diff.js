@@ -50,8 +50,8 @@ function runTool(platform, args) {
   }
 
   // Build event data tables.
-  var table1 = new wtf.db.EventStatistics(db1, filter);
-  var table2 = new wtf.db.EventStatistics(db2, filter);
+  var table1 = new wtf.db.EventStatistics(db1).getTable().filter(filter);
+  var table2 = new wtf.db.EventStatistics(db2).getTable().filter(filter);
 
   // Grab all event types from each table and divide by type.
   var allInstanceEntryNames = wtf.db.EventStatistics.getAllEventTypeNames(
