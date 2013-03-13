@@ -18,6 +18,7 @@ var child_process = require('child_process');
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
+var optimist = require('optimist');
 var os = require('os');
 var path = require('path');
 var querystring = require('querystring');
@@ -31,12 +32,14 @@ var falafel = require('falafel');
  * @param {number} moduleId Module ID, [0-126].
  * @param {string} url URL of the source code.
  * @param {string} sourceCode Source code.
- * @param {boolean} trackHeap Track heap usage.
+ * @param {!Object} argv Parsed arguments.
  * @return {string} Transformed code.
  */
-function transformCode(moduleId, url, sourceCode, trackHeap) {
+function transformCode(moduleId, url, sourceCode, argv) {
   console.log('Instrumenting ' + url + ' (' + sourceCode.length + 'b)...');
   var startTime = Date.now();
+
+  var trackHeap = argv['track-heap'];
 
   // This code is stringified and then embedded in each output file.
   // It cannot capture any state.
@@ -260,11 +263,11 @@ function transformCode(moduleId, url, sourceCode, trackHeap) {
 
 /**
  * Processes a single input file.
- * @param {boolean} trackHeap Use heap tracking mode.
+ * @param {!Object} argv Parsed arguments.
  * @param {string} inputPath Input file path.
  * @param {string=} opt_outputPath Output file path.
  */
-function processFile(trackHeap, inputPath, opt_outputPath) {
+function processFile(argv, inputPath, opt_outputPath) {
   // Setup output path.
   var outputPath = opt_outputPath;
   if (!opt_outputPath) {
@@ -280,7 +283,7 @@ function processFile(trackHeap, inputPath, opt_outputPath) {
   var sourceCode = fs.readFileSync(inputPath).toString();
 
   // TODO(benvanik): support setting the module ID?
-  var targetCode = transformCode(0, inputPath, sourceCode, trackHeap);
+  var targetCode = transformCode(0, inputPath, sourceCode, argv);
 
   console.log('Writing ' + outputPath + '...');
   fs.writeFileSync(outputPath, targetCode);
@@ -290,12 +293,12 @@ function processFile(trackHeap, inputPath, opt_outputPath) {
 
 /**
  * Launches a proxy server.
- * @param {boolean} trackHeap Use heap tracking mode.
+ * @param {!Object} argv Parsed arguments.
  * @param {number} httpPort HTTP port.
  * @param {number} httpsPort HTTPS port.
  * @param {{privateKey: string, certificate: string}} certs Certificates.
  */
-function startServer(trackHeap, httpPort, httpsPort, certs) {
+function startServer(argv, httpPort, httpsPort, certs) {
   console.log('Launching proxy server...');
   console.log('   http: ' + httpPort);
   console.log('  https: ' + httpsPort);
@@ -314,7 +317,7 @@ function startServer(trackHeap, httpPort, httpsPort, certs) {
       sourceCode += chunk;
     });
     source.on('end', function() {
-      var targetCode = transformCode(moduleId, url, sourceCode, trackHeap);
+      var targetCode = transformCode(moduleId, url, sourceCode, argv);
       target.end(targetCode);
     });
   };
@@ -460,37 +463,58 @@ function getHttpsCerts(callback) {
 
 
 function main(argv) {
-  if (argv.length < 3) {
-    console.log('usage:');
-    console.log('  wtf-instrument --server [--trackheap]');
-    console.log('  wtf-instrument [--trackheap] source.js [source.instrumented.js]');
-    return;
-  }
-
-  var isServer = false;
-  var trackHeap = false;
-  var n = 2;
-  for (; n < argv.length && argv[n].indexOf('--') == 0; n++) {
-    if (argv[n] == '--server') {
-      isServer = true;
-    } else if (argv[n] == '--trackheap') {
-      trackHeap = true;
-    } else {
-      console.log('Unkown arg: "' + argv[n] +
-                  '", valid args: "--server", "--trackheap"');
-      process.exit(1);
-    }
-  }
-
-  if (isServer) {
+  if (argv['server']) {
     // TODO(benvanik): read ports from args/etc
     getHttpsCerts(function(certs) {
-      startServer(trackHeap, 8081, 8082, certs);
+      startServer(argv, argv['http-port'], argv['https-port'], certs);
     });
   } else {
-    processFile(trackHeap, argv[n], argv[n + 1]);
+    processFile(argv, argv._[0], argv._[1]);
   }
 };
 
 
-main(process.argv);
+main(optimist
+    .usage('Instrument Javascript for tracing.\nUsage: $0 source.js [source.instrumented.js]\n       $0 --server')
+    .options('s', {
+      type: 'boolean',
+      alias: 'server',
+      default: false,
+      desc: 'Run as a proxy server.'
+    })
+    .options('p', {
+      type: 'string',
+      alias: 'http-port',
+      default: 8081,
+      desc: 'HTTP proxy listen port.'
+    })
+    .options('P', {
+      type: 'string',
+      alias: 'https-port',
+      default: 8082,
+      desc: 'HTTPS proxy listen port.'
+    })
+    .options('h', {
+      type: 'boolean',
+      alias: 'track-heap',
+      default: false,
+      desc: 'Enable heap size tracking.'
+    })
+    .check(function(argv) {
+      if (argv['help']) {
+        throw '';
+      }
+      if (argv['server']) {
+        // Assert no files passed too.
+        if (argv._.length) {
+          throw 'Server mode does not accept input files.'
+        }
+      } else {
+        // Assert has a file.
+        if (!argv._.length) {
+          throw 'Pass a file to instrument.'
+        }
+      }
+      return true;
+    })
+    .argv);

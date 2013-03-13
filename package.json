@@ -24,7 +24,8 @@
   },
 
   "dependencies": {
-    "falafel": "0.1.4"
+    "falafel": "0.1.4",
+    "optimist": "0.3.5"
   },
   "devDependencies": {
     "mocha": "1.4.2",
