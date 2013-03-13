@@ -41,7 +41,13 @@ wtf.db.EventStruct = {
   PARENT: 2,
 
   /**
-   * Event depth, where 0 is at the root.
+   * Event depth, where 0 is at the root, and a max descendant depth.
+   * The depth is in the lower 16 bits and the max descendant depth is in the
+   * upper.
+   * <code>
+   * var depth = data[DEPTH] & 0xFFFF;
+   * var descendantDepth = data[DEPTH] >>> 16;
+   * </code>
    */
   DEPTH: 3,
 
