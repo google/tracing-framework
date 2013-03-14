@@ -2,10 +2,23 @@
 
 Warning: this feature is experimental and requires a bit of work to get going.
 
-This tool makes it possible to get a full function call trace of your
-application without the need to instrument anything manually. Since there's an
-overwhelming amount of data being recorded only the fact that calls were made
-is encoded, and no times are available.
+Want to see every single function call your app is making? How about how many
+bytes each function allocates as it runs? That'd be cool, right?!
+
+The normal WTF instrumentation requires adding `wtf.trace` calls inside your
+code to find the times and structure of your code as it executes. Since you're
+trying to get timing you want to restrain your usage as to not cause time skew
+and other bad effects. It's also impossible to try to instrument every call in
+your program, even with the nifty helper functions.
+
+So the call tracing feature is implemented entirely differently. It is **not for
+timing** - you will not be able to get function times from this! What you will
+be seeing in the user interface is counts, based on the mode you're running in.
+
+The `wtf-instrument` command line tool runs over your Javascript to produce
+an instrumented file that can be run in the browser. Unlike the normal
+instrumentation that normal WTF does, this process performs code transformation
+and results in a different kind of file: `.wtf-calls`.
 
 The basic usage is to instrument your code (via a command line tool or a proxy),
 capture the call trace data, and view it in WTF.
@@ -34,7 +47,8 @@ My.named2 = function() {};
 My.prototype.named3 = function() {};
 ```
 
-Future versions will try to handle other cases better.
+Future versions will try to handle other cases better. Or help out and [hack in
+your own](https://github.com/google/tracing-framework/blob/master/bin/instrument.js#L131)!
 
 If you're using Closure Compiler to generate your optimized code you can enable
 anonymous function naming via the `setAnonymousFunctionNaming` compiler option.
@@ -128,8 +142,8 @@ You can reset and save as many times as you want in a session.
 
 ## Tracking Memory Usage
 
-The call tracing tool can be used to see how much garbage each function
-generates by enabling a special Chrome flag and adding a flag to your
+The call tracing tool can be used to see how much memory each function
+allocates by enabling a special Chrome flag and adding a flag to your
 `wtf-instrument` call.
 
 First, launch a Chrome with natives enabled.
@@ -151,16 +165,22 @@ When viewing the trace each function call will be represented with the total
 bytes of memory allocated inside of that call as its time (so something that
 took 0.032ms allocated 32bytes, etc).
 
+## Bookmarklets
+
+Drag these to your bookmarks bar to make working with instrumented pages easier.
+
+Err, github doesn't allow javascript: links, so you'll have to create these
+manually:
+
+* Reset Trace: `javascript:__resetTrace()`
+  * Resets recorded data to start recording fresh.
+* Save Trace: `javascript:__saveTrace()`
+  * Saves a `.wtf-calls` file with the currently recorded data.
+
 ## Limitations
 
-When manually instrumenting with the command line app you will only be able to
-have a single instrumented file on a page. This may be fixed in future versions.
-
-There's no UI right now so you must use the console. Future versions will likely
-have a few modes (capture after N seconds, etc) or a UI.
-
-The recording buffer is currently hardcoded to 128MB and after that calls are
-ignored without warning.
+The recording buffer is currently hardcoded to some large size and after it is
+full all calls are ignored without warning.
 
 Functions without a proper name will end up named as 'anon#'. Future versions
 may try a little harder to extract a valid name from functions that have one
