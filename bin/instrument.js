@@ -53,7 +53,12 @@ function transformCode(moduleId, url, sourceCode, argv) {
     global.__wtfd = window.__wtfd || new Int32Array(1 << dataMagnitude);
     global.__wtfi = window.__wtfi || 0;
     if (trackHeap) {
-      var getHeapUsage = new Function('return %GetHeapUsage()');
+      var getHeapUsage = null;
+      try {
+        getHeapUsage = new Function('return %GetHeapUsage()');
+      } catch (e) {
+        window.alert('Launch Chrome with --js-flags=--allow-natives-syntax');
+      }
       global.__wtfEnter = function(id) {
         __wtfd[__wtfi++ & dataMask] = id;
         __wtfd[__wtfi++ & dataMask] = getHeapUsage();
