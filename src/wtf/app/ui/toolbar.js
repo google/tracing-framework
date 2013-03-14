@@ -49,7 +49,7 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
 
   var healthPane = this.getChildElement(
       goog.getCssName('healthPane'));
-  goog.style.showElement(healthPane, false);
+  goog.style.setElementShown(healthPane, false);
 
   eh.listen(
       this.getChildElement(goog.getCssName('viewHealthLink')),
@@ -165,7 +165,7 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
   var healthInfo = this.documentView_.getHealthInfo();
   var healthPane = this.getChildElement(
       goog.getCssName('healthPane'));
-  goog.style.showElement(healthPane, healthInfo.isBad());
+  goog.style.setElementShown(healthPane, healthInfo.isBad());
 };
 
 
