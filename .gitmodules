@@ -16,3 +16,6 @@
 [submodule "third_party/normalize.css"]
 	path = third_party/normalize.css
 	url = https://github.com/necolas/normalize.css.git
+[submodule "third_party/closure-library"]
+	path = third_party/closure-library
+	url = https://code.google.com/p/closure-library/
