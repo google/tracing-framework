@@ -126,6 +126,31 @@ __resetTrace()
 
 You can reset and save as many times as you want in a session.
 
+## Tracking Memory Usage
+
+The call tracing tool can be used to see how much garbage each function
+generates by enabling a special Chrome flag and adding a flag to your
+`wtf-instrument` call.
+
+First, launch a Chrome with natives enabled.
+
+```
+# WARNING: THIS IS TOTALLY UNSAFE! DO NOT BROWSE THE WEB LIKE THIS!
+chrome --remote-debugging-port=9222 --disable-web-security --js-flags=--allow-natives-syntax
+```
+
+When running `wtf-instrument` add the `--track-heap` argument:
+
+```
+wtf-instrument --track-heap some.js
+# or
+wtf-instrument --server --track-heap
+```
+
+When viewing the trace each function call will be represented with the total
+bytes of memory allocated inside of that call as its time (so something that
+took 0.032ms allocated 32bytes, etc).
+
 ## Limitations
 
 When manually instrumenting with the command line app you will only be able to
