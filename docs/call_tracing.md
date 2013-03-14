@@ -63,6 +63,12 @@ the structure of the code you're executing is what you will be shipping. The
 **only** difference between the code you run this tool on and what you ship
 should be visual only (pretty printing, naming, etc).
 
+## Install the tracing-framework Tools
+
+```
+npm install -g tracing-framework
+```
+
 ## Manual Instrumentation
 
 If you have a Javascript file you'd like to instrument the easiest way to get
