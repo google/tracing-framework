@@ -322,8 +322,14 @@ function startServer(argv, httpPort, httpsPort, certs) {
       sourceCode += chunk;
     });
     source.on('end', function() {
-      var targetCode = transformCode(moduleId, url, sourceCode, argv);
-      target.end(targetCode);
+      try {
+        var targetCode = transformCode(moduleId, url, sourceCode, argv);
+        target.end(targetCode);
+      } catch (e) {
+        console.log('Error during transformation, writing through.');
+        console.log(e);
+        target.end(sourceCode);
+      }
     });
   };
 
