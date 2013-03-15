@@ -176,6 +176,33 @@ function transformCode(moduleId, url, sourceCode, argv) {
     return null;
   };
 
+  function isFunctionBlock(node) {
+    var parent = node.parent;
+
+    // function foo() {}
+    var isDecl = parent.type == 'FunctionDeclaration';
+    // = function [optional]() {}
+    var isExpr = parent.type == 'FunctionExpression';
+
+    return isDecl || isExpr;
+  }
+
+  // Compute an ignore map for fast checks.
+  var ignores = {};
+  var anyIgnores = false;
+  var ignoreArg = argv['ignore'];
+  if (ignoreArg) {
+    if (Array.isArray(ignoreArg)) {
+      for (var n = 0; n < ignoreArg.length; n++) {
+        ignores[ignoreArg[n]] = true;
+        anyIgnores = true;
+      }
+    } else {
+      ignores[ignoreArg] = true;
+      anyIgnores = true;
+    }
+  }
+
   // Walk the entire document instrumenting functions.
   var nextFnId = (moduleId << 24) + 1;
   var nextAnonymousName = 0;
@@ -189,26 +216,19 @@ function transformCode(moduleId, url, sourceCode, argv) {
   var targetCode = falafel(sourceCode, function(node) {
     if (node.type == 'BlockStatement') {
       var parent = node.parent;
-
-      // function foo() {}
-      var isDecl = parent.type == 'FunctionDeclaration';
-      // = function [optional]() {}
-      var isExpr = parent.type == 'FunctionExpression';
-      if (!isDecl && !isExpr) {
+      if (!isFunctionBlock(node)) {
         return;
       }
 
       // Guess function name or set to some random one.
       var name = getFunctionName(parent);
-      if (name) {
-        // Strip off any junk.
-        // jscompiler adds a _.$ prefix sometimes.
-        if (name.indexOf('_.$') == 0) {
-          name = name.substr(3);
-        }
-      }
       if (!name || !name.length) {
         name = 'anon' + moduleId + '$' + nextAnonymousName++;
+      }
+
+      // Check ignore list.
+      if (ignores[name]) {
+        return;
       }
 
       var fnId = nextFnId++;
@@ -235,6 +255,23 @@ function transformCode(moduleId, url, sourceCode, argv) {
         ].join(''));
       }
     } else if (!tryCatchMode && node.type == 'ReturnStatement') {
+      // Walk up to see if this function is ignored.
+      if (anyIgnores) {
+        var testNode = node.parent;
+        while (testNode) {
+          if (testNode.type == 'BlockStatement') {
+            if (isFunctionBlock(testNode)) {
+              var testName = getFunctionName(testNode.parent);
+              if (testName && ignores[testName]) {
+                return;
+              }
+              break;
+            }
+          }
+          testNode = testNode.parent;
+        }
+      }
+
       if (node.argument) {
         node.update([
           '{__wtfRet=(',
@@ -350,8 +387,17 @@ function startServer(argv, httpPort, httpsPort, certs) {
       return;
     }
 
+    res.on('error', function(e) {
+      console.log('ERROR (source): ' + e);
+    });
+
     var targetModule = targetUrl.indexOf('https') == 0 ? https : http;
     targetModule.get(targetUrl, function(originalRes) {
+      // Eat errors, otherwise the app will die.
+      originalRes.on('error', function(e) {
+        console.log('ERROR (target): ' + e);
+      });
+
       // Pull out content type to see if we are interested in it.
       var supportedContentType = false;
       var contentType = originalRes.headers['content-type'];
@@ -488,28 +534,33 @@ function main(argv) {
 main(optimist
     .usage('Instrument Javascript for tracing.\nUsage: $0 source.js [source.instrumented.js]\n       $0 --server')
     .options('s', {
-      type: 'boolean',
       alias: 'server',
+      type: 'boolean',
       default: false,
       desc: 'Run as a proxy server.'
     })
     .options('p', {
-      type: 'string',
       alias: 'http-port',
+      type: 'string',
       default: 8081,
       desc: 'HTTP proxy listen port.'
     })
     .options('P', {
-      type: 'string',
       alias: 'https-port',
+      type: 'string',
       default: 8082,
       desc: 'HTTPS proxy listen port.'
     })
     .options('h', {
-      type: 'boolean',
       alias: 'track-heap',
+      type: 'boolean',
       default: false,
       desc: 'Enable heap size tracking.'
+    })
+    .options('i', {
+      alias: 'ignore',
+      type: 'string',
+      desc: 'Don\'t trace functions with this name.'
     })
     .check(function(argv) {
       if (argv['help']) {
