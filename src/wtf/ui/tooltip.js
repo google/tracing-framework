@@ -82,7 +82,7 @@ wtf.ui.Tooltip.prototype.disposeInternal = function() {
  */
 wtf.ui.Tooltip.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
-  goog.style.showElement(el, false);
+  goog.style.setElementShown(el, false);
   goog.dom.classes.add(el, goog.getCssName('uiTooltip'));
   return el;
 };
@@ -124,7 +124,7 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
     'left': left + 'px',
     'top': top + 'px'
   });
-  goog.style.showElement(el, true);
+  goog.style.setElementShown(el, true);
 
   if (!this.visible_) {
     wtf.ui.Tooltip.allVisibleTooltips_.push(this);
@@ -155,7 +155,7 @@ wtf.ui.Tooltip.prototype.hide = function() {
   }
   this.visible_ = false;
   goog.array.remove(wtf.ui.Tooltip.allVisibleTooltips_, this);
-  goog.style.showElement(this.rootElement_, false);
+  goog.style.setElementShown(this.rootElement_, false);
 };
 
 

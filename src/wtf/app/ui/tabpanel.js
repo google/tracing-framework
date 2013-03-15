@@ -63,7 +63,7 @@ wtf.app.ui.TabPanel = function(documentView, path, name) {
    * @private
    */
   this.visible_ = false;
-  goog.style.showElement(this.getRootElement(), false);
+  goog.style.setElementShown(this.getRootElement(), false);
 };
 goog.inherits(wtf.app.ui.TabPanel, wtf.ui.Control);
 
@@ -111,7 +111,7 @@ wtf.app.ui.TabPanel.prototype.isVisible = function() {
 wtf.app.ui.TabPanel.prototype.setVisible = function(value) {
   this.visible_ = value;
 
-  goog.style.showElement(this.getRootElement(), value);
+  goog.style.setElementShown(this.getRootElement(), value);
 };
 
 

@@ -258,7 +258,7 @@ wtf.ui.SettingsDialog.prototype.addPane = function(title) {
 
   // Add the pane to the DOM.
   var contentEl = this.getChildElement(goog.getCssName('contents'));
-  goog.style.showElement(pane.el_, false);
+  goog.style.setElementShown(pane.el_, false);
   dom.appendChild(contentEl, pane.el_);
 
   // Setup the button on the nav bar.
@@ -298,12 +298,12 @@ wtf.ui.SettingsDialog.prototype.selectPane = function(title) {
   if (this.currentPane_) {
     goog.dom.classes.remove(this.currentPane_.navLinkEl_,
         goog.getCssName('selected'));
-    goog.style.showElement(this.currentPane_.el_, false);
+    goog.style.setElementShown(this.currentPane_.el_, false);
   }
   this.currentPane_ = pane;
   goog.dom.classes.add(pane.navLinkEl_,
       goog.getCssName('selected'));
-  goog.style.showElement(pane.el_, true);
+  goog.style.setElementShown(pane.el_, true);
 };
 
 
