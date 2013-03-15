@@ -276,8 +276,8 @@ wtf.app.ui.query.QueryPanel.prototype.clear = function() {
 
   // Clear errors/show empty help text.
   this.searchControl_.toggleError(false);
-  goog.style.showElement(this.emptyEl_, true);
-  goog.style.showElement(this.errorEl_, false);
+  goog.style.setElementShown(this.emptyEl_, true);
+  goog.style.setElementShown(this.errorEl_, false);
 
   // Disable all buttons.
   for (var n = 0; n < this.buttonEls_.length; n++) {
@@ -332,8 +332,8 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
 
   // Toggle error state.
   this.searchControl_.toggleError(!!error);
-  goog.style.showElement(this.emptyEl_, !!error);
-  goog.style.showElement(this.errorEl_, !!error);
+  goog.style.setElementShown(this.emptyEl_, !!error);
+  goog.style.setElementShown(this.errorEl_, !!error);
   if (error) {
     dom.setTextContent(this.infoEl_, '');
     dom.setTextContent(this.errorEl_, error);

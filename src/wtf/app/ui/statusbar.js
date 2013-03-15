@@ -108,10 +108,10 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
   var selection = this.documentView_.getSelection();
 
   if (!db.getLastEventTime()) {
-    goog.style.showElement(this.getRootElement(), false);
+    goog.style.setElementShown(this.getRootElement(), false);
     return;
   }
-  goog.style.showElement(this.getRootElement(), true);
+  goog.style.setElementShown(this.getRootElement(), true);
 
   var timebase = db.getTimebase();
   var firstEventTime = db.getFirstEventTime();
