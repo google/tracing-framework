@@ -198,7 +198,8 @@ wtf.data.Variable.parseSignature = function(signature) {
   // Split signature.
   // 'a.b.c(<params>)'
   // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
-  var signatureParts = /^([a-zA-Z0-9_\.#:\$]+)(\((.*)\)$)?/.exec(signature);
+  var signatureParts =
+      /^([a-zA-Z0-9_\.#:\$\[\]\"\']+)(\((.*)\)$)?/.exec(signature);
   if (!signatureParts || !signatureParts.length) {
     throw new Error(
         'Invalid event signature: ' + signature + ' - unable to parse');
