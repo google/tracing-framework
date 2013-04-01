@@ -119,6 +119,8 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   if (top + size.height > window.innerHeight) {
     top = y - offset - size.height;
   }
+  left = Math.max(0, left);
+  top = Math.max(0, top);
 
   goog.style.setStyle(el, {
     'left': left + 'px',
