@@ -42,16 +42,42 @@ function transformCode(moduleId, url, sourceCode, argv) {
   var trackHeap = argv['track-heap'];
 
   // This code is stringified and then embedded in each output file.
+  // It's ok if multiple are present on the page.
   // It cannot capture any state.
   // TODO(benvanik): clean up, make support nodejs too.
   // TODO(benvanik): put in an external file, have a HUD, etc.
   var sharedInitCode = '(' + (function(global, trackHeap) {
+    // Add a global tag to let WTF know we are on the page. The extension can
+    // then yell at the user for trying to use both at the same time.
+    var firstBlock = !global.__wtfInstrumentationPresent;
+    global.__wtfInstrumentationPresent = true;
+
+    // Add a big warning div to let users know the proxy is active.
+    // This is useful for when the proxy is accidentally left enabled.
+    if (firstBlock) {
+      var div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.left = '50%';
+      div.style.top = 0;
+      div.style.backgroundColor = 'red';
+      div.style.color = 'white';
+      div.style.pointerEvents = 'none';
+      div.innerHTML = 'WTF PROXY ENABLED';
+      if (document.body) {
+        document.body.appendChild(div);
+      } else {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.appendChild(div);
+        }, false);
+      }
+    }
+
     var dataMagnitude = 26; // 2^26 = 67 million records
     var dataSize = 1 << dataMagnitude;
     var dataMask = dataSize - 1;
-    global.__wtfm = window.__wtfm || {};
-    global.__wtfd = window.__wtfd || new Int32Array(1 << dataMagnitude);
-    global.__wtfi = window.__wtfi || 0;
+    global.__wtfm = global.__wtfm || {};
+    global.__wtfd = global.__wtfd || new Int32Array(1 << dataMagnitude);
+    global.__wtfi = global.__wtfi || 0;
     if (trackHeap) {
       var getHeapUsage = null;
       try {
@@ -110,7 +136,7 @@ function transformCode(moduleId, url, sourceCode, argv) {
       }
       var padBytes = new Uint8Array(padLength);
 
-      var contents = global.__wtfd.subarray(0, window.__wtfi);
+      var contents = global.__wtfd.subarray(0, global.__wtfi);
       a.href = URL.createObjectURL(new Blob([
         header,
         padBytes,
