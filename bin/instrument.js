@@ -62,10 +62,11 @@ function transformCode(moduleId, url, sourceCode, argv) {
       div.style.top = 0;
       div.style.backgroundColor = 'red';
       div.style.color = 'white';
-      div.style.pointerEvents = 'none';
       div.style.font = '8pt monospace';
       div.style.padding = '3px';
-      div.innerHTML = 'WTF PROXY ENABLED';
+      div.style.userSelect = 'none';
+      div.style.webkitUserSelect = 'none';
+      div.innerHTML = 'WTF INSTRUMENTATION ENABLED';
       if (document.body) {
         document.body.appendChild(div);
       } else {
@@ -81,6 +82,23 @@ function transformCode(moduleId, url, sourceCode, argv) {
         window.alert('The WTF tracing feature cannot be used on ' +
             'instrumented code. Disable instrumentation and try again.');
       }
+
+      // Add helper buttons.
+      var innerDiv = document.createElement('div');
+      div.appendChild(innerDiv);
+      function addButton(name, tip, code) {
+        var a = document.createElement('a');
+        a.innerHTML = name;
+        a.title = tip;
+        a.href = 'javascript:' + code;
+        a.style.marginRight = '5px';
+        a.style.color = 'white';
+        a.style.textDecoration = 'underline';
+        innerDiv.appendChild(a);
+      };
+      addButton('Clear', 'Clear current trace data.', '__resetTrace()');
+      addButton('Save', 'Save the trace to a file.', '__saveTrace()');
+      addButton('Show', 'Show the trace in the WTF UI.', '__showTrace()');
     }
 
     var dataMagnitude = 26; // 2^26 = 67 million records
