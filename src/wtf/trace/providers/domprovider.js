@@ -112,7 +112,9 @@ wtf.trace.providers.DomProvider.prototype.injectDocument_ = function() {
 wtf.trace.providers.DomProvider.prototype.injectElements_ = function() {
   var elementTypes = {
     'HTMLAnchorElement': 'a',
-    'HTMLAppletElement': 'applet',
+    // Don't hook <applet>, as it causes IE to display warnings/errors about
+    // Java not being installed.
+    //'HTMLAppletElement': 'applet',
     'HTMLAreaElement': 'area',
     'HTMLAudioElement': 'audio',
     'HTMLBRElement': 'br',
