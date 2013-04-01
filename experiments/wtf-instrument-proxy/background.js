@@ -23,6 +23,19 @@ function registerRules() {
       return;
     }
 
+    // Whitelist of prefix that are not instrumented.
+    var whitelist = [
+      'https://www.google.com/jsapi',
+      'https://apis.google.com/js/client.js',
+      'http://google.github.com/tracing-framework/bin/',
+      'https://ssl.google-analytics.com/ga.js',
+    ];
+    for (var n = 0; n < whitelist.length; n++) {
+      if (details.url.indexOf(whitelist[n]) == 0) {
+        return;
+      }
+    }
+
     // Only inspect scripts.
     if (details.method == 'GET' &&
         (details.type == 'script' || details.type == 'xmlhttprequest') &&
