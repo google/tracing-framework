@@ -68,12 +68,9 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
    */
   this.debugger_ = null;
 
-  if (pageOptions['wtf.trace.provider.chromeDebug']) {
-    var timelineEnabled = pageOptions[
-        'wtf.trace.provider.chromeDebug.timeline'];
-    if (timelineEnabled === undefined) {
-      timelineEnabled = true;
-    }
+  if (pageOptions['wtf.trace.provider.chromeDebug'] !== false) {
+    var timelineEnabled =
+        pageOptions['wtf.trace.provider.chromeDebug.timeline'] !== false;
     var memoryInfoEnabled =
         pageOptions['wtf.trace.provider.chromeDebug.memoryInfo'];
     var tracingEnabled =
