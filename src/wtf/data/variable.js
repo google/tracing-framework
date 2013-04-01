@@ -192,12 +192,20 @@ wtf.data.Variable.parseSignatureArguments = function(argsString) {
  * }}
  */
 wtf.data.Variable.parseSignature = function(signature) {
+  // Trim.
+  signature = goog.string.trim(signature);
+
   // Split signature.
   // 'a.b.c(<params>)'
   // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
   var signatureParts = /^([a-zA-Z0-9_\.#:\$]+)(\((.*)\)$)?/.exec(signature);
   if (!signatureParts || !signatureParts.length) {
-    throw new Error('Invalid event signature: ' + signature);
+    throw new Error(
+        'Invalid event signature: ' + signature + ' - unable to parse');
+  }
+  if (signatureParts[0] != signature) {
+    throw new Error(
+        'Invalid event signature: ' + signature + ' - not all characters used');
   }
 
   var signatureName = signatureParts[1]; // entire name before ()
