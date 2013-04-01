@@ -164,16 +164,20 @@ function transformCode(moduleId, url, sourceCode, argv) {
 
   // Attempt to guess the names of functions.
   function getFunctionName(node) {
+    function cleanupName(name) {
+      return name.replace(/[ \n]/g, '');
+    };
+
     // Simple case of:
     // function foo() {}
     if (node.id) {
-      return node.id.name;
+      return cleanupName(node.id.name);
     }
 
     // var foo = function() {};
     if (node.parent.type == 'VariableDeclarator') {
       if (node.parent.id) {
-        return node.parent.id.name;
+        return cleanupName(node.parent.id.name);
       }
       console.log('unknown var decl', node.parent);
       return null;
@@ -193,9 +197,9 @@ function transformCode(moduleId, url, sourceCode, argv) {
         // Bar.prototype.foo = function() {};
         // left.object {type: 'MemberExpression', ...}
         // left.property {type: 'Identifier', name: 'foo'}
-        return left.source();
+        return cleanupName(left.source());
       } else if (left.type == 'Identifier') {
-        return left.name;
+        return cleanupName(left.name);
       }
       console.log('unknown assignment LHS', left);
       return null;
