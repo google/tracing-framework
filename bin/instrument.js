@@ -63,6 +63,8 @@ function transformCode(moduleId, url, sourceCode, argv) {
       div.style.backgroundColor = 'red';
       div.style.color = 'white';
       div.style.pointerEvents = 'none';
+      div.style.font = '8pt monospace';
+      div.style.padding = '3px';
       div.innerHTML = 'WTF PROXY ENABLED';
       if (document.body) {
         document.body.appendChild(div);
@@ -113,10 +115,7 @@ function transformCode(moduleId, url, sourceCode, argv) {
     global.__resetTrace = function() {
       global.__wtfi = 0;
     };
-    global.__saveTrace = function(opt_filename) {
-      var a = document.createElement('a');
-      a.download = opt_filename || (Date.now() + '.wtf-calls');
-
+    global.__grabTrace = function() {
       var euri = window.location.href;
       var etitle =
           window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
@@ -145,14 +144,68 @@ function transformCode(moduleId, url, sourceCode, argv) {
       }
       var padBytes = new Uint8Array(padLength);
 
-      var contents = global.__wtfd.subarray(0, global.__wtfi);
-      a.href = URL.createObjectURL(new Blob([
+      var contents = new Uint8Array(global.__wtfd.buffer);
+      contents = contents.subarray(0, global.__wtfi * 4);
+
+      return [
         header,
         padBytes,
         contents
-      ], {
+      ];
+    };
+    global.__showTrace = function() {
+      // Grab trace data and combine into a single buffer.
+      var buffers = global.__grabTrace();
+      var totalLength = 0;
+      for (var n = 0; n < buffers.length; n++) {
+        totalLength += buffers[n].length;
+      }
+      var buffer = new Uint8Array(totalLength);
+      for (var n = 0, o = 0; n < buffers.length; n++) {
+        var sourceBuffer = buffers[n];
+        for (var m = 0; m < sourceBuffer.length; m++) {
+          buffer[o + m] = sourceBuffer[m];
+        }
+        o += sourceBuffer.length;
+      }
+
+      var boundHandler = function(e) {
+        if (e.data && e.data['wtf_ipc_connect_token'] &&
+            e.data.data && e.data.data['hello'] == true) {
+          e.stopPropagation();
+          window.removeEventListener('message', boundHandler, true);
+
+          e.source.postMessage({
+            'wtf_ipc_connect_token': true,
+            'data': {
+              'command': 'snapshot',
+              'content_types': ['application/x-extension-wtf-calls'],
+              'content_sources': [Date.now() + '.wtf-calls'],
+              'content_buffers': [buffer],
+              'content_length': totalLength
+            }
+          }, '*');
+        }
+      };
+      window.addEventListener('message', boundHandler, true);
+      var uiUrl =
+          'http://google.github.com/tracing-framework/bin/app/maindisplay.html';
+          //'http://localhost:8080/app/maindisplay-debug.html';
+          //'http://localhost:8080/app/maindisplay.html';
+      window.open(uiUrl + '?expect_data', '_blank');
+    };
+    global.__saveTrace = function(opt_filename) {
+      // Grab trace blob URL.
+      var buffers = global.__grabTrace();
+      var blob = new Blob(buffers, {
         type: 'application/octet-stream'
-      }));
+      });
+      var url = URL.createObjectURL(blob);
+
+      // Fake a download.
+      var a = document.createElement('a');
+      a.download = opt_filename || (Date.now() + '.wtf-calls');
+      a.href = url;
       var e = document.createEvent('MouseEvents');
       e.initMouseEvent(
           'click',
@@ -440,7 +493,7 @@ function startServer(argv, httpPort, httpsPort, certs) {
       // Pull out content type to see if we are interested in it.
       var supportedContentType = false;
       var contentType = originalRes.headers['content-type'];
-      if (contentType.indexOf(';') != 0) {
+      if (contentType && contentType.indexOf(';') != 0) {
         contentType = contentType.substr(0, contentType.indexOf(';'));
       }
       switch (contentType) {
