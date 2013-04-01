@@ -56,6 +56,7 @@ function transformCode(moduleId, url, sourceCode, argv) {
     // This is useful for when the proxy is accidentally left enabled.
     if (firstBlock) {
       var div = document.createElement('div');
+      div.style.zIndex = 999999;
       div.style.position = 'fixed';
       div.style.left = '50%';
       div.style.top = 0;
@@ -69,6 +70,14 @@ function transformCode(moduleId, url, sourceCode, argv) {
         document.addEventListener('DOMContentLoaded', function() {
           document.body.appendChild(div);
         }, false);
+      }
+
+      // Check to see if WTF is active on the page.
+      // The user shouldn't be trying to trace and instrument at the same time.
+      if (global['wtf']) {
+        div.innerHTML = 'You must disable WTF to run with instrumentation';
+        window.alert('The WTF tracing feature cannot be used on ' +
+            'instrumented code. Disable instrumentation and try again.');
       }
     }
 
