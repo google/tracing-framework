@@ -23,6 +23,7 @@ goog.require('wtf.db.ArgumentData');
 goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
 goog.require('wtf.db.TimeRange');
+goog.require('wtf.db.Unit');
 goog.require('wtf.io.EventType');
 
 
@@ -259,7 +260,11 @@ wtf.db.sources.BinaryDataSource.prototype.readTraceHeader_ =
 
   // Initialize the trace source.
   // Only call when all other parsing has been successful.
-  this.initialize(contextInfo, flags, 0, metadata, timebase, timeDelay);
+  if (!this.initialize(
+      contextInfo, flags, 0, wtf.db.Unit.TIME_MILLISECONDS, metadata,
+      timebase, timeDelay)) {
+    return false;
+  }
 
   // Add builtin events for this version.
   switch (formatVersion) {

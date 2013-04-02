@@ -32,6 +32,7 @@ goog.require('wtf.app.ui.query.QueryPanel');
 goog.require('wtf.app.ui.tracks.TracksPanel');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.HealthInfo');
+goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -56,6 +57,8 @@ goog.require('wtf.ui.Tooltip');
  */
 wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   goog.base(this, parentElement, dom);
+
+  var db = doc.getDatabase();
 
   /**
    * Document.
@@ -85,18 +88,14 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    * @type {!wtf.db.HealthInfo}
    * @private
    */
-  this.healthInfo_ = new wtf.db.HealthInfo(
-      doc.getDatabase(), this.selection_.getFullStatistics());
+  this.healthInfo_ = new wtf.db.HealthInfo(db, null);
 
   // Rebuild health info.
   // We try to pass in our event statistics if we can (no filter).
   // Note that we bind this handler as early as possible so that we run before
   // other handlers setup by the UI.
-  var db = doc.getDatabase();
-  db.addListener(wtf.events.EventType.INVALIDATED, function() {
-    this.healthInfo_ = new wtf.db.HealthInfo(
-        db, this.selection_.getFullStatistics());
-  }, this);
+  db.addListener(wtf.events.EventType.INVALIDATED, this.updateHealth_, this);
+  this.updateHealth_();
 
   /**
    * Toolbar.
@@ -403,6 +402,24 @@ wtf.app.ui.DocumentView.prototype.getHealthInfo = function() {
  */
 wtf.app.ui.DocumentView.prototype.getTabbar = function() {
   return this.tabbar_;
+};
+
+
+/**
+ * Updates health information on database change.
+ * @private
+ */
+wtf.app.ui.DocumentView.prototype.updateHealth_ = function() {
+  var db = this.getDatabase();
+
+  // Get the stats table used for health info, but only if the database has
+  // useful information.
+  var statsTable = null;
+  if (db.getUnits() == wtf.db.Unit.TIME_MILLISECONDS) {
+    statsTable = this.selection_.getFullStatistics();
+  }
+
+  this.healthInfo_ = new wtf.db.HealthInfo(db, statsTable);
 };
 
 

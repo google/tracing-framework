@@ -408,6 +408,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.viewportChanged_ = function() {
   for (var n = 0; n < this.timePainters_.length; n++) {
     var painter = this.timePainters_[n];
     painter.setTimeRange(timeLeft, timeRight);
+    painter.setUnits(db.getUnits());
   }
 
   // Update the tooltip, if it's visible.

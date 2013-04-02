@@ -25,11 +25,11 @@ goog.require('wtf.db.ScopeEventDataEntry');
  * to track things like tracing overhead.
  *
  * @param {!wtf.db.Database} db Database.
- * @param {!wtf.db.EventStatistics.Table} table An event statistics
+ * @param {wtf.db.EventStatistics.Table=} opt_table An event statistics
  *     table to use for generating the health report.
  * @constructor
  */
-wtf.db.HealthInfo = function(db, table) {
+wtf.db.HealthInfo = function(db, opt_table) {
   /**
    * Whether the trace is 'bad'.
    * @type {boolean}
@@ -65,7 +65,9 @@ wtf.db.HealthInfo = function(db, table) {
    */
   this.warnings_ = [];
 
-  this.analyzeStatistics_(db, table);
+  if (opt_table) {
+    this.analyzeStatistics_(db, opt_table);
+  }
 };
 
 
