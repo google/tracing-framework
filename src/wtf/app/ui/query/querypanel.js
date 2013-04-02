@@ -363,7 +363,9 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   // Update the table.
   if (result instanceof wtf.db.EventIterator) {
     // Show using table.
-    this.table_.setSource(new wtf.app.ui.query.QueryTableSource(result));
+    var tableSource = new wtf.app.ui.query.QueryTableSource(result);
+    tableSource.setUnits(this.db_.getUnits());
+    this.table_.setSource(tableSource);
   } else {
     // Show simple result.
   }

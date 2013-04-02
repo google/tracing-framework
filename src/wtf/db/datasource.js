@@ -18,6 +18,7 @@ goog.provide('wtf.db.PresentationHint');
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('wtf.data.formats.FileFlags');
+goog.require('wtf.db.Unit');
 
 
 
@@ -135,6 +136,13 @@ wtf.db.DataSource = function(db) {
   this.presentationHints_ = 0;
 
   /**
+   * Units used in the database.
+   * @type {wtf.db.Unit}
+   * @private
+   */
+  this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
+
+  /**
    * File metadata.
    * @type {!Object}
    * @private
@@ -218,6 +226,15 @@ wtf.db.DataSource.prototype.getPresentationHints = function() {
 
 
 /**
+ * Gets the unit of measurement the data is in.
+ * @return {wtf.db.Unit} Unit of measurement.
+ */
+wtf.db.DataSource.prototype.getUnits = function() {
+  return this.units_;
+};
+
+
+/**
  * Gets embedded file metadata.
  * @return {!Object} Metadata.
  */
@@ -259,22 +276,28 @@ wtf.db.DataSource.prototype.start = goog.nullFunction;
  * @param {!wtf.data.ContextInfo} contextInfo Context information.
  * @param {number} flags A bitmask of {@see wtf.data.formats.FileFlags} values.
  * @param {number} presentationHints Bitmask of presentation hints.
+ * @param {wtf.db.Unit} units Unit of measurement.
  * @param {!Object} metadata File metadata.
  * @param {number} timebase Time base for all time values read.
  * @param {number} timeDelay Estimated time delay.
+ * @return {boolean} Whether the initialization was successful.
  * @protected
  */
 wtf.db.DataSource.prototype.initialize = function(
-    contextInfo, flags, presentationHints, metadata, timebase, timeDelay) {
+    contextInfo, flags, presentationHints, units, metadata, timebase,
+    timeDelay) {
   goog.asserts.assert(!this.isInitialized_);
   this.isInitialized_ = true;
 
   this.contextInfo_ = contextInfo;
   this.flags_ = flags;
   this.presentationHints_ = presentationHints;
+  this.units_ = units;
   this.metadata_ = metadata;
   this.timebase_ = timebase;
   this.timeDelay_ = timeDelay;
+
+  return this.db_.sourceInitialized(this);
 };
 
 
@@ -290,6 +313,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.DataSource.prototype, 'getPresentationHints',
     wtf.db.DataSource.prototype.getPresentationHints);
+goog.exportProperty(
+    wtf.db.DataSource.prototype, 'getUnits',
+    wtf.db.DataSource.prototype.getUnits);
 goog.exportProperty(
     wtf.db.DataSource.prototype, 'getMetadata',
     wtf.db.DataSource.prototype.getMetadata);

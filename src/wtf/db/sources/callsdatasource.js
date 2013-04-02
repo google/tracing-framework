@@ -21,6 +21,7 @@ goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
 goog.require('wtf.db.PresentationHint');
+goog.require('wtf.db.Unit');
 goog.require('wtf.io');
 goog.require('wtf.util');
 
@@ -121,13 +122,23 @@ wtf.db.sources.CallsDataSource.prototype.start = function() {
   }
   var attributes = metadata['attributes'] || [];
 
+  // Infer units from attributes.
+  var units = wtf.db.Unit.COUNT;
+  if (attributes.length) {
+    var unitsStr = attributes[0]['units'];
+    units = wtf.db.Unit.parse(unitsStr);
+  }
+
   // Assume we are always special. In the future the file can specify this.
   var presentationHints = 0;
   presentationHints |= wtf.db.PresentationHint.NO_RENDER_DATA;
   presentationHints |= wtf.db.PresentationHint.BARE;
 
-  this.initialize(
-      contextInfo, flags, presentationHints, metadata, timebase, timeDelay);
+  if (!this.initialize(
+      contextInfo, flags, presentationHints, units, metadata,
+      timebase, timeDelay)) {
+    return false;
+  }
 
   // Setup some builtin event types.
   var leaveEventType = eventTypeTable.defineType(

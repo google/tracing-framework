@@ -315,7 +315,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.onClickInternal =
 wtf.app.ui.tracks.ZonePainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
   var it = this.hitTest_(x, y, bounds);
-  return it ? it.getInfoString() : undefined;
+  return it ? it.getInfoString(this.units) : undefined;
 };
 
 

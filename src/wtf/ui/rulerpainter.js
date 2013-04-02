@@ -13,9 +13,9 @@
 
 goog.provide('wtf.ui.RulerPainter');
 
+goog.require('wtf.db.Unit');
 goog.require('wtf.math');
 goog.require('wtf.ui.TimePainter');
-goog.require('wtf.util');
 
 
 
@@ -41,6 +41,13 @@ wtf.ui.RulerPainter = function RulerPainter(canvas) {
    * @private
    */
   this.maxGranularity_ = 0;
+
+  /**
+   * Units to display labels in.
+   * @type {wtf.db.Unit}
+   * @private
+   */
+  this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
 
   /**
    * Whether to show the hover bar/time.
@@ -141,8 +148,8 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
       }
       var x = wtf.math.remap(time, timeLeft, timeRight, 0, width);
       x = Math.round(x) + 0.5;
-      var timeValue = (time / 1000);
-      var timeString = (Math.round(timeValue * g) / g) + 's';
+      var timeValue = Math.round(time * g) / g;
+      var timeString = wtf.db.Unit.format(time, this.units, true);
       ctx.fillText(timeString, bounds.left + x, bounds.top + 11);
     }
 
@@ -153,7 +160,7 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
   // Draw the hover time.
   if (this.showHoverTip_ && this.hoverX_) {
     var time = wtf.math.remap(this.hoverX_, 0, width, timeLeft, timeRight);
-    var timeString = wtf.util.formatTime(time);
+    var timeString = wtf.db.Unit.format(time, this.units);
     var timeWidth = ctx.measureText(timeString).width;
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#FFFFFF';

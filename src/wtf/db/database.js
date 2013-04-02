@@ -18,6 +18,7 @@ goog.require('goog.events');
 goog.require('wtf');
 goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
+goog.require('wtf.db.Unit');
 goog.require('wtf.db.Zone');
 goog.require('wtf.db.sources.BinaryDataSource');
 goog.require('wtf.db.sources.CallsDataSource');
@@ -69,6 +70,13 @@ wtf.db.Database = function(opt_useStorage) {
    * @private
    */
   this.sources_ = [];
+
+  /**
+   * Unit of measure.
+   * @type {wtf.db.Unit}
+   * @private
+   */
+  this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
 
   /**
    * A timebase used to calculate the time delay of each source.
@@ -286,6 +294,15 @@ wtf.db.Database.prototype.getSources = function() {
 
 
 /**
+ * Gets the unit of measure used in the database.
+ * @return {wtf.db.Unit} Unit of measure.
+ */
+wtf.db.Database.prototype.getUnits = function() {
+  return this.units_;
+};
+
+
+/**
  * Gets the timebase that all event times are relative to.
  * This, when added to an events time, can be used to compute the wall-time
  * the event occurred at.
@@ -421,6 +438,32 @@ wtf.db.Database.prototype.getFirstEventTime = function() {
  */
 wtf.db.Database.prototype.getLastEventTime = function() {
   return this.lastEventTime_;
+};
+
+
+/**
+ * Signals that a data source was initialized with header information.
+ * The data may not be fully loaded yet.
+ * @param {!wtf.db.DataSource} source Source that was initialized.
+ * @return {boolean} Whether the initialization was successful.
+ */
+wtf.db.Database.prototype.sourceInitialized = function(source) {
+  // Handle source units.
+  // If this is the first source we just switch to that, otherwise we verify
+  // that the user isn't trying to mix units.
+  var units = source.getUnits();
+  if (this.sources_.length == 1) {
+    this.units_ = units;
+  } else {
+    if (this.units_ != units) {
+      this.sourceError(source,
+          'Mixing measurement units is not supported.',
+          'All sources loaded must be of the same type (time/size).');
+      return false;
+    }
+  }
+
+  return true;
 };
 
 

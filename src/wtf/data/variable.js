@@ -195,6 +195,15 @@ wtf.data.Variable.parseSignature = function(signature) {
   // Trim.
   signature = goog.string.trim(signature);
 
+  // Trim interior whitespace up until the first (.
+  // This allows poorly-formed names to still work.
+  var i = signature.indexOf('(');
+  if (i != -1) {
+    signature = signature.substr(0, i).replace(/ /g, '') + signature.substr(i);
+  } else {
+    signature = signature.replace(/ /g, '');
+  }
+
   // Split signature.
   // 'a.b.c(<params>)'
   // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]

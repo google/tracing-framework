@@ -13,9 +13,9 @@
 
 goog.provide('wtf.app.ui.query.QueryTableSource');
 
+goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.ui.VirtualTableSource');
-goog.require('wtf.util');
 
 
 
@@ -30,6 +30,13 @@ wtf.app.ui.query.QueryTableSource = function(result) {
   goog.base(this);
 
   /**
+   * Display units.
+   * @type {wtf.db.Unit}
+   * @private
+   */
+  this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
+
+  /**
    * All rows.
    * @type {!wtf.db.EventIterator}
    * @private
@@ -38,6 +45,15 @@ wtf.app.ui.query.QueryTableSource = function(result) {
   this.setRowCount(result.getCount());
 };
 goog.inherits(wtf.app.ui.query.QueryTableSource, wtf.ui.VirtualTableSource);
+
+
+/**
+ * Sets the display units.
+ * @param {wtf.db.Unit} value Display units.
+ */
+wtf.app.ui.query.QueryTableSource.prototype.setUnits = function(value) {
+  this.units_ = value;
+};
 
 
 /**
@@ -96,7 +112,7 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
 
     var x = gutterWidth + charWidth;
     if (columnTime >= 0) {
-      var columnTimeText = wtf.util.formatTime(columnTime);
+      var columnTimeText = wtf.db.Unit.format(columnTime, this.units_);
       ctx.fillText(
           columnTimeText,
           x + columnTimeWidth - (columnTimeText.length * charWidth),
@@ -158,7 +174,7 @@ wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
     row, x, bounds) {
   var it = this.result_;
   it.seek(row);
-  return it.getInfoString();
+  return it.getInfoString(this.units_);
 };
 
 

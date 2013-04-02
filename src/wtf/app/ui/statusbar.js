@@ -17,6 +17,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.app.ui.statusbar');
+goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.Keyboard');
@@ -106,6 +107,7 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
   var dom = this.getDom();
   var db = this.documentView_.getDatabase();
   var selection = this.documentView_.getSelection();
+  var units = db.getUnits();
 
   if (!db.getLastEventTime()) {
     goog.style.setElementShown(this.getRootElement(), false);
@@ -132,12 +134,12 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
   ].join('/');
   dom.setTextContent(this.divs_.selectionCounts, selectionCounts);
 
-  var totalDuration = wtf.util.formatTime(lastEventTime - firstEventTime);
+  var totalDuration = wtf.db.Unit.format(lastEventTime - firstEventTime, units);
   if (selection.hasTimeRangeSpecified()) {
     var selectionTimeStart = selection.getTimeStart();
     var selectionTimeEnd = selection.getTimeEnd();
     dom.setTextContent(this.divs_.selectionTimes, [
-      wtf.util.formatTime(selectionTimeEnd - selectionTimeStart),
+      wtf.db.Unit.format(selectionTimeEnd - selectionTimeStart, units),
       totalDuration
     ].join('/'));
   } else {
@@ -147,8 +149,12 @@ wtf.app.ui.Statusbar.prototype.update_ = function() {
     ].join('/'));
   }
 
-  dom.setTextContent(this.divs_.timeRange, [
-    wtf.util.formatWallTime(timebase + firstEventTime),
-    wtf.util.formatWallTime(timebase + lastEventTime)
-  ].join('-'));
+  if (units == wtf.db.Unit.TIME_MILLISECONDS) {
+    dom.setTextContent(this.divs_.timeRange, [
+      wtf.util.formatWallTime(timebase + firstEventTime),
+      wtf.util.formatWallTime(timebase + lastEventTime)
+    ].join('-'));
+  } else {
+    dom.setTextContent(this.divs_.timeRange, '');
+  }
 };

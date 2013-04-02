@@ -280,7 +280,9 @@ wtf.app.ui.nav.Navbar.prototype.databaseInvalidated_ = function() {
   var firstEventTime = db.getFirstEventTime();
   var lastEventTime = db.getLastEventTime();
   for (var n = 0; n < this.timePainters_.length; n++) {
-    this.timePainters_[n].setTimeRange(firstEventTime, lastEventTime);
+    var painter = this.timePainters_[n];
+    painter.setTimeRange(firstEventTime, lastEventTime);
+    painter.setUnits(db.getUnits());
   }
   this.requestRepaint();
 };

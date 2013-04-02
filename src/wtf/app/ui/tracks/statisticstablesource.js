@@ -17,10 +17,10 @@ goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.InstanceEventDataEntry');
 goog.require('wtf.db.ScopeEventDataEntry');
 goog.require('wtf.db.SortMode');
+goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.ui.ModifierKey');
 goog.require('wtf.ui.VirtualTableSource');
-goog.require('wtf.util');
 
 
 
@@ -49,9 +49,25 @@ wtf.app.ui.tracks.StatisticsTableSource = function() {
    * @private
    */
   this.sortMode_ = wtf.db.SortMode.TOTAL_TIME;
+
+  /**
+   * Display units.
+   * @type {wtf.db.Unit}
+   * @private
+   */
+  this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
 };
 goog.inherits(
     wtf.app.ui.tracks.StatisticsTableSource, wtf.ui.VirtualTableSource);
+
+
+/**
+ * Sets the display units.
+ * @param {wtf.db.Unit} value Display units.
+ */
+wtf.app.ui.tracks.StatisticsTableSource.prototype.setUnits = function(value) {
+  this.units_ = value;
+};
 
 
 /**
@@ -105,9 +121,9 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.paintRowRange = function(
     var meanTime = null;
     var content = '';
     if (entry instanceof wtf.db.ScopeEventDataEntry) {
-      totalTime = wtf.util.formatSmallTime(entry.getTotalTime());
-      userTime = wtf.util.formatSmallTime(entry.getUserTime());
-      meanTime = wtf.util.formatSmallTime(entry.getMeanTime());
+      totalTime = wtf.db.Unit.format(entry.getTotalTime(), this.units_, true);
+      userTime = wtf.db.Unit.format(entry.getUserTime(), this.units_, true);
+      meanTime = wtf.db.Unit.format(entry.getMeanTime(), this.units_, true);
       content =
           entry.getCount() + ', ' +
           totalTime + ' t, ' +
@@ -201,9 +217,25 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.getInfoString = function(
   lines.push(eventType.getName());
   lines.push('Count: ' + entry.getCount());
   if (entry instanceof wtf.db.ScopeEventDataEntry) {
-    lines.push('Total time: ' + wtf.util.formatSmallTime(entry.getTotalTime()));
-    lines.push('User time: ' + wtf.util.formatSmallTime(entry.getUserTime()));
-    lines.push('Mean time: ' + wtf.util.formatSmallTime(entry.getMeanTime()));
+    var unitName;
+    switch (this.units_) {
+      default:
+      case wtf.db.Unit.TIME_MILLISECONDS:
+        unitName = 'time';
+        break;
+      case wtf.db.Unit.SIZE_KILOBYTES:
+        unitName = 'size';
+        break;
+      case wtf.db.Unit.COUNT:
+        unitName = 'value';
+        break;
+    }
+    lines.push('Total ' + unitName + ': ' +
+        wtf.db.Unit.format(entry.getTotalTime(), this.units_));
+    lines.push('User ' + unitName + ': ' +
+        wtf.db.Unit.format(entry.getUserTime(), this.units_));
+    lines.push('Mean ' + unitName + ': ' +
+        wtf.db.Unit.format(entry.getMeanTime(), this.units_));
   }
 
   return lines.join('\n');

@@ -13,6 +13,7 @@
 
 goog.provide('wtf.ui.TimePainter');
 
+goog.require('wtf.db.Unit');
 goog.require('wtf.ui.Painter');
 
 
@@ -39,6 +40,13 @@ wtf.ui.TimePainter = function(canvas) {
    * @protected
    */
   this.timeRight = 0;
+
+  /**
+   * Units to display labels in.
+   * @type {wtf.db.Unit}
+   * @protected
+   */
+  this.units = wtf.db.Unit.TIME_MILLISECONDS;
 };
 goog.inherits(wtf.ui.TimePainter, wtf.ui.Painter);
 
@@ -51,4 +59,13 @@ goog.inherits(wtf.ui.TimePainter, wtf.ui.Painter);
 wtf.ui.TimePainter.prototype.setTimeRange = function(timeLeft, timeRight) {
   this.timeLeft = timeLeft;
   this.timeRight = timeRight;
+};
+
+
+/**
+ * Sets the units the painter draws labels in.
+ * @param {wtf.db.Unit} value Units.
+ */
+wtf.ui.TimePainter.prototype.setUnits = function(value) {
+  this.units = value;
 };
