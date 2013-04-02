@@ -213,5 +213,8 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   var updateDuration = wtf.now() - beginTime;
   //goog.global.console.log('update info', updateDuration);
 
+  var db = this.tracksPanel_.getDocumentView().getDatabase();
+  this.tableSource_.setUnits(db.getUnits());
+
   this.tableSource_.update(table, this.sortMode_);
 };

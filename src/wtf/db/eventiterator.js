@@ -14,6 +14,7 @@
 goog.provide('wtf.db.EventIterator');
 
 goog.require('wtf.db.EventStruct');
+goog.require('wtf.db.Unit');
 goog.require('wtf.util');
 
 
@@ -501,16 +502,18 @@ wtf.db.EventIterator.prototype.getOwnDuration = function() {
 
 /**
  * Gets an informative string about the current event.
+ * @param {wtf.db.Unit=} opt_units Units to display times in.
  * @return {string?} Info string.
  */
-wtf.db.EventIterator.prototype.getInfoString = function() {
+wtf.db.EventIterator.prototype.getInfoString = function(opt_units) {
   if (this.done()) {
     return null;
   }
+  var units = goog.isDef(opt_units) ? opt_units : wtf.db.Unit.TIME_MILLISECONDS;
   if (this.isScope()) {
-    return this.getScopeInfoString_();
+    return this.getScopeInfoString_(units);
   } else if (this.isInstance()) {
-    return this.getInstanceInfoString_();
+    return this.getInstanceInfoString_(units);
   }
   return null;
 };
@@ -518,14 +521,15 @@ wtf.db.EventIterator.prototype.getInfoString = function() {
 
 /**
  * Gets an informative string about the current scope event.
+ * @param {wtf.db.Unit} units Units to display times in.
  * @return {string} Info string.
  * @private
  */
-wtf.db.EventIterator.prototype.getScopeInfoString_ = function() {
-  var totalTime = wtf.util.formatTime(this.getTotalDuration());
+wtf.db.EventIterator.prototype.getScopeInfoString_ = function(units) {
+  var totalTime = wtf.db.Unit.format(this.getTotalDuration(), units);
   var times = totalTime;
   if (this.getTotalDuration() - this.getOwnDuration()) {
-    var ownTime = wtf.util.formatTime(this.getOwnDuration());
+    var ownTime = wtf.db.Unit.format(this.getOwnDuration(), units);
     times += ' (' + ownTime + ')';
   }
 
@@ -545,10 +549,11 @@ wtf.db.EventIterator.prototype.getScopeInfoString_ = function() {
 
 /**
  * Gets an informative string about the current instance event.
+ * @param {wtf.db.Unit} units Units to display times in.
  * @return {string} Info string.
  * @private
  */
-wtf.db.EventIterator.prototype.getInstanceInfoString_ = function() {
+wtf.db.EventIterator.prototype.getInstanceInfoString_ = function(units) {
   var lines = [];
 
   var type = this.getType();

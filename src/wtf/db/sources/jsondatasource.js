@@ -23,6 +23,7 @@ goog.require('wtf.data.formats.JsonTrace');
 goog.require('wtf.db.ArgumentData');
 goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
+goog.require('wtf.db.Unit');
 
 
 
@@ -321,9 +322,9 @@ wtf.db.sources.JsonDataSource.prototype.parseHeader_ = function(entry) {
   var contextInfo = new wtf.data.ScriptContextInfo();
 
   var timeDelay = db.computeTimeDelay(timebase);
-  this.initialize(contextInfo, flags, 0, metadata, timebase, timeDelay);
-
-  return true;
+  return this.initialize(
+      contextInfo, flags, 0, wtf.db.Unit.TIME_MILLISECONDS, metadata,
+      timebase, timeDelay);
 };
 
 
