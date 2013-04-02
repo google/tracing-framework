@@ -13,6 +13,9 @@ consumption. Once ready, much of the functionality will be available via
 browser extensions and embeddable minified js files, but for now they aren't
 going to be published.
 
+For a list of known issues see [KNOWN_ISSUES](https://github.com/google/tracing-framework/blob/master/KNOWN_ISSUES.md)
+or the Github issues list.
+
 ## Setup
 
 See [building](https://github.com/google/tracing-framework/blob/master/docs/building.md) for instructions and
