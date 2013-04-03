@@ -142,6 +142,19 @@ The mode used for communicating with the visualizer application. May be one of:
 opened in a new window.
 * `remote`: If set, `wtf.hud.app.endpoint` is a `host:port` of a target HTTP server that will listen for POSTs.
 
+## Remote Control
+
+A page can be connected to a remote server for control via the
+`wtf.remote.connect` method. This allows for snapshotting of instances running
+inside of VMs or over the network that otherwise cannot run a WTF UI or save
+files (such as iOS/Android).
+
+### wtf.remote.target
+
+The target URI to connect to. This must be set. The wtf-controller server will
+list its URL on startup and that value should be used.
+Example: `ws://localhost:8084`
+
 ## App
 
 App options are only used by the app UI. They can be specified to the

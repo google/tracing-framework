@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WTF Controller</title>
+    <style>
+      #tracerList {
+        width: 400px;
+        border: 1px solid black;
+        padding: 3px;
+      }
+      .tracerEntry {
+        border: 1px solid black;
+        margin-bottom: 5px;
+        font: 8pt monospace;
+      }
+      .tracerTitle {
+      }
+      .tracerUrl {
+        color: #888888;
+      }
+      .tracerAgent {
+        color: #aaaaaa;
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
+      .tracerCommands {
+      }
+      .tracerCommand {
+        text-decoration: underline;
+        margin-right: 5px;
+        cursor: pointer;
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tracerList">
+    </div>
+
+    <script>
+      // This gets replaced when the server sends the page down.
+      var uri = '%%CONTROL_URI%%';
+
+      var tracers = {};
+      var listEl = document.getElementById('tracerList');
+
+      var Client = function(uri) {
+        this.socket_ = new WebSocket(uri);
+        this.nextReqId_ = 1;
+        this.pendingCallbacks_ = {};
+        this.lastBinaryTarget_ = null;
+
+        var socket = this.socket_;
+        socket.binaryType = 'arraybuffer';
+        socket.onopen = (function() {
+          // Send hello packet.
+          var packet = {
+            'command': 'hello',
+            'client_type': 'controller'
+          };
+          socket.send(JSON.stringify(packet));
+        }).bind(this);
+        socket.onerror = (function(error) {
+          //
+        }).bind(this);
+        socket.onclose = (function(e) {
+          //
+        }).bind(this);
+        socket.onmessage = (function(e) {
+          if (e.data instanceof ArrayBuffer) {
+            this.handleBinaryMessage(e.data);
+          } else {
+            this.handleMessage(JSON.parse(e.data));
+          }
+        }).bind(this);
+      };
+
+      Client.prototype.handleMessage = function(data) {
+        switch (data['command']) {
+          case 'add_trace_client':
+            tracers[data['id']] = new Tracer(this, data);
+            break;
+          case 'remove_trace_client':
+            tracers[data['id']].remove();
+            delete tracers[data['id']];
+            break;
+          case 'response':
+            this.handleCommandResponse(data);
+            break;
+        }
+      };
+
+      Client.prototype.handleBinaryMessage = function(data) {
+        var callbackInfo = this.lastBinaryTarget_;
+        if (!callbackInfo) {
+          return;
+        }
+        callbackInfo.buffers.push(data);
+        callbackInfo.pendingBufferCount--;
+        if (!callbackInfo.pendingBufferCount) {
+          this.lastBinaryTarget_ = null;
+          callbackInfo.callback.call(callbackInfo.scope,
+              callbackInfo.response, callbackInfo.buffers);
+        }
+      };
+
+      Client.prototype.handleCommandResponse = function(data) {
+        var callbackInfo = this.pendingCallbacks_[data['req_id']];
+        if (callbackInfo) {
+          delete this.pendingCallbacks_[data['req_id']];
+
+          // If we are waiting on buffers we delay callback for now.
+          callbackInfo.response = data;
+          callbackInfo.pendingBufferCount = data['buffer_count'];
+          if (callbackInfo.pendingBufferCount) {
+            this.lastBinaryTarget_ = callbackInfo;
+          } else {
+            callbackInfo.callback.call(callbackInfo.scope,
+                callbackInfo.response, callbackInfo.buffers);
+          }
+        }
+      };
+
+      Client.prototype.sendCommand = function(targetId, commandName,
+          opt_callback, opt_scope) {
+        var reqId = this.nextReqId_++;
+        this.socket_.send(JSON.stringify({
+          'command': 'execute',
+          'id': targetId,
+          'name': commandName,
+          'req_id': reqId
+        }));
+        if (opt_callback) {
+          this.pendingCallbacks_[reqId] = {
+            callback: opt_callback,
+            scope: opt_scope,
+            response: null,
+            buffers: [],
+            pendingBufferCount: 0
+          };
+        }
+      };
+
+      Client.prototype.downloadData = function(filename, mimeType, buffers) {
+        // This code comes from wtf.pal.BrowserPlatform#writeBinaryFile.
+
+        var blob = new Blob(buffers, {
+          'type': mimeType || 'application/octet-stream'
+        });
+
+        // IE10+
+        if (window.navigator['msSaveBlob']) {
+          window.navigator['msSaveBlob'](blob, filename);
+          return;
+        }
+
+        // Download file. Wow.
+        var a = document.createElement('a');
+        a['download'] = filename;
+        a.href = window.URL.createObjectURL(blob);
+        var e = document.createEvent('MouseEvents');
+        e.initMouseEvent(
+            'click',
+            true, false, window, 0, 0, 0, 0, 0,
+            false, false, false, false, 0, null);
+        a.dispatchEvent(e);
+      };
+
+
+      var Tracer = function(client, data) {
+        var id = data['id'];
+        var contextInfo = data['context_info'];
+        var commands = data['commands'];
+
+        this.client_ = client;
+        this.id_ = id;
+        this.contextInfo_ = contextInfo;
+
+        this.el_ = document.createElement('div');
+        var el = this.el_;
+        el.className = 'tracerEntry';
+
+        var titleEl = document.createElement('div');
+        titleEl.className = 'tracerTitle';
+        titleEl.innerHTML = id + ': ' +
+            (contextInfo['title'] || '(unknown title)');
+        el.appendChild(titleEl);
+
+        var urlEl = document.createElement('a');
+        urlEl.className = 'tracerUrl';
+        urlEl.innerHTML = contextInfo['uri'] || '(unknown uri)';
+        urlEl.href = contextInfo['uri'];
+        urlEl.target = '_blank';
+        el.appendChild(urlEl);
+
+        var agentEl = document.createElement('div');
+        agentEl.className = 'tracerAgent';
+        agentEl.innerHTML = (contextInfo['userAgent'] ?
+            contextInfo['userAgent']['value'] : null) || '(unknown UA)';
+        el.appendChild(agentEl);
+
+        var commandsEl = document.createElement('div');
+        commandsEl.className = 'tracerCommands';
+        el.appendChild(commandsEl);
+
+        commands.forEach(function(command) {
+          var commandEl = document.createElement('a');
+          commandEl.className = 'tracerCommand';
+          commandEl.innerHTML = command['title'];
+          commandEl.title = command['tooltip'];
+          commandEl.onclick = function(e) {
+            e.preventDefault();
+            client.sendCommand(id, command['name'], function(data, buffers) {
+              // TODO(benvanik): clean this up a bit. Move to another fn.
+              switch (data['name']) {
+                case 'save_snapshot':
+                  if (!buffers.length) {
+                    window.alert('No data to capture');
+                    return;
+                  }
+                  client.downloadData(
+                      data['filename'],
+                      data['mimetype'],
+                      buffers);
+                  break;
+              }
+            });
+          };
+          commandsEl.appendChild(commandEl);
+        });
+
+        listEl.appendChild(el);
+      };
+
+      Tracer.prototype.remove = function() {
+        this.el_.parentNode.removeChild(this.el_);
+      };
+
+
+      var client = new Client(uri);
+    </script>
+  </body>
+</html>
