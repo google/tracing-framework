@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WTF Test (remote)</title>
+  <script src="../wtf_trace_web_js_compiled.js"></script>
+  <!--<script>window.CLOSURE_NO_DEPS = true;</script>
+  <script src="../third_party/closure-library/closure/goog/base.js"></script>
+  <script src="../wtf_js-deps.js"></script>-->
+  <style>
+  </style>
+</head>
+<body>
+  <!--<script>
+    goog.require('wtf.trace.exports');
+    goog.require('wtf.remote.exports');
+  </script>-->
+  <script>
+    var target = window.location.search.substring(1);
+    if (!target.length) {
+      target = 'ws://localhost:8084';
+    }
+    var options = {
+      'wtf.remote.target': target
+    };
+    wtf.remote.connect(options);
+    wtf.trace.start();
+  </script>
+
+  <br/>
+  <br/>
+  <br/>
+  <a id="someLink" href="">Click!</a>
+
+  <script>
+    window.onload = function() {
+      var customAppend = wtf.trace.events.createInstance(
+          'myCustomAppend(uint32 a, uint32 b)',
+          wtf.data.EventFlag.APPEND_SCOPE_DATA);
+      var someLink = document.getElementById('someLink');
+      someLink.onclick = function(e) {
+        e.preventDefault();
+
+        // Enter scope
+        var scope = wtf.trace.enterScope('onclick');
+
+        // Start flow...
+        var flow = wtf.trace.branchFlow('click');
+        window.setTimeout(function() {
+          // Enter scope, resume flow
+          var scope = wtf.trace.enterScope('setTimeout callback');
+          wtf.trace.extendFlow(flow, 'timeout');
+
+          wtf.trace.appendScopeData('number', -1);
+          wtf.trace.appendScopeData('string', 'hello');
+          wtf.trace.appendScopeData('array', [1, 2, 3]);
+          wtf.trace.appendScopeData('obj', {
+            a: 1,
+            b: 2
+          });
+          wtf.trace.appendScopeData('complex', {
+            a: [1, 2, 3],
+            d: {
+              b: [4, 5, 6]
+            }
+          });
+          customAppend(123, 456);
+
+          console.log('hi');
+
+          wtf.trace.terminateFlow(flow);
+          wtf.trace.leaveScope(scope);
+        }, 0);
+
+        wtf.trace.leaveScope(scope);
+      };
+    };
+  </script>
+</body>
+</html>

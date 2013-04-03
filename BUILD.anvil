@@ -112,6 +112,7 @@ closure_js_library(
         'wtf.app.ui.exports',
         'wtf.db.exports',
         'wtf.hud.exports',
+        'wtf.remote.exports',
         'wtf.trace.exports',
     ],
     srcs=[
@@ -175,10 +176,12 @@ WTF_TRACE_WEB_ENTRY_POINTS=[
     'wtf.ext',
     'wtf.trace.exports',
     'wtf.hud.exports',
+    'wtf.remote.exports',
     ]
 
 WTF_TRACE_WEB_JS_FLAGS=[
     '--define=wtf.hud.exports.ENABLE_EXPORTS=true',
+    '--define=wtf.remote.exports.ENABLE_EXPORTS=true',
     '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
     '--output_wrapper="if(!this.wtf){(function(){%output%}).call(this);}"',
     ]

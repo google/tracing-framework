@@ -92,11 +92,12 @@ wtf.trace.addSessionListener = function(listener) {
 
 /**
  * Gets a filename to use for a trace file.
- * @param {string} targetValue {@code wtf.trace.target} value.
+ * @param {string=} opt_targetValue {@code wtf.trace.target} value.
  * @return {string} Filename, minus the file:// prefix.
- * @private
  */
-wtf.trace.getTraceFilename_ = function(targetValue) {
+wtf.trace.getTraceFilename = function(opt_targetValue) {
+  var targetValue = opt_targetValue || '';
+
   // If the input looks like a full filename ('file://foo.bar') then use that.
   // Otherwise treat it as a prefix.
   if (goog.string.startsWith(targetValue, 'file://') &&
@@ -177,7 +178,7 @@ wtf.trace.createStream_ = function(options, opt_targetValue) {
       }
     } else if (goog.string.startsWith(targetUrl, 'file://')) {
       // File target.
-      var targetFilename = wtf.trace.getTraceFilename_(targetUrl);
+      var targetFilename = wtf.trace.getTraceFilename(targetUrl);
       return new wtf.io.LocalFileWriteStream(targetFilename);
     }
   } else if (goog.isArray(targetValue)) {
