@@ -25,7 +25,8 @@
 
   "dependencies": {
     "falafel": "0.1.4",
-    "optimist": "0.3.5"
+    "optimist": "0.3.5",
+    "ws": "0.4.25"
   },
   "devDependencies": {
     "mocha": "1.4.2",
@@ -54,10 +55,11 @@
 
   "main": "./build-out/wtf_node_js_compiled",
   "bin": {
-    "wtf-trace": "./bin/trace-runner.js",
+    "wtf-controller": "./bin/controller.js",
     "wtf-diff": "./bin/diff.js",
     "wtf-dump": "./bin/dump.js",
     "wtf-instrument": "./bin/instrument.js",
-    "wtf-query": "./bin/query.js"
+    "wtf-query": "./bin/query.js",
+    "wtf-trace": "./bin/trace-runner.js"
   }
 }
