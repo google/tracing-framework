@@ -34,7 +34,8 @@ wtf.db.SortMode = {
   ANY: 0,
   COUNT: 1,
   TOTAL_TIME: 2,
-  MEAN_TIME: 3
+  MEAN_TIME: 3,
+  OWN_TIME: 4
 };
 
 
@@ -53,6 +54,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.SortMode, 'MEAN_TIME',
     wtf.db.SortMode.MEAN_TIME);
+goog.exportProperty(
+    wtf.db.SortMode, 'OWN_TIME',
+    wtf.db.SortMode.OWN_TIME);
 
 
 
@@ -407,6 +411,20 @@ wtf.db.EventStatistics.Table.prototype.forEach = function(
           }
         });
         break;
+      case wtf.db.SortMode.OWN_TIME:
+        this.list_.sort(function(a, b) {
+          if (a instanceof wtf.db.ScopeEventDataEntry &&
+              b instanceof wtf.db.ScopeEventDataEntry) {
+            return b.ownTime_ - a.ownTime_;
+          } else if (a instanceof wtf.db.ScopeEventDataEntry) {
+            return -1;
+          } else if (b instanceof wtf.db.ScopeEventDataEntry) {
+            return 1;
+          } else {
+            return b.count - a.count;
+          }
+        });
+        break;
     }
   }
 
@@ -559,6 +577,13 @@ wtf.db.ScopeEventDataEntry = function(eventType) {
   this.totalTime_ = 0;
 
   /**
+   * Total own time taken by all scopes.
+   * @type {number}
+   * @private
+   */
+  this.ownTime_ = 0;
+
+  /**
    * Total time taken by all scopes, minus system time.
    * @type {number}
    * @private
@@ -585,9 +610,9 @@ wtf.db.ScopeEventDataEntry.prototype.appendEvent = function(it) {
 
   this.count++;
 
-  var totalDuration = it.getTotalDuration();
   var userDuration = it.getUserDuration();
-  this.totalTime_ += totalDuration;
+  this.totalTime_ += it.getTotalDuration();
+  this.ownTime_ += it.getOwnDuration();
   this.userTime_ += userDuration;
 
   var bucketIndex = Math.round(userDuration) | 0;
@@ -605,6 +630,15 @@ wtf.db.ScopeEventDataEntry.prototype.appendEvent = function(it) {
  */
 wtf.db.ScopeEventDataEntry.prototype.getTotalTime = function() {
   return this.totalTime_;
+};
+
+
+/**
+ * Gets the total time spent within all scopes of this type, excluding children.
+ * @return {number} Total time.
+ */
+wtf.db.ScopeEventDataEntry.prototype.getOwnTime = function() {
+  return this.ownTime_;
 };
 
 
@@ -651,6 +685,9 @@ goog.exportSymbol(
 goog.exportProperty(
     wtf.db.ScopeEventDataEntry.prototype, 'getTotalTime',
     wtf.db.ScopeEventDataEntry.prototype.getTotalTime);
+goog.exportProperty(
+    wtf.db.ScopeEventDataEntry.prototype, 'getOwnTime',
+    wtf.db.ScopeEventDataEntry.prototype.getOwnTime);
 goog.exportProperty(
     wtf.db.ScopeEventDataEntry.prototype, 'getUserTime',
     wtf.db.ScopeEventDataEntry.prototype.getUserTime);

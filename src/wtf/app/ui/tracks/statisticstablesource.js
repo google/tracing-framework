@@ -119,11 +119,13 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.paintRowRange = function(
     var totalTime = null;
     var userTime = null;
     var meanTime = null;
+    var ownTime = null;
     var content = '';
     if (entry instanceof wtf.db.ScopeEventDataEntry) {
       totalTime = wtf.db.Unit.format(entry.getTotalTime(), this.units_, true);
       userTime = wtf.db.Unit.format(entry.getUserTime(), this.units_, true);
       meanTime = wtf.db.Unit.format(entry.getMeanTime(), this.units_, true);
+      ownTime = wtf.db.Unit.format(entry.getOwnTime(), this.units_, true);
       content =
           entry.getCount() + ', ' +
           totalTime + ' t, ' +
@@ -145,6 +147,9 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.paintRowRange = function(
         break;
       case wtf.db.SortMode.MEAN_TIME:
         gutterValue = meanTime || '';
+        break;
+      case wtf.db.SortMode.OWN_TIME:
+        gutterValue = ownTime || '';
         break;
     }
     ctx.fillStyle = 'black';
@@ -232,6 +237,8 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.getInfoString = function(
     }
     lines.push('Total ' + unitName + ': ' +
         wtf.db.Unit.format(entry.getTotalTime(), this.units_));
+    lines.push('Own ' + unitName + ': ' +
+        wtf.db.Unit.format(entry.getOwnTime(), this.units_));
     lines.push('User ' + unitName + ': ' +
         wtf.db.Unit.format(entry.getUserTime(), this.units_));
     lines.push('Mean ' + unitName + ': ' +

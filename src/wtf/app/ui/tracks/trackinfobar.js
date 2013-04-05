@@ -22,6 +22,7 @@ goog.require('wtf');
 goog.require('wtf.app.ui.tracks.StatisticsTableSource');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.db.SortMode');
+goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -102,6 +103,21 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
    */
   this.sortMode_ = wtf.db.SortMode.TOTAL_TIME;
 
+  var unitName;
+  var db = documentView.getDatabase();
+  switch (db.getUnits()) {
+    default:
+    case wtf.db.Unit.TIME_MILLISECONDS:
+      unitName = 'Time';
+      break;
+    case wtf.db.Unit.SIZE_KILOBYTES:
+      unitName = 'Size';
+      break;
+    case wtf.db.Unit.COUNT:
+      unitName = 'Value';
+      break;
+  }
+
   // Setup sort buttons.
   var menu = new goog.ui.PopupMenu(dom);
   this.registerDisposable(menu);
@@ -110,9 +126,11 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
       goog.positioning.Corner.BOTTOM_LEFT);
   menu.setToggleMode(true);
   menu.addChild(new goog.ui.MenuItem(
-      'Sort by Total Time', wtf.db.SortMode.TOTAL_TIME, dom), true);
+      'Sort by Total ' + unitName, wtf.db.SortMode.TOTAL_TIME, dom), true);
   menu.addChild(new goog.ui.MenuItem(
-      'Sort by Mean Time', wtf.db.SortMode.MEAN_TIME, dom), true);
+      'Sort by Own ' + unitName, wtf.db.SortMode.OWN_TIME, dom), true);
+  menu.addChild(new goog.ui.MenuItem(
+      'Sort by Mean ' + unitName, wtf.db.SortMode.MEAN_TIME, dom), true);
   menu.addChild(new goog.ui.MenuItem(
       'Sort by Count', wtf.db.SortMode.COUNT, dom), true);
   menu.render();
@@ -165,7 +183,6 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
 
   // Update on database change.
   // TODO(benvanik): avoid when streaming? make incremental?
-  var db = documentView.getDatabase();
   db.addListener(wtf.events.EventType.INVALIDATED, function() {
     this.updateInfo_();
   }, this);
