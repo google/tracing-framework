@@ -3,7 +3,7 @@
 This is a list of major known issues. For the latest list of all issues see the
 [Github Issues page](https://github.com/google/tracing-framework/issues).
 
-## Timing on Chrome/Windows is Bad
+## Timing on Chrome/Windows and iOS is Bad
 
 Chrome/Windows does not currently implement the high-resolution timing required
 to get accurate times. If you try to use WTF there you'll get very weird (and
