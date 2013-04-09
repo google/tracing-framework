@@ -2132,13 +2132,13 @@ goog.debug.entryPointRegistry.register(function(a) {
 // Input 21
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13654944E5
+  return 1365498E6
 };
 wtf.version.getCommit = function() {
-  return"8f5284e30713c2cd954494bdde01dc78a05b69b5"
+  return"169021965d88e4e482f0ed5935ce73d017930a9e"
 };
 wtf.version.toString = function() {
-  return"2013.4.9-1"
+  return"2013.4.9-2"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -4811,7 +4811,7 @@ wtf.data.Variable.parseSignature = function(a) {
   a = goog.string.trim(a);
   var b = a.indexOf("(");
   a = -1 != b ? a.substr(0, b).replace(/ /g, "") + a.substr(b) : a.replace(/ /g, "");
-  var c = /^([a-zA-Z0-9_\.#:\$\[\]\"\']+)(\((.*)\)$)?/.exec(a);
+  var c = /^([a-zA-Z0-9_\.#:\$\[\]\"\'\-]+)(\((.*)\)$)?/.exec(a);
   if(!c || !c.length) {
     throw Error("Invalid event signature: " + a + " - unable to parse");
   }
