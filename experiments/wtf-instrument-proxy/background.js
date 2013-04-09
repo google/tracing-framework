@@ -45,11 +45,11 @@ function registerRules() {
         details.url.indexOf('https://localhost:8082/inject') != 0) {
       console.log(details.url);
       var localUrl;
-      if (details.url.indexOf('https://') == 0) {
-        localUrl = 'https://localhost:8082/inject';
-      } else {
+      // if (details.url.indexOf('https://') == 0) {
+      //   localUrl = 'https://localhost:8082/inject';
+      // } else {
         localUrl = 'http://localhost:8081/inject';
-      }
+      //}
       localUrl += '?url=' + escape(details.url);
       return {
         redirectUrl: localUrl
