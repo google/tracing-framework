@@ -131,6 +131,13 @@ wtf.ui.Painter = function(canvas) {
   this.drawBounds_ = new goog.math.Rect(0, 0, 0, 0);
 
   /**
+   * The desired size of the painter, if it were given infinite space.
+   * @type {!goog.math.Size}
+   * @private
+   */
+  this.desiredSize_ = new goog.math.Size(0, 0);
+
+  /**
    * Padding for layout.
    * This value is added to the computed layout bounds.
    * @type {!goog.math.Rect}
@@ -325,6 +332,15 @@ wtf.ui.Painter.prototype.addChildPainter = function(value, opt_before) {
 
 
 /**
+ * Gets the desired size of the painter and children.
+ * @return {!goog.math.Size} Desired size.
+ */
+wtf.ui.Painter.prototype.getDesiredSize = function() {
+  return this.desiredSize_.clone();
+};
+
+
+/**
  * Sets the ready state of the paint context.
  * @param {boolean} value New ready value.
  */
@@ -360,10 +376,22 @@ wtf.ui.Painter.prototype.requestLayout = function() {
  *
  * @param {!goog.math.Rect} availableBounds Current available bounds in the
  *     parent.
+ * @param {goog.math.Size=} opt_extents An object that will receive the maximum
+ *     size of any child painter. This should be initialized to 0,0.
  * @return {!goog.math.Rect} The new bounds of this painter.
  * @protected
  */
-wtf.ui.Painter.prototype.layout = function(availableBounds) {
+wtf.ui.Painter.prototype.layout = function(availableBounds, opt_extents) {
+  // Compute the desired bounds, if needed.
+  var INFINITE_SIZE = 100000;
+  var desiredBounds;
+  if (opt_extents) {
+    var infiniteBounds = new goog.math.Rect(
+        availableBounds.left, availableBounds.top,
+        INFINITE_SIZE, INFINITE_SIZE);
+    desiredBounds = this.layoutInternal(infiniteBounds);
+  }
+
   // Compute self layout.
   var newBounds = this.layoutInternal(availableBounds);
 
@@ -378,7 +406,7 @@ wtf.ui.Painter.prototype.layout = function(availableBounds) {
   for (var n = 0; n < this.childPainters_.length; n++) {
     var childPainter = this.childPainters_[n];
     var childPadding = childPainter.padding_;
-    var childBounds = childPainter.layout(remainingBounds);
+    var childBounds = childPainter.layout(remainingBounds, opt_extents);
     if (!childBounds.width || !childBounds.height) {
       // Skip layout computation for empty painters.
       continue;
@@ -412,6 +440,18 @@ wtf.ui.Painter.prototype.layout = function(availableBounds) {
     drawBounds.height -= this.padding_.top + this.padding_.height;
   }
   this.drawBounds_ = drawBounds;
+
+  if (opt_extents) {
+    if (desiredBounds.width != INFINITE_SIZE) {
+      opt_extents.width = Math.max(
+          opt_extents.width, desiredBounds.left + desiredBounds.width);
+    }
+    if (desiredBounds.height != INFINITE_SIZE) {
+      opt_extents.height = Math.max(
+          opt_extents.height, desiredBounds.top + desiredBounds.height);
+    }
+  }
+
   return newBounds.clone();
 };
 
@@ -507,7 +547,9 @@ wtf.ui.Painter.prototype.repaint = function() {
   if (this.layoutNeeded_) {
     this.layoutNeeded_ = false;
     var availableBounds = new goog.math.Rect(0, 0, canvasWidth, canvasHeight);
-    bounds = this.layout(availableBounds);
+    this.desiredSize_.width = 0;
+    this.desiredSize_.height = 0;
+    bounds = this.layout(availableBounds, this.desiredSize_);
   }
 
   // Skip all drawing if too small.
