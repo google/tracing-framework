@@ -137,6 +137,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   var paintContext = new wtf.ui.Painter(this.trackCanvas_);
   this.setPaintContext(paintContext);
+  this.setScrollablePaintContext(true);
 
   // Clicking on non-handled space will clear the filter.
   var commandManager = wtf.events.getCommandManager();

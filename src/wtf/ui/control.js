@@ -110,6 +110,13 @@ wtf.ui.Control = function(parentElement, opt_dom) {
    */
   this.paintContext_ = null;
 
+  /**
+   * Whether to enable scrolling on the paint context.
+   * @type {boolean}
+   * @private
+   */
+  this.scrollPaintContext_ = false;
+
   // Add to page.
   this.enterDocument(this.parentElement_);
 };
@@ -435,6 +442,20 @@ wtf.ui.Control.prototype.setPaintContext = function(value) {
 
 
 /**
+ * Sets whether the paint context is scrollable.
+ * When scrollable the paint context will be queried for its desired size and
+ * the canvas will be set to those dimensions.
+ * @param {boolean} value Whether to enable scrolling.
+ */
+wtf.ui.Control.prototype.setScrollablePaintContext = function(value) {
+  if (this.scrollPaintContext_ != value) {
+    this.scrollPaintContext_ = value;
+    this.layout();
+  }
+};
+
+
+/**
  * Requests a repaint of the control on the next rAF.
  * This should be used instead of repainting inline in JS callbacks to help
  * the browser draw things optimally. Only call repaint directly if the results
@@ -476,6 +497,34 @@ wtf.ui.Control.prototype.layout = function() {
 
   // Repaint immediately to prevent flicker.
   this.repaint();
+
+  // If we resized our paint context, setup scrolling.
+  if (this.paintContext_ && this.scrollPaintContext_) {
+    goog.asserts.assert(canvas);
+    goog.asserts.assert(ctx);
+    var currentCanvasSize = goog.style.getSize(canvas);
+    var newDesiredSize = this.paintContext_.getDesiredSize();
+    if (newDesiredSize.height != currentCanvasSize.height) {
+      // Toggle overflow on parent.
+      var canvasOuter = goog.dom.getParentElement(canvas);
+      if (newDesiredSize.height > currentSize.height) {
+        goog.style.setStyle(canvasOuter, 'overflow-y', 'auto');
+      } else {
+        goog.style.setStyle(canvasOuter, 'overflow-y', 'hidden');
+      }
+
+      // Always fit to outer.
+      var newHeight = Math.max(currentSize.height, newDesiredSize.height);
+
+      // Resize the canvas.
+      wtf.util.canvas.reshape(
+          canvas, ctx, currentCanvasSize.width, newHeight);
+
+      // Layout/repaint again.
+      this.layoutInternal();
+      this.repaint();
+    }
+  }
 };
 
 
