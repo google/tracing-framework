@@ -315,7 +315,7 @@ wtf.db.sources.JsonDataSource.prototype.parseHeader_ = function(entry) {
     flags |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
   }
   var timebase = entry['timebase'] || 0;
-  var timeOffset = entry['time_offset'] || 0;
+  var timeOffset = entry['time_offset'];
   var metadata = entry['metadata'] || {};
 
   // TODO(benvanik): embed context info.
@@ -323,7 +323,7 @@ wtf.db.sources.JsonDataSource.prototype.parseHeader_ = function(entry) {
   var contextInfo = new wtf.data.ScriptContextInfo();
 
   var timeDelay;
-  if (timeOffset) {
+  if (goog.isDef(timeOffset)) {
     timeDelay = timeOffset;
   } else {
     timeDelay = db.computeTimeDelay(timebase);
