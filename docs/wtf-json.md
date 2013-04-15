@@ -58,6 +58,9 @@ are used.
 This indicates that the times have higher than millisecond precision.
 * `timebase`: unix time since the epoch that is added to all time values in the
 trace. A timebase of 1000 means that a `time` of 5 would be seen as 1005.
+* `time_offset`: milliseconds to offset the time from any previously loaded
+files. This overrides any timebase setting and should only be used in 'additive'
+files.
 
 ### Event Definitions
 

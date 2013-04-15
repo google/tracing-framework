@@ -1,0 +1,53 @@
+[
+  {
+    "type": "wtf.json#header",
+    "format_version": 2,
+    "timebase": 20000
+  },
+  {
+    "type": "wtf.event#define",
+    "signature": "my.custom#scopeEvent2",
+    "event_id": 2
+  },
+  {
+    "event": "wtf.zone#create",
+    "time": 0,
+    "args": [
+      1000,
+      "Runtime",
+      "script",
+      ""
+    ]
+  },
+  {
+    "event": "wtf.zone#set",
+    "time": 0,
+    "args": [
+      1000
+    ]
+  },
+  {
+    "event": 2,
+    "time": 20250
+  },
+  {
+    "event": -1,
+    "time": 20750
+  },
+  {
+    "event": 2,
+    "time": 22250
+  },
+  {
+    "event": -1,
+    "time": 22750
+  },
+  {
+    "event": 2,
+    "time": 24250
+  },
+  {
+    "event": -1,
+    "time": 24750
+  }
+]

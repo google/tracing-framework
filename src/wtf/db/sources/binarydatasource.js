@@ -186,7 +186,10 @@ wtf.db.sources.BinaryDataSource.prototype.processBuffer_ =
 
     if (insertEvent) {
       var eventList = this.currentZone_.getEventList();
-      eventList.insert(eventType, time + this.getTimeDelay(), args);
+      eventList.insert(
+          eventType,
+          Math.max(0, time + this.getTimeDelay()),
+          args);
     }
   }
 

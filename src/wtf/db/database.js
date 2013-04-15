@@ -326,7 +326,7 @@ wtf.db.Database.prototype.computeTimeDelay = function(timebase) {
     this.commonTimebase_ = timebase;
     return 0;
   } else {
-    return timebase - this.commonTimebase_;
+    return this.commonTimebase_ - timebase;
   }
 };
 

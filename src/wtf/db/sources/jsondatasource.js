@@ -315,13 +315,19 @@ wtf.db.sources.JsonDataSource.prototype.parseHeader_ = function(entry) {
     flags |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
   }
   var timebase = entry['timebase'] || 0;
+  var timeOffset = entry['time_offset'] || 0;
   var metadata = entry['metadata'] || {};
 
   // TODO(benvanik): embed context info.
   // TODO(benvanik): a better default context info.
   var contextInfo = new wtf.data.ScriptContextInfo();
 
-  var timeDelay = db.computeTimeDelay(timebase);
+  var timeDelay;
+  if (timeOffset) {
+    timeDelay = timeOffset;
+  } else {
+    timeDelay = db.computeTimeDelay(timebase);
+  }
   return this.initialize(
       contextInfo, flags, 0, wtf.db.Unit.TIME_MILLISECONDS, metadata,
       timebase, timeDelay);
@@ -373,6 +379,7 @@ wtf.db.sources.JsonDataSource.prototype.parseEventType_ = function(
 wtf.db.sources.JsonDataSource.prototype.dispatchEvent_ = function(
     eventType, time, argList) {
   time += this.getTimeDelay();
+  time = Math.max(0, time);
 
   // Infer state.
   var db = this.getDatabase();
