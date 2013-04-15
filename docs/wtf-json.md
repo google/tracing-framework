@@ -48,12 +48,12 @@ are used.
 
     {
       "type": "wtf.json#header",
-      "format_version": 1,
+      "format_version": 2,
       "high_resolution_times": true,
       "timebase": 0
     }
 
-* `format_version`: major version of the format, must be 1.
+* `format_version`: major version of the format, must be 2.
 * `high_resolution_times`: whether the times in the file are high resolution.
 This indicates that the times have higher than millisecond precision.
 * `timebase`: unix time since the epoch that is added to all time values in the
@@ -191,6 +191,7 @@ Efficient file:
     [
       {
         "type": "wtf.json#header",
+        "format_version": 2,
         "timebase": 123450000
       },
       {
