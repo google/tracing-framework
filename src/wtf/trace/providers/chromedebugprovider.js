@@ -53,7 +53,7 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
    */
   this.available_ = false;
 
-  if (!options.getNumber('wtf.trace.provider.chromeDebug', 0) ||
+  if (!options.getNumber('wtf.trace.provider.chromeDebug', 1) ||
       !options.getBoolean('wtf.trace.provider.chromeDebug.present', false)) {
     return;
   }
@@ -308,24 +308,35 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
 
   // EvaluateScript: script runtime/parsing/etc.
   var evalScriptEvent = wtf.trace.events.createScope(
-      'javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
+      'javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta, ' +
+          'ascii url, uint32 lineNumber)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['EvaluateScript'] = function(record) {
     var startTime = record[1] - timebase;
     var endTime = record[2] - timebase;
-    var scope = evalScriptEvent(record[3], record[4], startTime);
+    var scope = evalScriptEvent(record[3], record[4], record[5], record[6],
+        startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
 
   // ParseHTML: parsing of HTML in a page.
   var parseHtmlEvent = wtf.trace.events.createScope(
-      'browser#parseHtml(uint32 contentLength)',
+      'browser#parseHtml()',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['ParseHTML'] = function(record) {
     var startTime = record[1] - timebase;
     var endTime = record[2] - timebase;
-    var scope = parseHtmlEvent(record[3], startTime);
+    var scope = parseHtmlEvent(startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // MarkDOMContent: main resource DOM finished loading.
+  var domContentReadyEvent = wtf.trace.events.createInstance(
+      'browser#domContentReady(bool isMainFrame)',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['MarkDOMContent'] = function(record) {
+    var startTime = record[1] - timebase;
+    var scope = domContentReadyEvent(record[2], startTime);
   };
 
   // ScheduleStyleRecalculation: a style has been invalidated - expect a
@@ -339,12 +350,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
 
   // RecalculateStyles: style recalculation is occurring.
   var recalculateStylesEvent = wtf.trace.events.createScope(
-      'browser#recalculateStyles()',
+      'browser#recalculateStyles(uint32 elementCount)',
       wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_['ParseHTML'] = function(record) {
+  this.timelineDispatch_['RecalculateStyles'] = function(record) {
     var startTime = record[1] - timebase;
     var endTime = record[2] - timebase;
-    var scope = recalculateStylesEvent(startTime);
+    var scope = recalculateStylesEvent(record[3], startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
 
@@ -358,13 +369,16 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
 
   // Layout: DOM layout.
   var layoutEvent = wtf.trace.events.createScope(
-      'browser#layout(int32 x, int32 y, int32 width, int32 height)',
+      'browser#layout(uint32 totalObjects, uint32 dirtyObjects, ' +
+          'bool partialLayout, int32 x, int32 y, int32 width, int32 height)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['Layout'] = function(record) {
     var startTime = record[1] - timebase;
     var endTime = record[2] - timebase;
     var scope = layoutEvent(
-        record[3], record[4], record[5], record[6], startTime);
+        record[3], record[4], record[5],
+        record[6], record[7], record[8], record[9],
+        startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
 
@@ -535,6 +549,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.toggleCapture_ = function() {
     // Kick off the tracker events.
     this.tracingTrackerIntervalId_ = setInterval.call(
         goog.global, emitTraceTracker, 100);
+    emitTraceTracker();
 
     this.updateTracingProgress_('tracing...');
 

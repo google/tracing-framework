@@ -103,11 +103,13 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
   if (this.debugger_) {
     this.debuggerTransmitId_ = window.setInterval((function() {
       var records = this.debugger_.getRecords();
-      this.port_.postMessage(JSON.stringify({
-        'command': 'debugger_data',
-        'records': records
-      }));
-      this.debugger_.clearRecords();
+      if (records.length) {
+        this.port_.postMessage(JSON.stringify({
+          'command': 'debugger_data',
+          'records': records
+        }));
+        this.debugger_.clearRecords();
+      }
     }).bind(this), 1000);
   }
 };
