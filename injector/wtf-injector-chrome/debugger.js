@@ -77,6 +77,15 @@ var Debugger = function(tabId, pageOptions) {
    */
   this.memoryPollIntervalId_ = null;
 
+  /**
+   * The time of the first GC event inside of an event tree.
+   * Frequently the timeline will send 2-3 GC events with the same time.
+   * De-dupe those by tracking the first GC and ignoring the others.
+   * @type {number}
+   * @private
+   */
+  this.lastGcStartTime_ = 0;
+
   // Attach to the target tab.
   chrome.debugger.attach(this.debugee_, '1.0', (function() {
     this.attached_ = true;
@@ -144,7 +153,9 @@ Debugger.prototype.beginListening_ = function() {
     chrome.debugger.sendCommand(this.debugee_, 'Timeline.start', {
       // Limit call stack depth to keep messages small - if we ever need this
       // data this can be increased.
-      'maxCallStackDepth': 0
+      // BUG: values of 0 are ignored:
+      // https://code.google.com/p/chromium/issues/detail?id=232008
+      'maxCallStackDepth': 1
     });
   }
 
@@ -197,6 +208,30 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
   // The table of available record types can be found here:
   // http://trac.webkit.org/browser/trunk/Source/WebCore/inspector/front-end/TimelinePresentationModel.js#L70
 
+  /**
+   * Attempts to get the bounding rectangle from clip points.
+   * @param {!Array.<number>} clip Clip points.
+   * @return {Array.<number>} The [x,y,w,h] rect or null invalid.
+   */
+  function getClipRect(clip) {
+    var minX = Number.MAX_VALUE;
+    var minY = Number.MAX_VALUE;
+    var maxX = Number.MIN_VALUE;
+    var maxY = Number.MIN_VALUE;
+    for (var i = 0; i < clip.length; i += 2) {
+      var x = clip[i];
+      var y = clip[i + 1];
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+    if (minX == Number.MAX_VALUE) {
+      return null;
+    }
+    return [minX, minY, maxX - minX, maxY - minY];
+  };
+
   var dispatch = {};
 
   // GCEvent: garbage collections.
@@ -217,7 +252,9 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
       record.startTime,
       record.endTime,
       record.usedHeapSize,
-      record.data.usedHeapSizeDelta
+      record.usedHeapSizeDelta,
+      record.data.url,
+      record.data.lineNumber
     ];
   };
 
@@ -226,8 +263,15 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
     return [
       'ParseHTML',
       record.startTime,
-      record.endTime,
-      record.data.length
+      record.endTime
+    ];
+  };
+
+  dispatch['MarkDOMContent'] = function(record) {
+    return [
+      'MarkDOMContent',
+      record.startTime,
+      record.data.isMainFrame
     ];
   };
 
@@ -245,7 +289,8 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
     return [
       'RecalculateStyles',
       record.startTime,
-      record.endTime
+      record.endTime,
+      record.data.elementCount
     ];
   };
 
@@ -259,27 +304,32 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
 
   // Layout: DOM layout.
   dispatch['Layout'] = function(record) {
+    var rect = getClipRect(record.data.root);
     return [
       'Layout',
       record.startTime,
       record.endTime,
-      record.data.x,
-      record.data.y,
-      record.data.width,
-      record.data.height,
+      record.data.totalObjects,
+      record.data.dirtyObjects,
+      record.data.partialLayout ? 1 : 0,
+      rect ? rect[0] : 0,
+      rect ? rect[1] : 0,
+      rect ? rect[2] : 0,
+      rect ? rect[3] : 0
     ];
   };
 
   // Paint: DOM element painting.
   dispatch['Paint'] = function(record) {
+    var rect = getClipRect(record.data.clip);
     return [
       'Paint',
       record.startTime,
       record.endTime,
-      record.data.x,
-      record.data.y,
-      record.data.width,
-      record.data.height,
+      rect ? rect[0] : 0,
+      rect ? rect[1] : 0,
+      rect ? rect[2] : 0,
+      rect ? rect[3] : 0
     ];
   };
 
@@ -362,6 +412,11 @@ Debugger.prototype.onEvent_ = function(source, method, params) {
  * @private
  */
 Debugger.prototype.processTimelineRecord_ = function(record) {
+  // Ignore if a duplicate.
+  if (this.shouldIgnoreTimelineRecord_(record)) {
+    return;
+  }
+
   // Handle the record.
   var dispatch = Debugger.TIMELINE_DISPATCH_[record.type];
   if (dispatch) {
@@ -369,11 +424,29 @@ Debugger.prototype.processTimelineRecord_ = function(record) {
   }
 
   // Recursively check children.
-  if (record.children) {
+  if (record.children && record.children.length) {
     for (var n = 0; n < record.children.length; n++) {
       this.processTimelineRecord_(record.children[n]);
     }
   }
+};
+
+
+/**
+ * Checks to see whether a record should be ignored.
+ * This is used to filter out duplicate events.
+ * @param {!Object} record Timeline record.
+ * @return {boolean} True to ignore the record (and children).
+ * @private
+ */
+Debugger.prototype.shouldIgnoreTimelineRecord_ = function(record) {
+  if (record.type == 'GCEvent') {
+    if (record.startTime == this.lastGcStartTime_) {
+      return true;
+    }
+    this.lastGcStartTime_ = record.startTime;
+  }
+  return false;
 };
 
 
