@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Event Providers in tracing-framework by Google</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="bootstrap/css/magic-bootstrap-min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="bootstrap/css/prettify.css" rel="stylesheet">
+    <link href="bootstrap/css/docs.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-37275478-3', 'github.com');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body>
+    <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="./overview.html">Overview</a>
+              </li>
+              <li class="">
+                <a href="./getting-started.html">Get started</a>
+              </li>
+              <li class="active">
+                <a href="./event-providers.html">Providers</a>
+              </li>
+              <li class="">
+                <a href="./instrumenting-code.html">Instrument</a>
+              </li>
+              <li class="">
+                <a href="./analyzing-traces.html">Analyze</a>
+              </li>
+              <li class="">
+                <a href="./advanced-features.html">Advanced</a>
+              </li>
+              <li class="">
+                <a href="./extending.html">Extend</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subhead
+    ================================================== -->
+    <header class="jumbotron subhead" id="overview">
+      <div class="container">
+        <h1>Event Providers</h1>
+        <p class="lead">An overview of the built-in event providers.</p>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="row">
+        <div class="span3 bs-docs-sidebar">
+          <ul class="nav nav-list bs-docs-sidenav">
+            <li><a href="#configuring"><i class="icon-chevron-right"></i> Configuring</a></li>
+            <li><a href="#chrome-debugging"><i class="icon-chevron-right"></i> Chrome Debugging</a></li>
+            <li><a href="#dom"><i class="icon-chevron-right"></i> DOM</a></li>
+            <li><a href="#images"><i class="icon-chevron-right"></i> Images</a></li>
+            <li><a href="#xhr"><i class="icon-chevron-right"></i> XMLHttpRequest</a></li>
+            <li><a href="#webgl"><i class="icon-chevron-right"></i> WebGL</a></li>
+            <li><a href="#web-workers"><i class="icon-chevron-right"></i> Web Workers</a></li>
+          </ul>
+        </div>
+        <div class="span9">
+
+
+<!-- Configuring
+================================================== -->
+<section id="configuring">
+  <div class="page-header">
+    <h1>1. Configuring</h1>
+  </div>
+  <p>All of the built-in events in WTF are handled by event providers included with the library. They can be enabled or disabled depending on what kind of data one wants to trace and how much overhead they want.</p>
+
+  <h2>Configuring with the Extension</h2>
+  <p>TODO: insert a screenshot of the hud button/options screen</p>
+  <p>The easiest way to configur providers is to use the settings screen accessible from the gear button on the on-page HUD. When using the WTF browser extension the settings will be saved and reused on future page reloads. Each provider has a section containing the available options, the descriptions of which are listed below.</p>
+
+  <h2>Configuring via Code</h2>
+  <p>When embedding the tracing framework on a page manually it's required that options are set ahead of time via code. This can allow for complex custom URL-driven options sets (such as <code>?wtf-fast</code>, <code>?wtf-all</code>, etc) or setting options on browsers that may not be able to display the UI (like mobile devices or node.js).</p>
+  <pre class="prettyprint linenums">
+wtf.trace.start({
+  // Disable DOM provider.
+  'wtf.trace.provider.dom': false,
+  // Enable the WebGL provider with recording at startup.
+  'wtf.trace.provider.webgl': true,
+  'wtf.trace.provider.webgl.recordAtStartup': true
+});</pre>
+
+  <h2>Shared Options</h2>
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.disableProviders': true
+};</pre>
+  <p>All providers can be quickly disabled with this option. This makes it easy to compare the overhead of traces with providers to those without or see if any provider is breaking the page.</p>
+
+</section>
+
+
+<!-- Chrome Debugging
+================================================== -->
+<section id="chrome-debugging">
+  <div class="page-header">
+    <h1>2. Chrome Debugging</h1>
+  </div>
+  <p class="lead">wtf.trace.provider.chromeDebug</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The Chrome debugging provider works in conjunction with the WTF Chrome extension to add many useful event types into traces, as well as adding features for capturing native traces. The provider adds a small amount of additional overhead as the Chrome debugger must be attached to get the events.</p>
+
+  <p>Use of this feature conflicts with the Chrome Dev Tools. If you have the dev tools open when the page loads or open them later on this feature will be disabled automatically. Closing the dev tools and reloading should make it work again</p>
+  <p>TODO: show a picture of the bar</p>
+
+  <h2>Browser Events</h2>
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.chromeDebug': true,
+  'wtf.trace.provider.chromeDebug.timeline': true
+};</pre>
+  <p>This provider inserts events from the Chrome debugger timeline into traces. The events included in this set include garbage collections, script evaluation, browser paint and layout, and style operations. They're very useful for figuring out where the time inbetween user callbacks is spent or where GCs are causing skipped frames.
+
+  <h2>Chrome Tracing</h2>
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.chromeDebug': true,
+  'wtf.trace.provider.chromeDebug.tracing': true
+};</pre>
+  <p><span class="label label-important">NOTE:</span> you must launch Chrome with <code>--remote-debugging-port=9222</code> for this to work.</p>
+  <p><span class="label label-info">NOTE:</span> this may only work on very recent Chromes (dev channel/canary/Chromium).</p>
+  <p>This adds a toggle button to the on-page HUD that allows for the capture of chrome:tracing data. The Chrome data will then be stored in the resulting WTF file in addition to any normal WTF events. Currently only the page renderer thread and GPU process are stored in the trace.</p>
+  <p>This feature uses undocumented functionality inside of Chrome, and it seems to change rather frequently. If it stops working on a recent Chrome, file an issue. Older Chrome releases are unsupported.</p>
+  <p>For more information on this feature see <a href="./advanced-features.html#chrome-tracing">Advanced Features</a>.</p>
+</section>
+
+
+<!-- DOM
+================================================== -->
+<section id="dom">
+  <div class="page-header">
+    <h1>3. DOM</h1>
+  </div>
+  <p class="lead">wtf.trace.provider.dom</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔ <small>✝</small></td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><small>✝ Chrome requires calling <code>wtf.trace.initializeDomEventProperties</code> on DOM trees added after document load to handle <code>on</code> events.</small></p>
+
+  <p>This provider attempts to automatically add DOM related events to traces. Today it primarily wraps event callbacks from DOM elements but in the future may also log expensive DOM operations.</p>
+
+  <h2>DOM Events</h2>
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.dom': true
+};</pre>
+  <p><span class="label label-warning">WARNING:</span> startup timing will be incorrect when this is enabled.</p>
+  <p>Enabling event injection allows you to easily track time spent in the many events that come back from the DOM such as mouse move or resize. When enabled, all DOM elements and a few other special elements such as <code>Window</code> are automatically instrumented to record their events when the occur.</p>
+  <p>There is overhead involved in setting up the event injection as well as in recording the events. In most applications this will be minimal, however it's important to note that this overhead exists when trying to get exact timing around startup or events. For example, if trying to optimize application startup latency it's best to disable this provider to remove the startup impact.</p>
+
+  <h3><code>wtf.trace.initializeDomEventProperties(el, opt_recursive)</code></h3>
+  <pre class="prettyprint linenums">
+var el = document.createElement('div');
+buildElementTree(el);
+// Instrument the event handlers recursively.
+wtf.trace.initializeDomEventProperties(el, true);</pre>
+  <p>Certain browsers (such as Chrome) require an additional call after new DOM has been constructed after document load. If you don't make this call on the new DOM elements their events will not be recorded. You should try to call it on entire DOM trees/fragments before they are added to the DOM, and although it's safe to call it on the same elements repeatedly you should avoid doing so for performance reasons.</p>
+
+  <h3><code>wtf.trace.ignoreDomTree(el)</code></h3>
+  <pre class="prettyprint linenums">
+var el = document.createElement('a');
+el.onclick = function(e) { console.log('hi!'); };
+// Ignore the onclick events.
+wtf.trace.ignoreDomTree(el);</pre>
+  <p>It's often useful to ignore events on certain DOM trees, such as debug UI. You can quickly ignore an entire tree by using this API. There's no way to opt back in a subtree that has been ignored, so only call this on pieces of the UI you really don't want events from.</p>
+</section>
+
+
+<!-- Images
+================================================== -->
+<section id="images">
+  <div class="page-header">
+    <h1>4. Images</h1>
+  </div>
+  <p class="lead">wtf.trace.provider.image</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.image': true
+};</pre>
+
+  <p>This provider adds special handling to the <code>Image</code> object. The DOM event provider handles HTMLImageElement, but since support for the handling there is flakey this logic is split. If you want consistent, low-overhead tracing of image-related events, prefer using <code>new Image();</code> and this provider.</p>
+</section>
+
+
+<!-- XMLHttpRequest
+================================================== -->
+<section id="xhr">
+  <div class="page-header">
+    <h1>5. XMLHttpRequest</h1>
+  </div>
+  <p class="lead">wtf.trace.provider.xhr</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.xhr': true
+};</pre>
+
+  <p><span class="label label-warning">WARNING:</span> calls to XHR <code>open</code> and <code>send</code> will have up to .1ms of overhead with this provider enabled.</p>
+
+  <p>XMLHttpRequest can often be difficult to debug due to its asynchronous nature. This provider records all method calls and events on the XHRs to make it easier to see who is making the requests and what kind of work is occurring as they progress. Since browsers are rather naive about how they call back XHR events it is useful to try minimizing the amount of work performed in the callbacks.</p>
+</section>
+
+
+<!-- WebGL
+================================================== -->
+<section id="webgl">
+  <div class="page-header">
+    <h1>6. WebGL</h1>
+  </div>
+  <p class="lead">wtf.trace.provider.webgl</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.webgl': true,
+  'wtf.trace.provider.webgl.recordAtStartup': true,
+  'wtf.trace.provider.webgl.captureLevel': 'draw_calls',
+  'wtf.trace.provider.webgl.embedRemoteImages': false
+};</pre>
+
+  <p>This provider allows for WebGL call streams to be recorded at various levels of fidelity. It's useful for quickly seeing what kind of uploads and draws are occurring per frame with low overhead, finding every single WebGL call executed (with arguments), or even recording replayable frames.</p>
+
+  <p>By default the provider begins recording WebGL data immediately on startup. Since in certain recording modes the amount of data can be very large it can be useful to only record data when desired. When the <code>wtf.trace.provider.webgl.recordAtStartup</code> option is set to <code>false</code> a 'WebGL' button will show up on the on-page HUD that lets you toggle recording on and off. It will also force a WebGL context loss/restore when clicked, allowing for context creation to be observed in the trace.</p>
+
+  <h3>Capture Levels</h3>
+  <p>Possible values for the <code>wtf.trace.provider.webgl.captureLevel</code> option:
+    <ul>
+      <li><code>draw_calls</code><br/>
+      Record only the draw calls and related operations such as buffer and texture uploads. This is the lowest overhead mode and is useful for seeing what kind of things are being drawn when.
+      <li><code>all_calls</code><br/>
+      Record all calls without arguments.
+      <li><code>all_calls_with_arguments</code><br/>
+      Record all calls with arguments. This mode does not allow for full replay but will let you see every WebGL call made and what the arguments were (excluding the actual buffers/textures).
+      <li><code>all_calls_with_data</code><br/>
+      This mode will record all WebGL calls along with all arguments and any data referenced by them (such as buffers and textures). This is required for full playback of the command stream.
+    </ul>
+  </p>
+
+  <p>When recording in the <code>all_calls_with_data</code> mode references to remote images and videos will be recorded with their URL. Since some URLs are transient (blob URLs, etc) or may not be accessible from the machine performing the replay (URLs that are unique per session/cookie), an option, <code>wtf.trace.provider.webgl.embedRemoteImages</code>, exists to synchronously fetch and embed the data within the trace. This will result in very large trace files and cause a severe performance penalty each time an image is requested. Do not use this option when trying to get performance numbers.
+</section>
+
+
+<!-- Web Workers
+================================================== -->
+<section id="web-workers">
+  <div class="page-header">
+    <h1>7. Web Workers</h1>
+  </div>
+  <p class="lead">wtf.trace.provider.webworker</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.webworker': true
+};</pre>
+
+  <p>This provider adds instrumentation of Web Worker-related events, such as the methods and events on the <code>Worker</code> object. It also provides the ability to automatically instrument worker code with the tracing framework and proxy the results back to the main thread.</p>
+
+  <p>This is an experimental feature and may not work correctly in all browsers or in all situations. It may also have unmeasured performance impacts when trying to transmit a lot of data between workers. Support for workers spawning other workers is untested, as that feature of the spec is unimplemented in most browsers.</p>
+
+  <h2>Automatic Injection</h2>
+  <pre class="prettyprint linenums">
+var options = {
+  'wtf.trace.provider.webworker': true,
+  'wtf.trace.provider.webworker.inject': true
+};</pre>
+  <p>It's possible to enable the automatic instrumentation of created workers with the tracing framework library. This makes it possible to instrument workers without any code changes using the extension at the cost of additional worker startup time.</p>
+
+  <p><strong>Currently this feature is disabled by default</strong> until browsers gain support for high-resolution times in Web Workers. Track with Chrome <a href="https://code.google.com/p/chromium/issues/detail?id=169318" target="_blank">issue 169318</a>.</p>
+
+</section>
+
+
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>Copyright 2013 Google, Inc.</p>
+        <p>All code released under a <a href="https://github.com/google/tracing-framework/blob/master/LICENSE">BSD-style license</a>.</p>
+        <p>Page built with <a href="https://github.com/twitter/bootstrap">Twitter Bootstrap</a>.</p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/google/tracing-framework/">GitHub project</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/issues?state=open">Issues</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/commits/master">Changes</a></li>
+        </ul>
+      </div>
+    </footer>
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/prettify.js"></script>
+    <script src="bootstrap/js/application.js"></script>
+  </body>
+</html>

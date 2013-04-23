@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Overview of tracing-framework by Google</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="bootstrap/css/magic-bootstrap-min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="bootstrap/css/prettify.css" rel="stylesheet">
+    <link href="bootstrap/css/docs.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-37275478-3', 'github.com');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body>
+    <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./index.html">Home</a>
+              </li>
+              <li class="active">
+                <a href="./overview.html">Overview</a>
+              </li>
+              <li class="">
+                <a href="./getting-started.html">Get started</a>
+              </li>
+              <li class="">
+                <a href="./event-providers.html">Providers</a>
+              </li>
+              <li class="">
+                <a href="./instrumenting-code.html">Instrument</a>
+              </li>
+              <li class="">
+                <a href="./analyzing-traces.html">Analyze</a>
+              </li>
+              <li class="">
+                <a href="./advanced-features.html">Advanced</a>
+              </li>
+              <li class="">
+                <a href="./extending.html">Extend</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subhead
+    ================================================== -->
+    <header class="jumbotron subhead" id="overview">
+      <div class="container">
+        <h1>Overview</h1>
+        <p class="lead">WTF?</p>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="row">
+        <div class="span3 bs-docs-sidebar">
+          <ul class="nav nav-list bs-docs-sidenav">
+            <li><a href="#web-tracing-framework"><i class="icon-chevron-right"></i> Web Tracing Framework</a></li>
+            <li><a href="#how-its-used"><i class="icon-chevron-right"></i> How it's used</a></li>
+            <li><a href="#side-effects-and-warnings"><i class="icon-chevron-right"></i> Side-effects and warnings</a></li>
+            <li><a href="#browser-support"><i class="icon-chevron-right"></i> Browser support</a></li>
+            <li><a href="#more-resources"><i class="icon-chevron-right"></i> More resources</a></li>
+          </ul>
+        </div>
+        <div class="span9">
+
+
+
+<!-- Web Tracing Framework
+================================================== -->
+<section id="web-tracing-framework">
+  <div class="page-header">
+    <h1>1. Web Tracing Framework</h1>
+  </div>
+  <p class="lead">A powerful toolset for investigating the performance of rich Javascript applications.</p>
+
+  <pre>
+   +------------------+                +-----------------+ +--------------------+
+   | Your Application |                | WTF Analysis UI | | Command Line Tools |
+   +------------------+                +-----------------+ +--------------------+
+   |   wtf-shim.js    |                         ^                     ^
+   +--------+---------+                         |                     |
+            |                                   +---------+-----------+
+            v                                             |
+   +------------------+    +---------------+    +---------+--------+
+   | Tracing Library  +--->| foo.wtf-trace +--->| Analysis Library |
+   +------------------+    +---------------+    +------------------+
+  </pre>
+
+  <p>The Web Tracing Framework is a collection of libraries, tools, and scripts aimed at web developers trying to write large, performance-sensitive Javascript applications. It's designed to be used in conjunction with the built-in development tools of browsers but goes far beyond what they usually support at the cost of some user setup time.</p>
+
+  <p>The development tools in modern browsers like Chrome and Firefox are pretty amazing. They've got great sampling profilers, live editing, debugging, and are constantly adding more features. Most developers can make (and have been making) the web an engaging place with them. But just as skilled native platform developers often run past the features in Visual Studio or Xcode and augment their workflow with VTune, Telemetry, and other tools web developers are starting to need the same. Enter the Web Tracing Framework.</p>
+
+  <h2>Who Cares?</h2>
+  <p>This is not a tool for everyone. It requires time to <a href="./instrumenting-code.html">instrument code</a> and understand how to <a href="./analyzing-traces.html">analyze traces</a> and for most simple web pages it's not worth it. But if you're building a Javascript-heavy page that tries to reach 60 frames per second, smoothly react to user input, or load as quickly as possible then you should continue reading.</p>
+  <p>Learning about the Web Tracing Framework and the data it provides is a journey that will change the way you write (and judge) Javascript. It is not trivial, but it is often worth it.</p>
+
+  <h2>Features</h2>
+  <p>The tracing framework and its tools are still very young. The feature list will continue to grow in an organic fashion.</p>
+  <ul>
+    <li>Easy embedding on any page</li>
+    <li><a href="https://chrome.google.com/webstore/detail/web-tracing-framework/gmdhhnlkjmknaopofnadmoamhmnlicme" target="_blank">Chrome extension</a> for getting internal browser data</li>
+    <li>Command line tools for processing data</li>
+    <li>Cross-browser tracing (in <a href="#browser-support">modern browsers</a>)</li>
+    <li><a href="getting-started.html#tracing-node-js">node.js tracing</a> (experimental)</li>
+    <li>Rich custom trace events (with binary data, etc)</li>
+    <li>Very low overhead (but <a href="#warnings">not free</a>!)</li>
+    <li>Show data from Chrome internals, such as garbage collection events</li>
+    <li><a href="https://github.com/google/tracing-framework/" target="_blank">Open source</a> and <a href="https://github.com/google/tracing-framework/blob/master/LICENSE" target="_blank">BSD licensed</a></li>
+  </ul>
+  <p>Have something you want to see? <a href="https://github.com/google/tracing-framework/issues?state=open" target="_blank">File an issue</a> or <a href="https://github.com/google/tracing-framework/blob/master/CONTRIBUTING.md" target="_blank">contribute</a>!
+
+</section>
+
+
+<!-- How It's Used
+================================================== -->
+<section id="how-its-used">
+  <div class="page-header">
+    <h1>2. How it's used</h1>
+  </div>
+  <p>The tracing framework operations on a capture-and-analyze cycle. You instrument your code, capture data, and analyze it. You can then either refine your instrumentation or change what you're testing and repeat the process.</p>
+
+  <pre>
+    +-------------------+
+    |  Instrument Code  +---------------+
+    +-------------------+               v
+               ^              +------------------+
+               |              |  Capture Traces  |
+               |              +---------+--------+
+     +---------+--------+               |
+     |  Analyze Traces  |<--------------+
+     +------------------+
+  </pre>
+
+  <h3>1. <a href="./instrumenting-code.html">Instrumenting Code</a></h3>
+  <p>Instrumentation is optional, with some built-in browser events automatically being traced, however to get the most benefit from the tool you should at least add events for the major functions of your application. More advanced instrumentation such as asynchronous event flows and time ranges can be added to make navigating traces even easier.</p>
+
+  <h3>2. <a href="./getting-started.html#injecting-the-library">Injecting The Library</a></h3>
+  <p>After instrumenting you need to either inject the framework onto your page via the Chrome extension or by manually embedding it, as found in the <a href="./getting-started.html">Getting Started</a> guide. This adds a small heads-up-display (HUD) that can be used to control the state of the library or change settings.</p>
+
+  <h3>3. <a href="./getting-started.html#capturing-a-trace">Capturing Snapshots</a></h3>
+  <p>Snapshots can be captured and either downloaded for later analysis or opened in a pop-out UI. It's also possible to programmatically capture traces if running inside of a test system. The snapshot contains all data since the page loaded or the snapshot was cleared with a button on the HUD. If the buffer fills up then old data is overwritten in a circular fashion, meaning that you can usually keep the library active while using an application and snapshot at any time.</p>
+
+  <h3>4. <a href="./analyzing-traces.html">Analyzing Snapshots</a></h3>
+  <p>A captured trace can be opened using the UI popped up from the page, opened via the extension, or <a href="http://google.github.io/tracing-framework/bin/app/maindisplay.html" target="_blank">hosted on Github</a>. This is the fun part!</p>
+  <p>Repeat until fast!</p>
+</section>
+
+
+<!-- Warnings
+================================================== -->
+<section id="side-effects-and-warnings">
+  <div class="page-header">
+    <h1>3. Side-effects and warnings</h1>
+  </div>
+  <p class="lead">"There ain't no such thing as a free lunch."</p>
+  <p>As with any performance measurement tool there are gotchas. The act of measuring activity with the tracing framework will change the performance characteristics of what's being measured. As a user of the tool you must be aware of this, lest you run down issues that real users would never hit.</p>
+  <p>You can find more information about a lot of the side-effects of certain features documented with the feature itself on the other pages. This is merely a summary and some of the big concepts.</p>
+  <p>More details about the overhead of the framework can be found in the <a href="https://github.com/google/tracing-framework/blob/master/docs/overhead.md">overhead document</a>.</p>
+
+  <h2>Trust No One</h2>
+  <p><b>Do</b> use the tracing framework to help guide you towards problem areas in your code, check for regressions, and learn about your application.<br/>
+  <b>Do not</b> use the tracing framework to blindly apply microoptimizations or mangle your code.</p>
+  <p>The Web Tracing Framework uses an instrumentation to record its data which naturally has some overhead. Modern Javascript engines and the browsers they run within are insanely complex and can change their behavior in interesting ways when instrumented. When inspecting long traces from large applications from 50,000ft you can often trust the insights you find in the tool. But <b>become more wary of the data the closer in you zoom</b> - if you're trying to make an optimization based on timings in the microseconds with the tracing framework you will not have good results.</p>
+
+  <h2>Understanding Timing</h2>
+  <p>The Web Tracing Framework is only really useful in environments that support high-resolution timing. In the browser space this means required support for <a href="https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/HighResolutionTime/Overview.html" target="_blank">performance.now</a>. If the target environment doesn't have this method (Mobile Safari, <a href="https://code.google.com/p/chromium/issues/detail?id=169318" target="_blank">Web Workers</a>, etc) or a <a href="https://code.google.com/p/chromium/issues/detail?id=158234" target="_blank">broken implementation</a> then the traces will be useful for structural information only. You can easily tell if your target browser is not supported when all times appear rounded to the nearest millisecond.</p>
+  <p>Even if your environment does have a high-resolution timer beware of the overhead of calling it. Not only is there usually hundreds of nanoseconds involved in getting the time, but the resolution of <a href="https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/HighResolutionTime/Overview.html" target="_blank">performance.now</a> is only to the nearest microsecond. This means that a pair of trace events surrounding a single assembly instruction can appear to consume as much as 2 microseconds! It's up to the developer instrumenting the code to know when to avoid adding events that are mostly overhead or ignore the data when viewing a trace that has them.</p>
+
+  <h2>Tragedy of the Commons</h2>
+  <p>Every method instrumented or piece of data traced adds additional overhead to the application that can skew trace data. On larger projects careful attention must be paid by developers and code reviewers to ensure that only the most necessary events get committed. It's strongly recommended that instrumented methods are frequently 'gardened' to find and remove events that are no longer providing useful information or being called frequently enough to degrade the trace quality.</p>
+
+  <h2>Tips</h2>
+  <ul>
+    <li>Avoid calls to WTF APIs like <code>enterScope</code>, <code>appendScopeData</code>, or <code>timeStamp</code></li>
+    <li>Always prefer statically initialized strongly-typed events</li>
+    <li>Always use the smallest event argument types - integers instead of strings, ascii instead of utf8, etc</li>
+    <li>Shoot for under 1000 events per frame</li>
+    <li>If you see large vertical stacks of events (where each has a very low or 0 'own time') remove the intermediate ones</li>
+    <li>Avoid high-frequency events that are very short (under a few microseconds)</li>
+  </ul>
+</section>
+
+
+<!-- Browser Support
+================================================== -->
+<section id="browser-support">
+  <div class="page-header">
+    <h1>4. Browser support</h1>
+  </div>
+  <p>There are two major components in the tracing framework that are dependent on the browser: the tracing library and the analysis application.</p>
+
+  <h2>Tracing</h2>
+  <p>The instrumentation library that gets embedded onto pages runs in many different browser environments (and node.js). However, unless the environment supports high-resolution timing the traces won't be very interesting.</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>High-resolution timing</th>
+        <td class="is-supported">✔ <small>✝</small></td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+      <tr>
+        <th>Custom events</th>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+      <tr>
+        <th>Garbage collection events</th>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+      <tr>
+        <th>Native browser tracing</th>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+      <tr>
+        <th>Memory tracking</th>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+      <tr>
+        <th>Web Workers</th>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><small>✝ Chrome Windows currently does not support the high-resolution timer API. <a href="https://code.google.com/p/chromium/issues/detail?id=158234" target="_blank">Issue 158234</a>.</small></p>
+
+  <h2>Analysis UI</h2>
+  <p>Though traces can be captured on many platforms, the UI is designed to work on Chrome (desktop) and Firefox (though support is largely untested). Future versions may support more browsers. Feel free to help out if you care!</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔ <small>✝</small></td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><small>✝ The UI in Firefox is mostly untested. There are some issues with resizing panels and animations.</small></p>
+</section>
+
+
+<!-- More Resources
+================================================== -->
+<section id="more-resources">
+  <div class="page-header">
+    <h1>5. More resources</h1>
+  </div>
+  <p class="lead">How to RTFM.</p>
+  <p>This website will be kept up to date with high level guides and examples. For the details, however, it's recommended that you look at the <a href="https://github.com/google/tracing-framework/">GitHub project</a>.</p>
+
+  <h3>Interesting API headers</h3>
+  <ul>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/shims/wtf-trace.js" target="_blank">wtf-trace.js</a> - the shim for normal Javascript.</li>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/shims/wtf-trace-closure.js" target="_blank">wtf-trace-closure.js</a> - the shim for Closure Compiler Javascript.</li>
+  </ul>
+
+  <h3>Documentation</h3>
+  <p>The <a href="https://github.com/google/tracing-framework/tree/master/docs" target="_blank">documentation directory</a> in the Github project is kept up to date with detailed feature documentation and other information.</p>
+  <ul>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/docs/building.md" target="_blank">Building the project from source</a></li>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/docs/node.md" target="_blank">Using tracing framework with node.js</a></li>
+  </ul>
+
+  <h3>File Formats</h3>
+  <p>Though it's not recommended that the file format is relied upon, the various types of files supported by the framework are documented here:</p>
+  <ul>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/docs/wtf-trace.md" target="_blank">.wtf-trace</a> - normal binary events</li>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/docs/wtf-json.md" target="_blank">.wtf-json</a> - JSON events (for small files)</li>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/docs/wtf-calls.md" target="_blank">.wtf-calls</a> - packed call tracing</li>
+  </ul>
+</section>
+
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>Copyright 2013 Google, Inc.</p>
+        <p>All code released under a <a href="https://github.com/google/tracing-framework/blob/master/LICENSE">BSD-style license</a>.</p>
+        <p>Page built with <a href="https://github.com/twitter/bootstrap">Twitter Bootstrap</a>.</p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/google/tracing-framework/">GitHub project</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/issues?state=open">Issues</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/commits/master">Changes</a></li>
+        </ul>
+      </div>
+    </footer>
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/prettify.js"></script>
+    <script src="bootstrap/js/application.js"></script>
+  </body>
+</html>

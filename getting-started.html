@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Getting Started with tracing-framework by Google</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="bootstrap/css/magic-bootstrap-min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="bootstrap/css/prettify.css" rel="stylesheet">
+    <link href="bootstrap/css/docs.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-37275478-3', 'github.com');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body>
+    <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="./overview.html">Overview</a>
+              </li>
+              <li class="active">
+                <a href="./getting-started.html">Get started</a>
+              </li>
+              <li class="">
+                <a href="./event-providers.html">Providers</a>
+              </li>
+              <li class="">
+                <a href="./instrumenting-code.html">Instrument</a>
+              </li>
+              <li class="">
+                <a href="./analyzing-traces.html">Analyze</a>
+              </li>
+              <li class="">
+                <a href="./advanced-features.html">Advanced</a>
+              </li>
+              <li class="">
+                <a href="./extending.html">Extend</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subhead
+    ================================================== -->
+    <header class="jumbotron subhead" id="overview">
+      <div class="container">
+        <h1>Getting Started</h1>
+        <p class="lead">How to capture and view traces.</p>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="row">
+        <div class="span3 bs-docs-sidebar">
+          <ul class="nav nav-list bs-docs-sidenav">
+            <li><a href="#installing"><i class="icon-chevron-right"></i> Installing</a></li>
+            <li><a href="#injecting-the-library"><i class="icon-chevron-right"></i> Injecting the library</a></li>
+            <li><a href="#capturing-a-trace"><i class="icon-chevron-right"></i> Capturing a trace</a></li>
+            <li><a href="#viewing-a-trace"><i class="icon-chevron-right"></i> Viewing a trace</a></li>
+            <li><a href="#what-next"><i class="icon-chevron-right"></i> What next?</a></li>
+          </ul>
+        </div>
+        <div class="span9">
+
+
+<!-- Installing
+================================================== -->
+<section id="installing">
+  <div class="page-header">
+    <h1>1. Installing</h1>
+  </div>
+  <p>The tracing framework is a suite of tools and libraries, and there are many different ways to obtain each. The easiest way to get started is to install the Chrome Extension (on Mac/Linux) and see what it records on your page. From there, you can start to add <a href="instrumenting-code.html">custom instrumentation</a> and <a href="analyzing-traces.html">analyzing the data</a>.</p>
+
+  <div class="row-fluid">
+    <div class="span6">
+      <h2>Chrome</h2>
+      <p>The most <strong>awesome, advanced features</strong> require the Chrome extension and some <a href="./advanced-features.html#chrome-flags">optional command line flags</a>. It's recommended you run with the <a href="http://www.chromium.org/getting-involved/dev-channel" target="_blank">dev channel</a> or a <a href="https://www.google.com/intl/en/chrome/browser/canary.html" target="_blank">Canary build</a>. Mac or Linux are preferred!</p>
+      <p><a href="https://chrome.google.com/webstore/detail/web-tracing-framework/gmdhhnlkjmknaopofnadmoamhmnlicme" class="btn btn-primary btn-large" onclick="ga('send', 'event', 'getting_started', 'install');">Install Chrome Extension</a></p>
+    </div>
+    <div class="span6">
+      <h2>Others</h2>
+      <p>None yet! Contribute some! Maybe a Firefox one?</p>
+    </div>
+  </div>
+
+  <h2>Command Line Tools</h2>
+  <p>Requires: node >= 0.8.14</p>
+  <p>You can use NPM to install the <a href="https://npmjs.org/package/tracing-framework" target="_blank">tracing-framework module</a>. You can either install it within your project as a dev dependency or globally to get access to the command line tools.</p>
+
+  <pre>
+$ node -v # ensure at least v0.8.14
+$ npm install -g tracing-framework
+$ wtf-trace myapp.js
+$ wtf-dump myapp-[date].wtf-trace # or open in the UI</pre>
+
+  <h2>Building From Source</h2>
+  <p>The hosted library and extension are updated every few weeks, but if you prefer living on the bleeding edge you can checkout and build the entire toolset from source. Detailed instructions are available in the <a href="https://github.com/google/tracing-framework/blob/master/docs/building.md" target="_blank">building documentation</a>.</p>
+</section>
+
+
+<!-- Injecting the library
+================================================== -->
+<section id="injecting-the-library">
+  <div class="page-header">
+    <h1>2. Injecting the library</h1>
+  </div>
+  <p>The tracing framework operates by being loaded inside your page or app <strong>before</strong> any of your application code executes. Attempting to load it afterwards will produce incorrect results.</p>
+
+  <h2><a id="tracing-with-extension"></a>Using the Chrome Extension</h2>
+  <p>The easiest way to put the framework on the page is via the Chrome extension. It gives you a toggle button for injection and makes it easy to enable and disable the framework when developing and testing. The extension also provides additional support for advanced features such as browser internal events like garbage collections.</p>
+
+  <p>TODO: gif of enable, page reload, etc</p>
+
+  <h2><a id="tracing-manually"></a>Manually Embedding</h2>
+  <p>When running where a browser extension is not available, such as Internet Explorer or on mobile devices, it's possible to manually embed the library on a page using some <code>&lt;script&gt;</code> tags. This is also useful when running automated tests that cannot depend on user interaction.</p>
+
+  <p>Add a <code>&lt;script&gt;</code> tag pointing at the compiled tracing library. This can be your own build result (if building from source), a copy of the library stored on your own server, or the publicly <a href="http://google.github.io/tracing-framework/bin/wtf_trace_web_js_compiled.js" target="_blank">hosted one on Github</a>. Note that the Github hosted version will not load on HTTPS pages, so you will have to copy it to your own server first.</p>
+
+  <p>After loading the library it must be initialized and started. You should do this with another <code>&lt;script&gt;</code> tag immediately following the previous one and again <strong>before any other scripts</strong>. This tag initializes options used by the library, optionally shows the on-screen HUD, and starts tracing right away (usually the desired behavior).</p>
+
+  <pre class="prettyprint linenums">
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;!-- These MUST be before any other scripts! --&gt;
+    &lt;script src="http://google.github.io/tracing-framework/bin/wtf_trace_web_js_compiled.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+      var options = {
+        /* options, if any */
+      };
+      // Setup tracing with the given options.
+      wtf.trace.prepare(options);
+      // Optionally, create the on-screen HUD for better control.
+      wtf.hud.prepare(options);
+      // Start recording a trace immediately (if desired).
+      wtf.trace.start(options);
+    &lt;/script&gt;
+    &lt;!-- Add your stuff here... --&gt;
+  &lt;/head&gt;
+&lt;/html&gt;</pre>
+
+  <p>For more details about the options that can be passed see the <a href="https://github.com/google/tracing-framework/blob/master/docs/options.md">options documentation</a> and the <a href="event-providers.html">event providers</a> page.</p>
+
+  <h2><a id="tracing-node-js"></a>node.js</h2>
+  <p>The easiest way to get the tracing framework to record your application is to use the <code>wtf-trace</code> tool included with the NPM package. This allows you to run any other node app with the library already present and recording at startup and will dump the trace file when the application ends (or CTRL-C is used).</p>
+
+  <pre class="prettyprint linenums">
+$ wtf-trace myapp.js
+Running...
+&lt;ctrl-c&gt;
+$ ls *.wtf-trace
+myapp-123456.wtf-trace</pre>
+
+  <p>When more control is desired you can instead directly require and setup the library. First you must obtain the <code>wtf_node_js_compiled.js</code> file, which can be found in the <code>node_modules/tracing-framework/build-out/</code> directory from your NPM install.</p>
+
+  <pre class="prettyprint linenums">
+// Require from wherever the library happens to be.
+global.wtf = require('./node_modules/tracing-framework/build-out/wtf_node_js_compiled.js');
+// Provide any options here.
+var options = {
+  /* options, if any */
+};
+// Start tracing with a handler for ctrl-c saving.
+wtf.trace.node.start(options);</pre>
+
+  <p>If you prefer to more tightly control the trace recording you can call the normal API instead:</p>
+
+  <pre class="prettyprint linenums">
+global.wtf = require('./node_modules/tracing-framework/build-out/wtf_node_js_compiled.js');
+wtf.trace.prepare({ /* options, if any */ });
+
+// Later on, when desired:
+wtf.trace.start();
+// Do stuff...
+wtf.trace.snapshot();</pre>
+
+</section>
+
+
+<!-- Capturing a trace
+================================================== -->
+<section id="capturing-a-trace">
+  <div class="page-header">
+    <h1>3. Capturing a trace</h1>
+  </div>
+  <p>Once the library is included and initialized as above one must record and save off traces. When using the on-screen HUD such as when added via the Chrome Extension this is as easy as clicking a button, but otherwise you must control the recording and saving yourself. Note that even with the HUD enabled it's still possible to use the programmatic control as described below.</p>
+
+  <h2>Capturing with the HUD</h2>
+  <p>The on-screen HUD provides several options for saving, resetting, and showing trace snapshots.</p>
+
+  <p>TODO: grid showing: resetting, saving, showing UI</p>
+
+  <p><span class="label label-info">TIP:</span> hold shift while clicking 'Show in UI' to open the trace in a new window.</p>
+  <p><span class="label label-info">TIP:</span> see the tooltips on the buttons for keyboard keys that perform the action.</p>
+
+  <h2>Capturing with Code</h2>
+  <p>Programmatically capturing traces can be useful when trying to gather data from specific timeranges, reducing the interference of the framework by not showing the HUD, or trying to automate trace capture.</p>
+
+  <h3>Starting/stopping a Capture</h3>
+  <pre class="prettyprint linenums">
+// Start capturing immediately.
+wtf.trace.start({
+  /* option overrides, if any */
+});
+
+// Reset the current buffer, clearing all recorded events.
+wtf.trace.reset();
+
+// Stop capturing and cleanup.
+wtf.trace.stop();</pre>
+  <p>Captures are started with the <code>wtf.trace.start()</code> API. This takes an optional object dictionary that can override any options that were previously passed to a <code>wtf.trace.prepare()</code> call or were setup by the extension.</p>
+  <p>The trace begins recording immediately after the call returns and when in snapshotting mode any new events are appended to the buffer. If you want to clear the buffer (for example, to ignore previous uninteresting events) you can use <code>wtf.trace.reset()</code>.</p>
+  <p>When the capture session is no longer required a call to <code>wtf.trace.stop()</code> is used to clean up any resources used by the snapshot. After this the data is disposed and there is no way to save it. Any future calls to <code>wtf.trace.start()</code> will begin with a clean buffer.</p>
+
+  <h3>Saving a Snapshot</h3>
+  <pre class="prettyprint linenums">
+// Save a snapshot with the default save options (file named on page/time):
+wtf.trace.snapshot();
+
+// Save a file with the given prefix:
+wtf.trace.snapshot('file://myprefix');
+
+// Grab the binary data from the snapshot:
+var buffers = [];
+wtf.trace.snapshot(buffers);
+console.log(buffers[0]); // a Uint8Array of the data</pre>
+  <p>Snapshots are saved on demand and can be either saved to a file, posted to a remote HTTP server, or grabbed in memory for custom saving.</p>
+
+  <p>If desired, an default save target can be passed when the library is initialized so that it needs not be passed to each snapshot call:</p>
+  <pre class="prettyprint linenums">
+// Specify a default save name (used for snapshots unless overriden).
+wtf.trace.prepare({
+  'wtf.trace.target': 'file://myname'
+});
+
+// No need to pass a name here, the given target will be used:
+wtf.trace.snapshot();</pre>
+</section>
+
+
+<!-- Viewing a trace
+================================================== -->
+<section id="viewing-a-trace">
+  <div class="page-header">
+    <h1>4. Viewing a trace</h1>
+  </div>
+
+  <h2>Capture to UI</h2>
+  <p>The easiest way to view a trace is to open it directly from the on-screen HUD. The 'Show in UI' button will capture a new trace and pop up a new UI window with the trace loaded, ready for inspection. If you wish to save this trace for later comparison or sharing you can use the 'Save' button.</p>
+
+  <p>TODO: gif of show in UI</p>
+
+  <h2>Opening the UI</h2>
+  <p>You can always use the hosted version available on Github:</p>
+  <p><a href="http://google.github.io/tracing-framework/bin/app/maindisplay.html" target="_blank">http://google.github.io/tracing-framework/bin/app/maindisplay.html</a></p>
+  <p>If using the Chrome extension you can open the UI quickly:</p>
+  <p>TODO: gif of show ui popup</p>
+
+  <h2>Loading Traces</h2>
+  <p>If you've saved a trace and have a <code>.wtf-trace</code> file there are several ways to load it.</p>
+
+  <p>TODO: grid gifs of drag/drop, open button, etc</p>
+
+  <h2>Sharing Traces</h2>
+  <p>It's possible to use the Github-hosted UI page to easily share traces with people who may not have the tracing framework extension installed. The simplest is to give them the URL to the UI, <a href="http://google.github.io/tracing-framework/bin/app/maindisplay.html" target="_blank">http://google.github.io/tracing-framework/bin/app/maindisplay.html</a>, and tell them to open the file you've shared.</p>
+  <p>Alternatively, the UI page accepts a <code>?url=http://...</code> query parameter that allows for loading a trace from a given source. Beware that the target must allow cross-origin XHRs via <a href="http://enable-cors.org/" target="_blank">cross-origin resource sharing</a> or it will fail to load.</p>
+</section>
+
+
+<!-- What next?
+================================================== -->
+<section id="what-next">
+  <div class="page-header">
+    <h1>5. What next?</h1>
+  </div>
+  <p class="lead">You're not done yet!</p>
+  <p>To get the most from the tracing framework you'll need to adjust settings, instrument your code, and learn what all the data means.</p>
+
+  <h4><a href="./event-providers.html">Tweak Provider Settings</a></h4>
+  <p>Enable or disable built-in event providers to get more information or reduce tracing overhead.</p>
+
+  <h4><a href="./instrumenting-code.html">Instrument your Code</a></h4>
+  <p>Get the most out of traces by efficiently tracing your application and its data.</p>
+
+  <h4><a href="./analyzing-traces.html">Learn how to Understand Traces</a></h4>
+  <p>Find out what the different data means and how to get useful information out of traces.</p>
+
+  <h4><a href="./advanced-features.html">Experiment with Advanced Features</a></h4>
+  <p>Learn more about the advanced features of the framework such as native browser tracing, remote control, and memory allocation tracking.</p>
+
+  <h4><a href="./extend.html">Extend the Framework</a></h4>
+  <p>Add your own custom data providers and visualizers.</p>
+</section>
+
+
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>Copyright 2013 Google, Inc.</p>
+        <p>All code released under a <a href="https://github.com/google/tracing-framework/blob/master/LICENSE">BSD-style license</a>.</p>
+        <p>Page built with <a href="https://github.com/twitter/bootstrap">Twitter Bootstrap</a>.</p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/google/tracing-framework/">GitHub project</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/issues?state=open">Issues</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/commits/master">Changes</a></li>
+        </ul>
+      </div>
+    </footer>
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/prettify.js"></script>
+    <script src="bootstrap/js/application.js"></script>
+  </body>
+</html>

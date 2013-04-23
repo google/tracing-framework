@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Instrumenting Code with tracing-framework by Google</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="bootstrap/css/magic-bootstrap-min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="bootstrap/css/prettify.css" rel="stylesheet">
+    <link href="bootstrap/css/docs.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-37275478-3', 'github.com');
+      ga('send', 'pageview');
+    </script>
+  </head>
+  <body>
+    <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="./index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="./overview.html">Overview</a>
+              </li>
+              <li class="">
+                <a href="./getting-started.html">Get started</a>
+              </li>
+              <li class="">
+                <a href="./event-providers.html">Providers</a>
+              </li>
+              <li class="active">
+                <a href="./instrumenting-code.html">Instrument</a>
+              </li>
+              <li class="">
+                <a href="./analyzing-traces.html">Analyze</a>
+              </li>
+              <li class="">
+                <a href="./advanced-features.html">Advanced</a>
+              </li>
+              <li class="">
+                <a href="./extending.html">Extend</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subhead
+    ================================================== -->
+    <header class="jumbotron subhead" id="overview">
+      <div class="container">
+        <h1>Instrumenting Code</h1>
+        <p class="lead">Guide to instrumenting your code for more detailed traces.</p>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="row">
+        <div class="span3 bs-docs-sidebar">
+          <ul class="nav nav-list bs-docs-sidenav">
+            <li><a href="#why"><i class="icon-chevron-right"></i> Why?</a></li>
+            <li><a href="#shims"><i class="icon-chevron-right"></i> Shims</a></li>
+            <li><a href="#events-in-traces"><i class="icon-chevron-right"></i> Events in Traces</a></li>
+            <li><a href="#builtin-events"><i class="icon-chevron-right"></i> Built-in Events</a></li>
+            <li><a href="#custom-events"><i class="icon-chevron-right"></i> Custom Events</a></li>
+            <li><a href="#automatic-instrumentation"><i class="icon-chevron-right"></i> Automatic Instrumentation</a></li>
+            <li><a href="#navigation-aids"><i class="icon-chevron-right"></i> Navigation Aids</a></li>
+            <li><a href="#tracking-flows"><i class="icon-chevron-right"></i> Tracking Flows</a></li>
+            <li><a href="#advanced-apis"><i class="icon-chevron-right"></i> Advanced APIs</a></li>
+          </ul>
+        </div>
+        <div class="span9">
+
+
+<!-- Why?
+================================================== -->
+<section id="why">
+  <div class="page-header">
+    <h1>1. Why?</h1>
+  </div>
+  <p class="lead">A little work goes a long way.</p>
+  <p>The tracing framework provides some useful <a href="./event-providers.html">events</a> without any work on your part, but that's only scratching the surface of what's possible with the tool and what data your app has yet to reveal. Though it's certainly useful to see the ways your application is interacting with the browser and vice versa, often there is much more work occuring within your call trees than not.</p>
+  <p>By adding some simple, easily-removable, (usually) well-isolated instrumentation calls to your application code you can quickly enhance your traces to be more useful both for understanding your program flow and identifying where time is going. The process if instrumenting is currently an iterative, trial-and-error affair but often just a few hours will yield 90% of the available data and get your application in a good state.</p>
+  <p>The tracing framework is designed to be very low overhead when disabled and the calls can be stripped by most Javascript optimization systems (such as the <a href="https://developers.google.com/closure/compiler/" target="_blank">Google Closure Compiler</a> and <a href="https://github.com/mishoo/UglifyJS2" target="_blank">UglifyJS 2</a>). Because of this it's encouraged that the instrumentation is checked into source control to enable all developers to run traces on a regular basis, enable automated performance regression tools, and keep your code healthy.</p>
+  <p>TODO: show a trace without manual, with manual</p>
+</section>
+
+
+<!-- Shims
+================================================== -->
+<section id="shims">
+  <div class="page-header">
+    <h1>2. Shims</h1>
+  </div>
+  <p>There are several shim files provided to make it easier to use the tracing framework library from your Javascript. They will disable all tracing if the library is not injected on a page, ensure that the version of the library matches the expected version, and can enable Javascript optimizers to better remove code. If possible, you should always prefer to use one of these shims to making calls directly into the library.</p>
+
+  <p>So, <strong>you should not make calls to the <code>wtf</code> global object.</strong> This object is only present when the library is on the page. If you make calls to <code>wtf</code> methods without protecting their use your application will not run with the tracing framework missing!</p>
+
+  <p>Instead, by using one of the shims below, you will have a <code>WTF</code> global object that ensures the methods are always present and do nothing unless the framework is present on the page. Javascript engines and most optimizers are good at doing the right thing here and this will not have a measurable performance impact on your code.</p>
+
+  <h2>Obtaining the Shims</h2>
+  <p>The shims are hosted in the <a href="https://github.com/google/tracing-framework/tree/master/shims" target="_blank">Github repository</a> and are designed to be copied into your project and checked into your own source control. This way when a new version of the tracing framework is deployed your applications will not break as it would have if you referenced the Github versions directly. Simply pick the shim you need from the list below and save it!</p>
+
+  <h2>Using a Shim</h2>
+  <p>Once you've saved your shim file into your project you should bundle it up with any other javascript as part of your normal build process. <strong>It must be the first file included.</strong> Depending on your Javascript optimizer your can specify different shim files or configuration options to enable or disable the tracing code at optimization time, resulting in final bundles that contain zero tracing code.</p>
+
+  <p>Once a shim is included, you will access all tracing framework APIs via the global <code>WTF</code> object, <strong>not the lower-case <code>wtf</code> object</strong>.</p>
+
+  <pre class="prettyprint linenums">
+if (WTF.PRESENT) {
+  // The tracing framework is injected onto this page!
+} else {
+  // All calls through WTF will be ignored.
+}
+
+// This will do nothing when the library is not injected, otherwise it will record an event.
+// Optimizing compilers can remove this entire line from the code if configured correctly.
+WTF.trace.timeStamp('hello!');</pre>
+
+  <h2>For normal Javascript</h2>
+  <p>Shim file: <a href="https://raw.github.com/google/tracing-framework/master/shims/wtf-trace.js" target="_blank">wtf-trace.js</a></p>
+  <p>This shim is useful if using WTF from regular Javascript, node.js applications, or in conjunction with most Javascript optimizers. When added to a page the <code>WTF</code> object will always be present regardless of whether the framework is injected on the page.</p>
+
+  <h2>For UglifyJS 2 Users</h2>
+  <p>Shim files: <a href="https://raw.github.com/google/tracing-framework/master/shims/wtf-trace.js" target="_blank">wtf-trace.js</a>, <a href="https://raw.github.com/google/tracing-framework/master/shims/wtf-trace-disabled.js" target="_blank">wtf-trace-disabled.js</a></p>
+  <p>If you're using UglifyJS 2 to optimize your release-mode Javascript you have the option of stripping all tracing calls when you don't want them. It's recommended that you produce an optimized bundle both with and without the tracing code enabled so that you can get realistic performance numbers from your optimized script and then ship the stripped file to users.</p>
+  <p>To do this, use the <a href="https://raw.github.com/google/tracing-framework/master/shims/wtf-trace.js" target="_blank">wtf-trace.js</a> when building a <code>myapp-traced.js</code> bundle. All of your calls to <code>WTF.trace.*</code> APIs will be retained through optimization and you'll be able to load your pages and get good numbers.</p>
+  <p>When it comes time to ship code to users switch to using <a href="https://raw.github.com/google/tracing-framework/master/shims/wtf-trace-disabled.js" target="_blank">wtf-trace-disabled.js</a> and pass the <code>--compress</code> option to strip all calls to <code>WTF.trace.*</code> APIs. This (should) remove any hint of tracing framework usage.</p>
+
+  <h2>For Closure Compiler Users</h2>
+  <p>Shim file: <a href="https://raw.github.com/google/tracing-framework/master/shims/wtf-trace-closure.js" target="_blank">wtf-trace-closure.js</a></p>
+  <p>This shim provides a Closure Compiler compatible <code>WTF</code> namespace that can be used in your code with type safety and all of the compilers awesome optimizations. By default the tracing calls will be included in built Javascript bundles but when the advanced compilation mode is used and <code>--define=WTF.ENABLED=false</code> is passed on the command line all traces of the WTF calls will be removed.</p>
+</section>
+
+
+<!-- Events in Traces
+================================================== -->
+<section id="events-in-traces">
+  <div class="page-header">
+    <h1>3. Events in Traces</h1>
+  </div>
+  <p>Events in the tracing framework come in two types: scopes and instances. Instance events denote that something occurred, but not how long it took. Scope events denote a time range when something was occuring and can nest within each other.</p>
+
+  <h2>Instance Events</h2>
+  <p>TODO: shot of instance events</p>
+  <p>It's often useful to record the occurrence of an event or some data for something that does not represent a time span. Instance events allow this in an efficient way and make it easy to filter and query trace files for the values.</p>
+  <p>Instances are recorded by the built-in <code>WTF.trace.timeStamp</code> API or custom instance event types. Prefer using the custom types to reduce tracing overhead.</p>
+
+  <h2>Scope Events</h2>
+  <p>TODO: shot of scope events</p>
+  <p>In most traces scopes are equivalent to function calls: a scope for function X starts when X is called and ends when X returns. They are the most useful type of events and the ones you'll see most often. The time duration of scopes is marked with an enter and a leave. Scopes can be nested with other scopes and instance events.</p>
+  <p>Scopes are recorded by either the built-in <code>WTF.trace.enterScope</code> API, custom scope event types, or automatic instrumentation of functions and types. Prefer using the custom types or automatic instrumentation to reduce tracing overhead.</p>
+  <p><span class="label label-important">Important</span> <strong>Scopes cannot overlap.</strong> You cannot leave a parent scope without first leaving a nested child scope. Bad things will happen.</p>
+</section>
+
+
+<!-- Built-in Events
+================================================== -->
+<section id="builtin-events">
+  <div class="page-header">
+    <h1>4. Built-in Events</h1>
+  </div>
+  <p>There are several helper methods in the API that make it really easy to trace new events without any event setup. They're super handy when exploring the performance characteristics of code and events need to be added and removed frequently.</p>
+  <p>But beware: <strong>these untyped event functions are slow</strong>. They can be up to 10x slower than using the custom event types as described below. They're great for debugging, but try to avoid checking them in!</p>
+
+  <h2>Instance Events</h2>
+  <p><code>WTF.trace.timeStamp(string name, any opt_value)</code></p>
+  <pre class="prettyprint linenums">
+// Records an instance event named 'didSomething' with some value.
+// The value is optional and can be any JSONable type (number/string/object/etc).
+WTF.trace.timeStamp('didSomething', someObject.value);</pre>
+
+  <h2>Scope Events</h2>
+  <p><code>WTF.trace.enterScope(string name, any opt_result) -> Scope</code></p>
+  <p><code>WTF.trace.leaveScope(Scope scope)</code></p>
+  <p>Enters a scope by name. This must be matched with a <code>WTF.trace.leaveScope</code> call.</p>
+  <p>It is strongly recommended that a custom enter scope event should be used instead of this, as the overhead required to write the scope name is non-trivial. Only use this when the name changes many times at runtime or you're hacking something together. See <code>WTF.trace.events.createScope</code>.</p>
+  <pre class="prettyprint linenums">
+function myFunction() {
+  var scope = WTF.trace.enterScope('myFunction');
+  // Do some work...
+  WTF.trace.leaveScope(scope);
+}
+function myFunction() {
+  var scope = WTF.trace.enterScope('myFunction');
+  // Do some work...
+  var result = ...;
+  return WTF.trace.leaveScope(scope, result);
+}
+</pre>
+
+  <h3>Adding Arguments to Scopes</h3>
+  <p><code>WTF.trace.appendScopeData(string name, any value)</code></p>
+  <p>Appends a named argument of any type to the current scope. The data added is keyed by name, and existing data with the same name will  be overwritten. This is slow and should only be used for very infrequent appends.</p>
+  <p>No, really, this JSON stringifies whatever is passed to it and will skew your results. Don't use it. Instead use custom event types.</p>
+  <p>Though it's strongly recommended you use the custom event types if you need arguments, you can add ad-hoc arguments to the current scope at any time.</p>
+  <pre class="prettyprint linenums">
+var scope = WTF.trace.enterScope('someScope');
+WTF.trace.appendScopeData('bar', 123);
+WTF.trace.appendScopeData('foo', {
+  'complex': ['data']
+});
+WTF.trace.leaveScope(scope);</pre>
+</section>
+
+
+<!-- Custom Events
+================================================== -->
+<section id="custom-events">
+  <div class="page-header">
+    <h1>5. Custom Events</h1>
+  </div>
+  <p><code>WTF.trace.events.createInstance(string signature, opt_flags)</code></p>
+  <p><code>WTF.trace.events.createScope(string signature, opt_flags)</code></p>
+
+  <p>Creating, caching, using, examples</p>
+
+  <h2>Event Signatures</h2>
+  <p></p>
+
+  <h2>Argument Types</h2>
+  <p></p>
+</section>
+
+
+<!-- Automatic Instrumentation
+================================================== -->
+<section id="automatic-instrumentation">
+  <div class="page-header">
+    <h1>6. Automatic Instrumentation</h1>
+  </div>
+  <p class="lead">Leading line.</p>
+  <p>Some things go here.</p>
+
+  <h2>Instrumenting Functions</h2>
+  <p><code>WTF.trace.instrument(function method, string signature)</code></p>
+  <p>TODO: talk about instrumenting methods.</p>
+
+  <pre class="prettyprint linenums">
+// Manually instrumenting a method:
+var someCallEvent = WTF.trace.events.createScope('someCall(uint32 a, uint32 b)');
+function someCall(a, b) {
+  var scope = someCallEvent(a, b);
+  var result = a + b;
+  return WTF.trace.leaveScope(scope, result);
+};
+
+// Or, for the (about) same performance impact, make it much more readable:
+var someCall = WTF.trace.instrument(function(a, b) {
+  return a + b;
+}, 'someCall(uint32 a, uint32 b)');</pre>
+
+  <p>More examples and usage:</p>
+
+  <pre class="prettyprint linenums">
+// Simplly instrument a method:
+var someCall = WTF.trace.instrument(function(a, b) {
+  return a + b;
+}, 'someCall');
+
+// Instrument an individual method, capturing arguments:
+var someCall = WTF.trace.instrument(function(a, b) {
+  return a + b;
+}, 'someCall(uint32 a, uint32 b)');
+
+// Instrument an individual method on a prototype:
+// (if you do this a lot it's best to instrument the type)
+myType.prototype['someCall'] = WTF.trace.instrument(
+    myType.prototype['someCall'],
+    'MyType#someCall(uint32 a, uint32 b)');</pre>
+
+  <h2>Instrumenting Types</h2>
+  <p><code>WTF.trace.instrumenType(function ctor, string ctorSignature, object methods)</code></p>
+  <p>The <code>WTF.trace.instrumenType</code> method can be used to quickly instrument a constructor and several prototype methods with optional argument recording. It's good practice to place this under a class definition.</p>
+
+  <pre class="prettyprint linenums">
+// Some type.
+var MyType = function(a, b) {
+  this.value = a + b;
+};
+MyType.prototype.foo = function(a) {
+  return a;
+};
+
+// A simpler version, not tracing the arguments:
+MyType = WTF.trace.instrumentType(
+  MyType, 'MyType', {
+    foo: 'foo'
+  });
+
+// Automatically instrument the constructor and the 'foo' method.
+// This records the given argument values (with a slightly performance overhead).
+MyType = WTF.trace.instrumentType(
+    MyType, 'MyType(uint8 a, uint8 b)', {
+      foo: 'foo(uint8 a)'
+    });</pre>
+
+  <h2>Instrumenting Closure Types</h2>
+  <p>When using the tracing framework in Closure annotated code it's possible to get a compact and rich form of the auto instrumentation that supports the advanced renaming options of the compiler. Use the example in the following snippet.</p>
+  <p>The Closure Compiler is smart enough, with this syntax, to still perform dead code removal on unused prototype methods and rename used methods while preserving the real name in traces.</p>
+
+  <pre class="prettyprint linenums">
+// Some properly constructed Closure type.
+// Be sure to use goog.base when inheriting.
+my.Type = function(a, b) {
+  goog.base(this);
+  this.value = a + b;
+};
+goog.inherits(my.Type, some.BaseType);
+my.Type.prototype.foo = function(a) {
+  return a;
+};
+
+// Automatically instrument the constructor and the 'foo' method.
+// Note where there are and aren't quotes.
+my.Type = WTF.trace.instrumentType(
+    my.Type, 'my.Type(uint8 a, uint8 b)',
+    goog.reflect.object(my.Type, {
+      foo: 'foo(uint8 a)'
+    }));</pre>
+</section>
+
+
+<!-- Timing Ranges
+================================================== -->
+<section id="navigation-aids">
+  <div class="page-header">
+    <h1>7. Navigation Aids</h1>
+  </div>
+  <p>Traces of complex applications can sometimes get difficult to navigate around, especially when looking at a trace file that was saved off days or weeks earlier. By annotating your traces with time ranges and markers it makes it much easier to find the information you're looking for. For example, 'were there slow frames while I was animating?', 'did I perform the same transition twice when I only needed once?', etc.</p>
+
+  <h2>Time Ranges</h2>
+  <p><code>WTF.trace.beginTimeRange(string name, any opt_value) -> TimeRange</code></p>
+  <p><code>WTF.trace.endTimeRange(TimeRange timeRange)</code></p>
+
+  <p>TODO: screenshot of time ranges</p>
+
+  <p>It's often useful to see what and how many async operations such as animations or deeply nested network operations are occurring at any given time in a trace. To enable this navigation aid there is a simple API for denoting an async time range. This is not intended to track every detail or stage of an async operation - instead see flows - but makes it easier to help answer questions such as 'when was I animating?' or 'how many updates were processing?' when looking at a trace file.</p>
+  <p>A limited number of active timers will be displayed in the UI. Do not abuse this feature by adding timers for everything (like network requests). Prefer to use flows to track complex async operations.</p>
+
+  <pre class="prettyprint linenums">
+// Begin tracking the async time range at the start:
+my.AnimationType.startJob = function(actionName) {
+  var job = {...};
+  job.tracingRange = WTF.trace.beginTimeRange('my.Type:job', actionName);
+};
+// Stop tracking it when done:
+my.AnimationType.endJob = function(job) {
+  WTF.trace.endTimeRange(job.tracingRange);
+};</pre>
+
+  <h2>Marks</h2>
+  <p><code>WTF.trace.mark(string name)</code></p>
+
+  <p>TODO: screenshot of timeline marks</p>
+
+  <p>The global timeline can be 'marked' with certain blocks denoting large chunks of time. You can think of these as bookmarks or a table of contents for the trace. This is mostly useful when tracking things like automated performance tests that run through various stages or other global state transitions like intro->menu->game.</p>
+  <p>There can be only one active mark at a time and any new mark will clear existing ones. Try not to use this too frequently - once every second or so at max, but ideally much less frequently - as the usefulness to navigation it provides is reduced when there are too many.</p>
+
+  <pre class="prettyprint linenums">
+// ...
+WTF.trace.mark('Loading UI');
+// ...
+WTF.trace.mark('Main Menu');
+// ...
+WTF.trace.mark('Loading Game');
+// ...
+WTF.trace.mark('Playing Game');
+// ...</pre>
+</section>
+
+
+<!-- Tracking Flows
+================================================== -->
+<section id="tracking-flows">
+  <div class="page-header">
+    <h1>8. Tracking Flows</h1>
+  </div>
+  <p class="lead">TODO</p>
+  <p>This feature is currently experimental and not yet implemented.</p>
+</section>
+
+
+<!-- Advanced
+================================================== -->
+<section id="advanced-apis">
+  <div class="page-header">
+    <h1>9. Advanced APIs</h1>
+  </div>
+  <p>There are a few advanced or extra features in the API to make it easier to work with. Not all are documented here.</p>
+
+  <h2>Getting the Time</h2>
+  <p>The tracing framework attempts to use high-resolution times for all timestamps. Because of this it's not usually possible to compare a value from <code>Date.now</code> with a time captured in a trace snapshot. If you wish to use the same times you can use the <code>WTF.timebase()</code> and <code>WTF.now()</code> APIs to match them up.</p>
+
+  <pre class="prettyprint linenums">
+// Check to see whether the framework is recording high-resolution times.
+// Without them, timing information will be limited to millisecond resolution and not very useful.
+if (WTF.hasHighResolutionTimes) {
+  // Current browser/app has high-resolution times.
+}
+
+// A high-resolution, timebase-relative time (if available).
+// Can be used to grab relative times in fractional milliseconds (e.g. 5.2ms).
+var startTime = WTF.now();
+var elapsedMs = WTF.now() - startTime;
+
+// Correlate times with the wall time (Date.now).
+// Because WTF.now() may be high-resolution this could be much more precise than Date.now().
+var wallTime = WTF.timebase() + WTF.now();</pre>
+
+  <h2>Ignoring Time</h2>
+  <p>Sometimes there is expensive preparation required for tracing that is not usually present in release builds, such as capturing remote assets to embed in the trace. To remove this time from being counted towards real events you can use the special tracing scope to mark the region.</p>
+
+  <pre class="prettyprint linenums">
+function myFunction() {
+  // Do real work...
+  if (WTF.PRESENT) {
+    // Need to capture server resource here!
+    var scope = WTF.trace.enterTracingScope();
+    // Do embedding/etc.
+    WTF.trace.leaveScope(scope);
+  }
+  // Continue doing real work...
+};</pre>
+
+  <h2>Ignoring DOM Events</h2>
+  <p>To prevent events from debug UI from appearing in your code use one of the ignore APIs. Note that your debug code will still take time and can skew your results, but if trying to analyze program structure ignoring it can make things much cleaner.</p>
+
+  <pre class="prettyprint linenums">
+// Ignore specific event handlers:
+myLink.onclick = WTF.trace.ignoreListener(function(e) {
+  // This callback will not be auto-traced.
+});
+myLink.addEventListener('click', WTF.trace.ignoreListener(function(e) {
+  // Also ignored.
+}), false);
+
+// Ignore all DOM events from this tree of elements:
+var myComplexElement = document.createElement('div');
+WTF.trace.ignoreDomTree(myComplexElement);
+</pre>
+
+  <h2>Zones</h2>
+  <p>All recorded events are attributed to a 'zone'. You can think of zones as threads or processes, though they need not line up. By default the main Javascript thread is assigned a zone (known as the 'default zone'), and additional zones may be created by the framework for things such as Web Workers, the browser internal state, etc. Each zone will appear as a separate track in the UI.</p>
+  <p>You can create your own zones and attribute events to them to enable tracing across process or server boundaries, isolating work groups, etc. Zones are disambiguated by name and a unique URI, allowing you to either merge zones or split zones from different trace contexts.</p>
+
+  <pre class="prettyprint linenums">
+// Create a new zone, on startup or wherever.
+var customZone = WTF.trace.createZone('zone name', WTF.data.ZoneType.SCRIPT,
+    'http://some/unique/URI');
+
+// By default, all events go into the default zone.
+WTF.trace.timeStamp('default zone event 1');
+WTF.trace.timeStamp('default zone event 2');
+
+// Set the active zone and record some events into it.
+WTF.trace.pushZone(customZone);
+WTF.trace.timeStamp('custom zone event 1');
+WTF.trace.timeStamp('custom zone event 2');
+
+// Restore back to the default zone.
+WTF.trace.popZone();
+WTF.trace.timeStamp('default zone event 3');
+WTF.trace.timeStamp('default zone event 4');
+
+// Delete a zone when no longer required.
+WTF.trace.deleteZone(customZone);</pre>
+</section>
+
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p>Copyright 2013 Google, Inc.</p>
+        <p>All code released under a <a href="https://github.com/google/tracing-framework/blob/master/LICENSE">BSD-style license</a>.</p>
+        <p>Page built with <a href="https://github.com/twitter/bootstrap">Twitter Bootstrap</a>.</p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/google/tracing-framework/">GitHub project</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/issues?state=open">Issues</a></li>
+          <li class="muted">&middot;</li>
+          <li><a href="https://github.com/google/tracing-framework/commits/master">Changes</a></li>
+        </ul>
+      </div>
+    </footer>
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/prettify.js"></script>
+    <script src="bootstrap/js/application.js"></script>
+  </body>
+</html>
