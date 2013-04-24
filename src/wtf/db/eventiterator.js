@@ -501,6 +501,43 @@ wtf.db.EventIterator.prototype.getOwnDuration = function() {
 
 
 /**
+ * Gets a long string representing the event and arguments.
+ * For example, {@code my#event(123, 'hello')}.
+ * If specified argument names will be included in the string, such as:
+ * {@code my#event(foo=123, bar='hello')}.
+ * @param {boolean=} opt_argumentNames Whether to include argument names.
+ * @return {string} Long string form of the event.
+ */
+wtf.db.EventIterator.prototype.getLongString = function(opt_argumentNames) {
+  var type = this.getType();
+  var s = [type.getName(), '('];
+  var argVars = type.getArguments();
+  var argData = this.getArguments();
+  for (var n = 0; n < argVars.length; n++) {
+    var argVar = argVars[n];
+    if (n) {
+      s.push(', ');
+    }
+    if (opt_argumentNames) {
+      s.push(argVar.name);
+      s.push('=');
+    }
+    var value = argData.get(argVar.name);
+    if (goog.isString(value)) {
+      s.push('\'');
+      s.push(value);
+      s.push('\'');
+    } else {
+      // TODO(benvanik): better handling of objects/other types?
+      s.push(value);
+    }
+  }
+  s.push(')');
+  return s.join('');
+};
+
+
+/**
  * Gets an informative string about the current event.
  * @param {wtf.db.Unit=} opt_units Units to display times in.
  * @return {string?} Info string.
@@ -649,6 +686,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.EventIterator.prototype, 'getOwnDuration',
     wtf.db.EventIterator.prototype.getOwnDuration);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getLongString',
+    wtf.db.EventIterator.prototype.getLongString);
 goog.exportProperty(
     wtf.db.EventIterator.prototype, 'getInfoString',
     wtf.db.EventIterator.prototype.getInfoString);

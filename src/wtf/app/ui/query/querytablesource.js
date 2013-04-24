@@ -101,14 +101,10 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
     ctx.fillStyle = 'black';
 
     it.seek(n);
-    if (it.isScope()) {
+    if (it.isScope() || it.isInstance()) {
       columnTime = it.getTime();
-      columnTitle = it.getName();
-    } else if (it.isInstance()) {
-      columnTime = it.getTime();
-      columnTitle = it.getName();
+      columnTitle = it.getLongString(true);
     }
-    // TODO(benvanik): arguments/etc?
 
     var x = gutterWidth + charWidth;
     if (columnTime >= 0) {
