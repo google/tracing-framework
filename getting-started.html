@@ -13,6 +13,8 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <script src="resources/animation.js"></script>
+    <script src="resources/anim_enable_disable.js"></script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -136,7 +138,14 @@ $ wtf-dump myapp-[date].wtf-trace # or open in the UI</pre>
   <h2><a id="tracing-with-extension"></a>Using the Chrome Extension</h2>
   <p>The easiest way to put the framework on the page is via the Chrome extension. It gives you a toggle button for injection and makes it easy to enable and disable the framework when developing and testing. The extension also provides additional support for advanced features such as browser internal events like garbage collections.</p>
 
-  <p>TODO: gif of enable, page reload, etc</p>
+  <p>You can toggle the injection via the page action popup, as well as show the UI at any time. Note that your page will reload when you enable or disable the injection, so it's handy to have any state you need to preserve stored in the URL to save time.</p>
+
+  <p>
+    <animation src="resources/anim_enable_disable"></animation>
+    <p class="text-center">
+      <small>Screenshot showing enabling and disabling the library.</small>
+    </p>
+  </p>
 
   <h2><a id="tracing-manually"></a>Manually Embedding</h2>
   <p>When running where a browser extension is not available, such as Internet Explorer or on mobile devices, it's possible to manually embed the library on a page using some <code>&lt;script&gt;</code> tags. This is also useful when running automated tests that cannot depend on user interaction.</p>

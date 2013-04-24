@@ -26,6 +26,9 @@
     // make code pretty
     window.prettyPrint && prettyPrint()
 
+    // animate images
+    window.prepareAnimations && prepareAnimations()
+
     // add-ons
     $('.add-on :checkbox').on('click', function () {
       var $this = $(this)
