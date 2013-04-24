@@ -156,7 +156,8 @@ wtf.db.QueryResult.prototype.dump = function(format) {
 wtf.db.QueryResult.prototype.dumpCsv_ = function() {
   var csv = [];
 
-  // // If the results are primitives use the simple output.
+  // TODO(benvanik): add back in support for different result types. Currently
+  //     we only have events, so it's much easier.
   // if (typeof rows[0] == 'boolean' ||
   //     typeof rows[0] == 'number' ||
   //     typeof rows[0] == 'string') {
@@ -170,76 +171,23 @@ wtf.db.QueryResult.prototype.dumpCsv_ = function() {
   //     }
   //     csv.push(value);
   //   }
-  // } else if (rows[0] instanceof wgxpath.Attr) {
-  //   csv.push('Time,Parent,Key,Value');
-  //   for (var n = 0; n < rows.length; n++) {
-  //     var value = rows[n];
-  //     var parentNode = value.getParentNode();
-  //     var time;
-  //     var parentName;
-  //     if (parentNode instanceof wtf.analysis.Scope) {
-  //       time = parentNode.getEnterTime();
-  //     } else if (parentNode instanceof wtf.analysis.Event) {
-  //       time = parentNode.getTime();
-  //     } else {
-  //       time = 0;
-  //     }
-  //     var attrkey = value.getNodeName();
-  //     var attrvalue = value.getNodeValue();
-  //     csv.push([time, parentNode.toString(), attrkey, attrvalue].join(','));
-  //   }
-  // } else {
-  //   csv.push('Time,Value,"Total Time","Own Time",Depth,Arguments');
-  //   for (var n = 0; n < rows.length; n++) {
-  //     var value = rows[n];
-  //     var line;
-  //     if (typeof value == 'string') {
-  //       line = [0, '"' + value.replace(/"/g, '""') + '"'];
-  //     } else if (typeof value == 'boolean' || typeof value == 'number') {
-  //       line = [0, value];
-  //     } else if (value) {
-  //       var parentNode = value.getParentNode();
-  //       if (value instanceof wtf.analysis.Scope) {
-  //         var args = value.getData();
-  //         args = args ? '"' + goog.global.JSON.stringify(
-  //             args).replace(/"/g, '""') + '"' : '';
-  //         line = [
-  //           value.getEnterTime(), value.toString(),
-  //           value.getTotalDuration(), value.getOwnDuration(),
-  //           value.getDepth(),
-  //           args
-  //         ];
-  //       } else if (value instanceof wtf.analysis.Event) {
-  //         var args = value.getData();
-  //         args = args ? '"' + goog.global.JSON.stringify(
-  //             args).replace(/"/g, '""') + '"' : '';
-  //         line = [
-  //           value.getTime(), value.toString(),
-  //           0, 0,
-  //           parentNode ? parentNode.getDepth() : 0,
-  //           args
-  //         ];
-  //       } else if (value instanceof wgxpath.Attr) {
-  //         var time;
-  //         if (parentNode instanceof wtf.analysis.Scope) {
-  //           time = parentNode.getEnterTime();
-  //         } else if (parentNode instanceof wtf.analysis.Event) {
-  //           time = parentNode.getTime();
-  //         } else {
-  //           time = 0;
-  //         }
-  //         var attrkey = value.getNodeName();
-  //         var attrvalue = value.getNodeValue();
-  //         line = [time, value.toString()];
-  //       } else if (value) {
-  //         line = [0, value.toString()];
-  //       }
-  //     }
-  //     if (line) {
-  //       csv.push(line.join(','));
-  //     }
-  //   }
   // }
+
+  var it = /** @type {!wtf.db.EventIterator} */ (this.value_);
+  csv.push('Time,Value,"Total Time","Own Time",Depth,Arguments');
+  it.seek(0);
+  for (; !it.done(); it.next()) {
+    var line = [
+      it.getTime(),
+      it.getName(),
+      it.isScope() ? it.getTotalDuration() : '',
+      it.isScope() ? it.getOwnDuration() : '',
+      it.getDepth(),
+      it.getArgumentString(true)
+    ];
+    csv.push(line.join(','));
+  }
+  it.seek(0);
 
   return csv.join('\r\n');
 };

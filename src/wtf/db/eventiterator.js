@@ -501,16 +501,14 @@ wtf.db.EventIterator.prototype.getOwnDuration = function() {
 
 
 /**
- * Gets a long string representing the event and arguments.
- * For example, {@code my#event(123, 'hello')}.
- * If specified argument names will be included in the string, such as:
- * {@code my#event(foo=123, bar='hello')}.
+ * Pushes argument data into the given array for later joining.
+ * @param {!Array} s Target string array.
+ * @param {!wtf.db.EventType} type Event type.
  * @param {boolean=} opt_argumentNames Whether to include argument names.
- * @return {string} Long string form of the event.
+ * @private
  */
-wtf.db.EventIterator.prototype.getLongString = function(opt_argumentNames) {
-  var type = this.getType();
-  var s = [type.getName(), '('];
+wtf.db.EventIterator.prototype.buildArgumentString_ = function(
+    s, type, opt_argumentNames) {
   var argVars = type.getArguments();
   var argData = this.getArguments();
   for (var n = 0; n < argVars.length; n++) {
@@ -532,6 +530,37 @@ wtf.db.EventIterator.prototype.getLongString = function(opt_argumentNames) {
       s.push(value);
     }
   }
+};
+
+
+/**
+ * Gets a string representing the event arguments.
+ * For example, {@code 123, 'hello'}.
+ * If specified argument names will be included in the string, such as:
+ * {@code foo=123, bar='hello'}.
+ * @param {boolean=} opt_argumentNames Whether to include argument names.
+ * @return {string} Long string form of the event arguments.
+ */
+wtf.db.EventIterator.prototype.getArgumentString = function(opt_argumentNames) {
+  var type = this.getType();
+  var s = [];
+  this.buildArgumentString_(s, type, opt_argumentNames);
+  return s.join('');
+};
+
+
+/**
+ * Gets a long string representing the event and arguments.
+ * For example, {@code my#event(123, 'hello')}.
+ * If specified argument names will be included in the string, such as:
+ * {@code my#event(foo=123, bar='hello')}.
+ * @param {boolean=} opt_argumentNames Whether to include argument names.
+ * @return {string} Long string form of the event.
+ */
+wtf.db.EventIterator.prototype.getLongString = function(opt_argumentNames) {
+  var type = this.getType();
+  var s = [type.getName(), '('];
+  this.buildArgumentString_(s, type, opt_argumentNames);
   s.push(')');
   return s.join('');
 };
