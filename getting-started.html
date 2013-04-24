@@ -221,12 +221,31 @@ wtf.trace.snapshot();</pre>
   <p>Once the library is included and initialized as above one must record and save off traces. When using the on-screen HUD such as when added via the Chrome Extension this is as easy as clicking a button, but otherwise you must control the recording and saving yourself. Note that even with the HUD enabled it's still possible to use the programmatic control as described below.</p>
 
   <h2>Capturing with the HUD</h2>
-  <p>The on-screen HUD provides several options for saving, resetting, and showing trace snapshots.</p>
-
-  <p>TODO: grid showing: resetting, saving, showing UI</p>
+  <p>The on-screen HUD provides several options for saving, resetting, and showing trace snapshots. You can easily reset the current data, save a snapshot to disk, or open a new UI with the data loaded with either buttons or hotkeys.</p>
 
   <p><span class="label label-info">TIP:</span> hold shift while clicking 'Show in UI' to open the trace in a new window.</p>
   <p><span class="label label-info">TIP:</span> see the tooltips on the buttons for keyboard keys that perform the action.</p>
+
+  <p>
+    <animation class="center img-polaroid" src="resources/anim_hud_tooltips"></animation>
+    <p class="text-center">
+      <small>Screenshot showing the on-screen HUD buttons.</small>
+    </p>
+  </p>
+
+  <p>
+    <animation src="resources/anim_save_trace"></animation>
+    <p class="text-center">
+      <small>Screenshot showing saving a trace file for later use.</small>
+    </p>
+  </p>
+
+  <p>
+    <animation src="resources/anim_show_trace" repeatdelay="3"></animation>
+    <p class="text-center">
+      <small>Screenshot showing how to snapshot and open the UI.</small>
+    </p>
+  </p>
 
   <h2>Capturing with Code</h2>
   <p>Programmatically capturing traces can be useful when trying to gather data from specific timeranges, reducing the interference of the framework by not showing the HUD, or trying to automate trace capture.</p>
@@ -283,18 +302,45 @@ wtf.trace.snapshot();</pre>
   <h2>Capture to UI</h2>
   <p>The easiest way to view a trace is to open it directly from the on-screen HUD. The 'Show in UI' button will capture a new trace and pop up a new UI window with the trace loaded, ready for inspection. If you wish to save this trace for later comparison or sharing you can use the 'Save' button.</p>
 
-  <p>TODO: gif of show in UI</p>
-
   <h2>Opening the UI</h2>
   <p>You can always use the hosted version available on Github:</p>
   <p><a href="http://google.github.io/tracing-framework/bin/app/maindisplay.html" target="_blank">http://google.github.io/tracing-framework/bin/app/maindisplay.html</a></p>
   <p>If using the Chrome extension you can open the UI quickly:</p>
-  <p>TODO: gif of show ui popup</p>
+
+  <p>
+    <animation src="resources/anim_show_ui"></animation>
+    <p class="text-center">
+      <small>Screenshot showing how to open the UI at any time.</small>
+    </p>
+  </p>
 
   <h2>Loading Traces</h2>
   <p>If you've saved a trace and have a <code>.wtf-trace</code> file there are several ways to load it.</p>
 
-  <p>TODO: grid gifs of drag/drop, open button, etc</p>
+  <p>
+    <ul>
+      <li>Use the 'Open' button on the welcome screen.</li>
+      <li>Drag/drop a file anywhere in the UI.</li>
+      <li>Drag/drop a file from the Chrome downloads bar.</li>
+      <li>Use the <code>wtf</code> omnibar keyword in Chrome to open URLs directly.</li>
+    </ul>
+  </p>
+
+  <p><span class="label label-info">TIP:</span> Drag/drop new files into the UI to update with the latest data.</p>
+
+  <p>
+    <animation src="resources/anim_drag_open" repeatdelay="4"></animation>
+    <p class="text-center">
+      <small>Screenshot showing drag/drop loading of a file.</small>
+    </p>
+  </p>
+
+  <p>
+    <animation src="resources/anim_omnibox_open" repeatdelay="4"></animation>
+    <p class="text-center">
+      <small>Screenshot showing opening a URL from the omnibox.</small>
+    </p>
+  </p>
 
   <h2>Sharing Traces</h2>
   <p>It's possible to use the Github-hosted UI page to easily share traces with people who may not have the tracing framework extension installed. The simplest is to give them the URL to the UI, <a href="http://google.github.io/tracing-framework/bin/app/maindisplay.html" target="_blank">http://google.github.io/tracing-framework/bin/app/maindisplay.html</a>, and tell them to open the file you've shared.</p>

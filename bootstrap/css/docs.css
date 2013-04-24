@@ -1030,3 +1030,11 @@ form.bs-docs-example {
     padding-bottom: 20px;
   }
 }
+
+
+
+.center {
+  float: none;
+  margin-left: auto;
+  margin-right: auto;
+}
