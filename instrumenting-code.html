@@ -104,7 +104,23 @@
   <p>The tracing framework provides some useful <a href="./event-providers.html">events</a> without any work on your part, but that's only scratching the surface of what's possible with the tool and what data your app has yet to reveal. Though it's certainly useful to see the ways your application is interacting with the browser and vice versa, often there is much more work occuring within your call trees than not.</p>
   <p>By adding some simple, easily-removable, (usually) well-isolated instrumentation calls to your application code you can quickly enhance your traces to be more useful both for understanding your program flow and identifying where time is going. The process if instrumenting is currently an iterative, trial-and-error affair but often just a few hours will yield 90% of the available data and get your application in a good state.</p>
   <p>The tracing framework is designed to be very low overhead when disabled and the calls can be stripped by most Javascript optimization systems (such as the <a href="https://developers.google.com/closure/compiler/" target="_blank">Google Closure Compiler</a> and <a href="https://github.com/mishoo/UglifyJS2" target="_blank">UglifyJS 2</a>). Because of this it's encouraged that the instrumentation is checked into source control to enable all developers to run traces on a regular basis, enable automated performance regression tools, and keep your code healthy.</p>
-  <p>TODO: show a trace without manual, with manual</p>
+
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_without_instrumentation.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot of uninstrumented code. Boring.</small>
+    </p>
+  </p>
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_with_instrumentation.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot of fully instrumented code. Awesome!</small>
+    </p>
+  </p>
 </section>
 
 
@@ -164,12 +180,26 @@ WTF.trace.timeStamp('hello!');</pre>
   <p>Events in the tracing framework come in two types: scopes and instances. Instance events denote that something occurred, but not how long it took. Scope events denote a time range when something was occuring and can nest within each other.</p>
 
   <h2>Instance Events</h2>
-  <p>TODO: shot of instance events</p>
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_instance_event.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot showing an instance event and its tooltip.</small>
+    </p>
+  </p>
   <p>It's often useful to record the occurrence of an event or some data for something that does not represent a time span. Instance events allow this in an efficient way and make it easy to filter and query trace files for the values.</p>
   <p>Instances are recorded by the built-in <code>WTF.trace.timeStamp</code> API or custom instance event types. Prefer using the custom types to reduce tracing overhead.</p>
 
   <h2>Scope Events</h2>
-  <p>TODO: shot of scope events</p>
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_scope_event.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot showing scope events and ones tooltip.</small>
+    </p>
+  </p>
   <p>In most traces scopes are equivalent to function calls: a scope for function X starts when X is called and ends when X returns. They are the most useful type of events and the ones you'll see most often. The time duration of scopes is marked with an enter and a leave. Scopes can be nested with other scopes and instance events.</p>
   <p>Scopes are recorded by either the built-in <code>WTF.trace.enterScope</code> API, custom scope event types, or automatic instrumentation of functions and types. Prefer using the custom types or automatic instrumentation to reduce tracing overhead.</p>
   <p><span class="label label-important">Important</span> <strong>Scopes cannot overlap.</strong> You cannot leave a parent scope without first leaving a nested child scope. Bad things will happen.</p>
@@ -351,11 +381,34 @@ my.Type = WTF.trace.instrumentType(
   </div>
   <p>Traces of complex applications can sometimes get difficult to navigate around, especially when looking at a trace file that was saved off days or weeks earlier. By annotating your traces with time ranges and markers it makes it much easier to find the information you're looking for. For example, 'were there slow frames while I was animating?', 'did I perform the same transition twice when I only needed once?', etc.</p>
 
+  <h2>Frames</h2>
+  <p>The tracing framework will automatically detect the use of <code>requestAnimationFrame</code> and add a frame navigation bar to your traces as well as detecting other useful statistics. This makes it really easy to find where frames are running too long or being skipped. If you're running animations, be sure to use <code>requestAnimationFrame</code> for the best performance and these tools!</p>
+
+  <p><span class="label label-info">TIP:</span> z and x move between frames.</p>
+  <p><span class="label label-info">TIP:</span> hold shift when using z and x to also include time between frames.</p>
+  <p><span class="label label-info">TIP:</span> ctrl-g lets you quickly jump to a specific frame number.</p>
+
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_frames.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot showing the frame bar.</small>
+    </p>
+  </p>
+
   <h2>Time Ranges</h2>
   <p><code>WTF.trace.beginTimeRange(string name, any opt_value) -> TimeRange</code></p>
   <p><code>WTF.trace.endTimeRange(TimeRange timeRange)</code></p>
 
-  <p>TODO: screenshot of time ranges</p>
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_timeranges.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot showing many time ranges and a tooltip.</small>
+    </p>
+  </p>
 
   <p>It's often useful to see what and how many async operations such as animations or deeply nested network operations are occurring at any given time in a trace. To enable this navigation aid there is a simple API for denoting an async time range. This is not intended to track every detail or stage of an async operation - instead see flows - but makes it easier to help answer questions such as 'when was I animating?' or 'how many updates were processing?' when looking at a trace file.</p>
   <p>A limited number of active timers will be displayed in the UI. Do not abuse this feature by adding timers for everything (like network requests). Prefer to use flows to track complex async operations.</p>
@@ -374,7 +427,14 @@ my.AnimationType.endJob = function(job) {
   <h2>Marks</h2>
   <p><code>WTF.trace.mark(string name)</code></p>
 
-  <p>TODO: screenshot of timeline marks</p>
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_marks.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot showing some marked regions.</small>
+    </p>
+  </p>
 
   <p>The global timeline can be 'marked' with certain blocks denoting large chunks of time. You can think of these as bookmarks or a table of contents for the trace. This is mostly useful when tracking things like automated performance tests that run through various stages or other global state transitions like intro->menu->game.</p>
   <p>There can be only one active mark at a time and any new mark will clear existing ones. Try not to use this too frequently - once every second or so at max, but ideally much less frequently - as the usefulness to navigation it provides is reduced when there are too many.</p>
