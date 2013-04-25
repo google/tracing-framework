@@ -411,7 +411,7 @@ my.Type = WTF.trace.instrumentType(
   </p>
 
   <p>It's often useful to see what and how many async operations such as animations or deeply nested network operations are occurring at any given time in a trace. To enable this navigation aid there is a simple API for denoting an async time range. This is not intended to track every detail or stage of an async operation - instead see flows - but makes it easier to help answer questions such as 'when was I animating?' or 'how many updates were processing?' when looking at a trace file.</p>
-  <p>A limited number of active timers will be displayed in the UI. Do not abuse this feature by adding timers for everything (like network requests). Prefer to use flows to track complex async operations.</p>
+  <p>A limited number of active time ranges will be displayed in the UI. Do not abuse this feature by adding time ranges for everything (like network requests). Prefer to use flows to track complex async operations.</p>
 
   <pre class="prettyprint linenums">
 // Begin tracking the async time range at the start:

@@ -13,6 +13,7 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <script src="resources/all-animations.js"></script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -114,19 +115,20 @@
       <div class="marketing">
 
         <h1></h1>
-        <p>TODO: gif showing use</p>
+        <p>
+          <animation class="center" src="resources/anim_index" speed="2" repeatdelay="5"></animation>
+        </p>
 
         <h1></h1>
-        <p class="marketing-byline">Example traces.</p>
         <div class="row-fluid">
           <div class="span3"></div>
           <div class="span3">
-            <img class="marketing-img" src="img/screenshots/home-example-1.png">
-            <p>Example: WebGL game</p>
+            <img class="marketing-img img-polaroid" src="img/screenshots/home-example-1.png">
+            <p>Example trace: WebGL game</p>
           </div>
           <div class="span3">
-            <img class="marketing-img" src="img/screenshots/home-example-2.png">
-            <p>Example: node.js game server</p>
+            <img class="marketing-img img-polaroid" src="img/screenshots/home-example-2.png">
+            <p>Example trace: node.js game server</p>
           </div>
           <div class="span3"></div>
         </div>
@@ -137,17 +139,17 @@
         <div class="row-fluid">
           <div class="span4">
             <img class="marketing-img" src="img/screenshots/home-1.png">
-            <h2>Rich Tracing.</h2>
+            <h2>Rich Tracing</h2>
             <p>Choose what methods to trace and add custom data to each event. Track asynchronous flows and actions.</p>
           </div>
           <div class="span4">
             <img class="marketing-img" src="img/screenshots/home-2.png">
-            <h2>Slick Visualization.</h2>
+            <h2>Slick Visualization</h2>
             <p>Smoothly dig through millions of events in an awesome UI. See patterns and understand your code like never before.</p>
           </div>
           <div class="span4">
             <img class="marketing-img" src="img/screenshots/home-3.png">
-            <h2>Extensible Framework.</h2>
+            <h2>Extensible Framework</h2>
             <p>Write <a href="./extending.html#trace-extensions">extensions</a> to capture more data or visualize it in new ways. Write small <a href="./extending.html#node-scripts">node.js scripts</a> to process traces and pull out useful data.</p>
           </div>
         </div>
@@ -157,17 +159,17 @@
         <div class="row-fluid">
           <div class="span4">
             <img class="marketing-img" src="img/screenshots/home-1.png">
-            <h2>Canvas &amp; WebGL.</h2>
+            <h2>Canvas &amp; WebGL</h2>
             <p>Capture and replay HTML5 &lt;canvas&gt; and WebGL content. Write tools to analyze and test your drawing.</p>
           </div>
           <div class="span4">
             <img class="marketing-img" src="img/screenshots/home-2.png">
-            <h2>Track Memory Usage.</h2>
+            <h2>Track Memory Usage</h2>
             <p>Find every byte allocated by every function via <a href="./advanced-features.html#heap-tracking">heap tracking</a>. See not just the what but when and who of every allocation.</p>
           </div>
           <div class="span4">
             <img class="marketing-img" src="img/screenshots/home-3.png">
-            <h2>Remotely Trace Android.</h2>
+            <h2>Remotely Trace Android</h2>
             <p>Grab captures and analyze pages running on Chrome for Android using a simple <a href="./advanced-features.html#remote-control">remote controller</a>.</p>
           </div>
         </div>
