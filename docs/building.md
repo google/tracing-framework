@@ -2,24 +2,26 @@
 
 ## Setup
 
-    # You may need to do this on Linux
-    umask 0022
-    # Clone the project
-    git clone git@github.com:google/tracing-framework.git
-    cd tracing-framework/
-    # Run one-time setup of dependencies
-    ./scripts/setup.sh # or setup.bat on Windows
+```bash
+# You may need to do this on Linux
+umask 0022
+# Clone the project
+git clone git@github.com:google/tracing-framework.git
+cd tracing-framework/
+# Run one-time setup of dependencies
+./scripts/setup.sh # or setup.bat on Windows
 
-    # Source the utility script to get the nice bash aliases
-    # You'll want to do this every time you start up a new prompt
-    source wtfrc
-    # Start a dev server on port 8080
-    anvil serve -p 8080 &
-    # Do a full build
-    anvil build :debug :release
+# Source the utility script to get the nice bash aliases
+# You'll want to do this every time you start up a new prompt
+source wtfrc
+# Start a dev server on port 8080
+anvil serve -p 8080 &
+# Do a full build
+anvil build :debug :release
 
-    # When updating goog.require/provide or soy/gss you must do:
-    anvil build :fast
+# When updating goog.require/provide or soy/gss you must do:
+anvil build :fast
+```
 
 ## Building the Chrome Extension
 
@@ -32,10 +34,12 @@ tried to run it uncompiled in a page with its own content.
 If you want to do debugging/use the extension unpacked on a local machine,
 deploy it to a local directory:
 
-    # Build a release build and get all of the files in a folder
-    anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy
-    # Alternatively, use an alias:
-    deployext
+```bash
+# Build a release build and get all of the files in a folder
+anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy
+# Alternatively, use an alias:
+deployext
+```
 
 Then, use 'Load Unpacked Extension' from `chrome://extensions`. Any time you
 update the code you'll have to rerun this step and then reload the extension.
@@ -44,9 +48,11 @@ update the code you'll have to rerun this step and then reload the extension.
 
 The Web Store requires a zip file:
 
-    # Build release and deploy a zip
-    anvil deploy -o build-bin/ :injector
-    # Load build-bin/wtf-injector-chrome/wtf-injector-chrome.zip as an unpacked extension in Chrome or upload to the CWS
+```bash
+# Build release and deploy a zip
+anvil deploy -o build-bin/ :injector
+# Load build-bin/wtf-injector-chrome/wtf-injector-chrome.zip as an unpacked extension in Chrome or upload to the CWS
+```
 
 ## Platform Notes
 

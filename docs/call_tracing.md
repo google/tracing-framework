@@ -65,7 +65,7 @@ should be visual only (pretty printing, naming, etc).
 
 ## Install the tracing-framework Tools
 
-```
+```bash
 npm install -g tracing-framework
 ```
 
@@ -78,7 +78,7 @@ started is by using the `wtf-instrument` tool included in the npm package
 This tool will take an input file and produce an instrumented version that can
 be used on a page.
 
-```
+```bash
 # Generate the instrumented js file.
 wtf-instrument myapp.js myapp.instrumented.js
 ```
@@ -105,7 +105,7 @@ Flow:
 
 ### Launching the Proxy Server
 
-```
+```bash
 # Launch the proxy on the default ports.
 # Leave this running and watch the output to make sure it's working.
 wtf-instrument --server
@@ -154,14 +154,14 @@ allocates by enabling a special Chrome flag and adding a flag to your
 
 First, launch a Chrome with natives enabled.
 
-```
+```bash
 # WARNING: THIS IS TOTALLY UNSAFE! DO NOT BROWSE THE WEB LIKE THIS!
 chrome --remote-debugging-port=9222 --disable-web-security --js-flags=--allow-natives-syntax
 ```
 
 When running `wtf-instrument` add the `--track-heap` argument:
 
-```
+```bash
 wtf-instrument --track-heap some.js
 # or
 wtf-instrument --server --track-heap

@@ -8,15 +8,19 @@ browser-based tests.
 
 Ensure your deps are up to date (only required when changing goog.requires):
 
-    anvil build :deps
+```bash
+anvil build :deps
+```
 
 To run from the command-line, use the `run-tests.sh` script in the root:
 
-    # Run all tests
-    ./scripts/run-tests.sh
+```bash
+# Run all tests
+./scripts/run-tests.sh
 
-    # Run just wtf.io tests
-    ./scripts/run-tests.sh wtf.io
+# Run just wtf.io tests
+./scripts/run-tests.sh wtf.io
+```
 
 To run the tests in the browser, navigate to the main test runner page:
 

@@ -25,19 +25,23 @@ See [building](https://github.com/google/tracing-framework/blob/master/docs/buil
 
 Just want the extension as fast as possible?
 
-    umask 0022
-    git clone git@github.com:google/tracing-framework.git
-    cd tracing-framework/
-    ./scripts/setup.sh # or setup.bat on Windows
-    source wtfrc && deployext
-    # At chrome://extensions load unpacked extension from
-    # build-bin/wtf-injector-chrome
+```bash
+umask 0022
+git clone git@github.com:google/tracing-framework.git
+cd tracing-framework/
+./scripts/setup.sh # or setup.bat on Windows
+source wtfrc && deployext
+# At chrome://extensions load unpacked extension from
+# build-bin/wtf-injector-chrome
+```
 
 If you pull new changes, just redeploy:
 
-    git pull && git submodule update
-    deployext
-    # Reload from chrome://extensions
+```bash
+git pull && git submodule update
+deployext
+# Reload from chrome://extensions
+```
 
 For more information and other build options, see [building](https://github.com/google/tracing-framework/blob/master/docs/building.md).
 

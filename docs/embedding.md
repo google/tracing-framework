@@ -60,11 +60,15 @@ NOTE: this is experimental and not yet ready for use!
 
 Obtain a copy of `wtf_trace_node_release.js`:
 
-    # Build the release trace library js
-    anvil build :wtf_trace_node_release
-    # Copy the build-out/wtf_trace_node_release.js to wherever you want
+```bash
+# Build the release trace library js
+anvil build :wtf_trace_node_release
+# Copy the build-out/wtf_trace_node_release.js to wherever you want
+```
 
 Run your app with the runner script:
 
-    node ./bin/trace-runner.js myscript.js arg1 arg2 ...
-    # See node.wtf-trace for the result
+```bash
+node ./bin/trace-runner.js myscript.js arg1 arg2 ...
+# See node.wtf-trace for the result
+```

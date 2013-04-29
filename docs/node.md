@@ -4,14 +4,16 @@
 
 ### Quickstart
 
-    $ npm install tracing-framework
-    $ node
-    > var wtf = require('tracing-framework');
-    > wtf.trace.node.start();
-    > var scope = wtf.trace.enterScope('hello!');
-    > wtf.trace.leaveScope(scope);
-    > process.exit()
-    $ wtf-dump node-[time].wtf-trace
+```bash
+$ npm install tracing-framework
+$ node
+> var wtf = require('tracing-framework');
+> wtf.trace.node.start();
+> var scope = wtf.trace.enterScope('hello!');
+> wtf.trace.leaveScope(scope);
+> process.exit()
+$ wtf-dump node-[time].wtf-trace
+```
 
 ### Instrumenting
 
@@ -21,8 +23,10 @@ See [api](api.md) for the `wtf.trace` API.
 
 Automatic injection from the shell:
 
-    # Start a snapshot-on-exit trace:
-    wtf-trace myscript.js [args]
+```bash
+# Start a snapshot-on-exit trace:
+wtf-trace myscript.js [args]
+```
 
 Simple snapshot-on-exit:
 
@@ -52,11 +56,13 @@ Manual control:
 
 ### Quickstart
 
-    $ npm install tracing-framework
-    $ node
-    > var wtf = require('tracing-framework');
-    > var db = wtf.db.load('test.wtf-trace');
-    > db.query('something');
+```bash
+$ npm install tracing-framework
+$ node
+> var wtf = require('tracing-framework');
+> var db = wtf.db.load('test.wtf-trace');
+> db.query('something');
+```
 
 ### Using the Tool Runner
 

@@ -18,7 +18,9 @@ Older Chrome releases are unsupported.
 Check the documentation for [running Chromium with flags](http://www.chromium.org/developers/how-tos/run-chromium-with-flags).
 Make sure all previous instances of Chromium have been closed.
 
-    ~/chrome-linux/chrome --remote-debugging-port=9222
+```bash
+~/chrome-linux/chrome --remote-debugging-port=9222
+```
 
 ### Enable the Feature in WTF
 

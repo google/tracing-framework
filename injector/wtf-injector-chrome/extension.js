@@ -376,7 +376,7 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
 
   if (options.showPageAction) {
     // Determine UI title/icon.
-    var title = 'Toggle Web Tracing Framework on this page';
+    var title = '';// 'Toggle Web Tracing Framework on this page';
     var icon;
     switch (status) {
       case PageStatus.NONE:
