@@ -182,6 +182,20 @@ WTF.trace.timeStamp('hello!');</pre>
   </div>
   <p>Events in the tracing framework come in two types: scopes and instances. Instance events denote that something occurred, but not how long it took. Scope events denote a time range when something was occuring and can nest within each other.</p>
 
+  <p><a name="event-naming"></a>All events are defined by a name. These names are literal-like, in that they cannot contain spaces or many other special characters. Generally, if a name can be used as a variable name in Javascript it can be used as an event name in WTF. In addition to the normal allowed characters, however, there are a few additional supported to enable JSDoc-like names. This allows tools and the UI to handle things like classes and and callbacks.</p>
+  <pre class="prettyprint linenums">
+// Valid names:
+'someEvent'
+'my.namespaces.someEvent'
+'my.Type#someEvent'
+'callingFunction:callback'
+
+// Invalid names:
+'things with strings!'
+'/slashes/are/bad\'
+'avoid|pipes|too'
+</pre>
+
   <h2>Instance Events</h2>
   <p>
     <div class="text-center">
@@ -268,13 +282,93 @@ WTF.trace.leaveScope(scope);</pre>
   <p><code>WTF.trace.events.createInstance(string signature, opt_flags)</code></p>
   <p><code>WTF.trace.events.createScope(string signature, opt_flags)</code></p>
 
-  <p>Creating, caching, using, examples</p>
+  <p>Custom events are defined by a function signature that can be a simple string such as <code>'myEvent'</code> or a JSDoc name like <code>'my.namespace.Type#methodName'</code>. Optionally it can include typed parameters like <code>'myEvent(uint32 a, ascii b)'</code>.</p>
+
+  <p>You create the event functions with a call to <code>createInstance</code> or <code>createScope</code>, depending on the type of event you want, and then cache the returned function for later use. Note that it can be expensive to create the event functions, so only do it once during startup.</p>
+
+  <p>Once you have the cached function, you call it as it was defined by the signature you provided. For example, a simple signature like <code>'myEvent'</code> takes no arguments, so the function takes none either.</p>
+
+  <p>When tracing is disabled the creation functions will always return a no-op function. This lets you continue to make calls on the events without worrying about the calls breaking when the framework is not active.</p>
+
+  <p>Unless you're using <a href="#automatic-instrumentation">automatic instrumentation</a> you'll want to create and reuse event functions instead of using the built in <code>WTF.trace.enterScope</code> and <code>WTF.trace.timeStamp</code> methods. When using the event functions Javascript is generated at runtime to efficiently pack the events and their arguments into a binary format that is incredibly fast to record.</p>
+
+  <pre class="prettyprint linenums">
+// Create the events once, statically.
+// This allows for optimized code generation and a faster recording time.
+my.Type.fooEvent_ = wtf.trace.events.createInstance(
+    'my.Type#foo(uint32 a, ascii b)');
+my.Type.someMethodEvent_ = wtf.trace.events.createScope(
+    'my.Type#someMethod()');
+
+my.Type.prototype.someMethod = function() {
+  // Enter the custom scope:
+  var scope = my.Type.someMethodEvent_();
+  // Trace the event with custom arguments:
+  my.Type.fooEvent_(123, 'hello');
+  // Leave the scope, as normal.
+  WTF.trace.leaveScope(scope);
+};
+</pre>
 
   <h2>Event Signatures</h2>
-  <p></p>
+  <p>The signatures used by events look like function signatures in many languages. They are a name plus some optional number of typed arguments in parentheses. For naming rules, see the <a href="#event-naming">event naming</a> note above.</p>
 
-  <h2>Argument Types</h2>
-  <p></p>
+  <table class="table table-hover table-bordered table-condensed">
+    <caption>Supported argument types.</caption>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Example Signature</th>
+        <th>Example Call</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>bool</td>
+        <td><code>'myEvent(bool a)'</code></td>
+        <td><code>myEvent(true);</code></td>
+      </tr>
+      <tr>
+        <td>int8/uint8</td>
+        <td><code>'myEvent(uint8 a)'</code></td>
+        <td><code>myEvent(123);</code></td>
+      </tr>
+      <tr>
+        <td>int16/uint16</td>
+        <td><code>'myEvent(uint16 a)'</code></td>
+        <td><code>myEvent(12345);</code></td>
+      </tr>
+      <tr>
+        <td>int32/uint32</td>
+        <td><code>'myEvent(uint32 a)'</code></td>
+        <td><code>myEvent(1234567);</code></td>
+      </tr>
+      <tr>
+        <td>float32</td>
+        <td>'myEvent(float32 a)'</code></td>
+        <td><code>myEvent(5.4);</code></td>
+      </tr>
+      <tr>
+        <td>ascii/utf8</td>
+        <td><code>'myEvent(ascii a)'</code></td>
+        <td><code>myEvent('hello');</code></td>
+      </tr>
+      <tr>
+        <td>any</td>
+        <td><code>'myEvent(any a)'</code></td>
+        <td><code>myEvent({hello: ['world']});</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Arrays of most of the basic types are also supported. You should use typed arrays if possible to ensure good performance. For example:</p>
+  <pre class="prettyprint linenums">
+var arrayEvent = wtf.trace.events.createInstance('foo(uint32[] a)');
+var myArray = new Uint32Array(128);
+arrayEvent(myArray);
+</pre>
+
+  <p>Note that for the time it takes to record each argument type increases as the table goes down. Booleans are 10x faster to encode than floating point numbers, and ASCII strings are much faster to encode than UTF8 ones. You should avoid using 'any', which JSONifies the input, any more than a few times per frame.</p>
 </section>
 
 
@@ -284,12 +378,13 @@ WTF.trace.leaveScope(scope);</pre>
   <div class="page-header">
     <h1>6. Automatic Instrumentation</h1>
   </div>
-  <p class="lead">Leading line.</p>
-  <p>Some things go here.</p>
+  <p>Instrumenting every function manually is tedious and can hurt readability. To make things easier the framework provides some automatic instrumentation utility methods that make wrapping functions in scope events much easier. It keeps your code cleaner and is easier to add/remove.</p>
+
+  <p>There is, however, a more significant performance impact for wrapping the methods like this, requiring an additional function call per normal call. In most applications this won't matter much so long as you are careful with how many instrumented calls you make per frame. Be careful not to exceed a few hundred or the overhead will skew the results.</p>
 
   <h2>Instrumenting Functions</h2>
   <p><code>WTF.trace.instrument(function method, string signature)</code></p>
-  <p>TODO: talk about instrumenting methods.</p>
+  <p>Use this to instrument single methods, such as callbacks passed to API functions or event handlers.</p>
 
   <pre class="prettyprint linenums">
 // Manually instrumenting a method:
