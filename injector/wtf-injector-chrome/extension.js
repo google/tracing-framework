@@ -343,6 +343,15 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
     return;
   }
 
+  // Check for query parameter to enable the extension for automated tests.
+  var reloadUrl = null;
+  var forceWhitelistRegex = /[&?]wtf__force_whitelist\b/;
+  if (forceWhitelistRegex.test(URI.parse(tabUrl).query)) {
+    options.whitelistPage(pageUrl);
+    // Reload the page without the parameter after updating settings.
+    reloadUrl = tabUrl.replace(forceWhitelistRegex, '');
+  }
+
   // Get tab toggle status.
   var status = options.getPageStatus(pageUrl);
   var pageOptions = options.getPageOptions(pageUrl);
@@ -407,6 +416,10 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
       popup: 'popup.html'
     });
     chrome.pageAction.show(tabId);
+
+    if (reloadUrl) {
+      chrome.tabs.update(tabId, {url: reloadUrl});
+    }
   } else {
     // Hide page action.
     chrome.pageAction.hide(tabId);
