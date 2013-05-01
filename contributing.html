@@ -82,21 +82,71 @@
       <div class="row">
         <div class="span3 bs-docs-sidebar">
           <ul class="nav nav-list bs-docs-sidenav">
-            <li><a href="#todo"><i class="icon-chevron-right"></i> TODO</a></li>
+            <li><a href="#open-source"><i class="icon-chevron-right"></i> Open Source</a></li>
+            <li><a href="#roadmap"><i class="icon-chevron-right"></i> Roadmap</a></li>
+            <li><a href="#paperwork"><i class="icon-chevron-right"></i> Paperwork</a></li>
           </ul>
         </div>
         <div class="span9">
 
 
 
-<!-- TODO
+<!-- Open Source
 ================================================== -->
-<section id="todo">
+<section id="open-source">
   <div class="page-header">
-    <h1>1. TODO!</h1>
+    <h1>1. Open Source</h1>
   </div>
-  <p class="lead">More to come!</p>
-  <p>Roadmap, list of interesting projects, link to issue tracker, etc.</p>
+  <div class="row-fluid">
+    <div class="span2">&nbsp;</div>
+    <div class="span8">
+      <div class="github-widget" data-repo="google/tracing-framework" data-travis="true"></div>
+    </div>
+    <div class="span2">&nbsp;</div>
+  </div>
+  <br/>
+  <br/>
+
+  <p>Though the project is run by Googlers all development is done out in the open and we happily accept patches. Things are moving pretty fast so if you're interested in implementing something please <a href="https://github.com/google/tracing-framework/issues/new" target="_blank">open an issue</a> first to let us know about it!</p>
+
+  <p>All code checked in to the project is licensed under the <a href="http://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_.28.22Revised_BSD_License.22.2C_.22New_BSD_License.22.2C_or_.22Modified_BSD_License.22.29" target="_blank">3-clause BSD license</a> (aka 'New BSD License'). Third party code included in the repository remains under the license specified by that code.</p>
+
+  <p>For more information on contributing, including links to the style guide and test information, see the <a href="https://github.com/google/tracing-framework/blob/master/CONTRIBUTING.md" target="_blank">CONTRIBUTING</a> file in the repository.</p>
+</section>
+
+
+<!-- Roadmap
+================================================== -->
+<section id="roadmap">
+  <div class="page-header">
+    <h1>2. Roadmap</h1>
+  </div>
+  <p class="lead">So many ideas, so little time...</p>
+  <ul>
+    <li><a href="https://github.com/google/tracing-framework/blob/master/KNOWN_ISSUES.md" target="_blank">Known Issues</a>: things that will be fixed or can't be fixed yet.</li>
+    <li><a href="https://github.com/google/tracing-framework/issues" target="_blank">Open Issues</a>: active work and bugs.</li>
+    <li><a href="https://github.com/google/tracing-framework/issues?labels=research&page=1&state=open" target="_blank">Open Research Tasks</a>: fun ideas to hack on.</li>
+  </ul>
+  <p>The goal of the project is to provide deep, meaningful information about complex web applications. To that end, we will continue to evolve it to gather more information and display it in interesting, insightful ways.</p>
+
+  <p>Adding new event providers is a good, bite-sized task that can provide a lot of benefit to all developers using them. It'd be great to have rich providers for Web Audio, the File and FileSystem APIs, Web Sockets, etc.</p>
+</section>
+
+
+<!-- Paperwork
+================================================== -->
+<section id="paperwork">
+  <div class="page-header">
+    <h1>3. Paperwork</h1>
+  </div>
+  <div class="row-fluid">
+    <div class="span8">
+      <p>As this is a Google project, you <strong>must</strong> first e-sign the <a href="https://developers.google.com/open-source/cla/individual" target="_blank">Google Contributor License Agreement</a> before we can accept any code. It takes only a second and basically just says you won't sue us or claim copyright of your submitted code. You only need to do this once for any Google project.</p>
+    </div>
+    <div class="span4">
+      <img class="img-polaroid" src="bootstrap/img/lawyercat.jpg">
+    </div>
+  </div>
 </section>
 
 
@@ -128,5 +178,6 @@
     <script src="bootstrap/js/bootstrap.min.js"></script>
     <script src="bootstrap/js/prettify.js"></script>
     <script src="bootstrap/js/application.js"></script>
+    <script src="bootstrap/js/jquery.githubRepoWidget.js"></script>
   </body>
 </html>
