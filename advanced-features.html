@@ -83,31 +83,207 @@
       <div class="row">
         <div class="span3 bs-docs-sidebar">
           <ul class="nav nav-list bs-docs-sidenav">
-            <li><a href="#todo"><i class="icon-chevron-right"></i> TODO</a></li>
+            <li><a href="#remote-control"><i class="icon-chevron-right"></i> Remote Control</a></li>
+            <li><a href="#chrome-tracing"><i class="icon-chevron-right"></i> chrome:tracing</a></li>
+            <li><a href="#call-tracing"><i class="icon-chevron-right"></i> Full Call Tracing</a></li>
+            <li><a href="#heap-tracing"><i class="icon-chevron-right"></i> Heap Tracing</a></li>
           </ul>
         </div>
         <div class="span9">
 
-<!--
-#chrome-flags
-#chrome-tracing
-#call-tracing
-#heap-tracking
-#remote-control
--->
 
-
-
-<!-- TODO
+<!-- Remote Control
 ================================================== -->
-<section id="todo">
+<section id="remote-control">
   <div class="page-header">
-    <h1>1. TODO!</h1>
+    <h1>1. Remote Control</h1>
   </div>
-  <p class="lead">More to come!</p>
-  <p>:)</p>
+  <p class="lead">Capture traces from mobile devices.</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel</small></th>
+        <th>Firefox <small>Release channel</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+        <th>Chrome Android <small>Release channel</small></th>
+        <th>Android Browser <small>&nbsp;</small></th>
+        <th>Mobile Safari <small>6.0+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The tracing framework node package contains a remote control coordination server that makes it possible to connect pages running in browser to a central control panel. Once a device is connected it's possible to capture and save snapshots for inspection, making it possible to easily grab snapshots from mobile devices, browsers running remotely on test machines, etc.</p>
+
+  <p>It's important to note that the tracing framework still requires certain platform features such as high resolution timing and will not run everywhere. For example, the stock Android browser and Mobile Safari do not support high resolution timing, but Chrome for Android does.</p>
+
+  <p>The tools and UI around this will improve as more mobile browsers support the features required of the framework. If you really like this feature please <a href="./contributing.html">help to improve it!</a></p>
+
+  <ol>
+    <li>Install the <a href="https://npmjs.org/package/tracing-framework" target="_blank">tracing-framework</a> NPM package.</li>
+    <li>Launch the controller with <code>wtf-controller</code>.</li>
+    <li>Open the control page as printed (something like <code>http://localhost:8083</code>).
+    <li>Insert the <code>&lt;script&gt;</code> snippet it prints into your page.</li>
+    <li>Open your page on a remote device.</li>
+    <li>Capture snapshots!</li>
+  </ol>
+
+  <pre class=""><code>benvanik@benvanik-linux:~$ npm install -g tracing-framework
+...
+benvanik@benvanik-linux:~$ wtf-controller
+Launching remote control server...
+   http: 8083
+     ws: 8084
+
+Open the control page:
+  http://benvanik-linux:8083
+
+Add this to your page &lt;head&gt; BEFORE anything else:
+&lt;script src="http://google.github.io/tracing-framework/bin/wtf_trace_web_js_compiled.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  wtf.remote.connect({
+    'wtf.remote.target': 'ws://benvanik-linux:8084'
+  });
+  wtf.trace.start();
+&lt;/script&gt;
+
+Server ready, use ctrl-c to exit...</code>
+</pre>
+
 </section>
 
+
+<!-- Chrome Tracing
+================================================== -->
+<section id="chrome-tracing">
+  <div class="page-header">
+    <h1>2. chrome:tracing</h1>
+  </div>
+  <p class="lead">See native browser callstacks in your traces!</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><span class="label label-important">WARNING:</span> this is an experimental feature and may stop working at any time!</p>
+
+  <p>This feature makes it possible to selectively capture data from the <a href="http://www.chromium.org/developers/how-tos/trace-event-profiling-tool" target="_blank">chrome://tracing</a> tool and include it in your traces. This allows you to see the native activity occuring on the browser main thread, your page renderer process, and the GPU process (if it exists).</p>
+
+  <p>For in-depth information about this feature please see the documentation in <a href="https://github.com/google/tracing-framework/blob/master/docs/chrome_tracing.md">chrome_tracing.md</a>.</p>
+
+  <h3>Running with Chromium/Canary</h3>
+  <p>This feature uses APIs internal to Chrome and breaks frequently. Support is only provided for Chromium nightlies and Chrome Canary. It likely will not work in stable or beta channels of Chrome.</p>
+
+  <h3><a name="chrome-flags"></a>Setting the Chrome Flags</h3>
+  <p>This feature currently requires you to launch Chrome with the remote debugging feature enabled by adding the <code>--remote-debugging-port=9222</code> flag. See the Chromium documentation for how to <a href="http://www.chromium.org/developers/how-tos/run-chromium-with-flags" target="_blank">run Chromium with flags</a>.</p>
+
+  <h3>Capturing Data</h3>
+  <p>With a properly configured Chrome you should see a 'C:T' button in the on-page HUD. Clicking on it will start collecting chrome://tracing data, and clicking it again will stop and gather the data. Look in the top right of the screen for the status messages. Once the data has been retrieved you can snapshot and view the results.</p>
+</section>
+
+
+<!-- Full Call Tracing
+================================================== -->
+<section id="call-tracing">
+  <div class="page-header">
+    <h1>3. Full Call Tracing</h1>
+  </div>
+  <p class="lead">See every single function called in your application.</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+        <td class="is-supported">✔</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><span class="label label-important">WARNING:</span> this is an experimental feature and may stop working at any time!</p>
+  <p><span class="label label-important">WARNING:</span> you cannot use both WTF tracing and this at the same time!</p>
+
+  <p>The normal WTF instrumentation requires adding trace calls inside your code to find the times and structure of your code as it executes. Since you're trying to get timing you want to restrain your usage as to not cause time skew and other bad effects. It's also impossible to try to instrument every call in your program, even with the nifty helper functions.</p>
+
+  <p>So the call tracing feature is implemented entirely differently. <strong>It is not for timing</strong> - you will not be able to get function times from this! What you will be seeing in the user interface is counts, based on the mode you're running in. <strong>It does not work with normal tracing</strong> - you must remove all use of the tracing framework to get good data. It's recommended that you compile out the tracing framework calls by <a href="./instrumenting-code.html#shims">using a shim and compiler</a>.</p>
+
+  <p>The <code>wtf-instrument</code> command line tool runs over your Javascript to produce an instrumented file that can be run in the browser. Unlike the normal instrumentation that normal WTF does, this process performs code transformation and results in a different kind of file: <code>.wtf-calls</code>. These files will have millions to tens of millions of entries, and are very cool to view in the UI.</p>
+
+  <p>The basic usage is to instrument your code (via a command line tool or a proxy), capture the call trace data, and view it in WTF.</p>
+
+  <p>For in-depth information about this feature please see the documentation in <a href="https://github.com/google/tracing-framework/blob/master/docs/call_tracing.md">call_tracing.md</a>.</p>
+</section>
+
+
+<!-- Heap Tracing
+================================================== -->
+<section id="heap-tracing">
+  <div class="page-header">
+    <h1>4. Heap Tracing</h1>
+  </div>
+  <p class="lead">See every byte allocated by every function called.</p>
+  <table class="table table-bordered table-striped feature-traces">
+    <thead>
+      <tr>
+        <th>Chrome <small>Release channel (26+)</small></th>
+        <th>Firefox <small>Release channel (20+)</small></th>
+        <th>Internet Explorer <small>10+</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="is-supported">✔</td>
+        <td class="not-supported">✘</td>
+        <td class="not-supported">✘</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><span class="label label-important">WARNING:</span> this is an experimental feature and may stop working at any time!</p>
+  <p><span class="label label-important">WARNING:</span> you cannot use both WTF tracing and this at the same time!</p>
+
+  <p>Building on the <a href="#call-tracing">call tracing</a> feature, it's possible with special Chrome flags to track the number of bytes allocated by every function called by a script. Instrument your code with <code>wtf-instrument</code> as above, but also add the <code>--track-heap</code> flag to enable the tracking.</p>
+
+  <p>When you load your page every single function will be wrapped with with code that records the current heap memory usage. When you save a snapshot you'll be able to view this in the visualizer to see your program's execution laid out along it's memory usage instead of time. This can be incredibly valuable in helping to find unexpected sources of garbage generation or wasteful coding patterns.</p>
+
+  <p>It's important to understand that wrapping code in this mode does cause some additional memory to sometimes be allocated when V8 is unable to inline things, though it's often very small and doesn't skew the results much.</p>
+
+  <p>For in-depth information about this feature please see the documentation in <a href="https://github.com/google/tracing-framework/blob/master/docs/call_tracing.md">call_tracing.md</a>.</p>
+
+  <h3>Running with Chromium/Canary</h3>
+  <p>This feature uses APIs internal to Chrome and breaks frequently. Support is only provided for Chromium nightlies and Chrome Canary. It likely will not work in stable or beta channels of Chrome.</p>
+
+  <h3><a name="chrome-flags"></a>Setting the Chrome Flags</h3>
+  <p><span class="label label-important">WARNING:</span> do not browse the web with these flags!</p>
+  <p>This feature currently requires you to launch Chrome with the security features disabled by adding the <code>--disable-web-security --js-flags=--allow-natives-syntax</code> flags. See the Chromium documentation for how to <a href="http://www.chromium.org/developers/how-tos/run-chromium-with-flags" target="_blank">run Chromium with flags</a>.</p>
+</section>
 
 
         </div>
