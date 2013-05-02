@@ -104,7 +104,7 @@
     <h1>1. Why?</h1>
   </div>
   <p class="lead">A little work goes a long way.</p>
-  <p>The tracing framework provides some useful <a href="./event-providers.html">events</a> without any work on your part, but that's only scratching the surface of what's possible with the tool and what data your app has yet to reveal. Though it's certainly useful to see the ways your application is interacting with the browser and vice versa, often there is much more work occuring within your call trees than not.</p>
+  <p>The tracing framework provides some useful <a href="./event-providers.html">events</a> without any work on your part, but that's only scratching the surface of what's possible with the tool and what data your app has yet to reveal. Though it's certainly useful to see the ways your application is interacting with the browser and vice versa, often there is much more work occurring within your call trees than not.</p>
   <p>By adding some simple, easily-removable, (usually) well-isolated instrumentation calls to your application code you can quickly enhance your traces to be more useful both for understanding your program flow and identifying where time is going. The process if instrumenting is currently an iterative, trial-and-error affair but often just a few hours will yield 90% of the available data and get your application in a good state.</p>
   <p>The tracing framework is designed to be very low overhead when disabled and the calls can be stripped by most Javascript optimization systems (such as the <a href="https://developers.google.com/closure/compiler/" target="_blank">Google Closure Compiler</a> and <a href="https://github.com/mishoo/UglifyJS2" target="_blank">UglifyJS 2</a>). Because of this it's encouraged that the instrumentation is checked into source control to enable all developers to run traces on a regular basis, enable automated performance regression tools, and keep your code healthy.</p>
 
@@ -143,7 +143,7 @@
   <p>The shims are hosted in the <a href="https://github.com/google/tracing-framework/tree/master/shims" target="_blank">Github repository</a> and are designed to be copied into your project and checked into your own source control. This way when a new version of the tracing framework is deployed your applications will not break as it would have if you referenced the Github versions directly. Simply pick the shim you need from the list below and save it!</p>
 
   <h2>Using a Shim</h2>
-  <p>Once you've saved your shim file into your project you should bundle it up with any other javascript as part of your normal build process. <strong>It must be the first file included.</strong> Depending on your Javascript optimizer your can specify different shim files or configuration options to enable or disable the tracing code at optimization time, resulting in final bundles that contain zero tracing code.</p>
+  <p>Once you've saved your shim file into your project you should bundle it up with any other Javascript as part of your normal build process. <strong>It must be the first file included.</strong> Depending on your Javascript optimizer your can specify different shim files or configuration options to enable or disable the tracing code at optimization time, resulting in final bundles that contain zero tracing code.</p>
 
   <p>Once a shim is included, you will access all tracing framework APIs via the global <code>WTF</code> object, <strong>not the lower-case <code>wtf</code> object</strong>.</p>
 
@@ -180,7 +180,7 @@ WTF.trace.timeStamp('hello!');</pre>
   <div class="page-header">
     <h1>3. Events in Traces</h1>
   </div>
-  <p>Events in the tracing framework come in two types: scopes and instances. Instance events denote that something occurred, but not how long it took. Scope events denote a time range when something was occuring and can nest within each other.</p>
+  <p>Events in the tracing framework come in two types: scopes and instances. Instance events denote that something occurred, but not how long it took. Scope events denote a time range when something was occurring and can nest within each other.</p>
 
   <p><a name="event-naming"></a>All events are defined by a name. These names are literal-like, in that they cannot contain spaces or many other special characters. Generally, if a name can be used as a variable name in Javascript it can be used as an event name in WTF. In addition to the normal allowed characters, however, there are a few additional supported to enable JSDoc-like names. This allows tools and the UI to handle things like classes and and callbacks.</p>
   <pre class="prettyprint linenums">

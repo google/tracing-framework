@@ -116,7 +116,7 @@
     </p>
   </p>
 
-  <p>The easiest way to configur providers is to use the settings screen accessible from the gear button on the on-page HUD. When using the WTF browser extension the settings will be saved and reused on future page reloads. Each provider has a section containing the available options, the descriptions of which are listed below.</p>
+  <p>The easiest way to configure providers is to use the settings screen accessible from the gear button on the on-page HUD. When using the WTF browser extension the settings will be saved and reused on future page reloads. Each provider has a section containing the available options, the descriptions of which are listed below.</p>
 
   <h2>Configuring via Code</h2>
   <p>When embedding the tracing framework on a page manually it's required that options are set ahead of time via code. This can allow for complex custom URL-driven options sets (such as <code>?wtf-fast</code>, <code>?wtf-all</code>, etc) or setting options on browsers that may not be able to display the UI (like mobile devices or node.js).</p>
@@ -182,7 +182,7 @@ var options = {
   'wtf.trace.provider.chromeDebug': true,
   'wtf.trace.provider.chromeDebug.timeline': true
 };</pre>
-  <p>This provider inserts events from the Chrome debugger timeline into traces. The events included in this set include garbage collections, script evaluation, browser paint and layout, and style operations. They're very useful for figuring out where the time inbetween user callbacks is spent or where GCs are causing skipped frames.
+  <p>This provider inserts events from the Chrome debugger timeline into traces. The events included in this set include garbage collections, script evaluation, browser paint and layout, and style operations. They're very useful for figuring out where the time in-between user callbacks is spent or where GCs are causing skipped frames.
 
   <h2>Chrome Tracing</h2>
   <pre class="prettyprint linenums">
@@ -281,7 +281,7 @@ var options = {
   'wtf.trace.provider.image': true
 };</pre>
 
-  <p>This provider adds special handling to the <code>Image</code> object. The DOM event provider handles HTMLImageElement, but since support for the handling there is flakey this logic is split. If you want consistent, low-overhead tracing of image-related events, prefer using <code>new Image();</code> and this provider.</p>
+  <p>This provider adds special handling to the <code>Image</code> object. The DOM event provider handles HTMLImageElement, but since support for the handling there is flaky this logic is split. If you want consistent, low-overhead tracing of image-related events, prefer using <code>new Image();</code> and this provider.</p>
 </section>
 
 
