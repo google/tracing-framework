@@ -161,7 +161,7 @@ wtf.trace.StreamingSession.prototype.flush = function() {
   // Flush to network.
   this.stream_.flush();
 
-  // Allocate a new buffer. This assumes that the flush is occuring with the
+  // Allocate a new buffer. This assumes that the flush is occurring with the
   // intent of writing more. Applications that will be stopping should use
   // {@see #stop} instead.
   this.currentBuffer = this.nextBuffer();
