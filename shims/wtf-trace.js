@@ -364,7 +364,7 @@ WTF.trace.popZone = WTF.PRESENT ?
  * It is strongly recommended that a custom enter scope event should be used
  * instead of this, as the overhead required to write the scope name is
  * non-trivial. Only use this when the name changes many times at runtime or
- * you're hacking something together. See {@see wtf.trace.events.createScope}.
+ * you're hacking something together. See {@see WTF.trace.events.createScope}.
  *
  * Example:
  * <code>
@@ -396,7 +396,7 @@ WTF.trace.enterTracingScope = WTF.PRESENT ?
 
 /**
  * Leaves a scope.
- * @param {wtf.trace.Scope} scope Scope to leave. This is the result of a
+ * @param {WTF.trace.Scope} scope Scope to leave. This is the result of a
  *     previous call to {@see #enterScope} or a custom enter scope function.
  * @param {T=} opt_result Optional result to chain.
  * @param {number=} opt_time Time for the leave; omit to use the current time.
@@ -694,7 +694,7 @@ WTF.trace.events.createInstance = WTF.PRESENT ?
  *   // Enter and leave each function call with custom args.
  *   var scope = my.Type.someMethodEvent_(123, 'hello');
  *   var result = 5; // ...
- *   return wtf.trace.leaveScope(scope, result);
+ *   return WTF.trace.leaveScope(scope, result);
  * };
  * </code>
  *
