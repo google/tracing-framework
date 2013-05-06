@@ -9,7 +9,7 @@
     "performance"
   ],
   "license": "BSD",
-  "homepage": "https://github.com/google/tracing-framework",
+  "homepage": "https://google.github.io/tracing-framework",
   "bugs": "https://github.com/google/tracing-framework/issues",
   "repository" : {
     "type" : "git",
