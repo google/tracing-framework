@@ -31,8 +31,12 @@ var document = global.document;
 
 /**
  * @define {boolean} Whether to enable canvas support.
+ * Since the DOM method is actually just fine for our uses we avoid canvas
+ * unless required. For example, on high-dpi displays the DOM method will show
+ * weird banding/etc.
  */
-var ENABLE_CANVAS = false;
+var ENABLE_CANVAS = (global.devicePixelRatio === undefined) ? false :
+    global.devicePixelRatio > 1;
 
 
 // TODO(benvanik): cursor at 2x res.
