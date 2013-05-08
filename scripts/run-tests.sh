@@ -16,7 +16,7 @@ if [ ! -d ".git" ]; then
 fi
 
 # Fast build and ensure test dependencies exist.
-./third_party/anvil-build/anvil-local.sh build :test_external
+./third_party/anvil-build/anvil-local.sh build -j1 :test_external
 
 GREP="$1"
 if [ -z $GREP ]; then
