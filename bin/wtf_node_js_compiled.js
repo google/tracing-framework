@@ -2132,13 +2132,13 @@ goog.debug.entryPointRegistry.register(function(a) {
 // Input 21
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 1365498E6
+  return 1368E9
 };
 wtf.version.getCommit = function() {
-  return"169021965d88e4e482f0ed5935ce73d017930a9e"
+  return"242546ba9f4a20dc2d66f6fd2dd00f4a2b91a29c"
 };
 wtf.version.toString = function() {
-  return"2013.4.9-2"
+  return"2013.5.8-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -4693,6 +4693,27 @@ wtf.db.EventIterator.prototype.getOwnDuration = function() {
   var a = this.eventData_, b = this.offset_;
   return(a[b + wtf.db.EventStruct.END_TIME] - a[b + wtf.db.EventStruct.TIME] - a[b + wtf.db.EventStruct.CHILD_TIME]) / 1E3
 };
+wtf.db.EventIterator.prototype.buildArgumentString_ = function(a, b, c) {
+  b = b.getArguments();
+  for(var d = this.getArguments(), e = 0;e < b.length;e++) {
+    var f = b[e];
+    e && a.push(", ");
+    c && (a.push(f.name), a.push("="));
+    f = d.get(f.name);
+    goog.isString(f) ? (a.push("'"), a.push(f), a.push("'")) : a.push(f)
+  }
+};
+wtf.db.EventIterator.prototype.getArgumentString = function(a) {
+  var b = this.getType(), c = [];
+  this.buildArgumentString_(c, b, a);
+  return c.join("")
+};
+wtf.db.EventIterator.prototype.getLongString = function(a) {
+  var b = this.getType(), c = [b.getName(), "("];
+  this.buildArgumentString_(c, b, a);
+  c.push(")");
+  return c.join("")
+};
 wtf.db.EventIterator.prototype.getInfoString = function(a) {
   if(this.done()) {
     return null
@@ -4742,6 +4763,7 @@ goog.exportProperty(wtf.db.EventIterator.prototype, "getEndTime", wtf.db.EventIt
 goog.exportProperty(wtf.db.EventIterator.prototype, "getTotalDuration", wtf.db.EventIterator.prototype.getTotalDuration);
 goog.exportProperty(wtf.db.EventIterator.prototype, "getUserDuration", wtf.db.EventIterator.prototype.getUserDuration);
 goog.exportProperty(wtf.db.EventIterator.prototype, "getOwnDuration", wtf.db.EventIterator.prototype.getOwnDuration);
+goog.exportProperty(wtf.db.EventIterator.prototype, "getLongString", wtf.db.EventIterator.prototype.getLongString);
 goog.exportProperty(wtf.db.EventIterator.prototype, "getInfoString", wtf.db.EventIterator.prototype.getInfoString);
 // Input 51
 wtf.db.ArgumentData = function(a) {
@@ -7165,7 +7187,14 @@ wtf.db.QueryResult.prototype.dump = function(a) {
   }
 };
 wtf.db.QueryResult.prototype.dumpCsv_ = function() {
-  return""
+  var a = [], b = this.value_;
+  a.push('Time,Value,"Total Time","Own Time",Depth,Arguments');
+  for(b.seek(0);!b.done();b.next()) {
+    var c = [b.getTime(), b.getName(), b.isScope() ? b.getTotalDuration() : "", b.isScope() ? b.getOwnDuration() : "", b.getDepth(), b.getArgumentString(!0)];
+    a.push(c.join(","))
+  }
+  b.seek(0);
+  return a.join("\r\n")
 };
 goog.exportProperty(wtf.db.QueryResult.prototype, "getExpression", wtf.db.QueryResult.prototype.getExpression);
 goog.exportProperty(wtf.db.QueryResult.prototype, "getCompiledExpression", wtf.db.QueryResult.prototype.getCompiledExpression);
@@ -8694,7 +8723,7 @@ wtf.db.sources.BinaryDataSource.prototype.processBuffer_ = function(a, b) {
       var m = this.builtinDispatch_[g.name];
       m && (i = m.call(this, g, h))
     }
-    i && this.currentZone_.getEventList().insert(g, k + this.getTimeDelay(), h)
+    i && this.currentZone_.getEventList().insert(g, Math.max(0, k + this.getTimeDelay()), h)
   }
   c.endInsertingEvents();
   return d
@@ -8899,10 +8928,10 @@ wtf.db.sources.JsonDataSource.prototype.parseHeader_ = function(a) {
   if(goog.isDef(a.high_resolution_times) ? a.high_resolution_times : 1) {
     c |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES
   }
-  var d = a.timebase || 0;
+  var d = a.timebase || 0, e = a.time_offset;
   a = a.metadata || {};
-  var e = new wtf.data.ScriptContextInfo, b = b.computeTimeDelay(d);
-  return this.initialize(e, c, 0, wtf.db.Unit.TIME_MILLISECONDS, a, d, b)
+  var f = new wtf.data.ScriptContextInfo, b = goog.isDef(e) ? e : b.computeTimeDelay(d);
+  return this.initialize(f, c, 0, wtf.db.Unit.TIME_MILLISECONDS, a, d, b)
 };
 wtf.db.sources.JsonDataSource.prototype.parseEventType_ = function(a) {
   var b = a.signature;
@@ -8922,6 +8951,7 @@ wtf.db.sources.JsonDataSource.prototype.parseEventType_ = function(a) {
 };
 wtf.db.sources.JsonDataSource.prototype.dispatchEvent_ = function(a, b, c) {
   b += this.getTimeDelay();
+  b = Math.max(0, b);
   var d = this.getDatabase(), e = this.currentZone_, f = null;
   if(c && c.length && c.length == a.args.length) {
     for(var f = new wtf.db.ArgumentData, g = 0;g < c.length;g++) {
@@ -9022,7 +9052,7 @@ wtf.db.Database.prototype.getTimebase = function() {
   return this.commonTimebase_
 };
 wtf.db.Database.prototype.computeTimeDelay = function(a) {
-  return-1 == this.commonTimebase_ ? (this.commonTimebase_ = a, 0) : a - this.commonTimebase_
+  return-1 == this.commonTimebase_ ? (this.commonTimebase_ = a, 0) : this.commonTimebase_ - a
 };
 wtf.db.Database.prototype.createOrGetZone = function(a, b, c) {
   var d = a + ":" + b + ":" + c;
@@ -14220,7 +14250,7 @@ wtf.trace.providers.ChromeDebugProvider = function(a, b) {
   wtf.trace.Provider.call(this, b);
   this.hudButtons_ = [];
   this.available_ = !1;
-  b.getNumber("wtf.trace.provider.chromeDebug", 0) && b.getBoolean("wtf.trace.provider.chromeDebug.present", !1) && (this.timelineDispatch_ = {}, this.setupTimelineDispatch_(), this.nextRequestId_ = 0, this.pendingRequests_ = {}, this.awaitingTracingData_ = this.isCapturingTracing_ = !1, this.tracingTrackerId_ = String(goog.now()), this.tracingTrackerIntervalId_ = -1, this.tracingProgressEl_ = this.createTracingProgressElement_(), this.extensionChannel_ = null, goog.global.document && (this.extensionChannel_ = 
+  b.getNumber("wtf.trace.provider.chromeDebug", 1) && b.getBoolean("wtf.trace.provider.chromeDebug.present", !1) && (this.timelineDispatch_ = {}, this.setupTimelineDispatch_(), this.nextRequestId_ = 0, this.pendingRequests_ = {}, this.awaitingTracingData_ = this.isCapturingTracing_ = !1, this.tracingTrackerId_ = String(goog.now()), this.tracingTrackerIntervalId_ = -1, this.tracingProgressEl_ = this.createTracingProgressElement_(), this.extensionChannel_ = null, goog.global.document && (this.extensionChannel_ = 
   wtf.ipc.openDomChannel(goog.global.document, "WtfContentScriptEvent")), this.registerDisposable(this.extensionChannel_), this.extensionChannel_ && this.extensionChannel_.addListener(wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this), (this.available_ = !!this.extensionChannel_) && b.getBoolean("wtf.trace.provider.chromeDebug.tracing", !1) && this.hudButtons_.push({title:"Toggle chrome:tracing Capture", icon:"/assets/icons/chrometracing.svg", shortcut:"f3", callback:function() {
     this.toggleCapture_()
   }, scope:this}))
@@ -14265,60 +14295,64 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ = funct
     c = b(c[3], c[4], c[1] - a);
     wtf.trace.leaveScope(c, void 0, d)
   };
-  var c = wtf.trace.events.createScope("javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME);
+  var c = wtf.trace.events.createScope("javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta, ascii url, uint32 lineNumber)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.EvaluateScript = function(b) {
     var d = b[2] - a;
-    b = c(b[3], b[4], b[1] - a);
+    b = c(b[3], b[4], b[5], b[6], b[1] - a);
     wtf.trace.leaveScope(b, void 0, d)
   };
-  var d = wtf.trace.events.createScope("browser#parseHtml(uint32 contentLength)", wtf.data.EventFlag.SYSTEM_TIME);
+  var d = wtf.trace.events.createScope("browser#parseHtml()", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.ParseHTML = function(b) {
     var c = b[2] - a;
-    b = d(b[3], b[1] - a);
+    b = d(b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   };
-  var e = wtf.trace.events.createInstance("browser#invalidateStyles()");
+  var e = wtf.trace.events.createInstance("browser#domContentReady(bool isMainFrame)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.MarkDOMContent = function(b) {
+    e(b[2], b[1] - a)
+  };
+  var f = wtf.trace.events.createInstance("browser#invalidateStyles()");
   this.timelineDispatch_.ScheduleStyleRecalculation = function(b) {
-    e(b[1] - a)
+    f(b[1] - a)
   };
-  var f = wtf.trace.events.createScope("browser#recalculateStyles()", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.ParseHTML = function(b) {
+  var g = wtf.trace.events.createScope("browser#recalculateStyles(uint32 elementCount)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.RecalculateStyles = function(b) {
     var c = b[2] - a;
-    b = f(b[1] - a);
+    b = g(b[3], b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   };
-  var g = wtf.trace.events.createInstance("browser#invalidateLayout()");
+  var h = wtf.trace.events.createInstance("browser#invalidateLayout()");
   this.timelineDispatch_.InvalidateLayout = function(b) {
-    g(b[1] - a)
+    h(b[1] - a)
   };
-  var h = wtf.trace.events.createScope("browser#layout(int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
+  var k = wtf.trace.events.createScope("browser#layout(uint32 totalObjects, uint32 dirtyObjects, bool partialLayout, int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.Layout = function(b) {
     var c = b[2] - a;
-    b = h(b[3], b[4], b[5], b[6], b[1] - a);
+    b = k(b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   };
-  var k = wtf.trace.events.createScope("browser#paint(int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
+  var i = wtf.trace.events.createScope("browser#paint(int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.Paint = function(b) {
     var c = b[2] - a;
-    b = k(b[3], b[4], b[5], b[6], b[1] - a);
+    b = i(b[3], b[4], b[5], b[6], b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   };
-  var i = wtf.trace.events.createScope("browser#compositeLayers()", wtf.data.EventFlag.SYSTEM_TIME);
+  var m = wtf.trace.events.createScope("browser#compositeLayers()", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.CompositeLayers = function(b) {
     var c = b[2] - a;
-    b = i(b[1] - a);
+    b = m(b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   };
-  var m = wtf.trace.events.createScope("browser#decodeImage(ascii imageType)", wtf.data.EventFlag.SYSTEM_TIME);
+  var n = wtf.trace.events.createScope("browser#decodeImage(ascii imageType)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.DecodeImage = function(b) {
     var c = b[2] - a;
-    b = m(b[3], b[1] - a);
+    b = n(b[3], b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   };
-  var n = wtf.trace.events.createScope("browser#resizeImage(bool cached)", wtf.data.EventFlag.SYSTEM_TIME);
+  var q = wtf.trace.events.createScope("browser#resizeImage(bool cached)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.ResizeImage = function(b) {
     var c = b[2] - a;
-    b = n(b[3], b[1] - a);
+    b = q(b[3], b[1] - a);
     wtf.trace.leaveScope(b, void 0, c)
   }
 };
@@ -14352,7 +14386,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.toggleCapture_ = function() {
   }else {
     var b = goog.global.setInterval.raw || goog.global.setInterval, c = goog.global.clearInterval.raw || goog.global.clearInterval, d = goog.global.console.time.raw || goog.global.console.time, e = goog.global.console.timeEnd.raw || goog.global.console.timeEnd;
     this.isCapturingTracing_ ? (c.call(goog.global, this.tracingTrackerIntervalId_), this.tracingTrackerIntervalId_ = -1, this.updateTracingProgress_("waiting for chrome:tracing data..."), this.isCapturingTracing_ = !1, this.awaitingTracingData_ = !0, this.sendMessage_({command:"stop_chrome_tracing", tracker_id:this.tracingTrackerId_, include_threads:["CrBrowserMain", "CrGpuMain"]})) : (this.isCapturingTracing_ = !0, this.sendMessage_({command:"start_chrome_tracing"}), this.tracingTrackerIntervalId_ = 
-    b.call(goog.global, a, 100), this.updateTracingProgress_("tracing..."), wtf.trace.mark("tracing"))
+    b.call(goog.global, a, 100), a(), this.updateTracingProgress_("tracing..."), wtf.trace.mark("tracing"))
   }
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.processChromeTracingData_ = function(a, b) {

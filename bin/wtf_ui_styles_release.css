@@ -157,14 +157,14 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiTabbar{position:relative;left:0;right:0;bottom:0;overflow:hidden;background:white;}
 .appUiToolbar{height:40px;background:white;border-bottom:1px solid #EBEBEB;}.appUiToolbar .leftPane{float:left;height:100%;margin-top:8px;}.appUiToolbar .leftPane .infoIcon{width:16px;height:16px;margin-left:6px;position:relative;top:2px;}
 .appUiToolbar .leftPane .infoTitle{max-width:300px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:16px;color:#dd4b39;padding-left:2px;padding-right:6px;}
-.appUiToolbar .leftPane .infoUrl{-moz-user-select:auto !important;-ms-user-select:auto !important;-webkit-user-select:auto !important;display:block;max-width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.appUiToolbar .leftPane .infoUrl{-moz-user-select:auto !important;-ms-user-select:auto !important;-webkit-user-select:auto !important;display:block;max-width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:16px;}
 .appUiToolbar .healthPane{float:left;margin-top:15px;height:100%;left:50%;right:50%;}.appUiToolbar .healthPane .warning{font-weight:bold;}
 .appUiToolbar .rightPane{position:relative;top:6px;bottom:6px;float:right;}.appUiToolbar .rightPane .viewers{float:left;margin-right:6px;margin-top:6px;font-size:12px;color:#777777;}
 .appUiToolbar .rightPane .buttons{float:left;}
-.appUiNavbar{position:relative;left:0;right:0;top:0;height:140px;overflow:hidden;background:white;}.appUiNavbar .outer{position:absolute;left:0;right:0;height:100%;margin-right:301px;border-right:1px solid #ebebeb;overflow:hidden;}.appUiNavbar .outer .canvas{cursor:crosshair;}
+.appUiNavbar{position:relative;left:0;right:0;top:0;height:130px;overflow:hidden;background:white;}.appUiNavbar .outer{position:absolute;left:0;right:0;height:100%;margin-right:301px;border-right:1px solid #ebebeb;overflow:hidden;}.appUiNavbar .outer .canvas{cursor:crosshair;}
 .appUiNavbar .outer .canvasOverlay{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;overflow:hidden;margin-top:16px;}.appUiNavbar .outer .canvasOverlay .view{position:absolute;bottom:0;top:0;background-color:rgba(0, 0, 0, 0.1);border-left:1px solid #DDDDDD;border-right:1px solid #DDDDDD;}
 .appUiNavbar .boxesOuter{position:absolute;top:0;bottom:0;right:0;width:300px;}.appUiNavbar .boxesOuter .boxes{position:absolute;left:0;right:0;top:0;bottom:0;overflow-x:hidden;overflow-y:auto;}
-.appUiNavbarStatsBox{position:relative;height:69px;border-bottom:1px solid #DDDDDD;}.appUiNavbarStatsBox .title{position:absolute;top:2px;left:2px;font-family:monospace;font-weight:bold;cursor:default;}
+.appUiNavbarStatsBox{position:relative;height:64px;border-bottom:1px solid #DDDDDD;}.appUiNavbarStatsBox .title{position:absolute;top:2px;left:2px;font-family:monospace;font-weight:bold;cursor:default;}
 .appUiNavbarStatsBox .graphOuter{height:100%;margin-right:150px;overflow:hidden;cursor:default;}
 .appUiNavbarStatsBox .graphOuter .todo{color:lightgray;position:absolute;top:30px;left:50px;}
 .appUiNavbarStatsBox .numbersOuter{position:absolute;top:0;right:0;width:149px;height:100%;border-left:1px solid #EEEEEE;}.appUiNavbarStatsBox .numbersOuter .numbersTable{width:100%;margin:3px;padding-top:5px;}.appUiNavbarStatsBox .numbersOuter .numbersTable td:first-child{width:53px;white-space:nowrap;text-align:right;padding-right:5px;}
@@ -177,7 +177,7 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiQueryPanel .header .headerRight .resultInfo{float:left;padding-top:7px;}
 .appUiQueryPanel .resultsOuter{position:absolute;width:100%;top:36px;bottom:0;overflow-x:hidden;overflow-y:auto;}.appUiQueryPanel .resultsOuter .results{position:absolute;left:0;right:0;top:0;bottom:0;cursor:pointer;}
 .appUiQueryPanel .empty{position:absolute;top:36px;left:0;right:0;bottom:0;margin-left:5px;margin-top:5px;}.appUiQueryPanel .empty .error{color:#DD4B39;padding-bottom:15px;}
-.appUiQueryPanel .empty .help{position:absolute;left:0;right:0;top:0;bottom:0;}.appUiQueryPanel .empty .help .examples{margin-left:15px;}.appUiQueryPanel .empty .help .examples .code{font-family:monospace;padding-right:25px;}
+.appUiQueryPanel .empty .help .examples{margin-left:15px;}.appUiQueryPanel .empty .help .examples .code{font-family:monospace;padding-right:25px;}
 .appUiTracksPanelInfo{position:absolute;top:0;bottom:0;right:0;width:300px;}.appUiTracksPanelInfo>.header{position:absolute;left:0;right:0;top:0;height:34px;border-bottom:1px solid #ebebeb;padding-left:5px;padding-top:5px;}.appUiTracksPanelInfo>.header table{width:100%;}.appUiTracksPanelInfo>.header table td{vertical-align:top;}
 .appUiTracksPanelInfo>.header table td:last-child{width:1%;}
 .appUiTracksPanelInfo>.header .kSearchField{width:100%;font-family:monospace;font-size:11px;}
