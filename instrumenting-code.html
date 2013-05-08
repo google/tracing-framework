@@ -345,7 +345,7 @@ my.Type.prototype.someMethod = function() {
       </tr>
       <tr>
         <td>float32</td>
-        <td>'myEvent(float32 a)'</code></td>
+        <td><code>'myEvent(float32 a)'</code></td>
         <td><code>myEvent(5.4);</code></td>
       </tr>
       <tr>
@@ -368,7 +368,7 @@ var myArray = new Uint32Array(128);
 arrayEvent(myArray);
 </pre>
 
-  <p>Note that for the time it takes to record each argument type increases as the table goes down. Booleans are 10x faster to encode than floating point numbers, and ASCII strings are much faster to encode than UTF8 ones. You should avoid using 'any', which JSONifies the input, any more than a few times per frame.</p>
+  <p>Note that the time it takes to record each argument type increases as the table goes down. Booleans are 10x faster to encode than floating point numbers, and ASCII strings are much faster to encode than UTF8 ones. You should avoid using 'any', which JSONifies the input, more than a few times per frame.</p>
 </section>
 
 
@@ -439,7 +439,7 @@ MyType = WTF.trace.instrumentType(
   });
 
 // Automatically instrument the constructor and the 'foo' method.
-// This records the given argument values (with a slightly performance overhead).
+// This records the given argument values (with a slight performance overhead).
 MyType = WTF.trace.instrumentType(
     MyType, 'MyType(uint8 a, uint8 b)', {
       foo: 'foo(uint8 a)'

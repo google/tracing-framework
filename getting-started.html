@@ -192,7 +192,7 @@ myapp-123456.wtf-trace</pre>
 
   <pre class="prettyprint linenums">
 // Require from wherever the library happens to be.
-global.wtf = require('./node_modules/tracing-framework/build-out/wtf_node_js_compiled.js');
+global.wtf = require('tracing-framework');
 // Provide any options here.
 var options = {
   /* options, if any */
@@ -203,7 +203,7 @@ wtf.trace.node.start(options);</pre>
   <p>If you prefer to more tightly control the trace recording you can call the normal API instead:</p>
 
   <pre class="prettyprint linenums">
-global.wtf = require('./node_modules/tracing-framework/build-out/wtf_node_js_compiled.js');
+global.wtf = require('tracing-framework');
 wtf.trace.prepare({ /* options, if any */ });
 
 // Later on, when desired:
