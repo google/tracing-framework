@@ -71,12 +71,16 @@ var Extension = function() {
   chrome.extension.onConnect.addListener(function(port) {
     var options = this.getOptions();
     if (port.name == 'injector') {
-      _gaq.push(['_trackEvent', 'extension', 'injected']);
-
       // Setup the extended info provider for the page.
       var tab = port.sender.tab;
+      if (!tab) {
+        // This sometimes happens on about:blank and the new tab page.
+        return;
+      }
       var pageUrl = URI.canonicalize(tab.url);
       var pageOptions = options.getPageOptions(pageUrl);
+
+      _gaq.push(['_trackEvent', 'extension', 'injected']);
 
       var injectedTab = new InjectedTab(this, tab, pageOptions, port);
       this.injectedTabs_[tab.id] = injectedTab;
@@ -128,9 +132,13 @@ var Extension = function() {
   }, this);
 
   // This hacky thing lets people open wtf from the omnibox.
-  chrome.omnibox.setDefaultSuggestion({
-    description: '<url><match>%s</match></url> Open trace file'
-  });
+  // HACK(benvanik): https://code.google.com/p/chromium/issues/detail?id=237817
+  try {
+    chrome.omnibox.setDefaultSuggestion({
+      description: '<url><match>%s</match></url> Open trace file'
+    });
+  } catch (e) {
+  }
   chrome.omnibox.onInputChanged.addListener((function(text, suggest) {
     suggest([
       {
