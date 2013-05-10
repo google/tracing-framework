@@ -2132,13 +2132,13 @@ goog.debug.entryPointRegistry.register(function(a) {
 // Input 21
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 1368E9
+  return 13681728E5
 };
 wtf.version.getCommit = function() {
-  return"242546ba9f4a20dc2d66f6fd2dd00f4a2b91a29c"
+  return"8a00cc72bdcc54c331f2d3c2c7c38a82d2c11843"
 };
 wtf.version.toString = function() {
-  return"2013.5.8-1"
+  return"2013.5.10-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
