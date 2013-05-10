@@ -8,13 +8,14 @@ the tracing and investigation of complex web applications. You spend a small
 amount of time instrumenting your code and it helps you discover performance
 problems, track regressions, and build buttery-smooth 60fps web apps.
 
-This is still very much a work in progress, and not yet ready for general
-consumption. Once ready, much of the functionality will be available via
-browser extensions and embeddable minified js files, but for now they aren't
-going to be published.
+This is still very much a work in progress, and not designed to work for all
+applications. If you find issues when using it with your application please
+contribute fixes!
 
 For a list of known issues see [KNOWN_ISSUES](https://github.com/google/tracing-framework/blob/master/KNOWN_ISSUES.md)
 or the Github issues list.
+
+![Screenshot](https://raw.github.com/google/tracing-framework/master/docs/assets/screenshot-1.png)
 
 ## Setup
 
