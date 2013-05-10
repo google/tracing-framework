@@ -12,10 +12,12 @@ This is still very much a work in progress, and not designed to work for all
 applications. If you find issues when using it with your application please
 contribute fixes!
 
+For documentation, tutorials, etc see the [main Web Tracing Framework website](http://google.github.io/tracing-framework/).
+
 For a list of known issues see [KNOWN_ISSUES](https://github.com/google/tracing-framework/blob/master/KNOWN_ISSUES.md)
 or the Github issues list.
 
-![Screenshot](https://raw.github.com/google/tracing-framework/master/docs/assets/screenshot-1.png)
+[![Screenshot](https://raw.github.com/google/tracing-framework/master/docs/assets/screenshot-1.png)](http://google.github.io/tracing-framework/)
 
 ## Setup
 
