@@ -21,6 +21,7 @@ goog.require('goog.asserts');
 goog.require('goog.debug');
 goog.require('goog.dom');
 goog.require('goog.math.Rect');
+goog.require('goog.math.Size');
 goog.require('wtf.timing');
 goog.require('wtf.util.canvas');
 

@@ -48,7 +48,7 @@ wtf.app.ui.show = function(opt_options) {
   var platform = new wtf.pal.BrowserPlatform();
 
   // TODO(benvanik): options value for this/fancy ui/etc.
-  //wtf.ext.registerExtension('../extensions/diagrams/diagrams.json');
+  //wtf.addon.registerAddon('../addons/diagrams/diagrams.json');
 
   // Add to DOM when it is ready.
   wtf.util.callWhenDomReady(function() {

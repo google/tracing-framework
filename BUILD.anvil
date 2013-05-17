@@ -173,7 +173,7 @@ file_set(
         ] + WTF_TRACE_WEB_SRCS)
 
 WTF_TRACE_WEB_ENTRY_POINTS=[
-    'wtf.ext',
+    'wtf.addon',
     'wtf.trace.exports',
     'wtf.hud.exports',
     'wtf.remote.exports',

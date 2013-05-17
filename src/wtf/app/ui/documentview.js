@@ -19,8 +19,8 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
+goog.require('wtf.app.ui.AddonManager');
 goog.require('wtf.app.ui.EmptyTabPanel');
-goog.require('wtf.app.ui.ExtensionManager');
 goog.require('wtf.app.ui.HealthDialog');
 goog.require('wtf.app.ui.Selection');
 goog.require('wtf.app.ui.Statusbar');
@@ -135,10 +135,10 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   /**
    * Extension manager.
-   * @type {!wtf.app.ui.ExtensionManager}
+   * @type {!wtf.app.ui.AddonManager}
    * @private
    */
-  this.extensionManager_ = new wtf.app.ui.ExtensionManager(this);
+  this.extensionManager_ = new wtf.app.ui.AddonManager(this);
   this.registerDisposable(this.extensionManager_);
 
   // Relayout as required.

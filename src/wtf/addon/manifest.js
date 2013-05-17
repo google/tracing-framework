@@ -6,23 +6,23 @@
  */
 
 /**
- * @fileoverview Extension manifest files.
+ * @fileoverview Addon manifest files.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.ext.Manifest');
+goog.provide('wtf.addon.Manifest');
 
 
 
 /**
- * Parsed extension manifest file.
- * For information on the format see `docs/extensions.md`.
+ * Parsed addon manifest file.
+ * For information on the format see `docs/addons.md`.
  * @param {string} url Manifest URL.
  * @param {!Object} json JSON object.
  * @constructor
  */
-wtf.ext.Manifest = function(url, json) {
+wtf.addon.Manifest = function(url, json) {
   /**
    * The URL of the manifest.
    * @type {string}
@@ -31,7 +31,7 @@ wtf.ext.Manifest = function(url, json) {
   this.url_ = url;
 
   /**
-   * Extension name as shown in UIs.
+   * Addon name as shown in UIs.
    * @type {string}
    * @private
    */
@@ -46,7 +46,7 @@ wtf.ext.Manifest = function(url, json) {
 
   /**
    * Tracing information.
-   * @type {wtf.ext.Manifest.TracingInfo?}
+   * @type {wtf.addon.Manifest.TracingInfo?}
    * @private
    */
   this.tracing_ = null;
@@ -61,7 +61,7 @@ wtf.ext.Manifest = function(url, json) {
 
   /**
    * UI information.
-   * @type {wtf.ext.Manifest.AppInfo?}
+   * @type {wtf.addon.Manifest.AppInfo?}
    * @private
    */
   this.app_ = null;
@@ -93,7 +93,7 @@ wtf.ext.Manifest = function(url, json) {
  *   options: !Array
  * }}
  */
-wtf.ext.Manifest.TracingInfo;
+wtf.addon.Manifest.TracingInfo;
 
 
 /**
@@ -103,23 +103,23 @@ wtf.ext.Manifest.TracingInfo;
  *   triggers: !Array.<{type: string, name: string}>
  * }}
  */
-wtf.ext.Manifest.AppInfo;
+wtf.addon.Manifest.AppInfo;
 
 
 /**
  * Gets the URL the manifest was loaded from.
- * @return {string} Extension manifest URL.
+ * @return {string} Addon manifest URL.
  */
-wtf.ext.Manifest.prototype.getUrl = function() {
+wtf.addon.Manifest.prototype.getUrl = function() {
   return this.url_;
 };
 
 
 /**
- * Gets the human-readable extension name.
- * @return {string} Extension name.
+ * Gets the human-readable addon name.
+ * @return {string} Addon name.
  */
-wtf.ext.Manifest.prototype.getName = function() {
+wtf.addon.Manifest.prototype.getName = function() {
   return this.name_;
 };
 
@@ -128,24 +128,24 @@ wtf.ext.Manifest.prototype.getName = function() {
  * Gets the required WTF version.
  * @return {string} Version as '1.0.5'.
  */
-wtf.ext.Manifest.prototype.getRequiredVersion = function() {
+wtf.addon.Manifest.prototype.getRequiredVersion = function() {
   return this.requiredVersion_;
 };
 
 
 /**
  * Gets the tracing information section of the manifest, if defined.
- * @return {wtf.ext.Manifest.TracingInfo?} Tracing information.
+ * @return {wtf.addon.Manifest.TracingInfo?} Tracing information.
  */
-wtf.ext.Manifest.prototype.getTracingInfo = function() {
+wtf.addon.Manifest.prototype.getTracingInfo = function() {
   return this.tracing_;
 };
 
 
 /**
  * Gets the application information section of the manifest, if defined.
- * @return {wtf.ext.Manifest.AppInfo?} Application information.
+ * @return {wtf.addon.Manifest.AppInfo?} Application information.
  */
-wtf.ext.Manifest.prototype.getAppInfo = function() {
+wtf.addon.Manifest.prototype.getAppInfo = function() {
   return this.app_;
 };

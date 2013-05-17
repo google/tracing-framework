@@ -11,9 +11,9 @@ behavior.
 
 ## Extensions
 
-### wtf.extensions
+### wtf.addon
 
-An array of extension manifest URLs. These extensions will be either injected or
+An array of addon manifest URLs. These addons will be either injected or
 loaded at runtime and can provide tracing or visualization functionality.
 
 ## Tracing

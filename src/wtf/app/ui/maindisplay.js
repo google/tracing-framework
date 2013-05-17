@@ -19,6 +19,7 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('wtf.addon');
 goog.require('wtf.app.ui.DocumentView');
 goog.require('wtf.app.ui.HelpDialog');
 goog.require('wtf.app.ui.Loader');
@@ -26,7 +27,6 @@ goog.require('wtf.app.ui.SplashDialog');
 goog.require('wtf.app.ui.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events.CommandManager');
-goog.require('wtf.ext');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.ui.Control');
@@ -420,12 +420,12 @@ wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
     }
   ];
 
-  // Add extension panes.
-  var extensions = wtf.ext.getAppExtensions();
-  for (var n = 0; n < extensions.length; n++) {
-    var manifest = extensions[n].getManifest();
-    var info = extensions[n].getInfo();
-    var extensionSections = [
+  // Add addon panes.
+  var addons = wtf.addon.getAppAddons();
+  for (var n = 0; n < addons.length; n++) {
+    var manifest = addons[n].getManifest();
+    var info = addons[n].getInfo();
+    var addonSections = [
       {
         'title': 'Info',
         'widgets': [
@@ -442,10 +442,10 @@ wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
         ]
       }
     ];
-    goog.array.extend(extensionSections, info.options);
+    goog.array.extend(addonSections, info.options);
     panes.push({
       'title': manifest.getName(),
-      'sections': extensionSections
+      'sections': addonSections
     });
   }
 

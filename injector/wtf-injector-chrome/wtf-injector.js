@@ -44,12 +44,12 @@ function main() {
     options
   ]);
 
-  // Inject extensions, if required.
-  var extensions = injectExtensions(options['wtf.extensions'] || []);
+  // Inject addons, if required.
+  var addons = injectAddons(options['wtf.addons'] || []);
 
   // Inject preparation code to start tracing with the desired options.
   injectScriptFunction(startTracing, [
-    extensions
+    addons
   ]);
 
   setupCommunications();
@@ -117,12 +117,12 @@ function fetchOptions() {
 
 
 /**
- * Injects the given extensions into the page.
- * @param {!Array.<string>} manifestUrls Extension manifest JSON URLs.
- * @return {!Object.<!Object>} Extension manifests, mapped by manifest URL.
+ * Injects the given addons into the page.
+ * @param {!Array.<string>} manifestUrls Addon manifest JSON URLs.
+ * @return {!Object.<!Object>} Addon manifests, mapped by manifest URL.
  */
-function injectExtensions(manifestUrls) {
-  var extensions = {};
+function injectAddons(manifestUrls) {
+  var addons = {};
   for (var n = 0; n < manifestUrls.length; n++) {
     // Fetch Manifest JSON.
     var url = manifestUrls[n];
@@ -132,7 +132,7 @@ function injectExtensions(manifestUrls) {
       continue;
     }
     json = JSON.parse(json);
-    extensions[url] = json;
+    addons[url] = json;
 
     // If it has a tracing node, inject scripts.
     var tracingInfo = json['tracing'];
@@ -141,13 +141,13 @@ function injectExtensions(manifestUrls) {
       for (var m = 0; m < tracingScripts.length; m++) {
         var scriptUrl = resolveUrl(url, tracingScripts[m]);
         if (!injectScriptFile(scriptUrl)) {
-          log('Error loading extension ' + url + ':');
+          log('Error loading addon ' + url + ':');
           log('Tracing script file not found: ' + scriptUrl);
         }
       }
     }
   }
-  return extensions;
+  return addons;
 };
 
 
@@ -159,18 +159,18 @@ function injectExtensions(manifestUrls) {
  * This function is stringified and passed to the page, so expect no closure
  * variables and all arguments must be serializable.
  *
- * @param {!Object.<!Object>} extensions A map of URL to extension JSON.
+ * @param {!Object.<!Object>} addons A map of URL to addon JSON.
  */
-function startTracing(extensions) {
+function startTracing(addons) {
   // NOTE: this code is injected by string and cannot access any closure
   //     variables!
-  // Register extensions.
-  for (var url in extensions) {
-    var name = extensions[url]['name'];
+  // Register addons.
+  for (var url in addons) {
+    var name = addons[url]['name'];
     if (window.console) {
-      console.log('WTF Extension Installed: ' + name + ' (' + url + ')');
+      console.log('WTF Addon Installed: ' + name + ' (' + url + ')');
     }
-    wtf.ext.registerExtension(url, extensions[url]);
+    wtf.addon.registerAddon(url, addons[url]);
   }
 
   // Show HUD.

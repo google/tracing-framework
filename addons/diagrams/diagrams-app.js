@@ -6,7 +6,7 @@
  */
 
 /**
- * @fileoverview Diagrams extension app code.
+ * @fileoverview Diagrams addon app code.
  *
  * @author benvanik@google.com (Ben Vanik)
  */

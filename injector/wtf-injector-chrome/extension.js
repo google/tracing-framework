@@ -475,7 +475,7 @@ Extension.prototype.sendPopupInfo_ = function(pageUrl, port) {
       'url': pageUrl,
       'status': options.getPageStatus(pageUrl),
       'options': options.getPageOptions(pageUrl),
-      'all_extensions': options.getExtensions()
+      'all_addons': options.getAddons()
     }
   });
 };
@@ -525,27 +525,27 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       });
       break;
 
-    case 'add_extension':
-      _gaq.push(['_trackEvent', 'extension', 'extension_added']);
-      options.addExtension(data.url, data.manifest);
+    case 'add_addon':
+      _gaq.push(['_trackEvent', 'extension', 'addon_added']);
+      options.addAddon(data.url, data.manifest);
       this.sendPopupInfo_(pageUrl, port);
       break;
-    case 'remove_extension':
-      _gaq.push(['_trackEvent', 'extension', 'extension_removed']);
-      options.removeExtension(data.url);
+    case 'remove_addon':
+      _gaq.push(['_trackEvent', 'extension', 'addon_removed']);
+      options.removeAddon(data.url);
       this.sendPopupInfo_(pageUrl, port);
       break;
-    case 'toggle_extension':
+    case 'toggle_addon':
       var pageOptions = options.getPageOptions(pageUrl);
-      var i = pageOptions['wtf.extensions'].indexOf(data.url);
+      var i = pageOptions['wtf.addons'].indexOf(data.url);
       if (data.enabled) {
         if (i == -1) {
-          pageOptions['wtf.extensions'].push(data.url);
-          _gaq.push(['_trackEvent', 'extension', 'page_extension_enabled']);
+          pageOptions['wtf.addons'].push(data.url);
+          _gaq.push(['_trackEvent', 'extension', 'page_addon_enabled']);
         }
       } else {
-        pageOptions['wtf.extensions'].splice(i, 1);
-        _gaq.push(['_trackEvent', 'extension', 'page_extension_disabled']);
+        pageOptions['wtf.addons'].splice(i, 1);
+        _gaq.push(['_trackEvent', 'extension', 'page_addon_disabled']);
       }
       options.setPageOptions(pageUrl, pageOptions);
       this.sendPopupInfo_(pageUrl, port);

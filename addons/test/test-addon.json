@@ -1,9 +1,9 @@
 {
-  "name": "My Extension",
+  "name": "My Addon",
   "required_version": "1.0.5",
   "tracing": {
     "scripts": [
-      "extension-trace.js"
+      "test-addon-trace.js"
     ]
   }
 }

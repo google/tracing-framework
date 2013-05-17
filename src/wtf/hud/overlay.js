@@ -24,9 +24,9 @@ goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
 goog.require('goog.userAgent');
+goog.require('wtf.addon');
 goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
-goog.require('wtf.ext');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.overlay');
 goog.require('wtf.io.BufferedHttpWriteStream');
@@ -560,12 +560,12 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
     }
   ];
 
-  // Add extension panes.
-  var extensions = wtf.ext.getTraceExtensions();
-  for (var n = 0; n < extensions.length; n++) {
-    var manifest = extensions[n].getManifest();
-    var info = extensions[n].getInfo();
-    var extensionSections = [
+  // Add addon panes.
+  var addons = wtf.addon.getTraceAddons();
+  for (var n = 0; n < addons.length; n++) {
+    var manifest = addons[n].getManifest();
+    var info = addons[n].getInfo();
+    var addonSections = [
       {
         'title': 'Info',
         'widgets': [
@@ -582,10 +582,10 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
         ]
       }
     ];
-    goog.array.extend(extensionSections, info.options);
+    goog.array.extend(addonSections, info.options);
     panes.push({
       'title': manifest.getName(),
-      'sections': extensionSections
+      'sections': addonSections
     });
   }
 

@@ -6,13 +6,13 @@
  */
 
 /**
- * @fileoverview Application extension manager.
+ * @fileoverview Application addon manager.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.ExtensionManager');
-goog.provide('wtf.app.ui.ExtensionTabPanel');
+goog.provide('wtf.app.ui.AddonManager');
+goog.provide('wtf.app.ui.AddonTabPanel');
 
 goog.require('goog.Disposable');
 goog.require('goog.Uri');
@@ -21,22 +21,22 @@ goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.style');
+goog.require('wtf.addon');
 goog.require('wtf.app.ui.TabPanel');
-goog.require('wtf.ext');
 goog.require('wtf.timing');
 
 
 
 /**
- * Handles the creation and management of app extensions.
- * Since extensions are {@see wtf.app.ui.DocumentView}-specific, this ties
- * extension lifetime to the parent document view.
+ * Handles the creation and management of app addons.
+ * Since addons are {@see wtf.app.ui.DocumentView}-specific, this ties
+ * addon lifetime to the parent document view.
  *
  * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.app.ui.ExtensionManager = function(documentView) {
+wtf.app.ui.AddonManager = function(documentView) {
   goog.base(this);
 
   var dom = documentView.getDom();
@@ -56,76 +56,76 @@ wtf.app.ui.ExtensionManager = function(documentView) {
   this.dom_ = dom;
 
   /**
-   * Root element that gets the extension iframes added inside it.
+   * Root element that gets the addon iframes added inside it.
    * This makes it easier to clean them up and debug.
    * @type {!Element}
    * @private
    */
-  this.extensionsEl_ = dom.createElement(goog.dom.TagName.DIV);
-  this.extensionsEl_.id = 'wtfAppExtensions';
-  dom.getDocument().body.appendChild(this.extensionsEl_);
+  this.addonsEl_ = dom.createElement(goog.dom.TagName.DIV);
+  this.addonsEl_.id = 'wtfAppAddons';
+  dom.getDocument().body.appendChild(this.addonsEl_);
 
   /**
-   * All loaded extensions.
+   * All loaded addons.
    * @type {!Array.<{
-   *   extension: !wtf.ext.AppExtension,
+   *   addon: !wtf.addon.AppAddon,
    *   iframe: !HTMLIFrameElement
    * }>}
    * @private
    */
-  this.extensions_ = [];
+  this.addons_ = [];
 
   /**
-   * Simple map of whether an extension has been loaded.
+   * Simple map of whether an addon has been loaded.
    * @type {!Object.<boolean>}
    * @private
    */
-  this.loadedExtensions_ = {};
+  this.loadedAddons_ = {};
 
   // Defer a bit to ensure everything gets created.
   wtf.timing.setImmediate(function() {
-    var extensions = wtf.ext.getAppExtensions();
-    for (var n = 0; n < extensions.length; n++) {
+    var addons = wtf.addon.getAppAddons();
+    for (var n = 0; n < addons.length; n++) {
       // TODO(benvanik): only load if no triggers? setup delayed loading for
       //     ones with triggers?
-      this.loadExtension(extensions[n]);
+      this.loadAddon(addons[n]);
     }
-    _gaq.push(['_trackEvent', 'app', 'load_extensions',
-      null, extensions.length]);
+    _gaq.push(['_trackEvent', 'app', 'load_addons',
+      null, addons.length]);
   }, this);
 };
-goog.inherits(wtf.app.ui.ExtensionManager, goog.Disposable);
+goog.inherits(wtf.app.ui.AddonManager, goog.Disposable);
 
 
 /**
  * @override
  */
-wtf.app.ui.ExtensionManager.prototype.disposeInternal = function() {
-  goog.dom.removeNode(this.extensionsEl_);
+wtf.app.ui.AddonManager.prototype.disposeInternal = function() {
+  goog.dom.removeNode(this.addonsEl_);
   goog.base(this, 'disposeInternal');
 };
 
 
 /**
- * Loads the given extension, if it has not already been loaded.
- * @param {!wtf.ext.AppExtension} extension Extension.
+ * Loads the given addon, if it has not already been loaded.
+ * @param {!wtf.addon.AppAddon} addon Addon.
  */
-wtf.app.ui.ExtensionManager.prototype.loadExtension = function(extension) {
+wtf.app.ui.AddonManager.prototype.loadAddon = function(addon) {
   var dom = this.dom_;
 
-  var manifest = extension.getManifest();
-  var info = extension.getInfo();
+  var manifest = addon.getManifest();
+  var info = addon.getInfo();
 
   // Loaded check.
-  if (this.loadedExtensions_[manifest.getUrl()]) {
+  if (this.loadedAddons_[manifest.getUrl()]) {
     return;
   }
-  this.loadedExtensions_[manifest.getUrl()] = true;
+  this.loadedAddons_[manifest.getUrl()] = true;
 
   // Create iframe container.
   var iframe = /** @type {!HTMLIFrameElement} */ (
       dom.createElement(goog.dom.TagName.IFRAME));
-  this.extensionsEl_.appendChild(iframe);
+  this.addonsEl_.appendChild(iframe);
 
   // Set base.
   var idoc = iframe.contentDocument;
@@ -135,7 +135,7 @@ wtf.app.ui.ExtensionManager.prototype.loadExtension = function(extension) {
   idoc.head.appendChild(baseEl);
 
   // Export API.
-  this.setupExtensionApi_(extension, iframe.contentWindow);
+  this.setupAddonApi_(addon, iframe.contentWindow);
 
   // Add scripts.
   for (var n = 0; n < info.scripts.length; n++) {
@@ -144,26 +144,26 @@ wtf.app.ui.ExtensionManager.prototype.loadExtension = function(extension) {
     idoc.body.appendChild(script);
   }
 
-  this.extensions_.push({
-    extension: extension,
+  this.addons_.push({
+    addon: addon,
     iframe: iframe
   });
 };
 
 
 /**
- * Sets up the extension API in the extension window.
- * @param {!wtf.ext.AppExtension} extension Owning extension.
- * @param {!Object} extensionGlobal Extension global scope.
+ * Sets up the addon API in the addon window.
+ * @param {!wtf.addon.AppAddon} addon Owning addon.
+ * @param {!Object} addonGlobal Addon global scope.
  * @private
  */
-wtf.app.ui.ExtensionManager.prototype.setupExtensionApi_ = function(
-    extension, extensionGlobal) {
+wtf.app.ui.AddonManager.prototype.setupAddonApi_ = function(
+    addon, addonGlobal) {
   var documentView = this.documentView_;
 
-  extensionGlobal['wtf'] = goog.global['wtf'];
-  extensionGlobal['d3'] = goog.global['d3'];
-  extensionGlobal['documentView'] = {
+  addonGlobal['wtf'] = goog.global['wtf'];
+  addonGlobal['d3'] = goog.global['d3'];
+  addonGlobal['documentView'] = {
     'db': documentView.getDatabase(),
     'createTabPanel': createTabPanel
   };
@@ -171,43 +171,43 @@ wtf.app.ui.ExtensionManager.prototype.setupExtensionApi_ = function(
   var tabbar = documentView.getTabbar();
   /**
    * Creates a new tab panel.
-   * Part of the app extension API.
+   * Part of the app addon API.
    * @param {string} path Path used for navigation.
    * @param {string} name Panel name.
    * @param {Object} options Options.
-   * @param {wtf.app.ui.ExtensionTabPanel.Callback} callback
+   * @param {wtf.app.ui.AddonTabPanel.Callback} callback
    *     A callback that creates an external panel.
    */
   function createTabPanel(path, name, options, callback) {
-    tabbar.addPanel(new wtf.app.ui.ExtensionTabPanel(
-        extension, documentView, path, name, options, callback));
+    tabbar.addPanel(new wtf.app.ui.AddonTabPanel(
+        addon, documentView, path, name, options, callback));
   };
 };
 
 
 
 /**
- * A tab panel that defers logic to an external extension.
- * @param {!wtf.ext.AppExtension} extension Owning extension.
+ * A tab panel that defers logic to an external addon.
+ * @param {!wtf.addon.AppAddon} addon Owning addon.
  * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
  * @param {string} path Path used for navigation.
  * @param {string} name Panel name.
  * @param {Object} options Options.
- * @param {wtf.app.ui.ExtensionTabPanel.Callback} callback
+ * @param {wtf.app.ui.AddonTabPanel.Callback} callback
  *     A callback that creates an external panel.
  * @constructor
  * @extends {wtf.app.ui.TabPanel}
  */
-wtf.app.ui.ExtensionTabPanel = function(extension, documentView, path, name,
+wtf.app.ui.AddonTabPanel = function(addon, documentView, path, name,
     options, callback) {
   goog.base(this, documentView, path, name);
 
   /**
-   * Owning extension.
-   * @type {!wtf.ext.AppExtension}
+   * Owning addon.
+   * @type {!wtf.addon.AppAddon}
    * @private
    */
-  this.extension_ = extension;
+  this.addon_ = addon;
 
   /**
    * Tab panel options.
@@ -226,8 +226,8 @@ wtf.app.ui.ExtensionTabPanel = function(extension, documentView, path, name,
   this.iframe_ = null;
 
   /**
-   * Extension panel handlers.
-   * @type {wtf.app.ui.ExtensionTabPanel.Handlers?}
+   * Addon panel handlers.
+   * @type {wtf.app.ui.AddonTabPanel.Handlers?}
    * @private
    */
   this.handlers_ = null;
@@ -237,13 +237,13 @@ wtf.app.ui.ExtensionTabPanel = function(extension, documentView, path, name,
     this.setupIframe_();
     goog.asserts.assert(this.iframe_);
 
-    // Let the extension set itself up.
+    // Let the addon set itself up.
     var idoc = this.iframe_.contentDocument;
     goog.asserts.assert(idoc);
     this.handlers_ = callback(idoc);
   }, this);
 };
-goog.inherits(wtf.app.ui.ExtensionTabPanel, wtf.app.ui.TabPanel);
+goog.inherits(wtf.app.ui.AddonTabPanel, wtf.app.ui.TabPanel);
 
 
 /**
@@ -252,19 +252,19 @@ goog.inherits(wtf.app.ui.ExtensionTabPanel, wtf.app.ui.TabPanel);
  *   onVisibilityChange: (function(boolean))?
  * }}
  */
-wtf.app.ui.ExtensionTabPanel.Handlers;
+wtf.app.ui.AddonTabPanel.Handlers;
 
 
 /**
- * @typedef {function(!Document):wtf.app.ui.ExtensionTabPanel.Handlers}
+ * @typedef {function(!Document):wtf.app.ui.AddonTabPanel.Handlers}
  */
-wtf.app.ui.ExtensionTabPanel.Callback;
+wtf.app.ui.AddonTabPanel.Callback;
 
 
 /**
  * @override
  */
-wtf.app.ui.ExtensionTabPanel.prototype.createDom = function(dom) {
+wtf.app.ui.AddonTabPanel.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('appUiTabPanel'));
   return el;
@@ -275,10 +275,10 @@ wtf.app.ui.ExtensionTabPanel.prototype.createDom = function(dom) {
  * Sets up the panel iframe.
  * @private
  */
-wtf.app.ui.ExtensionTabPanel.prototype.setupIframe_ = function() {
+wtf.app.ui.AddonTabPanel.prototype.setupIframe_ = function() {
   goog.asserts.assert(!this.iframe_);
 
-  var manifest = this.extension_.getManifest();
+  var manifest = this.addon_.getManifest();
 
   // Create iframe.
   // We could use seamless on this (in Chrome 22+), but it's not much use with
@@ -326,7 +326,7 @@ wtf.app.ui.ExtensionTabPanel.prototype.setupIframe_ = function() {
 /**
  * @override
  */
-wtf.app.ui.ExtensionTabPanel.prototype.layoutInternal = function() {
+wtf.app.ui.AddonTabPanel.prototype.layoutInternal = function() {
   if (this.handlers_ && this.handlers_['onLayout']) {
     var currentSize = goog.style.getSize(this.getRootElement());
     this.handlers_['onLayout'](currentSize.width, currentSize.height);
@@ -337,7 +337,7 @@ wtf.app.ui.ExtensionTabPanel.prototype.layoutInternal = function() {
 /**
  * @override
  */
-wtf.app.ui.ExtensionTabPanel.prototype.setVisible = function(value) {
+wtf.app.ui.AddonTabPanel.prototype.setVisible = function(value) {
   goog.base(this, 'setVisible', value);
   if (this.handlers_ && this.handlers_['onVisibilityChange']) {
     this.handlers_['onVisibilityChange'](value);

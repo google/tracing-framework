@@ -54,7 +54,7 @@ var Options = function() {
    * @type {!Object.<!Object>}
    * @private
    */
-  this.extensions_ = {};
+  this.addons_ = {};
 
   /**
    * A list of page match patterns that will have tracing on.
@@ -116,7 +116,7 @@ Options.prototype.load = function(opt_callback, opt_scope) {
       this.showPageAction = values['showPageAction'] || true;
       this.showContextMenu = values['showContextMenu'] || false;
       this.showDevPanel = values['showDevPanel'] || false;
-      this.extensions_ = values['extensions'] || {};
+      this.addons_ = values['extensions'] || {};
       this.pageWhitelist_ = values['pageWhitelist'] || [];
       this.pageBlacklist_ = values['pageBlacklist'] || [];
       this.pageOptions_ = values['pageOptions'] || {};
@@ -137,7 +137,7 @@ Options.prototype.save = function() {
       'showPageAction': this.showPageAction,
       'showContextMenu': this.showContextMenu,
       'showDevPanel': this.showDevPanel,
-      'extensions': this.extensions_,
+      'extensions': this.addons_,
       'pageWhitelist': this.pageWhitelist_,
       'pageBlacklist': this.pageBlacklist_,
       'pageOptions': this.pageOptions_
@@ -147,36 +147,36 @@ Options.prototype.save = function() {
 
 
 /**
- * Adds an extension.
- * @param {string} url Extension URL.
- * @param {!Object} manifest Extension manifest.
+ * Adds an addon.
+ * @param {string} url Addon URL.
+ * @param {!Object} manifest Addon manifest.
  */
-Options.prototype.addExtension = function(url, manifest) {
-  this.extensions_[url] = manifest;
+Options.prototype.addAddon = function(url, manifest) {
+  this.addons_[url] = manifest;
   this.save();
 };
 
 
 /**
- * Removes an extension.
- * @param {string} url Extension URL.
+ * Removes an addon.
+ * @param {string} url Addon URL.
  */
-Options.prototype.removeExtension = function(url) {
-  delete this.extensions_[url];
+Options.prototype.removeAddon = function(url) {
+  delete this.addons_[url];
   this.save();
 };
 
 
 /**
- * Gets a list of all added extensions.
- * @return {!Array.<{url: string, manifest: !Object}} A list of extensions.
+ * Gets a list of all addons.
+ * @return {!Array.<{url: string, manifest: !Object}} A list of addons.
  */
-Options.prototype.getExtensions = function() {
+Options.prototype.getAddons = function() {
   var result = [];
-  for (var url in this.extensions_) {
+  for (var url in this.addons_) {
     result.push({
       url: url,
-      manifest: this.extensions_[url]
+      manifest: this.addons_[url]
     });
   }
   return result;
@@ -287,9 +287,8 @@ Options.prototype.blacklistPage = function(url) {
  */
 Options.prototype.getDefaultPageOptions = function(url) {
   // TODO(benvanik): pull from global options?
-  var extensions = [
-    // 'http://localhost:8080/extensions/test/extension.json',
-    // 'http://localhost:8080/extensions/webglcapture/webglcapture.json'
+  var addons = [
+    // 'http://localhost:8080/addons/test/extension.json',
   ];
 
   var options = {
@@ -299,7 +298,7 @@ Options.prototype.getDefaultPageOptions = function(url) {
     'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
-    'wtf.extensions': extensions,
+    'wtf.addons': addons,
     'wtf.trace.provider.chromeDebug.present': true,
     'wtf.trace.provider.chromeDebug.tracing': false
   };
@@ -336,7 +335,7 @@ Options.prototype.getPageOptions = function(url) {
         case 'wtf.injector':
         case 'wtf.hud.app.mode':
         case 'wtf.hud.app.endpoint':
-        case 'wtf.extensions':
+        case 'wtf.addons':
         case 'wtf.trace.provider.chromeDebug.present':
         case 'wtf.trace.provider.chromeDebug.tracing':
           continue;

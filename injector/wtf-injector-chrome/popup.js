@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 /**
- * Sets up the add extensions box.
+ * Sets up the add addons box.
  */
 function setupAddBox() {
   var addBox = document.querySelector('.addRow input');
@@ -51,9 +51,9 @@ function setupAddBox() {
       clearError();
       return;
     }
-    fetchExtensionManifest(addBox.value);
+    fetchAddonManifest(addBox.value);
   };
-  function fetchExtensionManifest(url) {
+  function fetchAddonManifest(url) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onerror = function() {
@@ -78,7 +78,7 @@ function setupAddBox() {
       }
 
       clearError();
-      addExtension(url, manifest);
+      addAddon(url, manifest);
     };
     try {
       xhr.send(null);
@@ -93,17 +93,17 @@ function setupAddBox() {
     addBox.classList.remove('kTextFieldError');
   };
 
-  function addExtension(url, manifest) {
-    _gaq.push(['_trackEvent', 'popup', 'extension_added']);
+  function addAddon(url, manifest) {
+    _gaq.push(['_trackEvent', 'popup', 'addon_added']);
 
     addBox.value = '';
     port.postMessage({
-      command: 'add_extension',
+      command: 'add_addon',
       url: url,
       manifest: manifest
     });
     port.postMessage({
-      command: 'toggle_extension',
+      command: 'toggle_addon',
       enabled: true,
       url: url
     });
@@ -129,17 +129,17 @@ function updateWithInfo(info) {
       break;
   }
 
-  buildExtensionTable(info.all_extensions, info.options['wtf.extensions']);
+  buildAddonTable(info.all_addons, info.options['wtf.addons']);
 };
 
 
 /**
- * Builds the extension table.
- * @param {!Array.<!Object>} extensions Extension information.
- * @param {!Array.<string>} enabledExtensions Extensions that are enabled.
+ * Builds the addon table.
+ * @param {!Array.<!Object>} addons Addon information.
+ * @param {!Array.<string>} enabledAddons Addons that are enabled.
  */
-function buildExtensionTable(extensions, enabledExtensions) {
-  var tbody = document.querySelector('.extensionPicker tbody');
+function buildAddonTable(addons, enabledAddons) {
+  var tbody = document.querySelector('.addonPicker tbody');
 
   // Remove all old content.
   while (tbody.firstChild) {
@@ -147,22 +147,22 @@ function buildExtensionTable(extensions, enabledExtensions) {
   }
 
   // Add empty row.
-  if (!extensions.length) {
+  if (!addons.length) {
     var tr = document.createElement('tr');
     tr.className = 'emptyRow';
     var td = document.createElement('td');
-    td.innerText = 'No extensions added.';
+    td.innerText = 'No addons added.';
     tr.appendChild(td);
     tbody.appendChild(tr);
   }
 
   // Build the table.
-  for (var n = 0; n < extensions.length; n++) {
-    var extension = extensions[n];
+  for (var n = 0; n < addons.length; n++) {
+    var extension = addons[n];
     addExtensionRow(extension);
   }
   function addExtensionRow(extension) {
-    var isEnabled = enabledExtensions.indexOf(extension.url) >= 0;;
+    var isEnabled = enabledAddons.indexOf(extension.url) >= 0;;
 
     var td = document.createElement('td');
     var input = document.createElement('input');
@@ -187,7 +187,7 @@ function buildExtensionTable(extensions, enabledExtensions) {
     tbody.appendChild(tr);
 
     function changed() {
-      _gaq.push(['_trackEvent', 'popup', 'extension_toggled']);
+      _gaq.push(['_trackEvent', 'popup', 'addon_toggled']);
 
       port.postMessage({
         command: 'toggle_extension',
@@ -204,17 +204,17 @@ function buildExtensionTable(extensions, enabledExtensions) {
     };
 
     remove.onclick = function() {
-      _gaq.push(['_trackEvent', 'popup', 'extension_removed']);
+      _gaq.push(['_trackEvent', 'popup', 'addon_removed']);
 
       if (isEnabled) {
         port.postMessage({
-          command: 'toggle_extension',
+          command: 'toggle_addon',
           enabled: false,
           url: extension.url
         });
       }
       port.postMessage({
-        command: 'remove_extension',
+        command: 'remove_addon',
         url: extension.url
       });
     };

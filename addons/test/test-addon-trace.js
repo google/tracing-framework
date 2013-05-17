@@ -11,6 +11,6 @@ wtf.hud.addButton({
   scope: null
 });
 
-console.log('extension loaded', wtf);
+console.log('test addon loaded', wtf);
 
 })();
