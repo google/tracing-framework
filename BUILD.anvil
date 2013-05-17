@@ -482,7 +482,7 @@ archive_files(
 file_set(
     name='injector',
     srcs=[
-        'injector/wtf-injector-chrome:wtf-injector-chrome',
+        'extensions/wtf-injector-chrome:wtf-injector-chrome',
         ])
 
 file_set(

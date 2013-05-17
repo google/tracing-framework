@@ -52,13 +52,13 @@ sed -i.bak \
     package.json
 rm package.json.bak
 
-echo "-> injector/wtf-injector-chrome/manifest.json"
+echo "-> extensions/wtf-injector-chrome/manifest.json"
 # __"version": "2012.12.17.1",
 manifest_string="$ver_major.$ver_minor.$ver_patch.$ver_tag"
 sed -i.bak \
     "s/^\ \ \"version\": \".*\",$/\ \ \"version\": \"$manifest_string\",/" \
-    injector/wtf-injector-chrome/manifest.json
-rm injector/wtf-injector-chrome/manifest.json.bak
+    extensions/wtf-injector-chrome/manifest.json
+rm extensions/wtf-injector-chrome/manifest.json.bak
 
 echo "-> src/wtf/version.js"
 # __return 1355734800000; // time
@@ -85,5 +85,5 @@ echo "Committing changes..."
 
 git commit -o -m "Updating version to $ver_string." \
     package.json \
-    injector/wtf-injector-chrome/manifest.json \
+    extensions/wtf-injector-chrome/manifest.json \
     src/wtf/version.js

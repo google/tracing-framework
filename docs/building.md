@@ -36,7 +36,7 @@ deploy it to a local directory:
 
 ```bash
 # Build a release build and get all of the files in a folder
-anvil deploy -o build-bin/ injector/wtf-injector-chrome:deploy
+anvil deploy -o build-bin/ extensions/wtf-injector-chrome:deploy
 # Alternatively, use an alias:
 deployext
 ```

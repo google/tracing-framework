@@ -292,7 +292,8 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ =
  */
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
     function() {
-  // This table should match the one in injector/wtf-injector-chrome/debugger.js
+  // This table should match the one in
+  // extensions/wtf-injector-chrome/debugger.js
   var timebase = wtf.timebase();
 
   // GCEvent: garbage collections.

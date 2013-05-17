@@ -116,7 +116,7 @@ If you're running from source, use `./bin/instrument.js --server`.
 ### Install the Extension
 
 Navigate to `chrome://extensions`, click Load Unpacked Extensions, and select
-the `experiments/wtf-instrument-proxy/` directory. You can leave the extension
+the `extensions/wtf-instrument-proxy/` directory. You can leave the extension
 installed but should disable it when not in use so that you aren't instrumenting
 every page you visit!
 
