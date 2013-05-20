@@ -62,7 +62,7 @@ wtf.io.MemoryReadStream.prototype.listeningBegan = function() {
  * @param {!wtf.io.ByteArray} data Binary data.
  */
 wtf.io.MemoryReadStream.prototype.addData = function(data) {
-  var buffer = new wtf.io.Buffer(data.length, data);
+  var buffer = new wtf.io.Buffer(data.length, null, data);
   if (this.isListening()) {
     this.fireReadEvent(buffer, buffer.capacity);
   } else {

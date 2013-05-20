@@ -35,12 +35,18 @@ wtf.io.ReturnBufferCallback;
  * Buffers are very thin wrappers around byte arrays to make it easier to pass
  * them around along with the current read/write offset.
  *
+ * If desired, a string table can be passed in to enable more efficient string
+ * storage. If no table is provided strings will be embedded directly in the
+ * buffer. Since string tables are set in read-only or write-only mode, only
+ * those operations will be allowed when a string table is present.
+ *
  * @param {number} capacity Total capacity, in bytes.
+ * @param {wtf.io.StringTable=} opt_stringTable String table.
  * @param {wtf.io.ByteArray=} opt_data Override data. This will be used instead
  *     of a new array. It will not be cloned!
  * @constructor
  */
-wtf.io.Buffer = function(capacity, opt_data) {
+wtf.io.Buffer = function(capacity, opt_stringTable, opt_data) {
   /**
    * Capacity, in bytes.
    * @type {number}
@@ -60,6 +66,12 @@ wtf.io.Buffer = function(capacity, opt_data) {
    * @type {!wtf.io.ByteArray}
    */
   this.data = opt_data || wtf.io.createByteArray(capacity);
+
+  /**
+   * String table used for string storage, if any.
+   * @type {wtf.io.StringTable}
+   */
+  this.stringTable = opt_stringTable || null;
 };
 
 
@@ -483,6 +495,12 @@ wtf.io.Buffer.prototype.readAsciiString = function() {
     return null;
   }
 
+  // Check for string table reference.
+  if (charCount == 0xFFFF) {
+    goog.asserts.assert(this.stringTable);
+    return this.stringTable.getString(this.readUint32());
+  }
+
   // TODO(benvanik): evaluate not using a temp array
   var data = this.data;
   var offset = this.offset;
@@ -507,6 +525,15 @@ wtf.io.Buffer.prototype.writeAsciiString = function(value) {
     this.ensureCapacity_(2);
     this.data[this.offset++] = 0;
     this.data[this.offset++] = 0;
+    return;
+  }
+
+  // If a string table is active, write a reference.
+  if (this.stringTable) {
+    this.ensureCapacity_(2);
+    this.data[this.offset++] = 0xFF;
+    this.data[this.offset++] = 0xFF;
+    this.writeUint32(this.stringTable.addString(value));
     return;
   }
 
@@ -568,6 +595,12 @@ wtf.io.Buffer.prototype.readUtf8String = function() {
     return null;
   }
 
+  // Check for string table reference.
+  if (charCount == 0xFFFF) {
+    goog.asserts.assert(this.stringTable);
+    return this.stringTable.getString(this.readUint32());
+  }
+
   // Byte count.
   var data = this.data;
   var offset = this.offset;
@@ -613,6 +646,15 @@ wtf.io.Buffer.prototype.writeUtf8String = function(value) {
     this.ensureCapacity_(2);
     this.data[this.offset++] = 0;
     this.data[this.offset++] = 0;
+    return;
+  }
+
+  // If a string table is active, write a reference.
+  if (this.stringTable) {
+    this.ensureCapacity_(2);
+    this.data[this.offset++] = 0xFF;
+    this.data[this.offset++] = 0xFF;
+    this.writeUint32(this.stringTable.addString(value));
     return;
   }
 
