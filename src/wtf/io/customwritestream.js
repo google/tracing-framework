@@ -95,7 +95,7 @@ wtf.io.CustomWriteStream.prototype.disposeInternal = function() {
  */
 wtf.io.CustomWriteStream.prototype.write = function(
     buffer, returnBufferCallback, opt_selfObj) {
-  return this.target_['write'](
+  this.target_['write'](
       buffer.data, buffer.offset,
       function() {
         returnBufferCallback.call(opt_selfObj, buffer);

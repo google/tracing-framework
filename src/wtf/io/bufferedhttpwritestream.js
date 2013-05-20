@@ -15,6 +15,7 @@ goog.provide('wtf.io.BufferedHttpWriteStream');
 
 goog.require('wtf.io');
 goog.require('wtf.io.HttpWriteStream');
+goog.require('wtf.timing');
 
 
 
@@ -62,7 +63,9 @@ wtf.io.BufferedHttpWriteStream.prototype.write = function(
     buffer, returnBufferCallback, opt_selfObj) {
   var newBuffer = buffer.clone();
   this.buffers_.push(newBuffer);
-  return true;
+  wtf.timing.setTimeout(0, function() {
+    returnBufferCallback.call(opt_selfObj, buffer);
+  });
 };
 
 

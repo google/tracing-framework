@@ -47,8 +47,9 @@ To programmatically receive written data you can pass an object. This object
 must contain a `write` method and may optionally contain `flush` and `close`
 methods.
 
-* `write(Uint8Array|Array, length)`: write the given bytes up to the provided
-  length (do not trust the array length).
+* `write(Uint8Array|Array, length, done)`: write the given bytes up to the
+  provided length (do not trust the array length). You must call done() when
+  writing has completed.
 * `flush()`: write any pending data, if required.
 * `close()`: the stream is closed and no more data will be written.
 

@@ -15,6 +15,7 @@ goog.provide('wtf.io.MemoryWriteStream');
 
 goog.require('wtf.io');
 goog.require('wtf.io.WriteStream');
+goog.require('wtf.timing');
 
 
 
@@ -89,7 +90,9 @@ wtf.io.MemoryWriteStream.prototype.write = function(
   var newBuffer = /** @type {!wtf.io.Buffer} */ (buffer.clone());
   this.buffers_.push(newBuffer.data);
   this.totalLength_ += newBuffer.capacity;
-  return true;
+  wtf.timing.setTimeout(0, function() {
+    returnBufferCallback.call(opt_selfObj, buffer);
+  });
 };
 
 

@@ -14,6 +14,7 @@
 goog.provide('wtf.io.NullWriteStream');
 
 goog.require('wtf.io.WriteStream');
+goog.require('wtf.timing');
 
 
 
@@ -35,7 +36,9 @@ goog.inherits(wtf.io.NullWriteStream, wtf.io.WriteStream);
 wtf.io.NullWriteStream.prototype.write = function(
     buffer, returnBufferCallback, opt_selfObj) {
   // Always pretend the write occurs.
-  return true;
+  wtf.timing.setTimeout(0, function() {
+    returnBufferCallback.call(opt_selfObj, buffer);
+  });
 };
 
 

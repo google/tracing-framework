@@ -115,8 +115,10 @@ wtf.io.StreamingHttpWriteStream.prototype.write = function(
   // Fast-path for synchronous and already created.
   if (!async &&
       this.createWaiter_.getState() == goog.result.Result.State.SUCCESS) {
-    this.postData(this.baseUrl_ + '/append', mimeType, data);
-    return true;
+    var result = this.postData(this.baseUrl_ + '/append', mimeType, data);
+    goog.result.wait(result, function() {
+      returnBufferCallback.call(opt_selfObj, buffer);
+    }, this);
   } else {
     // Async - only release buffer when done.
     goog.result.wait(this.createWaiter_, function() {
@@ -126,7 +128,6 @@ wtf.io.StreamingHttpWriteStream.prototype.write = function(
         returnBufferCallback.call(opt_selfObj, buffer);
       }, this);
     }, this);
-    return false;
   }
 };
 

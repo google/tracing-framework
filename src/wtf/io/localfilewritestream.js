@@ -16,6 +16,7 @@ goog.provide('wtf.io.LocalFileWriteStream');
 goog.require('wtf.io');
 goog.require('wtf.io.WriteStream');
 goog.require('wtf.pal');
+goog.require('wtf.timing');
 
 
 
@@ -71,7 +72,9 @@ wtf.io.LocalFileWriteStream.prototype.write = function(
     buffer, returnBufferCallback, opt_selfObj) {
   var newBuffer = buffer.clone();
   this.bufferDatas_.push(newBuffer.data);
-  return true;
+  wtf.timing.setTimeout(0, function() {
+    returnBufferCallback.call(opt_selfObj, buffer);
+  });
 };
 
 
