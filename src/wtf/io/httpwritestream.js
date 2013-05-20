@@ -16,7 +16,6 @@ goog.provide('wtf.io.HttpWriteStream');
 goog.require('goog.asserts');
 goog.require('goog.labs.net.xhr');
 goog.require('goog.userAgent.product');
-goog.require('wtf.io');
 goog.require('wtf.io.WriteStream');
 
 
@@ -43,24 +42,19 @@ goog.inherits(wtf.io.HttpWriteStream, wtf.io.WriteStream);
  * @protected
  */
 wtf.io.HttpWriteStream.prototype.postData = function(url, mimeType, data) {
+  // Chrome prefers ArrayBufferView, others prefer ArrayBuffer.
   var postData = null;
-  if (wtf.io.HAS_TYPED_ARRAYS) {
-    // Chrome prefers ArrayBufferView, others prefer ArrayBuffer.
-    if (goog.userAgent.product.CHROME) {
-      postData = data;
-    } else {
-      // Need ArrayBuffer - must truncate if data is less than full thing.
-      if (data.length < data.buffer.byteLength) {
-        var tempData = new Uint8Array(data.length);
-        tempData.set(data);
-        postData = tempData.buffer;
-      } else {
-        postData = data.buffer;
-      }
-    }
+  if (goog.userAgent.product.CHROME) {
+    postData = data;
   } else {
-    // Need to convert to base64 data?
-    // TODO(benvanik): legacy browsers without typed arrays.
+    // Need ArrayBuffer - must truncate if data is less than full thing.
+    if (data.length < data.buffer.byteLength) {
+      var tempData = new Uint8Array(data.length);
+      tempData.set(data);
+      postData = tempData.buffer;
+    } else {
+      postData = data.buffer;
+    }
   }
   goog.asserts.assert(postData);
 

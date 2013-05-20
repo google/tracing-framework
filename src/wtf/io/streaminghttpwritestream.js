@@ -17,7 +17,6 @@ goog.require('goog.asserts');
 goog.require('goog.labs.net.xhr');
 goog.require('goog.result');
 goog.require('goog.result.Result');
-goog.require('wtf.io');
 goog.require('wtf.io.HttpWriteStream');
 
 
@@ -97,18 +96,9 @@ wtf.io.StreamingHttpWriteStream.prototype.disposeInternal = function() {
  */
 wtf.io.StreamingHttpWriteStream.prototype.write = function(
     buffer, returnBufferCallback, opt_selfObj) {
+  // Typed arrays - can subview to prevent a clone here.
   var async = true;
-  var data = null;
-  if (wtf.io.HAS_TYPED_ARRAYS) {
-    // Typed arrays - can subview to prevent a clone here.
-    async = true;
-    data = new Uint8Array(buffer.data.buffer, 0, buffer.offset);
-  } else {
-    // Normal arrays - clone (and prevent async).
-    async = false;
-    data = wtf.io.sliceByteArray(buffer.data, 0, buffer.offset);
-  }
-  goog.asserts.assert(data);
+  var data = new Uint8Array(buffer.data.buffer, 0, buffer.offset);
 
   var mimeType = 'application/octet-stream';
 

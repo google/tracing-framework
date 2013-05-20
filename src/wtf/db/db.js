@@ -66,6 +66,7 @@ wtf.db.load = function(input) {
         goog.dispose(db);
         return null;
       }
+      goog.asserts.assert(fileData);
       db.addBinarySource(fileData);
     } else if (goog.string.endsWith(input, '.wtf-json')) {
       var jsonSource = platform.readTextFile(input);

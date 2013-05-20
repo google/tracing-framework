@@ -22,7 +22,6 @@ goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
 goog.require('wtf.db.PresentationHint');
 goog.require('wtf.db.Unit');
-goog.require('wtf.io');
 goog.require('wtf.util');
 
 
@@ -69,7 +68,6 @@ wtf.db.sources.CallsDataSource.prototype.start = function() {
   var inputBuffer = this.data_;
 
   // Ehh, only support typed arrays.
-  goog.asserts.assert(wtf.io.HAS_TYPED_ARRAYS);
   goog.asserts.assert(inputBuffer instanceof Uint8Array);
 
   var i = 0;

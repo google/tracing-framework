@@ -29,7 +29,7 @@ wtf.io.FILE_EXTENSION = '.wtf-trace';
 
 
 /**
- * @typedef {Array.<number>|Uint8Array}
+ * @typedef {Uint8Array}
  */
 wtf.io.ByteArray;
 
@@ -40,6 +40,7 @@ wtf.io.ByteArray;
  * @type {boolean}
  */
 wtf.io.HAS_TYPED_ARRAYS = !!goog.global['Uint8Array'];
+goog.asserts.assert(wtf.io.HAS_TYPED_ARRAYS);
 
 
 /**
@@ -49,14 +50,8 @@ wtf.io.HAS_TYPED_ARRAYS = !!goog.global['Uint8Array'];
  * @param {number} size Size, in bytes.
  * @return {!wtf.io.ByteArray} The new array.
  */
-wtf.io.createByteArray = wtf.io.HAS_TYPED_ARRAYS ? function(size) {
+wtf.io.createByteArray = function(size) {
   return new Uint8Array(size);
-} : function(size) {
-  var value = new Array(size);
-  for (var n = 0; n < value.length; n++) {
-    value[n] = 0;
-  }
-  return value;
 };
 
 
@@ -69,8 +64,7 @@ wtf.io.isByteArray = function(value) {
   if (!value) {
     return false;
   }
-  return (wtf.io.HAS_TYPED_ARRAYS && value instanceof Uint8Array) ||
-      goog.isArray(value);
+  return (value instanceof Uint8Array);
 };
 
 
@@ -114,14 +108,7 @@ wtf.io.byteArraysEqual = function(a, b) {
  * @param {number=} opt_targetOffset Offset into the target to write the source.
  */
 wtf.io.copyByteArray = function(source, target, opt_targetOffset) {
-  var targetOffset = opt_targetOffset || 0;
-  if (wtf.io.HAS_TYPED_ARRAYS) {
-    target.set(source, targetOffset);
-  } else {
-    for (var n = 0; n < source.length; n++) {
-      target[targetOffset + n] = source[n];
-    }
-  }
+  target.set(source, opt_targetOffset || 0);
 };
 
 
@@ -153,16 +140,18 @@ wtf.io.combineByteArrays = function(sources) {
  * @param {number} length Length from the offset to slice.
  * @return {!wtf.io.ByteArray} Sliced array.
  */
-wtf.io.sliceByteArray = wtf.io.HAS_TYPED_ARRAYS ?
-    function(source, offset, length) {
-      var target = new Uint8Array(length);
-      for (var n = 0; n < length; n++) {
-        target[n] = source[offset + n];
-      }
-      return target;
-    } : function(source, offset, length) {
-      return source.slice(offset, length);
-    };
+wtf.io.sliceByteArray = function(source, offset, length) {
+  // NOTE: IE10 does not have the slice method, so we need to fallback.
+  if (source.buffer.slice) {
+    var buffer = source.buffer.slice(offset, offset + length);
+    return new Uint8Array(buffer);
+  } else {
+    var subarray = source.subarray(offset, offset + length);
+    var target = new Uint8Array(subarray.length);
+    target.set(subarray);
+    return target;
+  }
+};
 
 
 /**

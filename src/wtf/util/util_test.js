@@ -7,7 +7,6 @@
 
 goog.provide('wtf.util_test');
 
-goog.require('wtf.io');
 goog.require('wtf.util');
 
 
@@ -70,10 +69,6 @@ wtf.util_test = suite('wtf.util', function() {
   });
 
   test('#convertAsciiStringToUint8Array', function() {
-    if (!wtf.io.HAS_TYPED_ARRAYS) {
-      return;
-    }
-
     assert.lengthOf(wtf.util.convertAsciiStringToUint8Array(''), 0);
     assert.arraysEqual(
         wtf.util.convertAsciiStringToUint8Array('abc'),

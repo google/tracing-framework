@@ -17,7 +17,6 @@ goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.fs');
-goog.require('wtf.io');
 goog.require('wtf.pal.IPlatform');
 
 
@@ -73,19 +72,9 @@ wtf.pal.BrowserPlatform.prototype.writeTextFile = function(
 wtf.pal.BrowserPlatform.prototype.writeBinaryFile = function(
     path, contents, opt_mimeType) {
   // Create blob from all parts.
-  var blob;
-  if (wtf.io.HAS_TYPED_ARRAYS) {
-    // Binary version.
-    blob = new Blob([contents], {
-      'type': opt_mimeType || 'application/octet-stream'
-    });
-  } else {
-    // Base64 version.
-    var stringData = wtf.io.byteArrayToString(contents);
-    blob = new Blob([stringData], {
-      'type': opt_mimeType || 'text/plain'
-    });
-  }
+  var blob = new Blob([contents], {
+    'type': opt_mimeType || 'application/octet-stream'
+  });
 
   this.downloadBlob_(path, blob);
 };
