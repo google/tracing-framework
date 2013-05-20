@@ -113,6 +113,17 @@ wtf.io.Buffer.prototype.truncate = function() {
 
 
 /**
+ * Resets the buffer offset and its string table to the start.
+ */
+wtf.io.Buffer.prototype.reset = function() {
+  this.offset = 0;
+  if (this.stringTable) {
+    this.stringTable.reset();
+  }
+};
+
+
+/**
  * Ensures that at least the given number of bytes are available for reading
  * from the buffer.
  * @param {number} size Number of bytes to ensure available.

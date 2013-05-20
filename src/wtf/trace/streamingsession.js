@@ -82,7 +82,10 @@ wtf.trace.StreamingSession = function(traceManager, stream, options) {
 
   // Allocate the buffers now.
   for (var n = 0; n < bufferCount; n++) {
-    this.unusedBuffers_.push(new wtf.io.Buffer(this.bufferSize));
+    // var stringTable = new wtf.io.StringTable(
+    //     wtf.io.StringTable.Mode.WRITE_ONLY);
+    var stringTable = null;
+    this.unusedBuffers_.push(new wtf.io.Buffer(this.bufferSize, stringTable));
     this.totalUnusedSize_ += this.bufferSize;
   }
 
@@ -175,7 +178,6 @@ wtf.trace.StreamingSession.prototype.nextBuffer = function() {
   // Attempt to get a buffer from the pool.
   if (this.unusedBuffers_.length) {
     var buffer = this.unusedBuffers_.pop();
-    buffer.offset = 0;
     this.totalUnusedSize_ -= buffer.capacity;
     return buffer;
   }
@@ -203,12 +205,7 @@ wtf.trace.StreamingSession.prototype.retireBuffer = function(buffer) {
   // Write the buffer to the stream.
   // This may be async and not allow the buffer to be reused - in that case,
   // we clean up in {@see #returnBufferCallback_}.
-  var immediate = this.stream_.write(buffer, this.returnBufferCallback_, this);
-  if (immediate) {
-    // Buffer written immediately - return to pool.
-    this.unusedBuffers_.push(buffer);
-    this.totalUnusedSize_ += buffer.capacity;
-  }
+  this.stream_.write(buffer, this.returnBufferCallback_, this);
 };
 
 
@@ -220,4 +217,5 @@ wtf.trace.StreamingSession.prototype.retireBuffer = function(buffer) {
 wtf.trace.StreamingSession.prototype.returnBufferCallback_ = function(buffer) {
   this.unusedBuffers_.push(buffer);
   this.totalUnusedSize_ += buffer.capacity;
+  buffer.reset();
 };

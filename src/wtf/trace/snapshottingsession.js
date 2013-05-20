@@ -71,7 +71,10 @@ wtf.trace.SnapshottingSession = function(traceManager, options) {
 
   // Allocate the buffers.
   for (var n = 0; n < bufferCount; n++) {
-    this.buffers_[n] = new wtf.io.Buffer(this.bufferSize);
+    // var stringTable = new wtf.io.StringTable(
+    //     wtf.io.StringTable.Mode.WRITE_ONLY);
+    var stringTable = null;
+    this.buffers_[n] = new wtf.io.Buffer(this.bufferSize, stringTable);
     this.dirtyBuffers_[n] = false;
   }
 
@@ -125,7 +128,7 @@ wtf.trace.SnapshottingSession.prototype.reset = function() {
   }
 
   for (var n = 0; n < this.buffers_.length; n++) {
-    this.buffers_[n].offset = 0;
+    this.buffers_[n].reset();
     this.dirtyBuffers_[n] = false;
   }
 };
@@ -181,12 +184,9 @@ wtf.trace.SnapshottingSession.prototype.snapshot = function(
       this.setupStream_(stream);
     }
 
-    // Begin write.
-    var immediate = stream.write(buffer, this.returnBufferCallback_, this);
-    if (!immediate) {
-      // Lock until the buffer is returned.
-      this.pendingWrites_++;
-    }
+    // Begin write and lock until the buffer is returned.
+    this.pendingWrites_++;
+    stream.write(buffer, this.returnBufferCallback_, this);
   }
 
   // Flush the stream.
@@ -224,12 +224,9 @@ wtf.trace.SnapshottingSession.prototype.setupStream_ = function(stream) {
   // Write discontinuity event.
   //wtf.trace.BuiltinEvents.discontinuity(wtf.timebase(), buffer);
 
-  // Write header buffer.
-  var immediate = stream.write(buffer, this.returnBufferCallback_, this);
-  if (!immediate) {
-    // Lock until the buffer is returned.
-    this.pendingWrites_++;
-  }
+  // Write header buffer and lock until the buffer is returned.
+  this.pendingWrites_++;
+  stream.write(buffer, this.returnBufferCallback_, this);
 };
 
 
@@ -259,7 +256,7 @@ wtf.trace.SnapshottingSession.prototype.nextBuffer = function() {
 
   // Mark it as undirty and reset, as it's being reused.
   this.dirtyBuffers_[this.nextBufferIndex_] = false;
-  buffer.offset = 0;
+  buffer.reset();
 
   this.nextBufferIndex_ = (this.nextBufferIndex_ + 1) % this.buffers_.length;
   return buffer;

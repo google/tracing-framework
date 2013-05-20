@@ -14,6 +14,7 @@
 goog.provide('wtf.db');
 goog.provide('wtf.db.Granularity');
 
+goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('wtf.db.Database');
 goog.require('wtf.io');

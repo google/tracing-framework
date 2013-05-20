@@ -58,6 +58,25 @@ wtf.io.StringTable.Mode = {
 
 
 /**
+ * Resets all string table data.
+ */
+wtf.io.StringTable.prototype.reset = function() {
+  this.values_ = [];
+};
+
+
+/**
+ * Clones the string table contents.
+ * @return {!wtf.io.StringTable} New string table.
+ */
+wtf.io.StringTable.prototype.clone = function() {
+  var other = new wtf.io.StringTable(this.mode_);
+  other.values_ = this.values_.slice();
+  return other;
+};
+
+
+/**
  * Adds a string to the table.
  * @param {string} value String value.
  * @return {number} Ordinal value.
