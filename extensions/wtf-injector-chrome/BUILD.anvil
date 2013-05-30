@@ -70,9 +70,9 @@ copy_files(
     name='deploy',
     srcs=[':combined_files'],
     out='../../wtf-injector-chrome/',
-    flatten_paths=['injector/wtf-injector-chrome/'])
+    flatten_paths=['extensions/wtf-injector-chrome/'])
 
 archive_files(
     name='wtf-injector-chrome',
     srcs=':combined_files',
-    flatten_paths=['injector/wtf-injector-chrome/'])
+    flatten_paths=['extensions/wtf-injector-chrome/'])
