@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WTF DB</title>
+  <script src="../wtf_ui_js_compiled.js"></script>
+</head>
+<body>
+  <script>
+    (function() {
+      var search = window.location.search;
+      if (search && search.length &&
+          search.indexOf('?url=') == 0) {
+        var url = search.substr(5);
+        console.log('Loading ' + url + '...');
+        var xhr = new XMLHttpRequest();
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+          if (xhr.status == 200) {
+            window.db = wtf.db.load(new Uint8Array(xhr.response));
+            console.log('Loaded!', window.db);
+          } else {
+            console.log('Failed: ', xhr.status, xhr.statusText);
+          }
+        };
+        xhr.open('GET', url, true);
+        xhr.send();
+      }
+    })();
+  </script>
+  <div>Open the dev tools and use <code>wtf.db</code> to play around.</div>
+  <div>Pass <code>?url=some-trace.wtf-trace</code> to create a global 'db' object with the given trace loaded already.</div>
+</body>
+</html>
