@@ -116,6 +116,24 @@ wtf.db.Frame.prototype.getDuration = function() {
 
 
 /**
+ * Gets the ID of the start event.
+ * @return {number} ID of the start event.
+ */
+wtf.db.Frame.prototype.getStartEventId = function() {
+  return this.frameStartEventId_;
+};
+
+
+/**
+ * Gets the ID of the end event.
+ * @return {number} ID of the end event.
+ */
+wtf.db.Frame.prototype.getEndEventId = function() {
+  return this.frameEndEventId_;
+};
+
+
+/**
  * Comparer used with {@see goog.array#binarySearch}.
  * @param {!wtf.db.Frame} a LHS.
  * @param {!wtf.db.Frame} b RHS.
