@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.providers.ImageProvider');
 
+goog.require('wtf.data.webidl');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.eventtarget');
 
@@ -70,7 +71,7 @@ wtf.trace.providers.ImageProvider.prototype.getSettingsSectionConfigs =
 wtf.trace.providers.ImageProvider.prototype.injectImage_ = function() {
   var originalImage = goog.global['Image'];
 
-  // TODO(benvanik): inject both Image and HTMLImgElement
+  // TODO(benvanik): inject both Image and HTMLImageElement
 
   // TODO(benvanik): full proxy
   var proto = Image.prototype;
@@ -83,9 +84,13 @@ wtf.trace.providers.ImageProvider.prototype.injectImage_ = function() {
     eventNames = wtf.trace.eventtarget.getEventNames(proto);
   }
 
+  // Get all event types from the IDL store.
+  // This will be a map of event name to the {@code EVENT_TYPES} objects.
+  var eventTypes = wtf.data.webidl.getAllEvents('HTMLImageElement', eventNames);
+
   // Create a descriptor object.
   var descriptor = wtf.trace.eventtarget.createDescriptor(
-      'Image', eventNames);
+      'Image', eventTypes);
 
   // Stash the descriptor. It may be used by the hookDomEvents util.
   wtf.trace.eventtarget.setDescriptor(proto, descriptor);

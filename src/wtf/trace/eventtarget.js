@@ -15,6 +15,7 @@ goog.provide('wtf.trace.eventtarget');
 goog.provide('wtf.trace.eventtarget.BaseEventTarget');
 goog.provide('wtf.trace.eventtarget.Descriptor');
 
+goog.require('wtf.data.webidl');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
 
@@ -111,6 +112,7 @@ wtf.trace.eventtarget.getEventNames = function(target) {
 /**
  * @typedef {{
  *   prefix: string,
+ *   eventTypes: !Object.<!Object>,
  *   eventNames: !Array.<string>,
  *   eventMap: !Object.<Function>,
  *   eventInfos: !Array.<!{
@@ -129,22 +131,23 @@ wtf.trace.eventtarget.Descriptor;
  * This doesn't hook any methods but makes it easier to do so later either
  * via mixin or type overwriting.
  * @param {string} prefix Event name prefix.
- * @param {!Array.<string>} eventNames All event names, such as 'load', 'error'.
+ * @param {!Object.<Object>} eventTypes All event types, such as 'load', mapped
+ *     to their event type descriptor from {@see wtf.data.webidl}.
  * @return {!wtf.trace.eventtarget.Descriptor} Event target descriptor.
  */
-wtf.trace.eventtarget.createDescriptor = function(prefix, eventNames) {
-  // TODO(benvanik): allow for extraction of event properties
-  // Maybe use signature like args? eg:
-  // ['mousemove(int32 clientX, int32 clientY)', 'mousedown(...)']
-
+wtf.trace.eventtarget.createDescriptor = function(prefix, eventTypes) {
   var eventMap = {};
 
+  var eventNames = [];
   var eventInfos = [];
-  for (var n = 0; n < eventNames.length; n++) {
-    var eventName = eventNames[n];
+  for (var eventName in eventTypes) {
+    var eventType = eventTypes[eventName];
+    eventNames.push(eventName);
 
+    var signature = wtf.data.webidl.getEventSignature(
+        prefix, eventName, eventType);
     var scopeEvent = wtf.trace.events.createScope(
-        prefix + '#on' + eventName);
+        signature);
     eventMap[eventName] = scopeEvent;
 
     var hiddenName = '__wtf_event_value_' + eventName;
@@ -173,6 +176,7 @@ wtf.trace.eventtarget.createDescriptor = function(prefix, eventNames) {
 
   return {
     prefix: prefix,
+    eventTypes: eventTypes,
     eventNames: eventNames,
     eventMap: eventMap,
     eventInfos: eventInfos

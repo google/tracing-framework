@@ -19,6 +19,7 @@ goog.require('wtf.trace.providers.ChromeDebugProvider');
 goog.require('wtf.trace.providers.ConsoleProvider');
 goog.require('wtf.trace.providers.DomProvider');
 goog.require('wtf.trace.providers.ImageProvider');
+goog.require('wtf.trace.providers.ReplayProvider');
 goog.require('wtf.trace.providers.TimingProvider');
 goog.require('wtf.trace.providers.WebGLProvider');
 goog.require('wtf.trace.providers.WebWorkerProvider');
@@ -31,6 +32,13 @@ goog.require('wtf.trace.providers.XhrProvider');
  */
 wtf.trace.providers.setup = function(traceManager) {
   var options = traceManager.getOptions();
+
+  // Replay provider must go first, as it does some really crazy things.
+  if (!wtf.NODE &&
+      options.getBoolean('wtf.trace.replayable', false)) {
+    traceManager.addProvider(
+        new wtf.trace.providers.ReplayProvider(traceManager, options));
+  }
 
   traceManager.addProvider(
       new wtf.trace.providers.ConsoleProvider(options));
