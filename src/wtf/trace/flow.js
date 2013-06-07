@@ -56,19 +56,21 @@ wtf.trace.Flow.INVALID_ID = 0;
 
 
 /**
+ * Next flow ID.
+ * It'd be much better to pick a real ID that won't conflict.
+ * @type {number}
+ * @private
+ */
+wtf.trace.Flow.nextId_ = 1;
+
+
+/**
  * Generates a new semi-unique flow ID.
  * @return {number} Flow ID.
  * @private
  */
 wtf.trace.Flow.generateId_ = function() {
-  var value = 0 | Math.random() * (1 << 31);
-
-  // Ensure generated IDs are never all zeros.
-  if (!value) {
-    value = 1;
-  }
-
-  return value;
+  return wtf.trace.Flow.nextId_++;
 };
 
 

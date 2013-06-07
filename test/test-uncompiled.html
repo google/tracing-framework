@@ -20,7 +20,8 @@
       'wtf.hud.app.endpoint': 'http://localhost:8080/app/maindisplay-debug.html',
       'wtf.trace.target': 'file://test',
       //'wtf.trace.target': 'http://localhost:9024',
-      'wtf.trace.streaming.flushIntervalMs': 100
+      'wtf.trace.streaming.flushIntervalMs': 100,
+      'wtf.trace.replayable': true
     };
     wtf.hud.prepare(options);
     wtf.trace.start(options);

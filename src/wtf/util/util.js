@@ -207,6 +207,62 @@ wtf.util.convertUint8ArrayToAsciiString = function(value) {
 };
 
 
+/**
+ * Generates an XPath expression that tries to uniquely identify a DOM element.
+ * @param {Element} targetElement DOM element.
+ * @return {?string} XPath string or null if not possible.
+ */
+wtf.util.getElementXPath = function(targetElement) {
+  if (!targetElement) {
+    // No element is null.
+    return null;
+  } else if (targetElement.id) {
+    // Element has an ID - easy.
+    return '//*[@id="' + targetElement.id + '"]';
+  }
+
+  // Slow path - build a full xpath string.
+  var paths = [];
+  for (var el = targetElement;
+      el && el.nodeType == Node.ELEMENT_NODE; el = el.parentNode) {
+    var index = 0;
+    for (var sibling = el.previousSibling; sibling;
+        sibling = sibling.previousSibling) {
+      if (sibling.nodeType == Node.DOCUMENT_TYPE_NODE) {
+        continue;
+      }
+      if (sibling.nodeName == el.nodeName) {
+        index++;
+      }
+    }
+    var tagName = el.nodeName.toLowerCase();
+    var pathIndex = '[' + (index + 1) + ']';
+    paths.splice(0, 0, tagName + pathIndex);
+  }
+  return paths.length ? '/' + paths.join('/') : null;
+};
+
+
+/**
+ * Attempts to find an element int he DOM by XPath.
+ * @param {string?} path XPath query string.
+ * @param {Document=} opt_document Document to query.
+ * @return {Element} Element, if found.
+ */
+wtf.util.findElementByXPath = function(path, opt_document) {
+  if (!path) {
+    return null;
+  }
+  var result = document.evaluate(
+      path,
+      opt_document || goog.global['document'],
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null);
+  return result.singleNodeValue;
+};
+
+
 goog.exportSymbol(
     'wtf.util.formatTime',
     wtf.util.formatTime);

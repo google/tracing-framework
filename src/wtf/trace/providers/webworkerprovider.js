@@ -20,6 +20,7 @@ goog.require('goog.result');
 goog.require('goog.result.Result');
 goog.require('goog.result.SimpleResult');
 goog.require('goog.string');
+goog.require('wtf.data.webidl');
 goog.require('wtf.trace');
 goog.require('wtf.trace.ISessionListener');
 goog.require('wtf.trace.Provider');
@@ -160,10 +161,14 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
   var originalWorker = goog.global['Worker'];
   var prefix = 'Worker';
 
-  var descriptor = wtf.trace.eventtarget.createDescriptor('Worker', [
+  // Get all event types from the IDL store.
+  // This will be a map of event name to the {@code EVENT_TYPES} objects.
+  var eventTypes = wtf.data.webidl.getAllEvents('Worker', [
     'error',
     'message'
   ]);
+
+  var descriptor = wtf.trace.eventtarget.createDescriptor('Worker', eventTypes);
 
   // Get WTF URL.
   var wtfUrl = wtf.trace.util.getScriptUrl();
@@ -408,14 +413,18 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
   var workerId = goog.global['WTF_WORKER_ID'];
   var baseUri = new goog.Uri(goog.global['WTF_WORKER_BASE_URI']);
 
+  // Get all event types from the IDL store.
+  // This will be a map of event name to the {@code EVENT_TYPES} objects.
+  var eventTypes = wtf.data.webidl.getAllEvents('WorkerGlobalScope', [
+    'error',
+    'online',
+    'offline',
+    'message'
+  ]);
+
   // Mixin addEventListener/etc.
   var globalDescriptor = wtf.trace.eventtarget.createDescriptor(
-      'WorkerGlobalScope', [
-        'error',
-        'online',
-        'offline',
-        'message'
-      ]);
+      'WorkerGlobalScope', eventTypes);
   wtf.trace.eventtarget.mixin(globalDescriptor, goog.global);
 
   // Setup on* events.
