@@ -32,8 +32,8 @@
     "mocha": "1.4.2",
     "chai": "1.2.0",
     "benchmark": "1.0.0",
-    "wd": "*",
-    "less": "*"
+    "wd": "0.0.32",
+    "less": "1.4.0"
   },
   "optionalDependencies": {
     "microtime": "0.3.3"
