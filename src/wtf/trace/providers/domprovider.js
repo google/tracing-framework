@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.providers.DomProvider');
 
+goog.require('wtf.data.webidl');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.eventtarget');
 
@@ -36,6 +37,14 @@ wtf.trace.providers.DomProvider = function(options) {
   if (!level) {
     return;
   }
+
+  /**
+   * Whether to include event arguments.
+   * @type {boolean}
+   * @private
+   */
+  this.includeEventArgs_ =
+      options.getBoolean('wtf.trace.provider.dom.eventArgs', false);
 
   // Note that this code is extra exception-handly - this is because it's very
   // prone to exceptions in various browsers. Being defensive here means that
@@ -74,6 +83,12 @@ wtf.trace.providers.DomProvider.prototype.getSettingsSectionConfigs =
           'key': 'wtf.trace.provider.dom',
           'title': 'Enabled',
           'default': true
+        },
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.dom.eventArgs',
+          'title': 'Include event arguments',
+          'default': false
         }
       ]
     }
@@ -215,9 +230,22 @@ wtf.trace.providers.DomProvider.prototype.injectElement_ = function(
     eventNames = wtf.trace.eventtarget.getEventNames(proto);
   }
 
+  // Get all event types from the IDL store.
+  // This will be a map of event name to the {@code EVENT_TYPES} objects.
+  // Note that because this can be slow we allow the user to toggle it.
+  var eventTypes;
+  if (this.includeEventArgs_) {
+    eventTypes = wtf.data.webidl.getAllEvents(typeName, eventNames);
+  } else {
+    eventTypes = {};
+    for (var n = 0; n < eventNames.length; n++) {
+      eventTypes[eventNames[n]] = null;
+    }
+  }
+
   // Create a descriptor object.
   var descriptor = wtf.trace.eventtarget.createDescriptor(
-      typeName, eventNames);
+      typeName, eventTypes);
 
   // Stash the descriptor. It may be used by the hookDomEvents util.
   wtf.trace.eventtarget.setDescriptor(proto, descriptor);
