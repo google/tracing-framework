@@ -154,7 +154,7 @@ wtf.util.FunctionBuilder.prototype.end = function(name) {
     'return function(' + this.currentArgs_.join(', ') + ') {',
     combinedSource,
     '};',
-    '//@ sourceURL=x://wtf/' + sourceUrl
+    '//# sourceURL=x://wtf/' + sourceUrl
   ].join('\n'));
   creator['displayName'] = name;
 

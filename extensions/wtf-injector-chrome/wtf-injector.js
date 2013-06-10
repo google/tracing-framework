@@ -352,7 +352,7 @@ function injectScriptFunction(fn, opt_args) {
   var source = [
     '(' + String(fn) + ')(' + args + ');',
     '// Web Tracing Framework injected function: ' + fn.name,
-    '//@ sourceURL=x://wtf-injector/' + fn.name
+    '//# sourceURL=x://wtf-injector/' + fn.name
   ].join('\n');
 
   // Create script tag.
@@ -387,7 +387,7 @@ function injectScriptFile(url) {
   var source = [
     '(function() {' + rawText + '})();',
     '// Web Tracing Framework injected file: ' + url,
-    '//@ sourceURL=x://wtf-injector/' + filename
+    '//# sourceURL=x://wtf-injector/' + filename
   ].join('\n');
 
   // Setup script tag with the raw source.
