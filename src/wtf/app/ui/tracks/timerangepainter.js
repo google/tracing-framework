@@ -60,6 +60,7 @@ goog.inherits(wtf.app.ui.tracks.TimeRangePainter, wtf.ui.RangePainter);
  * Height of a time range, in pixels.
  * @type {number}
  * @const
+ * @private
  */
 wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_ = 16;
 

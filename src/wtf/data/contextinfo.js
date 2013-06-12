@@ -24,6 +24,7 @@ goog.require('goog.userAgent');
 goog.require('goog.userAgent.platform');
 goog.require('goog.userAgent.product');
 goog.require('wtf');
+goog.require('wtf.io.Buffer');
 
 
 /**
@@ -100,15 +101,24 @@ wtf.data.ContextInfo.prototype.toString = goog.abstractMethod;
 /**
  * Parses context information from the given buffer.
  * The appropriate subclass type will be returned.
- * @param {!wtf.io.Buffer} buffer Source buffer.
+ * @param {!(wtf.io.Buffer|Object)} source Source buffer or JSON object.
  * @return {wtf.data.ContextInfo} Parsed context information.
  */
-wtf.data.ContextInfo.parse = function(buffer) {
-  var jsonString = buffer.readUtf8String();
-  if (!jsonString) {
+wtf.data.ContextInfo.parse = function(source) {
+  var json;
+  if (source instanceof wtf.io.Buffer) {
+    var buffer = /** @type {!wtf.io.Buffer} */ (source);
+    var jsonString = buffer.readUtf8String();
+    if (!jsonString) {
+      return null;
+    }
+    json = /** @type {Object} */ (goog.global.JSON.parse(jsonString));
+  } else {
+    json = /** @type {Object} */ (source);
+  }
+  if (!json) {
     return null;
   }
-  var json = /** @type {Object} */ (goog.global.JSON.parse(jsonString));
 
   // Create appropriate subclass.
   var contextInfo;

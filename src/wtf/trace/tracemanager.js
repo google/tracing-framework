@@ -21,13 +21,14 @@ goog.require('wtf');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ZoneType');
-goog.require('wtf.io.MemoryWriteStream');
+goog.require('wtf.io.cff.BinaryStreamTarget');
+goog.require('wtf.io.transports.MemoryWriteTransport');
 goog.require('wtf.timing');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.EventRegistry');
 goog.require('wtf.trace.EventSessionContext');
-goog.require('wtf.trace.SnapshottingSession');
 goog.require('wtf.trace.Zone');
+goog.require('wtf.trace.sessions.SnapshottingSession');
 goog.require('wtf.util.Options');
 
 
@@ -385,6 +386,7 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
 };
 
 
+// TODO(benvanik): move this out of here, or someplace else.
 /**
  * Asynchronously snapshots all contexts.
  * This will take a snapshot of the current context as well as any dependent
@@ -402,19 +404,28 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
 wtf.trace.TraceManager.prototype.requestSnapshots = function(
     callback, opt_scope) {
   var session = this.currentSession_;
-  if (!session || !(session instanceof wtf.trace.SnapshottingSession)) {
+  if (!session ||
+      !(session instanceof wtf.trace.sessions.SnapshottingSession)) {
     wtf.timing.setImmediate(function() {
       callback.call(opt_scope, null);
     });
     return;
   }
 
+  // Create target stream.
   var allBuffers = [];
+  var transport = new wtf.io.transports.MemoryWriteTransport();
+  transport.setTargetArray(allBuffers);
+  var streamTarget = new wtf.io.cff.BinaryStreamTarget(transport);
+
+  function complete() {
+    goog.dispose(streamTarget);
+    goog.dispose(transport);
+    callback.call(opt_scope, allBuffers.length ? allBuffers : null);
+  };
 
   // Snapshot self.
-  session.snapshot(function() {
-    return new wtf.io.MemoryWriteStream(allBuffers);
-  });
+  session.snapshot(streamTarget);
 
   // Snapshot others.
   var pendingSnapshots = 0;
@@ -429,7 +440,7 @@ wtf.trace.TraceManager.prototype.requestSnapshots = function(
     // End chain when done.
     pendingSnapshots--;
     if (!pendingSnapshots) {
-      callback.call(opt_scope, allBuffers.length ? allBuffers : null);
+      complete();
     }
   };
   for (var n = 0; n < this.listeners_.length; n++) {
@@ -442,7 +453,7 @@ wtf.trace.TraceManager.prototype.requestSnapshots = function(
   if (!pendingSnapshots) {
     // No pending async snapshots - end next tick.
     wtf.timing.setImmediate(function() {
-      callback.call(opt_scope, allBuffers.length ? allBuffers : null);
+      complete();
     });
   }
 };

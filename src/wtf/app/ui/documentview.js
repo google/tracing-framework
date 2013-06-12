@@ -30,15 +30,12 @@ goog.require('wtf.app.ui.documentview');
 goog.require('wtf.app.ui.nav.Navbar');
 goog.require('wtf.app.ui.query.QueryPanel');
 goog.require('wtf.app.ui.tracks.TracksPanel');
-goog.require('wtf.db.Database');
 goog.require('wtf.db.HealthInfo');
 goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
-goog.require('wtf.io');
 goog.require('wtf.io.drive');
-goog.require('wtf.pal');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
@@ -156,14 +153,6 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   this.setupCommands_();
   this.setupKeyboardShortcuts_();
-
-  // Show error dialogs.
-  db.addListener(wtf.db.Database.EventType.SOURCE_ERROR,
-      function(source, message, opt_detail) {
-        goog.global.console.log(message, opt_detail);
-        wtf.ui.ErrorDialog.show(message, opt_detail, this.getDom());
-        _gaq.push(['_trackEvent', 'app', 'source_error', message]);
-      }, this);
 
   // Zoom to fit when the database changes.
   // This should be changed to track the most recent events if streaming.
@@ -511,25 +500,30 @@ wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
       goog.string.padNumber(dt.getSeconds(), 2);
   filename += filenameSuffix;
 
-  var storage = doc.getStorage();
-  var dataStreams = storage.snapshotDataStreamBuffers();
-  var contentLength = 0;
-  for (var n = 0; n < dataStreams.length; n++) {
-    var dataStream = dataStreams[n];
-    var streamFilename = filename;
-    if (dataStreams.length > 1) {
-      streamFilename += '-' + n;
-    }
-    switch (dataStream.type) {
-      case 'application/x-extension-wtf-trace':
-        streamFilename += wtf.io.FILE_EXTENSION;
-        break;
-    }
-    var platform = wtf.pal.getPlatform();
-    platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
-    contentLength += dataStream.data.length;
-  }
-  _gaq.push(['_trackEvent', 'app', 'save_trace', null, contentLength]);
+  wtf.ui.ErrorDialog.show(
+      'Local save support not enabled',
+      'This is coming soon!',
+      this.getDom());
+
+  // var storage = doc.getStorage();
+  // var dataStreams = storage.snapshotDataStreamBuffers();
+  // var contentLength = 0;
+  // for (var n = 0; n < dataStreams.length; n++) {
+  //   var dataStream = dataStreams[n];
+  //   var streamFilename = filename;
+  //   if (dataStreams.length > 1) {
+  //     streamFilename += '-' + n;
+  //   }
+  //   switch (dataStream.type) {
+  //     case 'application/x-extension-wtf-trace':
+  //       streamFilename += wtf.io.FILE_EXTENSION;
+  //       break;
+  //   }
+  //   var platform = wtf.pal.getPlatform();
+  //   platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
+  //   contentLength += dataStream.data.length;
+  // }
+  // _gaq.push(['_trackEvent', 'app', 'save_trace', null, contentLength]);
 };
 
 

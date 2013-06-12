@@ -29,7 +29,6 @@ goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.overlay');
-goog.require('wtf.io.BufferedHttpWriteStream');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace');
@@ -646,7 +645,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
       // script to get it open.
 
       var blobUrls = [];
-      var blob = new Blob(/** @type {!Array.<!ArrayBufferView>} */ (buffers), {
+      var blob = new Blob(/** @type {!Array.<!Blob>} */ (buffers), {
         'type': 'application/x-extension-wtf-trace'
       });
       blobUrls.push(goog.fs.createObjectUrl(blob));
@@ -703,9 +702,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToRemote_ = function(opt_endpoint) {
   var url = 'http://' + host + '/snapshot/upload';
 
   // Capture snapshot into memory buffers.
-  wtf.trace.snapshot(function() {
-    return new wtf.io.BufferedHttpWriteStream(url);
-  });
+  wtf.trace.snapshot(url);
 };
 
 

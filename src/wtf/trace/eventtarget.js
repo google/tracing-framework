@@ -400,6 +400,7 @@ wtf.trace.eventtarget.BaseEventTarget = function(descriptor) {
    *   callback: Function,
    *   scope: !Object
    * }>}
+   * @private
    */
   this.eventHooks_ = {};
 };
@@ -414,6 +415,7 @@ wtf.trace.eventtarget.BaseEventTarget = function(descriptor) {
  * @param {boolean=} opt_capture In DOM-compliant browsers, this determines
  *     whether the listener is fired during the capture or bubble phase
  *     of the event.
+ * @this {wtf.trace.eventtarget.BaseEventTarget}
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype['addEventListener'] = function(
     type, listener, opt_capture) {
@@ -439,6 +441,7 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['addEventListener'] = function(
  * @param {boolean=} opt_capture In DOM-compliant browsers, this determines
  *     whether the listener is fired during the capture or bubble phase
  *     of the event.
+ * @this {wtf.trace.eventtarget.BaseEventTarget}
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype['removeEventListener'] =
     function(type, listener, opt_capture) {

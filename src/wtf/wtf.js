@@ -206,6 +206,15 @@ wtf.computeNowOverhead = function() {
 };
 
 
+/**
+ * Logs a deprecation message.
+ * @param {string} message Message.
+ */
+wtf.deprecated = goog.global.console ?
+    goog.global.console.log.bind(goog.global.console) :
+    goog.nullFunction;
+
+
 goog.exportSymbol(
     'wtf.hasHighResolutionTimes',
     wtf.hasHighResolutionTimes);

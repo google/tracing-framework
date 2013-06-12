@@ -1,0 +1,126 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @fileoverview XMLHttpRequest read transport type.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+goog.provide('wtf.io.transports.XhrReadTransport');
+
+goog.require('goog.asserts');
+goog.require('wtf.io.DataFormat');
+goog.require('wtf.io.ReadTransport');
+
+
+
+/**
+ * Read-only XHR transport base type.
+ * Reads data from an XHR GET.
+ *
+ * @param {string} url Target URL.
+ * @constructor
+ * @extends {wtf.io.ReadTransport}
+ */
+wtf.io.transports.XhrReadTransport = function(url) {
+  goog.base(this);
+
+  /**
+   * URL to GET the data from.
+   * @type {string}
+   * @private
+   */
+  this.url_ = url;
+
+  /**
+   * XHR object, if active.
+   * @type {XMLHttpRequest}
+   * @private
+   */
+  this.xhr_ = null;
+};
+goog.inherits(wtf.io.transports.XhrReadTransport, wtf.io.ReadTransport);
+
+
+/**
+ * Timeout, in ms.
+ * @type {number}
+ * @const
+ * @private
+ */
+wtf.io.transports.XhrReadTransport.TIMEOUT_MS_ = 120 * 1000;
+
+
+/**
+ * @override
+ */
+wtf.io.transports.XhrReadTransport.prototype.disposeInternal = function() {
+  if (this.xhr_) {
+    this.xhr_.onprogress = null;
+    this.xhr_.onload = null;
+    this.xhr_.onerror = null;
+    this.xhr_.abort();
+    this.xhr_ = null;
+  }
+  goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * @override
+ */
+wtf.io.transports.XhrReadTransport.prototype.resume = function() {
+  goog.base(this, 'resume');
+
+  // Create the XHR.
+  goog.asserts.assert(!this.xhr_);
+  this.xhr_ = new XMLHttpRequest();
+  this.xhr_.timeout = wtf.io.transports.XhrReadTransport.TIMEOUT_MS_;
+
+  // Pick response type based on desired format. This avoids any conversion.
+  var responseType = 'text';
+  switch (this.format) {
+    case wtf.io.DataFormat.STRING:
+      responseType = 'text';
+      break;
+    case wtf.io.DataFormat.ARRAY_BUFFER:
+      responseType = 'arraybuffer';
+      break;
+    case wtf.io.DataFormat.BLOB:
+      responseType = 'blob';
+      break;
+    default:
+      goog.asserts.fail('Unknown data format.');
+      break;
+  }
+  this.xhr_.responseType = responseType;
+
+  // Setup events.
+  var self = this;
+  this.xhr_.onprogress = function(e) {
+    if (e.lengthComputable) {
+      this.emitProgressEvent(e.loaded, e.total);
+    }
+  };
+  this.xhr_.onload = function(e) {
+    var data = e.target.response;
+    this.emitReceiveData(data);
+    goog.dispose(self);
+  };
+  this.xhr_.onerror = function(e) {
+    var err = new Error(
+        'Error fetching data: ' + e.target.status + ' ' + e.target.statusText);
+    this.emitErrorEvent(err);
+    goog.dispose(self);
+  };
+
+  // Open.
+  // If we wanted to support POST reads, this would be where to do it.
+  this.xhr_.open('GET', this.url_, true);
+  this.xhr_.send();
+};

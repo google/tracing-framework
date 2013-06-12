@@ -19,6 +19,7 @@ goog.require('goog.math.Rect');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.app.ui.FramePainter');
+goog.require('wtf.app.ui.Granularity');
 goog.require('wtf.app.ui.MarkPainter');
 goog.require('wtf.app.ui.SelectionPainter');
 goog.require('wtf.app.ui.TabPanel');
@@ -27,7 +28,6 @@ goog.require('wtf.app.ui.tracks.TrackInfoBar');
 goog.require('wtf.app.ui.tracks.ZonePainter');
 goog.require('wtf.app.ui.tracks.trackspanel');
 goog.require('wtf.db.Database');
-goog.require('wtf.db.Granularity');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
@@ -333,7 +333,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
  * @private
  */
 wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_ =
-    100 * wtf.db.Granularity.SECOND;
+    100 * wtf.app.ui.Granularity.SECOND;
 
 
 /**

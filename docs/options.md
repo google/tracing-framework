@@ -30,6 +30,14 @@ The target mode for tracing.
 file.
 * `streaming`: stream all events to the UI or a file.
 
+### wtf.trace.format
+
+The format of the resulting trace data.
+
+* `binary`: an optimized binary format that's efficient to load and has small
+file sizes.
+* `json`: a JSON-based file format. Sort-of.
+
 ### wtf.trace.target
 
 A string value indicating the target for the tracing session.
