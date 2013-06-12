@@ -20,12 +20,13 @@ goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
 goog.require('wtf.db.Unit');
 goog.require('wtf.db.Zone');
-goog.require('wtf.db.sources.BinaryDataSource');
 goog.require('wtf.db.sources.CallsDataSource');
-goog.require('wtf.db.sources.JsonDataSource');
+goog.require('wtf.db.sources.ChunkedDataSource');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
-goog.require('wtf.io.MemoryReadStream');
+goog.require('wtf.io.cff.BinaryStreamSource');
+goog.require('wtf.io.cff.JsonStreamSource');
+goog.require('wtf.io.transports.MemoryReadTransport');
 
 
 
@@ -224,35 +225,28 @@ wtf.db.Database.prototype.addDataSource = function(dataSource) {
 
 
 /**
- * Adds a streaming source.
- * @param {!wtf.io.ReadStream} stream Read stream.
+ * Adds a chunked file format streaming source.
+ * @param {!wtf.io.cff.StreamSource} streamSource Stream source.
+ * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
-wtf.db.Database.prototype.addStreamingSource = function(stream) {
-  // Send to storage, if needed.
-  if (this.storage_) {
-    stream = this.storage_.captureStream(stream);
-  }
-
-  this.addDataSource(new wtf.db.sources.BinaryDataSource(this, stream));
+wtf.db.Database.prototype.addStreamSource = function(
+    streamSource, opt_sourceInfo) {
+  this.addDataSource(new wtf.db.sources.ChunkedDataSource(
+      this, streamSource));
 };
 
 
 /**
  * Adds a binary data source as an immediately-available stream.
- * @param {!wtf.io.ByteArray} data Input data.
+ * @param {!wtf.io.BlobData} data Input data.
  * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
 wtf.db.Database.prototype.addBinarySource = function(data, opt_sourceInfo) {
-  // Create a stream wrapper for the input data.
-  var stream = new wtf.io.MemoryReadStream();
-  stream.addData(data);
-
-  // Send to storage, if needed.
-  if (this.storage_) {
-    stream = this.storage_.captureStream(stream);
-  }
-
-  this.addDataSource(new wtf.db.sources.BinaryDataSource(this, stream));
+  var transport = new wtf.io.transports.MemoryReadTransport();
+  var streamSource = new wtf.io.cff.BinaryStreamSource(transport);
+  this.addStreamSource(streamSource, opt_sourceInfo);
+  transport.addData(data);
+  transport.end();
 };
 
 
@@ -262,9 +256,16 @@ wtf.db.Database.prototype.addBinarySource = function(data, opt_sourceInfo) {
  * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
 wtf.db.Database.prototype.addJsonSource = function(data, opt_sourceInfo) {
-  // TODO(benvanik): send to storage so that saves work
-
-  this.addDataSource(new wtf.db.sources.JsonDataSource(this, data));
+  // Always convert the incoming data to JSON to ensure we don't have it
+  // modified while we work with it.
+  if (typeof data != 'string') {
+    data = goog.global.JSON.stringify(data);
+  }
+  var transport = new wtf.io.transports.MemoryReadTransport();
+  var streamSource = new wtf.io.cff.JsonStreamSource(transport);
+  this.addStreamSource(streamSource, opt_sourceInfo);
+  transport.addData(data);
+  transport.end();
 };
 
 
@@ -274,12 +275,6 @@ wtf.db.Database.prototype.addJsonSource = function(data, opt_sourceInfo) {
  * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
  */
 wtf.db.Database.prototype.addCallsSource = function(data, opt_sourceInfo) {
-  // TODO(benvanik): support mimetype storage?
-  // Send to storage, if needed.
-  // if (this.storage_) {
-  //   stream = this.storage_.captureStream(stream);
-  // }
-
   this.addDataSource(new wtf.db.sources.CallsDataSource(this, data));
 };
 
@@ -552,8 +547,8 @@ goog.exportProperty(
     wtf.db.Database.prototype, 'addDataSource',
     wtf.db.Database.prototype.addDataSource);
 goog.exportProperty(
-    wtf.db.Database.prototype, 'addStreamingSource',
-    wtf.db.Database.prototype.addStreamingSource);
+    wtf.db.Database.prototype, 'addStreamSource',
+    wtf.db.Database.prototype.addStreamSource);
 goog.exportProperty(
     wtf.db.Database.prototype, 'addBinarySource',
     wtf.db.Database.prototype.addBinarySource);

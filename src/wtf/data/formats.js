@@ -13,6 +13,7 @@
 
 goog.provide('wtf.data.formats.BinaryCalls');
 goog.provide('wtf.data.formats.BinaryTrace');
+goog.provide('wtf.data.formats.ChunkedFileFormat');
 goog.provide('wtf.data.formats.FileFlags');
 goog.provide('wtf.data.formats.JsonTrace');
 
@@ -31,6 +32,14 @@ wtf.data.formats.BinaryTrace.VERSION = 3;
  * @const
  */
 wtf.data.formats.JsonTrace.VERSION = 2;
+
+
+/**
+ * Current version of the JSON file format.
+ * @type {number}
+ * @const
+ */
+wtf.data.formats.ChunkedFileFormat.VERSION = 10;
 
 
 /**
@@ -56,4 +65,43 @@ wtf.data.formats.FileFlags = {
    * Indicates that times in the file are actually counts.
    */
   TIMES_AS_COUNT: (1 << 1)
+};
+
+
+/**
+ * Converts a file flags bitmask to a list of string values.
+ * This can be decoded by {@see wtf.data.formats.FileFlags#fromStrings}.
+ * @param {number} value Flags bitmask.
+ * @return {!Array.<string>} An array of file flags strings.
+ */
+wtf.data.formats.FileFlags.toStrings = function(value) {
+  var result = [];
+  if (value & wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES) {
+    result.push('has_high_resolution_times');
+  }
+  if (value & wtf.data.formats.FileFlags.TIMES_AS_COUNT) {
+    result.push('times_as_count');
+  }
+  return result;
+};
+
+
+/**
+ * Converts a list of string values into a flags bitmask.
+ * @param {!Array.<string>} value List of strings values.
+ * @return {number} Flags bitmask.
+ */
+wtf.data.formats.FileFlags.fromStrings = function(value) {
+  var result = 0;
+  for (var n = 0; n < value.length; n++) {
+    switch (value[n]) {
+      case 'has_high_resolution_times':
+        result |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
+        break;
+      case 'times_as_count':
+        result |= wtf.data.formats.FileFlags.TIMES_AS_COUNT;
+        break;
+    }
+  }
+  return result;
 };

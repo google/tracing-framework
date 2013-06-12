@@ -67,7 +67,7 @@ goog.inherits(wtf.app.ui.LoaderEntry, wtf.events.EventEmitter);
 
 
 /**
- * @typedef {wtf.io.ByteArray|ArrayBuffer|ArrayBufferView|string}
+ * @typedef {wtf.io.ByteArray|ArrayBuffer|ArrayBufferView|string|Blob}
  */
 wtf.app.ui.LoaderEntry.ContentType;
 
