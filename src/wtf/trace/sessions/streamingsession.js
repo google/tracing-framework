@@ -11,11 +11,12 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.trace.StreamingSession');
+goog.provide('wtf.trace.sessions.StreamingSession');
 
 goog.require('goog.asserts');
 goog.require('wtf');
 goog.require('wtf.io.Buffer');
+goog.require('wtf.io.StringTable');
 goog.require('wtf.timing');
 goog.require('wtf.timing.RunMode');
 goog.require('wtf.trace.Session');
@@ -32,9 +33,9 @@ goog.require('wtf.trace.Session');
  * @constructor
  * @extends {wtf.trace.Session}
  */
-wtf.trace.StreamingSession = function(traceManager, stream, options) {
+wtf.trace.sessions.StreamingSession = function(traceManager, stream, options) {
   goog.base(this, traceManager, options,
-      wtf.trace.StreamingSession.DEFAULT_BUFFER_SIZE_);
+      wtf.trace.sessions.StreamingSession.DEFAULT_BUFFER_SIZE_);
 
   /**
    * Current stream target.
@@ -67,7 +68,7 @@ wtf.trace.StreamingSession = function(traceManager, stream, options) {
    */
   this.flushIntervalMs_ = options.getNumber(
       'wtf.trace.streaming.flushIntervalMs',
-      wtf.trace.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_);
+      wtf.trace.sessions.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_);
 
   /**
    * setInterval handle for the automatic flush timer.
@@ -82,9 +83,7 @@ wtf.trace.StreamingSession = function(traceManager, stream, options) {
 
   // Allocate the buffers now.
   for (var n = 0; n < bufferCount; n++) {
-    // var stringTable = new wtf.io.StringTable(
-    //     wtf.io.StringTable.Mode.WRITE_ONLY);
-    var stringTable = null;
+    var stringTable = new wtf.io.StringTable();
     this.unusedBuffers_.push(new wtf.io.Buffer(this.bufferSize, stringTable));
     this.totalUnusedSize_ += this.bufferSize;
   }
@@ -108,7 +107,7 @@ wtf.trace.StreamingSession = function(traceManager, stream, options) {
         this.flush, this);
   }
 };
-goog.inherits(wtf.trace.StreamingSession, wtf.trace.Session);
+goog.inherits(wtf.trace.sessions.StreamingSession, wtf.trace.Session);
 
 
 /**
@@ -118,7 +117,7 @@ goog.inherits(wtf.trace.StreamingSession, wtf.trace.Session);
  * @type {number}
  * @private
  */
-wtf.trace.StreamingSession.DEFAULT_BUFFER_SIZE_ = 256 * 1024;
+wtf.trace.sessions.StreamingSession.DEFAULT_BUFFER_SIZE_ = 256 * 1024;
 
 
 /**
@@ -127,13 +126,13 @@ wtf.trace.StreamingSession.DEFAULT_BUFFER_SIZE_ = 256 * 1024;
  * @type {number}
  * @private
  */
-wtf.trace.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_ = 1000;
+wtf.trace.sessions.StreamingSession.DEFAULT_FLUSH_INTERVAL_MS_ = 1000;
 
 
 /**
  * @override
  */
-wtf.trace.StreamingSession.prototype.disposeInternal = function() {
+wtf.trace.sessions.StreamingSession.prototype.disposeInternal = function() {
   // Cancel timer.
   if (this.flushIntervalId_) {
     wtf.timing.clearInterval(this.flushIntervalId_);
@@ -154,7 +153,7 @@ wtf.trace.StreamingSession.prototype.disposeInternal = function() {
  * session - for example, when the tab loses focus. Sessions will implicitly
  * call flush when stopping, so avoid calling it to prevent double-flushes.
  */
-wtf.trace.StreamingSession.prototype.flush = function() {
+wtf.trace.sessions.StreamingSession.prototype.flush = function() {
   // Retire the current buffer, if any.
   if (this.currentBuffer) {
     this.retireBuffer(this.currentBuffer);
@@ -174,7 +173,7 @@ wtf.trace.StreamingSession.prototype.flush = function() {
 /**
  * @override
  */
-wtf.trace.StreamingSession.prototype.nextBuffer = function() {
+wtf.trace.sessions.StreamingSession.prototype.nextBuffer = function() {
   // Attempt to get a buffer from the pool.
   if (this.unusedBuffers_.length) {
     var buffer = this.unusedBuffers_.pop();
@@ -191,7 +190,7 @@ wtf.trace.StreamingSession.prototype.nextBuffer = function() {
 /**
  * @override
  */
-wtf.trace.StreamingSession.prototype.retireBuffer = function(buffer) {
+wtf.trace.sessions.StreamingSession.prototype.retireBuffer = function(buffer) {
   // Buffer is now full of useful data - write it out.
 
   // Check to see if the buffer is actually empty.
@@ -214,7 +213,8 @@ wtf.trace.StreamingSession.prototype.retireBuffer = function(buffer) {
  * @param {!wtf.io.Buffer} buffer Buffer to return.
  * @private
  */
-wtf.trace.StreamingSession.prototype.returnBufferCallback_ = function(buffer) {
+wtf.trace.sessions.StreamingSession.prototype.returnBufferCallback_ =
+    function(buffer) {
   this.unusedBuffers_.push(buffer);
   this.totalUnusedSize_ += buffer.capacity;
   buffer.reset();

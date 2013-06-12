@@ -73,16 +73,6 @@ wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ = 18;
 
 
 /**
- * Height of an instance event, in pixels.
- * @const
- * @type {number}
- * @private
- */
-wtf.app.ui.tracks.ZonePainter.INSTANCE_HEIGHT_ =
-    wtf.app.ui.tracks.ZonePainter.SCOPE_HEIGHT_ * 2 / 3;
-
-
-/**
  * Fake amount of time given to instance events so they show up.
  * @const
  * @type {number}

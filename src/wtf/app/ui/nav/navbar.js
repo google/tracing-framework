@@ -20,6 +20,7 @@ goog.require('goog.math');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.app.ui.FramePainter');
+goog.require('wtf.app.ui.Granularity');
 goog.require('wtf.app.ui.MarkPainter');
 goog.require('wtf.app.ui.nav.FpsStatsBox');
 goog.require('wtf.app.ui.nav.GcStatsBox');
@@ -27,7 +28,6 @@ goog.require('wtf.app.ui.nav.HeatmapPainter');
 goog.require('wtf.app.ui.nav.TimelinePainter');
 goog.require('wtf.app.ui.nav.navbar');
 goog.require('wtf.db.Database');
-goog.require('wtf.db.Granularity');
 goog.require('wtf.db.PresentationHint');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.ListEventType');
@@ -249,7 +249,7 @@ wtf.app.ui.nav.Navbar.MAX_HEIGHT = 400;
  * @private
  */
 wtf.app.ui.nav.Navbar.MIN_GRANULARITY_ =
-    100 * wtf.db.Granularity.SECOND;
+    100 * wtf.app.ui.Granularity.SECOND;
 
 
 /**
