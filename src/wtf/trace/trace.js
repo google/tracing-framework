@@ -19,21 +19,22 @@ goog.provide('wtf.trace.TimeRange');
 goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('wtf.io');
-goog.require('wtf.io.BufferedHttpWriteStream');
-goog.require('wtf.io.CustomWriteStream');
-goog.require('wtf.io.LocalFileWriteStream');
-goog.require('wtf.io.MemoryWriteStream');
-goog.require('wtf.io.NullWriteStream');
-goog.require('wtf.io.StreamingHttpWriteStream');
-goog.require('wtf.io.WriteStream');
+goog.require('wtf.io.WriteTransport');
+goog.require('wtf.io.cff.BinaryStreamSource');
+goog.require('wtf.io.cff.BinaryStreamTarget');
+goog.require('wtf.io.cff.JsonStreamTarget');
+goog.require('wtf.io.transports.FileWriteTransport');
+goog.require('wtf.io.transports.MemoryReadTransport');
+goog.require('wtf.io.transports.MemoryWriteTransport');
+goog.require('wtf.io.transports.NullWriteTransport');
+goog.require('wtf.io.transports.XhrWriteTransport');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
-goog.require('wtf.trace.NullSession');
 goog.require('wtf.trace.Scope');
-goog.require('wtf.trace.SnapshottingSession');
-goog.require('wtf.trace.StreamingSession');
 goog.require('wtf.trace.TraceManager');
 goog.require('wtf.trace.eventtarget');
+goog.require('wtf.trace.sessions.NullSession');
+goog.require('wtf.trace.sessions.SnapshottingSession');
 goog.require('wtf.trace.util');
 
 
@@ -136,59 +137,110 @@ wtf.trace.getTraceFilename = function(opt_targetValue) {
 
 
 /**
- * Creates a write stream based on the given options.
+ * Creates a transport based on the given options.
  * @param {!wtf.util.Options} options Options.
- * @param {wtf.io.WriteStream|*=} opt_targetValue Target value. May be anything,
- *     pretty much. If a stream is given that will be used directly. This
- *     overrides any options specified.
- * @return {!wtf.io.WriteStream} Write stream.
+ * @param {boolean} streaming Whether to create for streaming.
+ * @param {wtf.io.WriteTransport|*=} opt_targetValue Target value.
+ *     May be anything, pretty much. If a transport is given that will be used
+ *     directly. This overrides any options specified.
+ * @return {!wtf.io.WriteTransport} Transport.
  * @private
  */
-wtf.trace.createStream_ = function(options, opt_targetValue) {
+wtf.trace.createTransport_ = function(options, streaming, opt_targetValue) {
   var targetValue =
       opt_targetValue || options.getOptionalString('wtf.trace.target');
-  if (targetValue instanceof wtf.io.WriteStream) {
-    return targetValue;
+
+  if (!targetValue ||
+      (goog.isString(targetValue) && !targetValue.length)) {
+    // Nothing specified - default to memory.
+    var transport = new wtf.io.transports.MemoryWriteTransport();
+    transport.needsLibraryDispose = true;
+    return transport;
+  } else if (targetValue instanceof wtf.io.WriteTransport) {
+    // Transport passed in - use directly.
+    var transport = /** @type {!wtf.io.WriteTransport} */ (targetValue);
+    transport.needsLibraryDispose = false;
+    return transport;
   } else if (goog.isObject(targetValue) && targetValue['write']) {
-    // Custom write stream - targetValue is an object with some write methods.
-    return new wtf.io.CustomWriteStream(targetValue);
-  } else if (goog.isString(targetValue)) {
-    var targetUrl = targetValue;
-    if (targetUrl == 'null') {
-      // Null target; write nothing.
-      return new wtf.io.NullWriteStream();
-    } else if (goog.string.startsWith(targetUrl, 'ws://')) {
-      // WebSocket target.
-      // TODO(benvanik): setup websocket target
-      return new wtf.io.NullWriteStream();
-    } else if (goog.string.startsWith(targetUrl, 'http://') ||
-        goog.string.startsWith(targetUrl, 'https://') ||
-        goog.string.startsWith(targetUrl, '//') ||
-        goog.string.startsWith(targetUrl, 'http-rel:')) {
-      // HTTP target.
-      // We use the fake protocol http-rel to specify a relative url. In
-      // that case we just strip it off and take the rest as the url.
-      if (goog.string.startsWith(targetUrl, 'http-rel:')) {
-        targetUrl = targetUrl.substring('http-rel:'.length);
-      }
-      if (options.getOptionalString('wtf.trace.mode') == 'snapshotting') {
-        return new wtf.io.BufferedHttpWriteStream(targetUrl);
-      } else {
-        return new wtf.io.StreamingHttpWriteStream(targetUrl);
-      }
-    } else if (goog.string.startsWith(targetUrl, 'file://')) {
-      // File target.
-      var targetFilename = wtf.trace.getTraceFilename(targetUrl);
-      return new wtf.io.LocalFileWriteStream(targetFilename);
-    }
+    // Custom transport - targetValue is an object with some write methods.
+    //return new wtf.io.CustomWriteStream(targetValue);
+    throw 'Custom transport not yet supported.';
   } else if (goog.isArray(targetValue)) {
     // Memory target.
     // This variant will stash the resulting buffers into the given array.
-    return new wtf.io.MemoryWriteStream(/** @type {!Array} */ (targetValue));
+    var transport = new wtf.io.transports.MemoryWriteTransport();
+    transport.needsLibraryDispose = true;
+    transport.setTargetArray(/** @type {!Array} */ (targetValue));
+    return transport;
   }
 
-  // Local in-memory stream target, for popups.
-  return new wtf.io.MemoryWriteStream([]);
+  // If some random object give up.
+  if (!goog.isString(targetValue)) {
+    throw 'Invalid transport specified.';
+  }
+
+  var targetUrl = /** @type {string} */ (targetValue);
+  if (targetUrl == 'null') {
+    // Null target; write nothing.
+    return new wtf.io.transports.NullWriteTransport();
+  } else if (goog.string.startsWith(targetUrl, 'ws://')) {
+    // WebSocket target.
+    // TODO(benvanik): setup websocket target
+    throw 'WebSocket transport not yet supported.';
+  } else if (
+      goog.string.startsWith(targetUrl, 'http://') ||
+      goog.string.startsWith(targetUrl, 'https://') ||
+      goog.string.startsWith(targetUrl, '//') ||
+      goog.string.startsWith(targetUrl, 'http-rel:')) {
+    // HTTP target.
+    // We use the fake protocol http-rel to specify a relative url. In
+    // that case we just strip it off and take the rest as the url.
+    if (goog.string.startsWith(targetUrl, 'http-rel:')) {
+      targetUrl = targetUrl.substring('http-rel:'.length);
+    }
+    if (streaming) {
+      throw 'Streaming XHR transport not yet supported.';
+      // return new wtf.io.transports.StreamingXhrWriteTransport(targetUrl);
+    } else {
+      var transport = new wtf.io.transports.XhrWriteTransport(targetUrl);
+      transport.needsLibraryDispose = true;
+      return transport;
+    }
+  } else if (goog.string.startsWith(targetUrl, 'file://')) {
+    // File target.
+    var targetFilename = wtf.trace.getTraceFilename(targetUrl);
+    var transport = new wtf.io.transports.FileWriteTransport(targetFilename);
+    transport.needsLibraryDispose = true;
+    return transport;
+  }
+
+  throw 'Invalid transport specified.';
+};
+
+
+/**
+ * Creates a write stream based on the given options.
+ * @param {!wtf.util.Options} options Options.
+ * @param {!wtf.io.WriteTransport} transport Write transport.
+ * @return {!wtf.io.cff.StreamTarget} Stream target.
+ * @private
+ */
+wtf.trace.createStreamTarget_ = function(options, transport) {
+  // Switch based on format.
+  // Note that some formats may not be ideal for certain transports.
+  // TODO(benvanik): force format based on transport type?
+  var formatValue = options.getString('wtf.trace.format', 'binary');
+  switch (formatValue) {
+    default:
+    case 'binary':
+      return new wtf.io.cff.BinaryStreamTarget(transport);
+    case 'json':
+      return new wtf.io.cff.JsonStreamTarget(
+          transport, wtf.io.cff.JsonStreamTarget.Mode.COMPLETE);
+    case 'partial_json':
+      return new wtf.io.cff.JsonStreamTarget(
+          transport, wtf.io.cff.JsonStreamTarget.Mode.PARTIAL);
+  }
 };
 
 
@@ -217,17 +269,25 @@ wtf.trace.start = function(opt_options) {
   var session = null;
   switch (options.getOptionalString('wtf.trace.mode')) {
     case 'null':
-      session = new wtf.trace.NullSession(traceManager, options);
+      session = new wtf.trace.sessions.NullSession(
+          traceManager, options);
       break;
     default:
+    case 'snapshot':
     case 'snapshotting':
-      session = new wtf.trace.SnapshottingSession(traceManager, options);
+      session = new wtf.trace.sessions.SnapshottingSession(
+          traceManager, options);
       break;
+    case 'stream':
     case 'streaming':
-      var stream = wtf.trace.createStream_(options);
-      session = new wtf.trace.StreamingSession(traceManager, stream, options);
+      // var transport = wtf.trace.createTransport_(options, true);
+      // var streamTarget = wtf.trace.createStreamTarget_(options, transport);
+      // session = new wtf.trace.sessions.StreamingSession(
+      //     traceManager, streamTarget, options);
+      throw new Error('Streaming not yet implemented');
       break;
   }
+  goog.asserts.assert(session);
 
   // Begin session.
   traceManager.startSession(session);
@@ -238,22 +298,52 @@ wtf.trace.start = function(opt_options) {
  * Takes a snapshot of the current state.
  * A session must be actively recording. This call is ignored if the session
  * does not support snapshotting.
- * @param {wtf.io.WriteStream|*=} opt_targetValue Stream target value.
+ * @param {wtf.io.WriteTransport|*=} opt_targetValue Stream target value.
  */
 wtf.trace.snapshot = function(opt_targetValue) {
   var traceManager = wtf.trace.getTraceManager();
   var session = traceManager.getCurrentSession();
-  if (!session || !(session instanceof wtf.trace.SnapshottingSession)) {
+  if (!session ||
+      !(session instanceof wtf.trace.sessions.SnapshottingSession)) {
     return;
   }
 
   if (goog.isFunction(opt_targetValue)) {
-    session.snapshot(opt_targetValue);
-  } else {
-    session.snapshot(function() {
-      return wtf.trace.createStream_(session.getOptions(), opt_targetValue);
-    });
+    // User function for creating the stream. This isn't really supported
+    // anymore.
+    throw (
+        'Snapshots with custom allocator functions are no longer ' +
+        'supported. Pass in a wtf.io.Transport instead.');
   }
+
+  // Create transport (or reuse what was passed in).
+  var options = session.getOptions();
+  var transport = wtf.trace.createTransport_(options, false, opt_targetValue);
+  goog.asserts.assert(transport);
+
+  // Create CFF stream target.
+  var streamTarget = wtf.trace.createStreamTarget_(options, transport);
+  goog.asserts.assert(streamTarget);
+
+  // Write the snapshot data into the target.
+  session.snapshot(streamTarget);
+
+  // Finish CFF.
+  goog.dispose(streamTarget);
+
+  // Only dispose the transport if we created it.
+  if (transport.needsLibraryDispose) {
+    goog.dispose(transport);
+  }
+
+  // HACK
+  var blob = transport.getBlob();
+  transport = new wtf.io.transports.MemoryReadTransport();
+  //var streamSource = new wtf.io.cff.JsonStreamSource(transport);
+  var streamSource = new wtf.io.cff.BinaryStreamSource(transport);
+  streamSource.resume();
+  transport.addData(blob);
+  transport.end();
 };
 
 
@@ -284,7 +374,7 @@ wtf.trace.snapshotAll = function(callback, opt_scope) {
 wtf.trace.reset = function() {
   var traceManager = wtf.trace.getTraceManager();
   var session = traceManager.getCurrentSession();
-  if (session instanceof wtf.trace.SnapshottingSession) {
+  if (session instanceof wtf.trace.sessions.SnapshottingSession) {
     session.reset();
   }
 };
@@ -407,7 +497,7 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
  *
  * Example:
  * <code>
- * my.Type.protoype.someMethod = function() {
+ * my.Type.prototype.someMethod = function() {
  *   // This method is traced automatically by traceMethods, but more data
  *   // is needed:
  *   wtf.trace.appendScopeData('bar', 123);

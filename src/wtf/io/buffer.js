@@ -13,20 +13,12 @@
  */
 
 goog.provide('wtf.io.Buffer');
-goog.provide('wtf.io.ReturnBufferCallback');
 
 goog.require('goog.asserts');
 goog.require('goog.object');
 goog.require('goog.reflect');
 goog.require('wtf.io');
 goog.require('wtf.io.floatConverter');
-
-
-/**
- * A function callback that receives a buffer that is no longer required.
- * @typedef {function(!wtf.io.Buffer)}
- */
-wtf.io.ReturnBufferCallback;
 
 
 

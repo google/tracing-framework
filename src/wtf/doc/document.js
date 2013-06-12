@@ -17,7 +17,6 @@ goog.provide('wtf.doc.DocumentStatus');
 
 goog.require('goog.asserts');
 goog.require('goog.events');
-goog.require('goog.object');
 goog.require('wtf.db.Database');
 goog.require('wtf.doc.CommentScope');
 goog.require('wtf.doc.Profile');
@@ -25,7 +24,6 @@ goog.require('wtf.doc.View');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.SimpleEventfulList');
 goog.require('wtf.events.SimpleEventfulMap');
-goog.require('wtf.io.MemoryReadStream');
 
 
 /**
@@ -129,12 +127,13 @@ wtf.doc.Document = function(platform) {
   this.db_ = new wtf.db.Database(true);
   this.registerDisposable(this.db_);
 
-  /**
-   * Incoming read streams, mapped by stream ID.
-   * @type {!Object.<!wtf.io.MemoryReadStream>}
-   * @private
-   */
-  this.readStreams_ = {};
+  // TODO(benvanik): streaming.
+  // /**
+  //  * Incoming read streams, mapped by stream ID.
+  //  * @type {!Object.<!wtf.io.MemoryReadStream>}
+  //  * @private
+  //  */
+  // this.readStreams_ = {};
 };
 goog.inherits(wtf.doc.Document, wtf.events.EventEmitter);
 
@@ -263,10 +262,11 @@ wtf.doc.Document.prototype.getDatabase = function() {
  * @param {string} contentType Stream content type.
  */
 wtf.doc.Document.prototype.beginEventStream = function(streamId, contentType) {
-  var readStream = new wtf.io.MemoryReadStream();
-  this.readStreams_[streamId] = readStream;
-  this.db_.addStreamingSource(readStream);
-  this.setStatus(wtf.doc.DocumentStatus.STREAMING);
+  throw new Error('Streaming not supported yet');
+  // var readStream = new wtf.io.MemoryReadStream();
+  // this.readStreams_[streamId] = readStream;
+  // this.db_.addStreamingSource(readStream);
+  // this.setStatus(wtf.doc.DocumentStatus.STREAMING);
 };
 
 
@@ -277,14 +277,15 @@ wtf.doc.Document.prototype.beginEventStream = function(streamId, contentType) {
  * @return {boolean} True if the stream data was appended successfully.
  */
 wtf.doc.Document.prototype.appendEventStreamData = function(streamId, datas) {
-  var readStream = this.readStreams_[streamId];
-  if (!readStream) {
-    return false;
-  }
-  for (var n = 0; n < datas.length; n++) {
-    readStream.addData(datas[n]);
-  }
-  return true;
+  throw new Error('Streaming not supported yet');
+  // var readStream = this.readStreams_[streamId];
+  // if (!readStream) {
+  //   return false;
+  // }
+  // for (var n = 0; n < datas.length; n++) {
+  //   readStream.addData(datas[n]);
+  // }
+  // return true;
 };
 
 
@@ -293,15 +294,16 @@ wtf.doc.Document.prototype.appendEventStreamData = function(streamId, datas) {
  * @param {string} streamId Stream ID.
  */
 wtf.doc.Document.prototype.endEventStream = function(streamId) {
-  var readStream = this.readStreams_[streamId];
-  if (!readStream) {
-    return;
-  }
-  delete this.readStreams_[streamId];
-  // TODO(benvanik): close the stream and remove the trace source.
-  if (goog.object.isEmpty(this.readStreams_)) {
-    this.setStatus(wtf.doc.DocumentStatus.STATIC);
-  }
+  throw new Error('Streaming not supported yet');
+  // var readStream = this.readStreams_[streamId];
+  // if (!readStream) {
+  //   return;
+  // }
+  // delete this.readStreams_[streamId];
+  // // TODO(benvanik): close the stream and remove the trace source.
+  // if (goog.object.isEmpty(this.readStreams_)) {
+  //   this.setStatus(wtf.doc.DocumentStatus.STATIC);
+  // }
 };
 
 

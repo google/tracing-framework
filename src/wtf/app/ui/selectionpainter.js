@@ -27,6 +27,7 @@ goog.require('wtf.ui.TimePainter');
  * Paints a selection region and handles selection events.
  * @param {!HTMLCanvasElement} canvas Canvas element.
  * @param {!wtf.app.ui.Selection} selection Selection.
+ * @param {!wtf.ui.zoom.Viewport} viewport Zooming viewport.
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */

@@ -15,14 +15,8 @@ goog.provide('wtf.trace.Session');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
-goog.require('goog.json');
-goog.require('goog.math.Long');
-goog.require('wtf');
-goog.require('wtf.data.formats.BinaryTrace');
-goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Scope');
-goog.require('wtf.version');
 
 
 
@@ -87,12 +81,20 @@ wtf.trace.Session = function(traceManager, options, defaultBufferSize) {
       defaultBufferSize);
 
   /**
-   * Current write buffer.
-   * This may be null if a buffer has not yet been allocated.
-   * @type {wtf.io.Buffer}
+   * Current write chunk.
+   * This may be null if a chunk has not yet been allocated.
+   * @type {wtf.io.cff.chunks.EventDataChunk}
    * @protected
    */
-  this.currentBuffer = null;
+  this.currentChunk = null;
+
+  /**
+   * Data buffer in the {@see #currentChunk}, held here to make accessing it
+   * easier on each call to {@see #acquireBuffer}.
+   * @type {wtf.io.Buffer}
+   * @private
+   */
+  this.currentBuffer_ = null;
 
   /**
    * Whether the event stream has a discontinuity.
@@ -120,10 +122,11 @@ wtf.trace.Session.DEFAULT_MAX_MEMORY_USAGE_ =
  * @override
  */
 wtf.trace.Session.prototype.disposeInternal = function() {
-  // Retire the current buffer but do not allocate a new one.
-  if (this.currentBuffer) {
-    this.retireBuffer(this.currentBuffer);
-    this.currentBuffer = null;
+  // Retire the current chunk but do not allocate a new one.
+  if (this.currentChunk) {
+    this.retireChunk(this.currentChunk);
+    this.currentChunk = null;
+    this.currentBuffer_ = null;
   }
 
   goog.base(this, 'disposeInternal');
@@ -168,68 +171,9 @@ wtf.trace.Session.prototype.getMetadata = function() {
  */
 wtf.trace.Session.prototype.startInternal = function() {
   // Allocate a new buffer.
-  goog.asserts.assert(!this.currentBuffer);
-  this.currentBuffer = this.nextBuffer();
-};
-
-
-/**
- * Writes out information about the trace useful for loading and parsing it.
- * This includes event information and wire ID mappings.
- *
- * This can be used either at the start of a trace session or at any time during
- * it to ensure that even truncated streams have the decoder ring.
- *
- * @param {!wtf.io.Buffer} buffer Target buffer.
- * @param {boolean=} opt_all True to write all events, regardless of use.
- *     Snapshotting sessions may prefer to set this to false to only write
- *     events seen in the snapshot, where as streaming sessions would want to
- *     write all of them as the use count doesn't mean anything at startup.
- * @return {boolean} True if the header was written successfully.
- * @protected
- */
-wtf.trace.Session.prototype.writeTraceHeader = function(buffer, opt_all) {
-  // Write magic number.
-  buffer.writeUint32(0xDEADBEEF);
-
-  // Write version information.
-  buffer.writeUint32(wtf.version.getValue());
-  buffer.writeUint32(wtf.data.formats.BinaryTrace.VERSION);
-
-  // Write context information.
-  var contextInfo = this.traceManager_.detectContextInfo();
-  if (!contextInfo.write(buffer)) {
-    return false;
-  }
-
-  // Write time information.
-  var flags = 0;
-  if (wtf.hasHighResolutionTimes) {
-    flags |= wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES;
-  }
-  buffer.writeUint32(flags);
-  var timebase = wtf.timebase();
-  var longTimebase = goog.math.Long.fromNumber(timebase);
-  buffer.writeUint32(longTimebase.getLowBits());
-  buffer.writeUint32(longTimebase.getHighBits());
-
-  // Run the now() benchmark and stash that in metadata.
-  // This isn't in the format as it's just informational.
-  this.metadata_['now_time_ns'] = wtf.computeNowOverhead();
-
-  // Write metadata.
-  var metadataString = goog.json.serialize(this.metadata_);
-  buffer.writeUtf8String(metadataString);
-
-  // Write event info.
-  if (!this.traceManager_.writeEventHeader(buffer)) {
-    return false;
-  }
-
-  // Write all zones.
-  this.traceManager_.appendAllZones(buffer);
-
-  return true;
+  goog.asserts.assert(!this.currentChunk);
+  this.currentChunk = this.nextChunk();
+  this.currentBuffer_ = this.currentChunk.getBinaryBuffer();
 };
 
 
@@ -238,19 +182,20 @@ wtf.trace.Session.prototype.writeTraceHeader = function(buffer, opt_all) {
  * The buffer may contain random data but will be seeked to the beginning.
  * If the buffer cannot be allocated (system out of memory/etc), none will be
  * returned. Callers should keep trying until one can be allocated.
- * @return {wtf.io.Buffer} A new, empty buffer.
+ * @return {wtf.io.cff.chunks.EventDataChunk} A new buffer. May contain garbage
+ *     data but will be seeked to 0.
  * @protected
  */
-wtf.trace.Session.prototype.nextBuffer = goog.abstractMethod;
+wtf.trace.Session.prototype.nextChunk = goog.abstractMethod;
 
 
 /**
  * Retires a used buffer.
- * @param {!wtf.io.Buffer} buffer A used buffer. May contain valid data or be
- *     empty.
+ * @param {!wtf.io.cff.chunks.EventDataChunk} chunk A used chunk. May contain
+ *     valid data or be empty (seeked to 0).
  * @protected
  */
-wtf.trace.Session.prototype.retireBuffer = goog.abstractMethod;
+wtf.trace.Session.prototype.retireChunk = goog.abstractMethod;
 
 
 /**
@@ -267,7 +212,7 @@ wtf.trace.Session.prototype.retireBuffer = goog.abstractMethod;
  */
 wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
   // If the current buffer has space return it for reuse.
-  var buffer = this.currentBuffer;
+  var buffer = this.currentBuffer_;
   if (buffer) {
     if (buffer.capacity - buffer.offset >= size) {
       return buffer;
@@ -281,13 +226,17 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
   }
 
   // Retire the old (full) buffer.
-  if (buffer) {
-    this.retireBuffer(buffer);
+  if (this.currentChunk) {
+    this.retireChunk(this.currentChunk);
+    this.currentChunk = null;
+    this.currentBuffer_ = null;
   }
 
   // Attempt to allocate a new buffer.
-  this.currentBuffer = this.nextBuffer();
-  buffer = this.currentBuffer;
+  this.currentChunk = this.nextChunk();
+  this.currentBuffer_ =
+      this.currentChunk ? this.currentChunk.getBinaryBuffer() : null;
+  buffer = this.currentBuffer_;
 
   // If no buffer could be allocated, flag a discontinuity.
   if (!buffer) {
@@ -317,14 +266,6 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
 
   return buffer;
 };
-
-
-// TODO(benvanik): append blob fn - this takes an arbitrary object (JS obj,
-//     typed array, string, etc) and attempts to write it to the buffer.
-//     It returns a BlobID that can be used as an argument to an event.
-// appendBlob(data) -> blobId
-// wtf.trace.Session.prototype.appendBlob = function() {
-// };
 
 
 /**

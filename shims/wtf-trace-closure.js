@@ -423,7 +423,7 @@ WTF.trace.leaveScope = WTF.PRESENT ?
  *
  * Example:
  * <code>
- * my.Type.protoype.someMethod = function() {
+ * my.Type.prototype.someMethod = function() {
  *   // This method is traced automatically by traceMethods, but more data
  *   // is needed:
  *   WTF.trace.appendScopeData('bar', 123);

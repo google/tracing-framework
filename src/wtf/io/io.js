@@ -12,7 +12,9 @@
  */
 
 goog.provide('wtf.io');
+goog.provide('wtf.io.BlobData');
 goog.provide('wtf.io.ByteArray');
+goog.provide('wtf.io.DataFormat');
 goog.provide('wtf.io.FloatConverter');
 goog.provide('wtf.io.floatConverter');
 
@@ -26,6 +28,26 @@ goog.require('goog.crypt.base64');
  * @type {string}
  */
 wtf.io.FILE_EXTENSION = '.wtf-trace';
+
+
+/**
+ * @typedef {Blob|ArrayBufferView|string}
+ */
+wtf.io.BlobData;
+
+
+/**
+ * Describes the ways data can be represented.
+ * @enum {number}
+ */
+wtf.io.DataFormat = {
+  /** Handle data as a string. */
+  STRING: 0,
+  /** Handle data as a Blob. */
+  BLOB: 1,
+  /** Handle data as an ArrayBuffer. */
+  ARRAY_BUFFER: 2
+};
 
 
 /**

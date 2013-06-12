@@ -12,7 +12,6 @@
  */
 
 goog.provide('wtf.db');
-goog.provide('wtf.db.Granularity');
 
 goog.require('goog.asserts');
 goog.require('goog.string');
@@ -21,28 +20,6 @@ goog.require('wtf.io');
 goog.require('wtf.pal');
 /** @suppress {extraRequire} */
 goog.require('wtf.pal.IPlatform');
-
-
-/**
- * Useful time granularities, in ms.
- * @enum {number}
- */
-wtf.db.Granularity = {
-  /** s */
-  SECOND: 1000,
-  /** ds */
-  DECISECOND: 100,
-  /** cs */
-  CENTISECOND: 10,
-  /** ms */
-  MILLISECOND: 1,
-
-  // TODO(benvanik): make this a setting on the summary index instead?
-  /**
-   * The finest granularity to work with.
-   */
-  FINEST: 100
-};
 
 
 /**

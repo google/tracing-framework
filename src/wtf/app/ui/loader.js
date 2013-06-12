@@ -28,6 +28,7 @@ goog.require('wtf.app.ui.LoadingDialog');
 goog.require('wtf.app.ui.UrlLoaderEntry');
 goog.require('wtf.app.ui.XhrLoaderEntry');
 goog.require('wtf.db.DataSourceInfo');
+goog.require('wtf.db.Database');
 goog.require('wtf.doc.Document');
 goog.require('wtf.io');
 goog.require('wtf.io.drive');
@@ -87,6 +88,7 @@ wtf.app.ui.Loader.prototype.disposeInternal = function() {
 /**
  * Calculates a title name from the given entries.
  * @param {!Array.<!wtf.app.ui.LoaderEntry>} entries Entries.
+ * @return {string} New title string.
  * @private
  */
 wtf.app.ui.Loader.prototype.generateTitleFromEntries_ = function(entries) {
@@ -372,6 +374,14 @@ wtf.app.ui.Loader.prototype.loadSucceeded_ = function(entries, opt_title) {
   var doc = new wtf.doc.Document(wtf.pal.getPlatform());
   var db = doc.getDatabase();
 
+  // Show error dialogs.
+  db.addListener(wtf.db.Database.EventType.SOURCE_ERROR,
+      function(source, message, opt_detail) {
+        goog.global.console.log(message, opt_detail);
+        wtf.ui.ErrorDialog.show(message, opt_detail, this.dom_);
+        _gaq.push(['_trackEvent', 'app', 'source_error', message]);
+      }, this);
+
   // Add the data sources.
   // This will often queue a bunch of invalidates for the next tick.
   var contentLength = 0;
@@ -438,9 +448,14 @@ wtf.app.ui.Loader.prototype.addEntryToDatabase_ = function(entry, db) {
   // TODO(benvanik): sniff contents/don't rely on mime type/etc.
   switch (sourceInfo.contentType) {
     case 'application/x-extension-wtf-trace':
-      goog.asserts.assert(wtf.io.isByteArray(data));
-      db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data), sourceInfo);
-      return data.length;
+      if (wtf.io.isByteArray(data)) {
+        db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data), sourceInfo);
+        return data.length;
+      } else if (data instanceof Blob) {
+        db.addBinarySource(/** @type {!Blob} */ (data), sourceInfo);
+        return data.size;
+      }
+      break;
     case 'application/x-extension-wtf-json':
       db.addJsonSource(data, sourceInfo);
       return goog.isString(data) ? data.length : 0;
@@ -454,6 +469,9 @@ wtf.app.ui.Loader.prototype.addEntryToDatabase_ = function(entry, db) {
   if (wtf.io.isByteArray(data)) {
     db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data), sourceInfo);
     return data.length;
+  } else if (data instanceof Blob) {
+    db.addBinarySource(/** @type {!Blob} */ (data), sourceInfo);
+    return data.size;
   }
   goog.asserts.assert('Unrecognized entry data type - ignoring.');
   goog.global.console.log('Unrecognized entry data type ' +

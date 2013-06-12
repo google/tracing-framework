@@ -114,6 +114,7 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
    * A <div> that is displayed on the page to show the status of the
    * chrome:tracing request.
    * @type {!Element}
+   * @private
    */
   this.tracingProgressEl_ = this.createTracingProgressElement_();
 
@@ -212,7 +213,8 @@ wtf.trace.providers.ChromeDebugProvider.prototype.getSettingsSectionConfigs =
         {
           'type': 'label',
           'title': '',
-          'value': 'Launch Chrome with --remote-debugging-port=9222 to use chrome:tracing.'
+          'value': 'Launch Chrome with --remote-debugging-port=9222 to use ' +
+              'chrome:tracing.'
         }
       ]
     }
@@ -434,6 +436,8 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
  * Forces a gather of all pending debugger data.
  * This is not required as the debugger will send down data periodically, but
  * can be used to ensure all data is received upon a snapshot.
+ * @return {!goog.async.Deferred} A deferred that completes when all data is
+ *     available.
  */
 wtf.trace.providers.ChromeDebugProvider.prototype.gatherData = function() {
   var deferred = new goog.async.Deferred();
@@ -485,6 +489,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.
 /**
  * Shows/hides the chrome:tracing progress <div> and updates the message.
  * @param {string?} message New message or null to hide.
+ * @private
  */
 wtf.trace.providers.ChromeDebugProvider.prototype.updateTracingProgress_ =
     function(message) {

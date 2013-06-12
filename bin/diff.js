@@ -45,7 +45,12 @@ function runTool(platform, args) {
   // Create databases for querying.
   var db1 = wtf.db.load(inputFile1);
   var db2 = wtf.db.load(inputFile2);
-  if (!db1 || !db2) {
+  if (!db1) {
+    console.log('ERROR: unable to open ' + inputFile1);
+    return -1;
+  }
+  if (!db2) {
+    console.log('ERROR: unable to open ' + inputFile2);
     return -1;
   }
 

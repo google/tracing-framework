@@ -130,7 +130,7 @@ wtf.ui.VirtualTableSource.prototype.onClick = goog.nullFunction;
  * @param {number} row Row.
  * @param {number} x X coordinate, relative to canvas.
  * @param {!goog.math.Rect} bounds Draw bounds.
- * @return {?string|undefined} Info string or undefined for none.
+ * @return {string|null|undefined} Info string or undefined for none.
  */
 wtf.ui.VirtualTableSource.prototype.getInfoString = goog.nullFunction;
 

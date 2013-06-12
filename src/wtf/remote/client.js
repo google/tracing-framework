@@ -225,7 +225,7 @@ wtf.remote.Client.prototype.executeCommand_ = function(data) {
   // If there are any buffers, send each in its own packet.
   // We do this so that we avoid JSONifying the buffer data.
   for (var n = 0; n < responseBuffers.length; n++) {
-    this.socket_.send(responseBuffers[n].buffer);
+    this.socket_.send(responseBuffers[n]);
   }
 };
 

@@ -129,6 +129,7 @@ wtf.db.EventList = function(eventTypeTable) {
    * Argument data hash.
    * Index 0 is reserved.
    * @type {!Array.<wtf.db.ArgumentData>}
+   * @private
    */
   this.argumentData_ = [null];
 

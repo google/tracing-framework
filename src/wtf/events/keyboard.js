@@ -120,6 +120,7 @@ wtf.events.Keyboard.prototype.resume = function() {
  * Translates a shortcut string into the platform-specific variant.
  * @param {string} shortcut Input shortcut string.
  * @return {string} Translated platform-specific variant.
+ * @private
  */
 wtf.events.Keyboard.prototype.translateShortcut_ = function(shortcut) {
   if (goog.userAgent.MAC) {

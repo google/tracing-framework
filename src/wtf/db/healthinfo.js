@@ -112,7 +112,6 @@ wtf.db.HealthInfo.prototype.getTotalOverheadPercent = function() {
 /**
  * Gets a list of generated warnings.
  * @return {!Array.<!wtf.db.HealthWarning>}
- * @private
  */
 wtf.db.HealthInfo.prototype.getWarnings = function() {
   return this.warnings_;
