@@ -6,20 +6,22 @@
  */
 
 /**
- * @fileoverview File transport types.
+ * @fileoverview File write transport type.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
 goog.provide('wtf.io.transports.FileWriteTransport');
 
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.WriteTransport');
-goog.require('wtf.pal');
 
 
 
 /**
  * Write-only file transport base type.
+ * We use synchronous writes for now, as async writes break under node when
+ * the user calls process.exit().
  *
  * @param {string} filename Filename.
  * @constructor
@@ -29,6 +31,13 @@ wtf.io.transports.FileWriteTransport = function(filename) {
   goog.base(this);
 
   /**
+   * Node 'fs' modulle.
+   * @type {!NodeFsModule}
+   * @private
+   */
+  this.fs_ = /** @type {!NodeFsModule} */ (require('fs'));
+
+  /**
    * Filename used when saving.
    * @type {string}
    * @private
@@ -36,11 +45,11 @@ wtf.io.transports.FileWriteTransport = function(filename) {
   this.filename_ = filename;
 
   /**
-   * Current blob containing all data that has been written.
-   * @type {!Blob}
+   * File handle.
+   * @type {number}
    * @private
    */
-  this.blob_ = new Blob([]);
+  this.fd_ = this.fs_.openSync(this.filename_, 'w');
 };
 goog.inherits(wtf.io.transports.FileWriteTransport, wtf.io.WriteTransport);
 
@@ -49,13 +58,9 @@ goog.inherits(wtf.io.transports.FileWriteTransport, wtf.io.WriteTransport);
  * @override
  */
 wtf.io.transports.FileWriteTransport.prototype.disposeInternal = function() {
-  var platform = wtf.pal.getPlatform();
-  platform.writeBinaryFile(this.filename_, this.blob_);
-
-  // TODO(benvanik): find a way to close on all browsers?
-  if (this.blob_['close']) {
-    this.blob_['close']();
-  }
+  // Flush and finish.
+  this.fs_.fsyncSync(this.fd_);
+  this.fs_.closeSync(this.fd_);
 
   goog.base(this, 'disposeInternal');
 };
@@ -65,13 +70,28 @@ wtf.io.transports.FileWriteTransport.prototype.disposeInternal = function() {
  * @override
  */
 wtf.io.transports.FileWriteTransport.prototype.write = function(data) {
-  var oldBlob = this.blob_;
-  this.blob_ = new Blob([oldBlob, data]);
-
-  // TODO(benvanik): find a way to close on all browsers?
-  if (oldBlob['close']) {
-    oldBlob['close']();
+  var nodeData;
+  if (data instanceof ArrayBuffer ||
+      data.buffer && data.buffer instanceof ArrayBuffer) {
+    var sourceData;
+    if (data instanceof ArrayBuffer) {
+      sourceData = new Uint8Array(data);
+    } else {
+      sourceData = new Uint8Array(data.buffer);
+    }
+    // TODO(benvanik): a better way to convert.
+    nodeData = new Buffer(sourceData.length);
+    for (var n = 0; n < nodeData.length; n++) {
+      nodeData[n] = sourceData[n];
+    }
+  } else if (wtf.io.Blob.isBlob(data)) {
+    nodeData = /** @type {!Buffer} */ (wtf.io.Blob.toNative(
+        /** @type {!wtf.io.Blob} */ (data)));
+  } else {
+    throw new Error('Unsupported write data type.');
   }
+
+  this.fs_.writeSync(this.fd_, nodeData, 0, nodeData.length, null);
 };
 
 
@@ -79,14 +99,5 @@ wtf.io.transports.FileWriteTransport.prototype.write = function(data) {
  * @override
  */
 wtf.io.transports.FileWriteTransport.prototype.flush = function() {
-  // No-op.
-};
-
-
-/**
- * Gets a blob containing all data that has been written to the transport.
- * @return {!Blob} Data blob.
- */
-wtf.io.transports.FileWriteTransport.prototype.getBlob = function() {
-  return this.blob_.slice(0, this.blob_.size);
+  this.fs_.fsyncSync(this.fd_);
 };

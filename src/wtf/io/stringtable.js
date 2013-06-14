@@ -13,6 +13,8 @@
 
 goog.provide('wtf.io.StringTable');
 
+goog.require('wtf.io.Blob');
+
 
 
 /**
@@ -132,7 +134,7 @@ wtf.io.StringTable.prototype.deserialize = function(value) {
 /**
  * Serializes the string table to a blob.
  * The resulting blob does not have a frame header.
- * @return {!Blob} Blob containing the string data.
+ * @return {!wtf.io.Blob} Blob containing the string data.
  */
 wtf.io.StringTable.prototype.serialize = function() {
   var values = this.values_;
@@ -144,6 +146,6 @@ wtf.io.StringTable.prototype.serialize = function() {
       values[n + 1] = '\0';
     }
   }
-  var blob = new Blob(values);
+  var blob = wtf.io.Blob.create(values);
   return blob;
 };

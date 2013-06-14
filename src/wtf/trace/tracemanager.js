@@ -57,7 +57,7 @@ wtf.trace.ISessionListener.prototype.sessionStopped = goog.nullFunction;
 /**
  * Fired when a snapshot has been requested.
  * @param {!wtf.trace.Session} session Trace session.
- * @param {function(this:T, wtf.io.ByteArray)} callback Function called one for
+ * @param {function(this:T, wtf.io.Blob)} callback Function called one for
  *     each snapshot buffer. When the buffer is null it means the last buffer
  *     has been reached.
  * @param {T=} opt_scope Callback scope.
@@ -395,7 +395,7 @@ wtf.trace.TraceManager.prototype.stopSession = function() {
  * If the call is going to be ignored (no active session) or fails the callback
  * will fire on the next javascript tick with a null value.
  *
- * @param {function(this:T, Array.<!wtf.io.ByteArray>)} callback Function called
+ * @param {function(this:T, Array.<!wtf.io.Blob>)} callback Function called
  *     when all buffers are available. The value will be null if an error
  *     occurred.
  * @param {T=} opt_scope Callback scope.
