@@ -265,7 +265,7 @@ wtf.io.drive.showFilePicker = function(options) {
  *   filename: string,
  *   fileExtension: string,
  *   mimeType: string,
- *   xhr: !XMLHttpRequest
+ *   downloadUrl: string
  * }}
  */
 wtf.io.drive.DriveFile;
@@ -281,15 +281,12 @@ wtf.io.drive.downloadFileLoadResult_ = null;
 
 
 /**
- * Begins downloading a file from Drive.
- * The async result from this is an XHR that is about to start downloading. Just
- * call {@code send()} on it to kick off the process. This allows you to listen
- * for any progress events you require.
+ * Begins querying a file from Drive.
  * @param {string} fileId Drive file ID.
  * @return {!goog.result.Result} Async result. The value will be a
  *     {@see wtf.io.drive.DriveFile} object.
  */
-wtf.io.drive.downloadFile = function(fileId) {
+wtf.io.drive.queryFile = function(fileId) {
   var result = new goog.result.SimpleResult();
 
   var clientId = wtf.io.drive.getClientId_();
@@ -338,9 +335,9 @@ wtf.io.drive.downloadFile = function(fileId) {
         filename: json['originalFilename'],
         fileExtension: json['fileExtension'],
         mimeType: json['mimeType'],
-        contents: null
+        downloadUrl: json['downloadUrl']
       };
-      download(json['downloadUrl'], driveFile);
+      result.setValue(driveFile);
     };
     xhr.onerror = function() {
       result.setError();
@@ -348,7 +345,45 @@ wtf.io.drive.downloadFile = function(fileId) {
     xhr.send(null);
   };
 
-  function download(downloadUrl, driveFile) {
+  return result;
+};
+
+
+/**
+ * Begins downloading a file from Drive.
+ * The async result from this is an XHR that is about to start downloading. Just
+ * call {@code send()} on it to kick off the process. This allows you to listen
+ * for any progress events you require.
+ * @param {wtf.io.drive.DriveFile} driveFile Drive file result from a
+ *     call to {@see wtf.io.drive#queryFile}.
+ * @return {!goog.result.Result} Async result. The value will be an XHR object.
+ */
+wtf.io.drive.downloadFile = function(driveFile) {
+  var result = new goog.result.SimpleResult();
+
+  var clientId = wtf.io.drive.getClientId_();
+
+  // Authenticate first.
+  // This is a no-op if the user has already authenticated.
+  goog.result.wait(wtf.io.drive.authenticate(), function(result) {
+    if (result.getState() == goog.result.Result.State.ERROR) {
+      result.setError(result.getError());
+      return;
+    }
+    loadDriveApi();
+  });
+
+  function loadDriveApi() {
+    if (!wtf.io.drive.downloadFileLoadResult_) {
+      wtf.io.drive.downloadFileLoadResult_ = new goog.result.SimpleResult();
+      gapi.client.load('drive', 'v2', function() {
+        wtf.io.drive.downloadFileLoadResult_.setValue(true);
+      });
+    }
+    goog.result.wait(wtf.io.drive.downloadFileLoadResult_, download);
+  };
+
+  function download() {
     var token = gapi.auth.getToken();
     goog.asserts.assert(token);
     var accessToken = token.access_token;
@@ -360,7 +395,7 @@ wtf.io.drive.downloadFile = function(fileId) {
         break;
     }
 
-    xhr.open('GET', downloadUrl, true);
+    xhr.open('GET', driveFile.downloadUrl, true);
     xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
     xhr.onerror = function() {
       result.setError();
@@ -368,9 +403,7 @@ wtf.io.drive.downloadFile = function(fileId) {
 
     // We don't send here, as we let the caller do it.
     // xhr.send(null);
-    driveFile.xhr = xhr;
-
-    result.setValue(driveFile);
+    result.setValue(xhr);
   };
 
   return result;

@@ -6,21 +6,22 @@
  */
 
 /**
- * Loading dialog DOM.
+ * Progress dialog DOM.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-{namespace wtf.app.ui.loadingdialog}
+{namespace wtf.ui.progressdialog}
 
 
 /**
  * Root control UI.
+ * @param title Dialog title.
  */
 {template .control}
-  <div class="{css appUiLoadingDialog}">
+  <div class="{css uiProgressDialog}">
     <h1 class="{css kRedLink}">
-      Loading trace...
+      {$title}
     </h1>
     <div class="{css list}">
     </div>
@@ -29,13 +30,13 @@
 
 
 /**
- * Entry template.
- * @param filename Filename.
+ * Task entry template.
+ * @param taskName Task name.
  */
-{template .entry}
+{template .task}
   <div class="{css progress}">
-    {if $filename}
-      <div class="{css filename} {css kSecondaryText}">{$filename}</div>
+    {if $taskName}
+      <div class="{css taskName} {css kSecondaryText}">{$taskName}</div>
     {/if}
     <div class="{css kProgressBar}">
       <div class="{css track} {css blue}"></div>

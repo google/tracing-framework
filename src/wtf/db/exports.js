@@ -30,8 +30,6 @@ goog.require('wtf.db.ArgumentData');
 /** @suppress {extraRequire} */
 goog.require('wtf.db.DataSource');
 /** @suppress {extraRequire} */
-goog.require('wtf.db.DataStorage');
-/** @suppress {extraRequire} */
 goog.require('wtf.db.Database');
 /** @suppress {extraRequire} */
 goog.require('wtf.db.EventDataEntry');

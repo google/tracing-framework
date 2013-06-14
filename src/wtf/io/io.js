@@ -20,6 +20,7 @@ goog.provide('wtf.io.floatConverter');
 
 goog.require('goog.asserts');
 goog.require('goog.crypt.base64');
+goog.require('goog.string');
 
 
 /**
@@ -28,6 +29,40 @@ goog.require('goog.crypt.base64');
  * @type {string}
  */
 wtf.io.FILE_EXTENSION = '.wtf-trace';
+
+
+/**
+ * Gets a unique filename.
+ * For example, {@code foo-2013-01-04T0832121.wtf-trace}.
+ * @param {string} prefix Filename prefix.
+ * @param {string} name Base file name.
+ * @param {string=} opt_contentType Content type used to pick an extension.
+ * @return {string} Full filename.
+ */
+wtf.io.getTimedFilename = function(prefix, name, opt_contentType) {
+  // prefix-YYYY-MM-DDTHH-MM-SS
+  var dt = new Date();
+  var suffix = '-' +
+      dt.getFullYear() +
+      goog.string.padNumber(dt.getMonth() + 1, 2) +
+      goog.string.padNumber(dt.getDate(), 2) + 'T' +
+      goog.string.padNumber(dt.getHours(), 2) +
+      goog.string.padNumber(dt.getMinutes(), 2) +
+      goog.string.padNumber(dt.getSeconds(), 2);
+
+  var extension = wtf.io.FILE_EXTENSION;
+  switch (opt_contentType) {
+    default:
+    case 'application/x-extension-wtf-trace':
+      extension = '.wtf-trace';
+      break;
+    case 'application/x-extension-wtf-json':
+      extension = '.wtf-json';
+      break;
+  }
+
+  return prefix + name + suffix + extension;
+};
 
 
 /**

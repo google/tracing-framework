@@ -80,6 +80,9 @@ goog.inherits(wtf.ui.Dialog, wtf.ui.Control);
  * @type {!Object.<string>}
  */
 wtf.ui.Dialog.EventType = {
+  OPENING: goog.events.getUniqueId('opening'),
+  OPENED: goog.events.getUniqueId('opened'),
+  CLOSING: goog.events.getUniqueId('closing'),
   CLOSED: goog.events.getUniqueId('closed')
 };
 
@@ -109,6 +112,11 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
 
   // Add after layout to prevent sliding.
   goog.dom.classes.add(el, goog.getCssName('uiDialogPoppedIn'));
+
+  this.emitEvent(wtf.ui.Dialog.EventType.OPENING);
+  wtf.timing.setTimeout(250, function() {
+    this.emitEvent(wtf.ui.Dialog.EventType.OPENED);
+  }, this);
 };
 
 
@@ -143,13 +151,19 @@ wtf.ui.Dialog.prototype.close = function(opt_callback, opt_scope) {
   if (rootElement) {
     var el = dom.getParentElement(rootElement);
     goog.dom.classes.remove(el, goog.getCssName('uiDialogPoppedIn'));
+
+    this.emitEvent(wtf.ui.Dialog.EventType.CLOSING);
     wtf.timing.setTimeout(218, function() {
       dom.removeNode(el);
-      this.emitEvent(wtf.ui.Dialog.EventType.CLOSED);
-      goog.dispose(this);
-      if (opt_callback) {
-        opt_callback.call(opt_scope);
-      }
+
+      // Give the browser a moment to update itself.
+      wtf.timing.setImmediate(function() {
+        this.emitEvent(wtf.ui.Dialog.EventType.CLOSED);
+        goog.dispose(this);
+        if (opt_callback) {
+          opt_callback.call(opt_scope);
+        }
+      }, this);
     }, this);
   }
 };

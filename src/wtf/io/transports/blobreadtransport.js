@@ -14,6 +14,7 @@
 goog.provide('wtf.io.transports.BlobReadTransport');
 
 goog.require('goog.fs.Error');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.DataFormat');
 goog.require('wtf.io.ReadTransport');
 
@@ -22,7 +23,7 @@ goog.require('wtf.io.ReadTransport');
 /**
  * Read-only blob transport type.
  *
- * @param {!Blob} blob Source blob.
+ * @param {!wtf.io.Blob} blob Source blob.
  * @constructor
  * @extends {wtf.io.ReadTransport}
  */
@@ -31,7 +32,7 @@ wtf.io.transports.BlobReadTransport = function(blob) {
 
   /**
    * Source blob.
-   * @type {!Blob}
+   * @type {!wtf.io.Blob}
    * @private
    */
   this.blob_ = blob;
@@ -82,18 +83,20 @@ wtf.io.transports.BlobReadTransport.prototype.resume = function() {
   if (!this.hasStartedRead_) {
     this.hasStartedRead_ = true;
 
+    var blob = wtf.io.Blob.toNative(this.blob_);
+
     switch (this.getPreferredFormat()) {
       case wtf.io.DataFormat.STRING:
-        this.reader_.readAsText(this.blob_);
+        this.reader_.readAsText(blob);
         break;
       case wtf.io.DataFormat.BLOB:
         // Immediate completion.
-        this.emitProgressEvent(this.blob_.size, this.blob_.size);
-        this.emitReceiveData(this.blob_);
+        this.emitProgressEvent(blob.size, blob.size);
+        this.emitReceiveData(blob);
         this.end();
         break;
       case wtf.io.DataFormat.ARRAY_BUFFER:
-        this.reader_.readAsArrayBuffer(this.blob_);
+        this.reader_.readAsArrayBuffer(blob);
         break;
     }
   }

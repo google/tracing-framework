@@ -16,25 +16,31 @@ goog.provide('wtf.app.ui.Loader');
 goog.require('goog.Disposable');
 goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
 goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.result');
 goog.require('goog.string');
-goog.require('wtf.app.ui.BufferLoaderEntry');
-goog.require('wtf.app.ui.FileLoaderEntry');
-goog.require('wtf.app.ui.LoadingDialog');
-goog.require('wtf.app.ui.UrlLoaderEntry');
-goog.require('wtf.app.ui.XhrLoaderEntry');
-goog.require('wtf.db.DataSourceInfo');
+goog.require('wtf.db.BlobDataSourceInfo');
 goog.require('wtf.db.Database');
+goog.require('wtf.db.DriveDataSourceInfo');
+goog.require('wtf.db.UrlDataSourceInfo');
+goog.require('wtf.db.sources.ChunkedDataSource');
 goog.require('wtf.doc.Document');
 goog.require('wtf.io');
+goog.require('wtf.io.Blob');
+goog.require('wtf.io.cff.BinaryStreamSource');
+goog.require('wtf.io.cff.JsonStreamSource');
 goog.require('wtf.io.drive');
+goog.require('wtf.io.transports.BlobReadTransport');
+goog.require('wtf.io.transports.XhrReadTransport');
 goog.require('wtf.pal');
 goog.require('wtf.timing');
+goog.require('wtf.ui.Dialog');
 goog.require('wtf.ui.ErrorDialog');
+goog.require('wtf.ui.ProgressDialog');
 
 
 
@@ -62,8 +68,8 @@ wtf.app.ui.Loader = function(mainDisplay) {
   this.mainDisplay_ = mainDisplay;
 
   /**
-   * Loading dialog, if it is displayed.
-   * @type {wtf.app.ui.LoadingDialog}
+   * Progress dialog, if it is displayed.
+   * @type {wtf.ui.ProgressDialog}
    * @private
    */
   this.progressDialog_ = null;
@@ -79,30 +85,9 @@ goog.inherits(wtf.app.ui.Loader, goog.Disposable);
  * @override
  */
 wtf.app.ui.Loader.prototype.disposeInternal = function() {
-  // TODO(benvanik): abort any inprogress loads.
+  // TODO(benvanik): abort any in-progress loads.
   goog.dispose(this.progressDialog_);
   goog.base(this, 'disposeInternal');
-};
-
-
-/**
- * Calculates a title name from the given entries.
- * @param {!Array.<!wtf.app.ui.LoaderEntry>} entries Entries.
- * @return {string} New title string.
- * @private
- */
-wtf.app.ui.Loader.prototype.generateTitleFromEntries_ = function(entries) {
-  var title = '';
-  for (var n = 0; n < entries.length; n++) {
-    var sourceInfo = entries[n].getSourceInfo();
-    var filename = sourceInfo.filename;
-    var lastSlash = filename.lastIndexOf('/');
-    if (lastSlash != -1) {
-      filename = filename.substr(lastSlash + 1);
-    }
-    title += filename;
-  }
-  return title;
 };
 
 
@@ -130,7 +115,6 @@ wtf.app.ui.Loader.prototype.inferContentType_ = function(filename) {
  * @param {!Object} data Command data.
  */
 wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
-  var revokeBlobUrls = data['revoke_blob_urls'] || false;
   var contentLength = data['content_length'];
   _gaq.push(['_trackEvent', 'app', 'open_snapshot', null, contentLength]);
 
@@ -141,10 +125,8 @@ wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
   var contentBuffers = data['content_buffers'];
   var contentUrls = data['content_urls'];
   goog.asserts.assert(contentTypes.length == contentSources.length);
-  var entries = [];
+  var sourceInfos = [];
   for (var n = 0; n < contentTypes.length; n++) {
-    var sourceInfo = new wtf.db.DataSourceInfo(
-        contentSources[n], contentTypes[n]);
     var entry = null;
     if (contentBuffers) {
       // Incoming arrays may be in many forms.
@@ -158,15 +140,21 @@ wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
       } else {
         buffer = contentBuffers[n];
       }
-      entry = new wtf.app.ui.BufferLoaderEntry(sourceInfo, buffer);
+      var blob = null;
+      if (buffer instanceof Blob) {
+        blob = wtf.io.Blob.fromNative(buffer);
+      } else {
+        blob = wtf.io.Blob.create([buffer]);
+      }
+      sourceInfos.push(new wtf.db.BlobDataSourceInfo(
+          contentSources[n], contentTypes[n], blob));
     } else {
-      entry = new wtf.app.ui.UrlLoaderEntry(
-          sourceInfo, contentUrls[n], revokeBlobUrls);
+      sourceInfos.push(new wtf.db.UrlDataSourceInfo(
+          contentSources[n], contentUrls[n]));
     }
-    entries.push(entry);
   }
 
-  this.loadEntries_(entries);
+  this.loadDataSources_(sourceInfos);
 };
 
 
@@ -235,29 +223,21 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
 
     _gaq.push(['_trackEvent', 'app', 'open_drive_files']);
 
-    var entries = [];
+    var sourceInfos = [];
     var errors = [];
     var remaining = files.length;
     goog.array.forEach(files, function(file) {
       var filename = file[0];
       var fileId = file[1];
       var contentType = this.inferContentType_(filename);
-      var sourceInfo = new wtf.db.DataSourceInfo(filename, contentType);
 
       // This call will kick off a bunch of API calls to get file metadata/etc.
-      // Afterwards, it'll give us a DriveFile that has a pending XHR and the
-      // information.
-      goog.result.wait(wtf.io.drive.downloadFile(fileId), function(result) {
+      goog.result.wait(wtf.io.drive.queryFile(fileId), function(result) {
         remaining--;
         var driveFile = result.getValue();
         if (driveFile) {
-          // The filename may differ from the other, due to the horrible Drive
-          // API.
-          sourceInfo.filename = driveFile.filename;
-
-          // Set the pending XHR.
-          var entry = new wtf.app.ui.XhrLoaderEntry(sourceInfo, driveFile.xhr);
-          entries.push(entry);
+          sourceInfos.push(new wtf.db.DriveDataSourceInfo(
+              driveFile.filename, contentType, fileId, driveFile));
         } else {
           errors.push(result.getError());
         }
@@ -279,7 +259,7 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
         return;
       }
 
-      this.loadEntries_(entries);
+      this.loadDataSources_(sourceInfos);
     };
   }, this);
 };
@@ -291,15 +271,14 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
  * @param {!Array.<!File>} files File objects.
  */
 wtf.app.ui.Loader.prototype.loadFiles = function(files) {
-  var entries = [];
+  var sourceInfos = [];
   for (var n = 0; n < files.length; n++) {
     var filename = files[n].name;
     var contentType = this.inferContentType_(filename);
-    var sourceInfo = new wtf.db.DataSourceInfo(filename, contentType);
-    var entry = new wtf.app.ui.FileLoaderEntry(sourceInfo, files[n]);
-    entries.push(entry);
+    sourceInfos.push(new wtf.db.BlobDataSourceInfo(
+        filename, contentType, wtf.io.Blob.fromNative(files[n])));
   }
-  this.loadEntries_(entries);
+  this.loadDataSources_(sourceInfos);
 };
 
 
@@ -308,65 +287,35 @@ wtf.app.ui.Loader.prototype.loadFiles = function(files) {
  * @param {!Array.<string>} urls URLs.
  */
 wtf.app.ui.Loader.prototype.loadUrls = function(urls) {
-  var entries = [];
+  var sourceInfos = [];
   for (var n = 0; n < urls.length; n++) {
     var url = urls[n];
     var contentType = this.inferContentType_(url);
-    var sourceInfo = new wtf.db.DataSourceInfo(url, contentType);
-    var entry = new wtf.app.ui.UrlLoaderEntry(sourceInfo, url, true);
-    entries.push(entry);
+    sourceInfos.push(new wtf.db.UrlDataSourceInfo(
+        url, contentType));
   }
-  this.loadEntries_(entries);
+  this.loadDataSources_(sourceInfos);
 };
 
 
 /**
- * Begins loading the entries and handles their async completion.
- * @param {!Array.<!wtf.app.ui.LoaderEntry>} entries Loader entries.
+ * Begins loading the data sources and handles their async completion.
+ * @param {!Array.<!wtf.db.DataSourceInfo>} sourceInfos Source infos.
  * @param {string=} opt_title Optional override for the app title. If omitted
  *     the title will be inferred from the entries.
  * @private
  */
-wtf.app.ui.Loader.prototype.loadEntries_ = function(entries, opt_title) {
+wtf.app.ui.Loader.prototype.loadDataSources_ = function(
+    sourceInfos, opt_title) {
+  // If we are already loading, ignore.
+  // This prevents multiple drops.
+  if (this.progressDialog_) {
+    return;
+  }
+
   // Close the old document.
   this.mainDisplay_.setDocumentView(null, true);
 
-  // TODO(benvanik): avoid showing the loading dialog for small traces.
-
-  // Show the loading dialog.
-  // Don't registerDisposable it so that we don't leak it.
-  goog.asserts.assert(!this.progressDialog_);
-  var body = this.dom_.getDocument().body;
-  goog.asserts.assert(body);
-  this.progressDialog_ = new wtf.app.ui.LoadingDialog(body, entries, this.dom_);
-
-  // Wait until the dialog is displayed.
-  wtf.timing.setTimeout(218, function() {
-    // Gather all deferrreds and wait on them.
-    var deferreds = goog.array.map(entries, function(entry) {
-      return entry.begin();
-    });
-    goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
-        function() {
-          this.loadSucceeded_(entries, opt_title);
-        },
-        function(args) {
-          this.loadFailed_(
-              'Unable to load snapshot',
-              'Source files could not be fetched.');
-        }, this);
-  }, this);
-};
-
-
-/**
- * Handles successful loads.
- * @param {!Array.<!wtf.app.ui.LoaderEntry>} entries Loader entries.
- * @param {string=} opt_title Optional override for the app title. If omitted
- *     the title will be inferred from the entries.
- * @private
- */
-wtf.app.ui.Loader.prototype.loadSucceeded_ = function(entries, opt_title) {
   // Create the document.
   var doc = new wtf.doc.Document(wtf.pal.getPlatform());
   var db = doc.getDatabase();
@@ -379,21 +328,78 @@ wtf.app.ui.Loader.prototype.loadSucceeded_ = function(entries, opt_title) {
         _gaq.push(['_trackEvent', 'app', 'source_error', message]);
       }, this);
 
-  // Add the data sources.
-  // This will often queue a bunch of invalidates for the next tick.
-  var contentLength = 0;
-  for (var n = 0; n < entries.length; n++) {
-    var entry = entries[n];
-    contentLength += this.addEntryToDatabase_(entries[n], db);
+  // TODO(benvanik): avoid showing the loading dialog for small traces.
 
-    // TODO(benvanik): retain for a bit?
-    goog.dispose(entry);
+  // Show the loading dialog.
+  // Don't registerDisposable it so that we don't leak it.
+  var body = this.dom_.getDocument().body;
+  goog.asserts.assert(body);
+  this.progressDialog_ = new wtf.ui.ProgressDialog(
+      body, 'Loading traces...', this.dom_);
+
+  // Create entries for each source and the data source itself.
+  // Note that these are handled async and make take some time to setup
+  // (file system ops/Drive API calls/etc).
+  var entries = [];
+  for (var n = 0; n < sourceInfos.length; n++) {
+    // Create the entry.
+    var entry = new wtf.app.ui.Loader.Entry_(sourceInfos[n]);
+    entries.push(entry);
+    this.progressDialog_.addTask(entry.task);
   }
-  _gaq.push(['_trackEvent', 'app', 'open_files', null, contentLength]);
 
-  // Pick a title, unless one was specified.
-  var title = opt_title || this.generateTitleFromEntries_(entries);
-  this.mainDisplay_.setTitle(title);
+  // Wait until the dialog is displayed.
+  this.progressDialog_.addListener(wtf.ui.Dialog.EventType.OPENED, function() {
+    // Gather all deferrreds and wait on them.
+    var deferreds = goog.array.map(entries, function(entry) {
+      return entry.start(db);
+    });
+    goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
+        function() {
+          this.loadSucceeded_(doc, entries, opt_title);
+        },
+        function(args) {
+          this.loadFailed_(
+              'Unable to load snapshot',
+              'Source files could not be fetched.');
+        }, this);
+  }, this);
+};
+
+
+/**
+ * Calculates a title name from the given entries.
+ * @param {!Array.<!wtf.app.ui.Loader.Entry_>} entries Entries.
+ * @return {string} New title string.
+ * @private
+ */
+wtf.app.ui.Loader.prototype.generateTitleFromEntries_ = function(entries) {
+  var title = '';
+  for (var n = 0; n < entries.length; n++) {
+    var sourceInfo = entries[n].sourceInfo;
+    var filename = sourceInfo.filename;
+    var lastSlash = filename.lastIndexOf('/');
+    if (lastSlash != -1) {
+      filename = filename.substr(lastSlash + 1);
+    }
+    title += filename;
+  }
+  return title;
+};
+
+
+/**
+ * Handles successful loads.
+ * @param {!wtf.doc.Document} doc Document.
+ * @param {!Array.<!wtf.app.ui.Loader.Entry_>} entries Loader entries.
+ * @param {string=} opt_title Optional override for the app title. If omitted
+ *     the title will be inferred from the entries.
+ * @private
+ */
+wtf.app.ui.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
+  var db = doc.getDatabase();
+
+  _gaq.push(['_trackEvent', 'app', 'open_files', null]);
 
   // Close the progress dialog.
   if (this.progressDialog_) {
@@ -406,57 +412,20 @@ wtf.app.ui.Loader.prototype.loadSucceeded_ = function(entries, opt_title) {
   // This is called after the dialog has closed to give it a chance to animate
   // out.
   function finishLoad() {
+    // Pick a title, unless one was specified.
+    var title = opt_title || this.generateTitleFromEntries_(entries);
+    this.mainDisplay_.setTitle(title);
+
     // Show the document.
     var documentView = this.mainDisplay_.openDocument(doc);
     goog.asserts.assert(documentView);
 
     // Zoom to fit.
-    // TODO(benvanik): remove setTimeout when zoomToFit is based on view
+    // TODO(benvanik): remove setTimeout when zoomToFit is based on view.
     wtf.timing.setTimeout(50, function() {
       documentView.zoomToFit();
     }, this);
   };
-};
-
-
-/**
- * Adds an entry to the database by guessing its type.
- * @param {!wtf.app.ui.LoaderEntry} entry Entry to add.
- * @param {!wtf.db.Database} db Target database.
- * @return {number} The total size, in bytes, of the data (estimated).
- * @private
- */
-wtf.app.ui.Loader.prototype.addEntryToDatabase_ = function(entry, db) {
-  var sourceInfo = entry.getSourceInfo();
-  var data = entry.getContents();
-  goog.asserts.assert(data);
-  if (!data) {
-    return 0;
-  }
-
-  // Wrap array buffers so they are always wtf.io.ByteArray-like.
-  if (data instanceof ArrayBuffer) {
-    data = new Uint8Array(data);
-  }
-
-  // Here be heuristics.
-  // If we have a mime type, use that. Otherwise try to guess based on the entry
-  // data type.
-  // TODO(benvanik): sniff contents/don't rely on mime type/etc.
-  switch (sourceInfo.contentType) {
-    default:
-    case 'application/x-extension-wtf-trace':
-      db.addBinarySource(data, sourceInfo);
-      break;
-    case 'application/x-extension-wtf-json':
-      db.addJsonSource(data, sourceInfo);
-      break;
-  }
-  if (data instanceof Blob) {
-    return data.size;
-  } else {
-    return data.length;
-  }
 };
 
 
@@ -475,4 +444,102 @@ wtf.app.ui.Loader.prototype.loadFailed_ = function(title, message) {
 
   // Let them know we failed.
   wtf.ui.ErrorDialog.show(title, message, this.dom_);
+};
+
+
+
+/**
+ * A data source loader entry.
+ * Tracks progress and allows for completion events.
+ * @param {!wtf.db.DataSourceInfo} sourceInfo Data source info.
+ * @constructor
+ * @private
+ */
+wtf.app.ui.Loader.Entry_ = function(sourceInfo) {
+  /**
+   * Data source info.
+   * @type {!wtf.db.DataSourceInfo}
+   */
+  this.sourceInfo = sourceInfo;
+
+  /**
+   * Progress dialog task.
+   * Used to update the dialog with the latest status.
+   * @type {!wtf.ui.ProgressDialog.Task}
+   */
+  this.task = new wtf.ui.ProgressDialog.Task(sourceInfo.filename);
+
+  /**
+   * Data source.
+   * @type {wtf.db.DataSource}
+   */
+  this.source = null;
+
+  /**
+   * A deferred waiting for the transport to be setup.
+   * {@see #start} will wait until this is called back until further processing.
+   * @type {!goog.async.Deferred}
+   * @private
+   */
+  this.transportDeferred_ = new goog.async.Deferred();
+
+  // Pick an appropriate transport.
+  // Some transports require setup time, so we defer starting until they've
+  // been prepped.
+  if (sourceInfo instanceof wtf.db.BlobDataSourceInfo) {
+    // Blob transport.
+    var transport = new wtf.io.transports.BlobReadTransport(sourceInfo.blob);
+    this.transportDeferred_.callback(transport);
+  } else if (sourceInfo instanceof wtf.db.DriveDataSourceInfo) {
+    // Drive URL - need to make some drive calls first.
+    goog.result.wait(wtf.io.drive.downloadFile(sourceInfo.driveFile),
+        function(result) {
+          var transport = new wtf.io.transports.XhrReadTransport(
+              sourceInfo.filename, result.getValue());
+          this.transportDeferred_.callback(transport);
+        }, this);
+  } else if (sourceInfo instanceof wtf.db.UrlDataSourceInfo) {
+    // Simple URL (or blob URL) transport.
+    var transport = new wtf.io.transports.XhrReadTransport(sourceInfo.filename);
+    this.transportDeferred_.callback(transport);
+  } else {
+    throw new Error('Unknown data source type.');
+  }
+};
+
+
+/**
+ * Begins the load of the entry.
+ * @param {!wtf.db.Database} db Target database.
+ * @return {!goog.async.Deferred} A deferred fulfilled when the load completes.
+ */
+wtf.app.ui.Loader.Entry_.prototype.start = function(db) {
+  var deferred = new goog.async.Deferred();
+  this.transportDeferred_.addCallback(function(transport) {
+    goog.asserts.assert(!this.source);
+
+    // Here be heuristics based on mime type.
+    // TODO(benvanik): sniff contents/don't rely on mime type/etc.
+    var streamSource;
+    switch (this.sourceInfo.contentType) {
+      default:
+      case 'application/x-extension-wtf-trace':
+        streamSource = new wtf.io.cff.BinaryStreamSource(transport);
+        break;
+      case 'application/x-extension-wtf-json':
+        streamSource = new wtf.io.cff.JsonStreamSource(transport);
+        break;
+    }
+
+    // Create data source.
+    this.source = new wtf.db.sources.ChunkedDataSource(
+        db, this.sourceInfo, streamSource);
+
+    // Add to database.
+    db.addSource(this.source);
+
+    // Kick off the source.
+    this.source.start().chainDeferred(deferred);
+  }, this);
+  return deferred;
 };

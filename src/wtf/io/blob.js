@@ -105,6 +105,20 @@ wtf.io.Blob.isBlob = function(value) {
 
 
 /**
+ * Wraps a native blob object without copying the data.
+ * @param {!(Blob|Buffer)} value Source value.
+ * @return {!wtf.io.Blob} A blob object.
+ */
+wtf.io.Blob.fromNative = function(value) {
+  if (wtf.NODE) {
+    return new wtf.io.NodeBlob_(/** @type {!Buffer} */ (value));
+  } else {
+    return new wtf.io.BrowserBlob_(/** @type {!Blob} */ (value));
+  }
+};
+
+
+/**
  * Converts a blob to a platform native binary blob object.
  * This does not copy the data.
  * @param {!wtf.io.Blob} blob Blob value.
@@ -236,11 +250,12 @@ wtf.io.BrowserBlob_.prototype.readAsText = function(callback, opt_scope) {
 /**
  * A blob implementation for node.js based on buffers.
  * Use the {@see #init} method to initialize a new blob instance.
+ * @param {Buffer=} opt_buffer Existing buffer to wrap.
  * @constructor
  * @implements {wtf.io.Blob}
  * @private
  */
-wtf.io.NodeBlob_ = function() {
+wtf.io.NodeBlob_ = function(opt_buffer) {
   /**
    * Underlying node.js binary buffer.
    * @type {Buffer}
