@@ -15,7 +15,6 @@ goog.provide('wtf.doc.Document');
 goog.provide('wtf.doc.DocumentMode');
 goog.provide('wtf.doc.DocumentStatus');
 
-goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('wtf.db.Database');
 goog.require('wtf.doc.CommentScope');
@@ -124,7 +123,7 @@ wtf.doc.Document = function(platform) {
    * @type {!wtf.db.Database}
    * @private
    */
-  this.db_ = new wtf.db.Database(true);
+  this.db_ = new wtf.db.Database();
   this.registerDisposable(this.db_);
 
   // TODO(benvanik): streaming.
@@ -304,15 +303,4 @@ wtf.doc.Document.prototype.endEventStream = function(streamId) {
   // if (goog.object.isEmpty(this.readStreams_)) {
   //   this.setStatus(wtf.doc.DocumentStatus.STATIC);
   // }
-};
-
-
-/**
- * Gets the trace data storage.
- * @return {!wtf.db.DataStorage} Trace data storage.
- */
-wtf.doc.Document.prototype.getStorage = function() {
-  var storage = this.db_.getStorage();
-  goog.asserts.assert(storage);
-  return storage;
 };

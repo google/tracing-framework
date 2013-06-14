@@ -12,7 +12,6 @@
  */
 
 goog.provide('wtf.db.DataSource');
-goog.provide('wtf.db.DataSourceInfo');
 goog.provide('wtf.db.PresentationHint');
 
 goog.require('goog.Disposable');
@@ -20,26 +19,6 @@ goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.db.Unit');
-
-
-
-/**
- * Source information about a data source.
- * @param {string} filename Filename or URL.
- * @param {string} contentType MIME type.
- * @constructor
- */
-wtf.db.DataSourceInfo = function(filename, contentType) {
-  /**
-   * @type {string}
-   */
-  this.filename = filename;
-
-  /**
-   * @type {string}
-   */
-  this.contentType = contentType;
-};
 
 
 /**
@@ -70,10 +49,11 @@ wtf.db.PresentationHint = {
  * Events are parsed and redirected to the given database as they arrive.
  *
  * @param {!wtf.db.Database} db Target database.
+ * @param {!wtf.db.DataSourceInfo} sourceInfo Data source info.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.db.DataSource = function(db) {
+wtf.db.DataSource = function(db, sourceInfo) {
   goog.base(this);
 
   /**
@@ -82,6 +62,13 @@ wtf.db.DataSource = function(db) {
    * @private
    */
   this.db_ = db;
+
+  /**
+   * Data source info.
+   * @type {!wtf.db.DataSourceInfo}
+   * @private
+   */
+  this.sourceInfo_ = sourceInfo;
 
   /**
    * A deferred that should be called back with success/failure.
@@ -164,6 +151,15 @@ goog.inherits(wtf.db.DataSource, goog.Disposable);
  */
 wtf.db.DataSource.prototype.getDatabase = function() {
   return this.db_;
+};
+
+
+/**
+ * Gets the source information for this data source.
+ * @return {!wtf.db.DataSourceInfo} Source info.
+ */
+wtf.db.DataSource.prototype.getInfo = function() {
+  return this.sourceInfo_;
 };
 
 

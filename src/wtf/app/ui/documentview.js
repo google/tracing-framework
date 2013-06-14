@@ -16,6 +16,7 @@ goog.provide('wtf.app.ui.DocumentView');
 goog.require('goog.asserts');
 goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
+goog.require('goog.result');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
@@ -30,12 +31,18 @@ goog.require('wtf.app.ui.documentview');
 goog.require('wtf.app.ui.nav.Navbar');
 goog.require('wtf.app.ui.query.QueryPanel');
 goog.require('wtf.app.ui.tracks.TracksPanel');
+goog.require('wtf.db.BlobDataSourceInfo');
+goog.require('wtf.db.DriveDataSourceInfo');
 goog.require('wtf.db.HealthInfo');
 goog.require('wtf.db.Unit');
+goog.require('wtf.db.UrlDataSourceInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.io');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.drive');
+goog.require('wtf.pal');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
@@ -485,45 +492,73 @@ wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
   if (!sources.length) {
     return;
   }
-  // Just pick the first source for naming.
-  var contextInfo = sources[0].getContextInfo();
-  var filename = contextInfo.getFilename();
 
-  // prefix-YYYY-MM-DDTHH-MM-SS
-  var dt = new Date();
-  var filenameSuffix = '-' +
-      dt.getFullYear() +
-      goog.string.padNumber(dt.getMonth() + 1, 2) +
-      goog.string.padNumber(dt.getDate(), 2) + 'T' +
-      goog.string.padNumber(dt.getHours(), 2) +
-      goog.string.padNumber(dt.getMinutes(), 2) +
-      goog.string.padNumber(dt.getSeconds(), 2);
-  filename += filenameSuffix;
+  _gaq.push(['_trackEvent', 'app', 'save_trace', null]);
 
-  wtf.ui.ErrorDialog.show(
-      'Local save support not enabled',
-      'This is coming soon!',
-      this.getDom());
+  var platform = wtf.pal.getPlatform();
+  for (var n = 0; n < sources.length; n++) {
+    var source = sources[n];
+    var sourceInfo = source.getInfo();
 
-  // var storage = doc.getStorage();
-  // var dataStreams = storage.snapshotDataStreamBuffers();
-  // var contentLength = 0;
-  // for (var n = 0; n < dataStreams.length; n++) {
-  //   var dataStream = dataStreams[n];
-  //   var streamFilename = filename;
-  //   if (dataStreams.length > 1) {
-  //     streamFilename += '-' + n;
-  //   }
-  //   switch (dataStream.type) {
-  //     case 'application/x-extension-wtf-trace':
-  //       streamFilename += wtf.io.FILE_EXTENSION;
-  //       break;
-  //   }
-  //   var platform = wtf.pal.getPlatform();
-  //   platform.writeBinaryFile(streamFilename, dataStream.data, dataStream.type);
-  //   contentLength += dataStream.data.length;
-  // }
-  // _gaq.push(['_trackEvent', 'app', 'save_trace', null, contentLength]);
+    // Try to use the original filename, or pick a random one.
+    var rawFilename = sourceInfo.filename;
+    var lastForwardSlash = rawFilename.lastIndexOf('/');
+    var lastBackSlash = rawFilename.lastIndexOf('\\');
+    var lastSlash = Math.max(lastForwardSlash, lastBackSlash);
+    var filename = null;
+    if (lastSlash != -1) {
+      filename = rawFilename.substr(lastSlash + 1);
+    } else {
+      filename = rawFilename;
+    }
+    if (!filename || !filename.length) {
+      // Get full filename with date/etc.
+      var contextInfo = source.getContextInfo();
+      filename = wtf.io.getTimedFilename(
+          '', contextInfo.getFilename(), sourceInfo.contentType);
+    }
+
+    // Begin fetching data or download it directly.
+    if (sourceInfo instanceof wtf.db.BlobDataSourceInfo) {
+      // Download directly.
+      platform.writeBinaryFile(
+          filename,
+          wtf.io.Blob.toNative(sourceInfo.blob),
+          sourceInfo.contentType);
+    } else if (sourceInfo instanceof wtf.db.DriveDataSourceInfo) {
+      // Drive fetch the target.
+      goog.result.wait(wtf.io.drive.downloadFile(sourceInfo.driveFile),
+          goog.partial(sendXhrDownload, filename, sourceInfo.contentType),
+          this);
+    } else if (sourceInfo instanceof wtf.db.UrlDataSourceInfo) {
+      // XHR fetch the target.
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', sourceInfo.filename, true);
+      sendXhrDownload(filename, sourceInfo.contentType, xhr);
+    } else {
+      // Unknown - ignore.
+      continue;
+    }
+  }
+
+  var self = this;
+  function sendXhrDownload(filename, contentType, xhr) {
+    if (!(xhr instanceof XMLHttpRequest)) {
+      xhr = xhr.getValue();
+    }
+    xhr.responseType = 'blob';
+    xhr.onload = function() {
+      platform.writeBinaryFile(
+          filename, xhr.response, contentType);
+    };
+    xhr.onerror = function() {
+      wtf.ui.ErrorDialog.show(
+          'Unable to download',
+          'A trace file could not be redownloaded for saving.',
+          self.getDom());
+    };
+    xhr.send();
+  };
 };
 
 

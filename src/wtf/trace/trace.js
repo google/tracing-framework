@@ -118,19 +118,9 @@ wtf.trace.getTraceFilename = function(opt_targetValue) {
       filenamePrefix = 'file://';
     }
 
-    // prefix-YYYY-MM-DDTHH-MM-SS
-    var dt = new Date();
-    var filenameSuffix = '-' +
-        dt.getFullYear() +
-        goog.string.padNumber(dt.getMonth() + 1, 2) +
-        goog.string.padNumber(dt.getDate(), 2) + 'T' +
-        goog.string.padNumber(dt.getHours(), 2) +
-        goog.string.padNumber(dt.getMinutes(), 2) +
-        goog.string.padNumber(dt.getSeconds(), 2);
-
-    var filename =
-        filenamePrefix + contextInfo.getFilename() + filenameSuffix +
-        wtf.io.FILE_EXTENSION;
+    // Get full filename with date/etc.
+    var filename = wtf.io.getTimedFilename(
+        filenamePrefix, contextInfo.getFilename());
     return filename.replace('file://', '');
   }
 };

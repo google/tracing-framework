@@ -34,14 +34,15 @@ goog.require('wtf.io.cff.parts.JsonEventBufferPart');
  * event data from the CFF type.
  *
  * @param {!wtf.db.Database} db Target database.
+ * @param {!wtf.db.DataSourceInfo} sourceInfo Data source info.
  * @param {!wtf.io.cff.StreamSource} streamSource Stream source.
  *     Ownership is transferred to the trace source and the stream will be
  *     disposed at the same time.
  * @constructor
  * @extends {wtf.db.DataSource}
  */
-wtf.db.sources.ChunkedDataSource = function(db, streamSource) {
-  goog.base(this, db);
+wtf.db.sources.ChunkedDataSource = function(db, sourceInfo, streamSource) {
+  goog.base(this, db, sourceInfo);
 
   /**
    * Chunked file format stream source.

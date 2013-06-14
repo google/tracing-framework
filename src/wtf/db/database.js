@@ -16,16 +16,11 @@ goog.provide('wtf.db.Database');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('wtf');
-goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
 goog.require('wtf.db.Unit');
 goog.require('wtf.db.Zone');
-goog.require('wtf.db.sources.ChunkedDataSource');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
-goog.require('wtf.io.cff.BinaryStreamSource');
-goog.require('wtf.io.cff.JsonStreamSource');
-goog.require('wtf.io.transports.MemoryReadTransport');
 
 
 
@@ -48,21 +43,11 @@ goog.require('wtf.io.transports.MemoryReadTransport');
  * Applications can add their own event-based indices to allow for more control
  * over iteration.
  *
- * @param {boolean=} opt_useStorage Enable data storage.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.db.Database = function(opt_useStorage) {
+wtf.db.Database = function() {
   goog.base(this);
-
-  /**
-   * Trace data storage.
-   * If set by an application all streams will be sent to this.
-   * @type {wtf.db.DataStorage}
-   * @private
-   */
-  this.storage_ = opt_useStorage ? new wtf.db.DataStorage() : null;
-  this.registerDisposable(this.storage_);
 
   /**
    * All trace sources that have been added to provide data.
@@ -205,86 +190,17 @@ wtf.db.Database.prototype.invalidate_ = function() {
 
 
 /**
- * Gets the trace data storage.
- * @return {wtf.db.DataStorage} Data storage, if enabled.
- */
-wtf.db.Database.prototype.getStorage = function() {
-  return this.storage_;
-};
-
-
-/**
  * Adds a data source to the database.
  * @param {!wtf.db.DataSource} dataSource Data source to add to the database.\.
- * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
- *     loading.
  */
-wtf.db.Database.prototype.addDataSource = function(dataSource) {
+wtf.db.Database.prototype.addSource = function(dataSource) {
+  // Add to the database.
+  // TODO(benvanik): dispose when completed?
   this.sources_.push(dataSource);
   this.registerDisposable(dataSource);
 
   this.emitEvent(wtf.db.Database.EventType.SOURCES_CHANGED);
   this.invalidate_();
-
-  // NOTE: this may start streaming back data immediately.
-  return dataSource.start();
-};
-
-
-/**
- * Adds a chunked file format streaming source.
- * @param {!wtf.io.cff.StreamSource} streamSource Stream source.
- * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
- * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
- *     loading.
- */
-wtf.db.Database.prototype.addStreamSource = function(
-    streamSource, opt_sourceInfo) {
-  return this.addDataSource(new wtf.db.sources.ChunkedDataSource(
-      this, streamSource));
-};
-
-
-/**
- * Adds a binary data source as an immediately-available stream.
- * @param {!wtf.io.BlobData} data Input data.
- * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
- * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
- *     loading.
- */
-wtf.db.Database.prototype.addBinarySource = function(data, opt_sourceInfo) {
-  var transport = new wtf.io.transports.MemoryReadTransport();
-  var streamSource = new wtf.io.cff.BinaryStreamSource(transport);
-  var deferred = this.addStreamSource(streamSource, opt_sourceInfo);
-
-  transport.addData(data);
-  transport.end();
-
-  return deferred;
-};
-
-
-/**
- * Adds a JSON data source as an immediately-available stream.
- * @param {string|!Array|!Object|wtf.io.BlobData} data Input data.
- * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
- * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
- *     loading.
- */
-wtf.db.Database.prototype.addJsonSource = function(data, opt_sourceInfo) {
-  // Always convert the incoming data to JSON to ensure we don't have it
-  // modified while we work with it.
-  if (typeof data != 'string') {
-    data = goog.global.JSON.stringify(data);
-  }
-  var transport = new wtf.io.transports.MemoryReadTransport();
-  var streamSource = new wtf.io.cff.JsonStreamSource(transport);
-  var deferred = this.addStreamSource(streamSource, opt_sourceInfo);
-
-  transport.addData(data);
-  transport.end();
-
-  return deferred;
 };
 
 
@@ -559,20 +475,8 @@ goog.exportSymbol(
     'wtf.db.Database',
     wtf.db.Database);
 goog.exportProperty(
-    wtf.db.Database.prototype, 'getStorage',
-    wtf.db.Database.prototype.getStorage);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'addDataSource',
-    wtf.db.Database.prototype.addDataSource);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'addStreamSource',
-    wtf.db.Database.prototype.addStreamSource);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'addBinarySource',
-    wtf.db.Database.prototype.addBinarySource);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'addJsonSource',
-    wtf.db.Database.prototype.addJsonSource);
+    wtf.db.Database.prototype, 'addSource',
+    wtf.db.Database.prototype.addSource);
 goog.exportProperty(
     wtf.db.Database.prototype, 'getSources',
     wtf.db.Database.prototype.getSources);
