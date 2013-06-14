@@ -14,6 +14,7 @@
 goog.provide('wtf.db');
 
 goog.require('goog.asserts');
+goog.require('goog.async.Deferred');
 goog.require('goog.string');
 goog.require('wtf.db.Database');
 goog.require('wtf.io');
@@ -24,17 +25,29 @@ goog.require('wtf.pal.IPlatform');
 
 /**
  * Loads a database from the given input.
+ *
+ * This is an asynchronous operation and may fail.
+ * Pass in a callback that will be called with either a loaded database or an
+ * error object describing the error that occured during load.
+ * The callback will not be called until the entire database is loaded and ready
+ * to use.
+ *
  * @param {string|!wtf.io.ByteArray|!Object} input Input data.
  *     This can be a filename (if in node.js) or a byte buffer.
- * @return {wtf.db.Database} Event database, if it could be loaded. If should be
- *     disposed when no longer needed.
+ * @param {!function(this:T, (wtf.db.Database|Error))} callback
+ *     A callback that will receive an event database, if it could be loaded.
+ *     If should be disposed when no longer needed. If an error occurred an
+ *     Error object will be passed.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
  */
-wtf.db.load = function(input) {
+wtf.db.load = function(input, callback, opt_scope) {
   var platform = wtf.pal.getPlatform();
 
   var db = new wtf.db.Database();
 
   // Initialize streams based on input type.
+  var deferred = new goog.async.Deferred();
   if (goog.isString(input)) {
     // Filename.
     if (goog.string.endsWith(input, '.wtf-trace')) {
@@ -45,26 +58,34 @@ wtf.db.load = function(input) {
         return null;
       }
       goog.asserts.assert(fileData);
-      db.addBinarySource(fileData);
+      deferred = db.addBinarySource(fileData);
     } else if (goog.string.endsWith(input, '.wtf-json')) {
       var jsonSource = platform.readTextFile(input);
       if (!jsonSource) {
         goog.dispose(db);
         return null;
       }
-      db.addJsonSource(jsonSource);
+      deferred = db.addJsonSource(jsonSource);
     } else {
-      db.addJsonSource(input);
+      deferred = db.addJsonSource(input);
     }
   } else if (wtf.io.isByteArray(input)) {
     // Binary buffer.
-    db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (input));
+    deferred = db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (input));
   } else if (goog.isObject(input)) {
     // JSON.
-    db.addJsonSource(input);
+    deferred = db.addJsonSource(input);
   }
 
-  return db;
+  if (!deferred) {
+    callback.call(opt_scope, new Error('Unrecognized input data.'));
+  }
+
+  deferred.addCallbacks(function() {
+    callback.call(opt_scope, db);
+  }, function(e) {
+    callback.call(opt_scope, e);
+  });
 };
 
 

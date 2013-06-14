@@ -17,6 +17,7 @@ goog.provide('wtf.db.PresentationHint');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.async.Deferred');
 goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.db.Unit');
 
@@ -38,23 +39,6 @@ wtf.db.DataSourceInfo = function(filename, contentType) {
    * @type {string}
    */
   this.contentType = contentType;
-};
-
-
-/**
- * Gets a value indicating whether the source data is binary (vs. text).
- * @return {boolean} True if binary, false if text.
- */
-wtf.db.DataSourceInfo.prototype.isBinary = function() {
-  // Guess the response type from the content type.
-  switch (this.contentType) {
-    default:
-    case 'application/x-extension-wtf-trace':
-    case 'application/x-extension-wtf-calls':
-      return true;
-    case 'application/x-extension-wtf-json':
-      return false;
-  }
 };
 
 
@@ -98,6 +82,14 @@ wtf.db.DataSource = function(db) {
    * @private
    */
   this.db_ = db;
+
+  /**
+   * A deferred that should be called back with success/failure.
+   * This will only be initialized when the source has started.
+   * @type {goog.async.Deferred}
+   * @private
+   */
+  this.deferred_ = null;
 
   /**
    * Whether the source has been fully initialized.
@@ -264,8 +256,17 @@ wtf.db.DataSource.prototype.getTimeDelay = function() {
 
 /**
  * Signals that the data source should start adding data.
+ * This is an async process and, in the case of streaming sources, may not
+ * complete for a very long time. Use the returned deferred if interested in
+ * the completion time.
+ * @return {!goog.async.Deferred} A deferred fulfilled when the data source
+ *     completes loading.
  */
-wtf.db.DataSource.prototype.start = goog.nullFunction;
+wtf.db.DataSource.prototype.start = function() {
+  goog.asserts.assert(!this.deferred_);
+  this.deferred_ = new goog.async.Deferred();
+  return this.deferred_;
+};
 
 
 /**
@@ -298,6 +299,36 @@ wtf.db.DataSource.prototype.initialize = function(
   this.timeDelay_ = timeDelay;
 
   return this.db_.sourceInitialized(this);
+};
+
+
+/**
+ * Emits an error event.
+ * @param {string} message Error message.
+ * @param {string=} opt_detail Detailed information.
+ * @protected
+ */
+wtf.db.DataSource.prototype.error = function(message, opt_detail) {
+  this.db_.sourceError(this, message, opt_detail);
+
+  if (this.deferred_) {
+    this.deferred_.errback(new Error(message));
+    this.deferred_ = null;
+  }
+};
+
+
+/**
+ * Emits an end event.
+ * @protected
+ */
+wtf.db.DataSource.prototype.end = function() {
+  this.db_.sourceEnded(this);
+
+  if (this.deferred_) {
+    this.deferred_.callback();
+    this.deferred_ = null;
+  }
 };
 
 

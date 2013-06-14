@@ -20,7 +20,6 @@ goog.require('wtf.db.DataStorage');
 goog.require('wtf.db.EventTypeTable');
 goog.require('wtf.db.Unit');
 goog.require('wtf.db.Zone');
-goog.require('wtf.db.sources.CallsDataSource');
 goog.require('wtf.db.sources.ChunkedDataSource');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.events.EventType');
@@ -184,6 +183,12 @@ wtf.db.Database.EventType = {
   SOURCE_ERROR: goog.events.getUniqueId('source_error'),
 
   /**
+   * A source has ended and will produce no more data.
+   * Args: [source]
+   */
+  SOURCE_ENDED: goog.events.getUniqueId('source_ended'),
+
+  /**
    * One or more zones was added. Args include a list of the added zones.
    */
   ZONES_ADDED: goog.events.getUniqueId('zones_added')
@@ -210,7 +215,9 @@ wtf.db.Database.prototype.getStorage = function() {
 
 /**
  * Adds a data source to the database.
- * @param {!wtf.db.DataSource} dataSource Data source to add to the database.
+ * @param {!wtf.db.DataSource} dataSource Data source to add to the database.\.
+ * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
+ *     loading.
  */
 wtf.db.Database.prototype.addDataSource = function(dataSource) {
   this.sources_.push(dataSource);
@@ -220,7 +227,7 @@ wtf.db.Database.prototype.addDataSource = function(dataSource) {
   this.invalidate_();
 
   // NOTE: this may start streaming back data immediately.
-  dataSource.start();
+  return dataSource.start();
 };
 
 
@@ -228,10 +235,12 @@ wtf.db.Database.prototype.addDataSource = function(dataSource) {
  * Adds a chunked file format streaming source.
  * @param {!wtf.io.cff.StreamSource} streamSource Stream source.
  * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
+ * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
+ *     loading.
  */
 wtf.db.Database.prototype.addStreamSource = function(
     streamSource, opt_sourceInfo) {
-  this.addDataSource(new wtf.db.sources.ChunkedDataSource(
+  return this.addDataSource(new wtf.db.sources.ChunkedDataSource(
       this, streamSource));
 };
 
@@ -240,20 +249,27 @@ wtf.db.Database.prototype.addStreamSource = function(
  * Adds a binary data source as an immediately-available stream.
  * @param {!wtf.io.BlobData} data Input data.
  * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
+ * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
+ *     loading.
  */
 wtf.db.Database.prototype.addBinarySource = function(data, opt_sourceInfo) {
   var transport = new wtf.io.transports.MemoryReadTransport();
   var streamSource = new wtf.io.cff.BinaryStreamSource(transport);
-  this.addStreamSource(streamSource, opt_sourceInfo);
+  var deferred = this.addStreamSource(streamSource, opt_sourceInfo);
+
   transport.addData(data);
   transport.end();
+
+  return deferred;
 };
 
 
 /**
  * Adds a JSON data source as an immediately-available stream.
- * @param {string|!Array|!Object} data Input data.
+ * @param {string|!Array|!Object|wtf.io.BlobData} data Input data.
  * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
+ * @return {!goog.async.Deferred} A deferred fulfilled when the source completes
+ *     loading.
  */
 wtf.db.Database.prototype.addJsonSource = function(data, opt_sourceInfo) {
   // Always convert the incoming data to JSON to ensure we don't have it
@@ -263,19 +279,12 @@ wtf.db.Database.prototype.addJsonSource = function(data, opt_sourceInfo) {
   }
   var transport = new wtf.io.transports.MemoryReadTransport();
   var streamSource = new wtf.io.cff.JsonStreamSource(transport);
-  this.addStreamSource(streamSource, opt_sourceInfo);
+  var deferred = this.addStreamSource(streamSource, opt_sourceInfo);
+
   transport.addData(data);
   transport.end();
-};
 
-
-/**
- * Adds a binary instrumented call source as an immediately-available stream.
- * @param {!wtf.io.ByteArray} data Input data.
- * @param {wtf.db.DataSourceInfo=} opt_sourceInfo Source information.
- */
-wtf.db.Database.prototype.addCallsSource = function(data, opt_sourceInfo) {
-  this.addDataSource(new wtf.db.sources.CallsDataSource(this, data));
+  return deferred;
 };
 
 
@@ -476,6 +485,15 @@ wtf.db.Database.prototype.sourceError =
 
 
 /**
+ * Signals that a data source ended successfully.
+ * @param {!wtf.db.DataSource} source Source that ended.
+ */
+wtf.db.Database.prototype.sourceEnded = function(source) {
+  this.emitEvent(wtf.db.Database.EventType.SOURCE_ENDED, source);
+};
+
+
+/**
  * Begins a batch of events.
  * This will be called immediately before a new batch of events are dispatched.
  * All events dispatched will be from the given source.
@@ -555,9 +573,6 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.Database.prototype, 'addJsonSource',
     wtf.db.Database.prototype.addJsonSource);
-goog.exportProperty(
-    wtf.db.Database.prototype, 'addCallsSource',
-    wtf.db.Database.prototype.addCallsSource);
 goog.exportProperty(
     wtf.db.Database.prototype, 'getSources',
     wtf.db.Database.prototype.getSources);

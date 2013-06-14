@@ -13,6 +13,7 @@
 
 goog.provide('wtf.io.transports.MemoryWriteTransport');
 
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.WriteTransport');
 
 
@@ -88,8 +89,8 @@ wtf.io.transports.MemoryWriteTransport.prototype.flush = function() {
 
 /**
  * Gets a blob containing all data that has been written to the transport.
- * @return {!Blob} Data blob.
+ * @return {!wtf.io.Blob} Data blob.
  */
 wtf.io.transports.MemoryWriteTransport.prototype.getBlob = function() {
-  return new Blob(this.data_);
+  return wtf.io.Blob.create(this.data_);
 };
