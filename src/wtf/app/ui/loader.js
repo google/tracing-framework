@@ -118,8 +118,6 @@ wtf.app.ui.Loader.prototype.inferContentType_ = function(filename) {
     return 'application/x-extension-wtf-trace';
   } else if (goog.string.endsWith(filename, '.wtf-json')) {
     return 'application/x-extension-wtf-json';
-  } else if (goog.string.endsWith(filename, '.wtf-calls')) {
-    return 'application/x-extension-wtf-calls';
   }
   // Default. Maybe we should just return null.
   return 'application/x-extension-wtf-trace';
@@ -188,7 +186,6 @@ wtf.app.ui.Loader.prototype.requestLocalOpenDialog = function(
   inputElement['accept'] = [
     '.wtf-trace,application/x-extension-wtf-trace',
     '.wtf-json,application/x-extension-wtf-json',
-    '.wtf-calls,application/x-extension-wtf-calls',
     '.part,application/x-extension-part'
   ].join(',');
   inputElement.click();
@@ -447,36 +444,19 @@ wtf.app.ui.Loader.prototype.addEntryToDatabase_ = function(entry, db) {
   // data type.
   // TODO(benvanik): sniff contents/don't rely on mime type/etc.
   switch (sourceInfo.contentType) {
+    default:
     case 'application/x-extension-wtf-trace':
-      if (wtf.io.isByteArray(data)) {
-        db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data), sourceInfo);
-        return data.length;
-      } else if (data instanceof Blob) {
-        db.addBinarySource(/** @type {!Blob} */ (data), sourceInfo);
-        return data.size;
-      }
+      db.addBinarySource(data, sourceInfo);
       break;
     case 'application/x-extension-wtf-json':
       db.addJsonSource(data, sourceInfo);
-      return goog.isString(data) ? data.length : 0;
-    case 'application/x-extension-wtf-calls':
-      goog.asserts.assert(wtf.io.isByteArray(data));
-      db.addCallsSource(/** @type {!wtf.io.ByteArray} */ (data), sourceInfo);
-      return data.length;
+      break;
   }
-
-  // Fallback to always trying wtf-trace.
-  if (wtf.io.isByteArray(data)) {
-    db.addBinarySource(/** @type {!wtf.io.ByteArray} */ (data), sourceInfo);
-    return data.length;
-  } else if (data instanceof Blob) {
-    db.addBinarySource(/** @type {!Blob} */ (data), sourceInfo);
+  if (data instanceof Blob) {
     return data.size;
+  } else {
+    return data.length;
   }
-  goog.asserts.assert('Unrecognized entry data type - ignoring.');
-  goog.global.console.log('Unrecognized entry data type ' +
-      sourceInfo.contentType + ' - ignoring.');
-  return 0;
 };
 
 

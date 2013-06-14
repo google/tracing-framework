@@ -60,8 +60,9 @@ Manual control:
 $ npm install tracing-framework
 $ node
 > var wtf = require('tracing-framework');
-> var db = wtf.db.load('test.wtf-trace');
-> db.query('something');
+> var db = wtf.db.load('test.wtf-trace', function(db) {
+    db.query('something');
+  });
 ```
 
 ### Using the Tool Runner

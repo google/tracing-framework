@@ -29,6 +29,7 @@ goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.overlay');
+goog.require('wtf.io.Blob');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace');
@@ -625,13 +626,13 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
   // Capture snapshot into memory buffers.
   // Sending may take a bit, so doing this now ensures we get the snapshot
   // immediately when requested.
-  wtf.trace.snapshotAll(function(buffers) {
+  wtf.trace.snapshotAll(function(blobs) {
     // Get the page URL.
     var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
 
     var contentLength = 0;
-    for (var n = 0; n < buffers.length; n++) {
-      contentLength += buffers[n].length;
+    for (var n = 0; n < blobs.length; n++) {
+      contentLength += blobs[n].getSize();
     }
 
     var traceManager = wtf.trace.getTraceManager();
@@ -645,9 +646,10 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
       // script to get it open.
 
       var blobUrls = [];
-      var blob = new Blob(/** @type {!Array.<!Blob>} */ (buffers), {
+      var blob = wtf.io.Blob.create(blobs, {
         'type': 'application/x-extension-wtf-trace'
       });
+      blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
       blobUrls.push(goog.fs.createObjectUrl(blob));
 
       this.extensionChannel_.postMessage({
@@ -670,10 +672,13 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
 
       var contentTypes = [];
       var contentSources = [];
-      for (var n = 0; n < buffers.length; n++) {
+      for (var n = 0; n < blobs.length; n++) {
         contentTypes.push('application/x-extension-wtf-trace');
         contentSources.push(contentSource);
       }
+
+      // Convert to native blobs.
+      blobs = wtf.io.Blob.toNativeParts(blobs);
 
       // Wait for the child to connect.
       wtf.ipc.waitForChildWindow(function(channel) {
@@ -681,9 +686,9 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
           'command': 'snapshot',
           'content_types': contentTypes,
           'content_sources': contentSources,
-          'content_buffers': buffers,
+          'content_buffers': blobs,
           'content_length': contentLength
-        }, buffers);
+        }, blobs);
       }, this);
     }
   }, this);

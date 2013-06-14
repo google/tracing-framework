@@ -21,8 +21,10 @@
         xhr.responseType = 'arraybuffer';
         xhr.onload = function() {
           if (xhr.status == 200) {
-            window.db = wtf.db.load(new Uint8Array(xhr.response));
-            console.log('Loaded!', window.db);
+            wtf.db.load(new Uint8Array(xhr.response), function(db) {
+              window.db = db;
+              console.log('Loaded!', window.db);
+            });
           } else {
             console.log('Failed: ', xhr.status, xhr.statusText);
           }

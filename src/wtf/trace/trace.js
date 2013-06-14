@@ -18,13 +18,13 @@ goog.provide('wtf.trace.TimeRange');
 
 goog.require('goog.asserts');
 goog.require('goog.string');
+goog.require('wtf');
 goog.require('wtf.io');
 goog.require('wtf.io.WriteTransport');
-goog.require('wtf.io.cff.BinaryStreamSource');
 goog.require('wtf.io.cff.BinaryStreamTarget');
 goog.require('wtf.io.cff.JsonStreamTarget');
+goog.require('wtf.io.transports.BlobWriteTransport');
 goog.require('wtf.io.transports.FileWriteTransport');
-goog.require('wtf.io.transports.MemoryReadTransport');
 goog.require('wtf.io.transports.MemoryWriteTransport');
 goog.require('wtf.io.transports.NullWriteTransport');
 goog.require('wtf.io.transports.XhrWriteTransport');
@@ -209,7 +209,12 @@ wtf.trace.createTransport_ = function(options, streaming, opt_targetValue) {
   } else if (goog.string.startsWith(targetUrl, 'file://')) {
     // File target.
     var targetFilename = wtf.trace.getTraceFilename(targetUrl);
-    var transport = new wtf.io.transports.FileWriteTransport(targetFilename);
+    var transport;
+    if (wtf.NODE) {
+      transport = new wtf.io.transports.FileWriteTransport(targetFilename);
+    } else {
+      transport = new wtf.io.transports.BlobWriteTransport(targetFilename);
+    }
     transport.needsLibraryDispose = true;
     return transport;
   }
@@ -335,15 +340,6 @@ wtf.trace.snapshot = function(opt_targetValue) {
   if (transport.needsLibraryDispose) {
     goog.dispose(transport);
   }
-
-  // HACK
-  var blob = transport.getBlob();
-  transport = new wtf.io.transports.MemoryReadTransport();
-  //var streamSource = new wtf.io.cff.JsonStreamSource(transport);
-  var streamSource = new wtf.io.cff.BinaryStreamSource(transport);
-  streamSource.resume();
-  transport.addData(blob);
-  transport.end();
 };
 
 
@@ -355,7 +351,7 @@ wtf.trace.snapshot = function(opt_targetValue) {
  * If the call is going to be ignored (no active session) or fails the callback
  * will fire on the next javascript tick with a null value.
  *
- * @param {function(this:T, Array.<!wtf.io.ByteArray>)} callback Function called
+ * @param {function(this:T, Array.<!wtf.io.Blob>)} callback Function called
  *     when all buffers are available. The value will be null if an error
  *     occurred.
  * @param {T=} opt_scope Callback scope.

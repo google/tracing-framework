@@ -485,7 +485,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       // We replace this with an on-demand event type.
       var args =
           this.argumentData_[eventData[o + wtf.db.EventStruct.ARGUMENTS]];
-      var name = /** @type {string} */ (args.get('name'));
+      var name = /** @type {string} */ (args.get('name')) ||
+          'unnamed.scope';
       var newEventType = this.eventTypeTable.getByName(name);
       if (!newEventType) {
         newEventType = this.eventTypeTable.defineType(
@@ -552,7 +553,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       // Replace with an on-demand event type.
       var args =
           this.argumentData_[eventData[o + wtf.db.EventStruct.ARGUMENTS]];
-      var name = /** @type {string} */ (args.get('name'));
+      var name = /** @type {string} */ (args.get('name')) ||
+          'unnamed.instance';
       var newEventType = this.eventTypeTable.getByName(name);
       if (!newEventType) {
         newEventType = this.eventTypeTable.defineType(

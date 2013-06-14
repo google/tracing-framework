@@ -15,8 +15,10 @@ goog.provide('wtf.io.transports.MemoryReadTransport');
 
 goog.require('goog.asserts');
 goog.require('goog.fs.FileReader');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.DataFormat');
 goog.require('wtf.io.ReadTransport');
+goog.require('wtf.timing');
 
 
 
@@ -46,6 +48,13 @@ wtf.io.transports.MemoryReadTransport = function() {
   this.pendingData_ = [];
 
   /**
+   * Number of pending async adds.
+   * @type {number}
+   * @private
+   */
+  this.pendingAdds_ = 0;
+
+  /**
    * Whether all data has been added and the transport is ended.
    * This is used to wait on emitting the end event until all data has been
    * dispatched.
@@ -55,6 +64,17 @@ wtf.io.transports.MemoryReadTransport = function() {
   this.pendingEnd_ = false;
 };
 goog.inherits(wtf.io.transports.MemoryReadTransport, wtf.io.ReadTransport);
+
+
+/**
+ * Pretend this is an async transport by using timed waits between all read
+ * events. This slows things down a bit but makes it easier to detect code paths
+ * that assume synchronous event dispatch.
+ * @type {boolean}
+ * @const
+ * @private
+ */
+wtf.io.transports.MemoryReadTransport.PRETEND_ASYNC_ = true;
 
 
 /**
@@ -82,16 +102,24 @@ wtf.io.transports.MemoryReadTransport.prototype.end = function() {
  */
 wtf.io.transports.MemoryReadTransport.prototype.addData = function(data) {
   // If the data is in blob form we need to convert it first.
+  if (wtf.io.Blob.isBlob(data)) {
+    data = /** @type {!Blob} */ (wtf.io.Blob.toNative(
+        /** @type {!wtf.io.Blob} */ (data)));
+  }
   if (goog.global['Blob'] && data instanceof Blob) {
     switch (this.format) {
       case wtf.io.DataFormat.STRING:
+        this.pendingAdds_++;
         goog.fs.FileReader.readAsText(data).addCallback(function(value) {
+          this.pendingAdds_--;
           this.pendingData_.push(value);
           this.scheduleDispatch_();
         }, this);
         break;
       case wtf.io.DataFormat.ARRAY_BUFFER:
+        this.pendingAdds_++;
         goog.fs.FileReader.readAsArrayBuffer(data).addCallback(function(value) {
+          this.pendingAdds_--;
           this.pendingData_.push(value);
           this.scheduleDispatch_();
         }, this);
@@ -141,9 +169,12 @@ wtf.io.transports.MemoryReadTransport.prototype.scheduleDispatch_ = function() {
   }
   this.dispatchPending_ = true;
 
-  // We could use this to approximate async transports.
-  //wtf.timing.setImmediate(this.dispatch_, this);
-  this.dispatch_();
+  // Approximate async transports.
+  if (wtf.io.transports.MemoryReadTransport.PRETEND_ASYNC_) {
+    wtf.timing.setImmediate(this.dispatch_, this);
+  } else {
+    this.dispatch_();
+  }
 };
 
 
@@ -164,7 +195,9 @@ wtf.io.transports.MemoryReadTransport.prototype.dispatch_ = function() {
     this.emitReceiveData(data);
   }
 
-  if (!this.pendingData_.length && this.pendingEnd_) {
+  if (!this.pendingAdds_ &&
+      !this.pendingData_.length &&
+      this.pendingEnd_) {
     // Done!
     goog.dispose(this);
   }
