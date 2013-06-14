@@ -31,7 +31,7 @@ wtf.io.FILE_EXTENSION = '.wtf-trace';
 
 
 /**
- * @typedef {Blob|ArrayBufferView|string}
+ * @typedef {wtf.io.Blob|Blob|ArrayBufferView|string}
  */
 wtf.io.BlobData;
 

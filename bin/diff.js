@@ -21,18 +21,16 @@ toolRunner.launch(runTool);
  * Diff tool.
  * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!Array.<string>} args Command line arguments.
- * @return {number|!goog.async.Deferred} Return code or a deferred that is
- *     called back when the tool exits.
+ * @param {function(number)} done Call to end the program with a return code.
  */
-function runTool(platform, args) {
-  var ALIGN_RIGHT = -8; // 8 chars wide, right aligned
-
+function runTool(platform, args, done) {
   var inputFile1 = args[0];
   var inputFile2 = args[1];
   var filterString = args[2];
   if (!inputFile1 || !inputFile2) {
     console.log('usage: diff.js file1.wtf-trace file2.wtf-trace [filter]');
-    return -1;
+    done(1);
+    return;
   }
   console.log('Diffing ' + inputFile1 + ' and ' + inputFile2 + '...');
   console.log('');
@@ -43,16 +41,45 @@ function runTool(platform, args) {
   }
 
   // Create databases for querying.
-  var db1 = wtf.db.load(inputFile1);
-  var db2 = wtf.db.load(inputFile2);
-  if (!db1) {
-    console.log('ERROR: unable to open ' + inputFile1);
-    return -1;
-  }
-  if (!db2) {
-    console.log('ERROR: unable to open ' + inputFile2);
-    return -1;
-  }
+  var db1 = null;
+  var db2 = null;
+  wtf.db.load(inputFile1, function(db) {
+    if (db instanceof Error) {
+      console.log('ERROR: unable to open ' + inputFile1, db);
+      done(1);
+      return;
+    }
+
+    db1 = db;
+    if (db1 && db2) {
+      diffDatabases(db1, db2, filter);
+      done(0);
+    }
+  });
+  wtf.db.load(inputFile2, function(db) {
+    if (db instanceof Error) {
+      console.log('ERROR: unable to open ' + inputFile2, db);
+      done(1);
+      return;
+    }
+
+    db2 = db;
+    if (db1 && db2) {
+      diffDatabases(db1, db2, filter);
+      done(0);
+    }
+  });
+};
+
+
+/**
+ * Diffs two loaded databases.
+ * @param {!wtf.db.Database} db1 Database 1.
+ * @param {!wtf.db.Database} db2 Database 2.
+ * @param {wtf.db.Filter} filter Filter, if any.
+ */
+function diffDatabases(db1, db2, filter) {
+  var ALIGN_RIGHT = -8; // 8 chars wide, right aligned
 
   // Build event data tables.
   var table1 = new wtf.db.EventStatistics(db1).getTable().filter(filter);

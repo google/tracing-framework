@@ -15,6 +15,7 @@ goog.provide('wtf.io.cff.parts.StringTablePart');
 
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.StringTable');
 goog.require('wtf.io.cff.Part');
 goog.require('wtf.io.cff.PartType');
@@ -65,7 +66,8 @@ wtf.io.cff.parts.StringTablePart.prototype.setValue = function(value) {
 wtf.io.cff.parts.StringTablePart.prototype.initFromBlobData = function(data) {
   var deferred = new goog.async.Deferred();
 
-  this.readBinaryAsString(data, function(value) {
+  var blob = wtf.io.Blob.create([data]);
+  blob.readAsText(function(value) {
     this.value_ = new wtf.io.StringTable();
     if (value) {
       this.value_.deserialize(value);

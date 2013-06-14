@@ -21,7 +21,6 @@ goog.require('goog.async.Deferred');
 goog.require('goog.events');
 goog.require('goog.events.EventHandler');
 goog.require('goog.fs');
-goog.require('goog.fs.Error');
 goog.require('goog.fs.FileReader');
 goog.require('goog.net.HttpStatus');
 goog.require('goog.net.XmlHttp');
@@ -161,6 +160,23 @@ goog.inherits(wtf.app.ui.BufferLoaderEntry, wtf.app.ui.LoaderEntry);
 
 
 /**
+ * An HTML File-based loader entry.
+ * @param {!wtf.db.DataSourceInfo} sourceInfo Source information.
+ * @param {!File} file File to load.
+ * @constructor
+ * @extends {wtf.app.ui.LoaderEntry}
+ */
+wtf.app.ui.FileLoaderEntry = function(sourceInfo, file) {
+  goog.base(this, sourceInfo);
+
+  // Files are blobs, so succeed immediately.
+  this.setContents(file);
+};
+goog.inherits(wtf.app.ui.FileLoaderEntry, wtf.app.ui.LoaderEntry);
+
+
+
+/**
  * A URL-based loader entry.
  * The given XHR should not have had its send method called yet.
  * @param {!wtf.db.DataSourceInfo} sourceInfo Source information.
@@ -197,8 +213,7 @@ wtf.app.ui.XhrLoaderEntry.prototype.begin = function() {
   var xhr = this.xhr_;
 
   // Set response mode. Must be set before send().
-  var asBinary = this.getSourceInfo().isBinary();
-  xhr.responseType = asBinary ? 'arraybuffer' : 'text';
+  xhr.responseType = 'blob';
 
   // Fired zero-to-many times.
   eh.listen(xhr, goog.fs.FileReader.EventType.PROGRESS, function(e) {
@@ -218,9 +233,10 @@ wtf.app.ui.XhrLoaderEntry.prototype.begin = function() {
     }
     if (goog.net.HttpStatus.isSuccess(status)) {
       // Succeeded.
-      var length = xhr.response.length || xhr.response.byteLength;
+      var blob = xhr.response;
+      var length = blob ? blob.size : 0;
       this.fireProgressEvent(length, length);
-      this.setContents(xhr.response);
+      this.setContents(blob);
     } else {
       // Failed.
       this.setError(status + ' ' + statusText);
@@ -276,87 +292,4 @@ wtf.app.ui.UrlLoaderEntry.prototype.disposeInternal = function() {
     goog.fs.revokeObjectUrl(this.url_);
   }
   goog.base(this, 'disposeInternal');
-};
-
-
-
-/**
- * An HTML File-based loader entry.
- * @param {!wtf.db.DataSourceInfo} sourceInfo Source information.
- * @param {!File} file File to load.
- * @constructor
- * @extends {wtf.app.ui.LoaderEntry}
- */
-wtf.app.ui.FileLoaderEntry = function(sourceInfo, file) {
-  goog.base(this, sourceInfo);
-
-  /**
-   * Event handler.
-   * @type {!goog.events.EventHandler}
-   * @private
-   */
-  this.eh_ = new goog.events.EventHandler(this);
-  this.registerDisposable(this.eh_);
-
-  /**
-   * The File to fetch.
-   * @type {!File}
-   * @private
-   */
-  this.file_ = file;
-};
-goog.inherits(wtf.app.ui.FileLoaderEntry, wtf.app.ui.LoaderEntry);
-
-
-/**
- * @override
- */
-wtf.app.ui.FileLoaderEntry.prototype.disposeInternal = function() {
-  // close() was added later - check for its existence.
-  if (this.file_['close']) {
-    this.file_['close']();
-  }
-  goog.base(this, 'disposeInternal');
-};
-
-
-/**
- * @override
- */
-wtf.app.ui.FileLoaderEntry.prototype.begin = function() {
-  var eh = this.eh_;
-
-  var reader = new FileReader();
-
-  // Fired zero-to-many times.
-  eh.listen(reader, goog.fs.FileReader.EventType.PROGRESS, function(e) {
-    e = e.getBrowserEvent();
-    if (e.lengthComputable) {
-      this.fireProgressEvent(e.loaded, e.total);
-    }
-  });
-
-  // Always fired after load/abort/error.
-  eh.listen(reader, goog.fs.FileReader.EventType.LOAD_END, function(e) {
-    e = e.getBrowserEvent();
-    this.fireProgressEvent(e.loaded, e.loaded);
-
-    if (reader.result) {
-      // Succeeded.
-      this.setContents(reader.result);
-    } else {
-      // Failed.
-      this.setError(goog.fs.Error.getDebugMessage(
-          /** @type {number} */ (reader.error)));
-    }
-  });
-
-  var asBinary = this.getSourceInfo().isBinary();
-  if (asBinary) {
-    reader.readAsArrayBuffer(this.file_);
-  } else {
-    reader.readAsText(this.file_);
-  }
-
-  return goog.base(this, 'begin');
 };

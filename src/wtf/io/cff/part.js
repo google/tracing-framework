@@ -73,31 +73,3 @@ wtf.io.cff.Part.prototype.initFromJsonObject = goog.abstractMethod;
  * @return {!Object} JSON object.
  */
 wtf.io.cff.Part.prototype.toJsonObject = goog.abstractMethod;
-
-
-/**
- * Reads a string from the given binary object.
- * @param {!(ArrayBufferView|Blob)} data Binary data.
- * @param {!function(this:T, string?)} callback Callback that receives the
- *     string value.
- * @param {T=} opt_scope Callback scope.
- * @template T
- * @protected
- */
-wtf.io.cff.Part.prototype.readBinaryAsString = function(
-    data, callback, opt_scope) {
-  // NOTE: we avoid using goog.fs as it is very bad for performance.
-
-  var blob;
-  if (data instanceof Blob) {
-    blob = data;
-  } else {
-    blob = new Blob([data]);
-  }
-
-  var fileReader = new FileReader();
-  fileReader.onload = function() {
-    callback.call(opt_scope, /** @type {?string} */ (fileReader.result));
-  };
-  fileReader.readAsText(blob);
-};

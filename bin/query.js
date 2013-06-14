@@ -24,13 +24,13 @@ toolRunner.launch(runTool);
  * Query tool.
  * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!Array.<string>} args Command line arguments.
- * @return {number|!goog.async.Deferred} Return code or a deferred that is
- *     called back when the tool exits.
+ * @param {function(number)} done Call to end the program with a return code.
  */
-function runTool(platform, args) {
+function runTool(platform, args, done) {
   if (args.length < 1) {
     console.log('usage: query.js file.wtf-trace "[query string]"');
-    return -1;
+    done(1);
+    return;
   }
 
   var inputFile = args[0];
@@ -41,14 +41,29 @@ function runTool(platform, args) {
 
   // Create database for querying.
   var loadStart = wtf.now();
-  var db = wtf.db.load(inputFile);
-  if (!db) {
-    return -1;
-  }
-  var loadDuration = wtf.now() - loadStart;
-  console.log('Database loaded in ' + loadDuration.toFixed(3) + 'ms');
-  console.log('');
+  wtf.db.load(inputFile, function(db) {
+    if (db instanceof Error) {
+      console.log('ERROR: unable to open ' + inputFile, db);
+      done(1);
+      return;
+    }
 
+    var loadDuration = wtf.now() - loadStart;
+    console.log('Database loaded in ' + loadDuration.toFixed(3) + 'ms');
+    console.log('');
+
+    queryDatabase(db);
+
+    done(0);
+  });
+};
+
+
+/**
+ * Runs a REPL that queries a database.
+ * @param {!wtf.db.Database} db Database.
+ */
+function queryDatabase(db) {
   // TODO(benvanik): allow the user to switch zone.
   var zone = db.getZones()[0];
 
@@ -128,8 +143,6 @@ function runTool(platform, args) {
     console.log('');
     console.log('Took ' + result.getDuration().toFixed(3) + 'ms');
   }
-
-  return undefined;
 };
 
 

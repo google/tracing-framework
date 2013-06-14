@@ -18,6 +18,7 @@ goog.provide('wtf.io.cff.parts.StringResourcePart');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('wtf.io');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.cff.Part');
 goog.require('wtf.io.cff.PartType');
 
@@ -84,7 +85,8 @@ wtf.io.cff.parts.StringResourcePart.prototype.initFromBlobData = function(
     data) {
   var deferred = new goog.async.Deferred();
 
-  this.readBinaryAsString(data, function(value) {
+  var blob = wtf.io.Blob.create([data]);
+  blob.readAsText(function(value) {
     this.value_ = value;
     deferred.callback(this);
   }, this);
@@ -125,7 +127,7 @@ wtf.io.cff.parts.StringResourcePart.prototype.toJsonObject = function() {
 /**
  * Binary embedded data resource part.
  *
- * @param {(Blob|ArrayBufferView)=} opt_value Initial value.
+ * @param {(wtf.io.Blob|Blob|ArrayBufferView)=} opt_value Initial value.
  * @constructor
  * @extends {wtf.io.cff.parts.ResourcePart}
  */
@@ -134,7 +136,7 @@ wtf.io.cff.parts.BinaryResourcePart = function(opt_value) {
 
   /**
    * Resource value.
-   * @type {Blob|ArrayBufferView}
+   * @type {wtf.io.Blob|Blob|ArrayBufferView}
    * @private
    */
   this.value_ = opt_value || null;
@@ -145,7 +147,7 @@ goog.inherits(wtf.io.cff.parts.BinaryResourcePart,
 
 /**
  * Gets the resource value.
- * @return {!(Blob|ArrayBufferView)} Resource value.
+ * @return {!(wtf.io.Blob|Blob|ArrayBufferView)} Resource value.
  */
 wtf.io.cff.parts.BinaryResourcePart.prototype.getValue = function() {
   goog.asserts.assert(this.value_);
@@ -155,7 +157,7 @@ wtf.io.cff.parts.BinaryResourcePart.prototype.getValue = function() {
 
 /**
  * Sets the resource value.
- * @param {!(Blob|ArrayBufferView)} value Resource value.
+ * @param {!(wtf.io.Blob|Blob|ArrayBufferView)} value Resource value.
  */
 wtf.io.cff.parts.BinaryResourcePart.prototype.setValue = function(value) {
   this.value_ = value;
@@ -167,7 +169,8 @@ wtf.io.cff.parts.BinaryResourcePart.prototype.setValue = function(value) {
  */
 wtf.io.cff.parts.BinaryResourcePart.prototype.initFromBlobData = function(
     data) {
-  if (data instanceof Blob) {
+  if (data instanceof Blob ||
+      wtf.io.Blob.isBlob(data)) {
     this.value_ = data;
   } else {
     // NOTE: cloning so that we don't hang on to the full buffer forever.

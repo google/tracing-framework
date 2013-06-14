@@ -19,6 +19,7 @@ goog.require('wtf');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.data.formats.FileFlags');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.cff.Part');
 goog.require('wtf.io.cff.PartType');
 
@@ -148,7 +149,8 @@ wtf.io.cff.parts.FileHeaderPart.prototype.setMetadata = function(value) {
 wtf.io.cff.parts.FileHeaderPart.prototype.initFromBlobData = function(data) {
   var deferred = new goog.async.Deferred();
 
-  this.readBinaryAsString(data, function(value) {
+  var blob = wtf.io.Blob.create([data]);
+  blob.readAsText(function(value) {
     try {
       var json = value ? goog.global.JSON.parse(value) : {};
       if (!json || typeof json != 'object') {

@@ -14,6 +14,7 @@
 goog.provide('wtf.io.cff.BinaryStreamTarget');
 
 goog.require('wtf.data.formats.ChunkedFileFormat');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.Buffer');
 goog.require('wtf.io.cff.ChunkType');
 goog.require('wtf.io.cff.PartType');
@@ -63,12 +64,14 @@ wtf.io.cff.BinaryStreamTarget.prototype.writeChunk = function(chunk) {
     if (blobData instanceof ArrayBuffer ||
         blobData.buffer instanceof ArrayBuffer) {
       partLength = blobData.byteLength;
-    } else if (blobData instanceof Blob) {
+    } else if (wtf.io.Blob.isBlob(blobData)) {
+      partLength = blobData.getSize();
+    } else if (goog.global['Blob'] && blobData instanceof Blob) {
       partLength = blobData.size;
     } else if (typeof blobData == 'string') {
       // Get the size by packing into a blob.
-      blobData = new Blob([blobData]);
-      partLength = blobData.size;
+      blobData = wtf.io.Blob.create([blobData]);
+      partLength = blobData.getSize();
     } else {
       throw new Error('Invalid blob data type: ' + (typeof blobData));
     }
@@ -111,7 +114,7 @@ wtf.io.cff.BinaryStreamTarget.prototype.writeChunk = function(chunk) {
   }
 
   // Concat all the parts together.
-  var blob = new Blob(blobParts);
+  var blob = wtf.io.Blob.create(blobParts);
   transport.write(blob);
 };
 

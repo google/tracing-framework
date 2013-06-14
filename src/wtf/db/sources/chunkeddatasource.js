@@ -111,7 +111,15 @@ goog.inherits(wtf.db.sources.ChunkedDataSource, wtf.db.DataSource);
  * @override
  */
 wtf.db.sources.ChunkedDataSource.prototype.start = function() {
+  var deferred = goog.base(this, 'start');
+
+  // Lock the DB for insertion.
+  var db = this.getDatabase();
+  db.beginInsertingEvents(this);
+
+  // Start streaming data in.
   this.streamSource_.resume();
+  return deferred;
 };
 
 
@@ -122,8 +130,7 @@ wtf.db.sources.ChunkedDataSource.prototype.start = function() {
  */
 wtf.db.sources.ChunkedDataSource.prototype.streamErrored_ = function(e) {
   var db = this.getDatabase();
-  db.sourceError(
-      this,
+  this.error(
       'Error loading trace data',
       e.toString());
 };
@@ -134,6 +141,10 @@ wtf.db.sources.ChunkedDataSource.prototype.streamErrored_ = function(e) {
  * @private
  */
 wtf.db.sources.ChunkedDataSource.prototype.streamEnded_ = function() {
+  var db = this.getDatabase();
+  db.endInsertingEvents();
+
+  this.end();
 };
 
 
@@ -162,8 +173,7 @@ wtf.db.sources.ChunkedDataSource.prototype.chunkReceived_ = function(chunk) {
           this.processBinaryEventDataChunk_(eventDataChunk);
           break;
         default:
-          db.sourceError(
-              this,
+          this.error(
               'Unrecognized event data buffer',
               'An event data part not recognized and could not be parsed.');
           return;
@@ -196,8 +206,7 @@ wtf.db.sources.ChunkedDataSource.prototype.processFileHeaderChunk_ =
       fileHeaderPart.getMetadata(),
       fileHeaderPart.getTimebase(),
       timeDelay)) {
-    db.sourceError(
-        this,
+    this.error(
         'Unable to initialize data source',
         'File corrupt or invalid.');
     return;
@@ -212,6 +221,8 @@ wtf.db.sources.ChunkedDataSource.prototype.processFileHeaderChunk_ =
  */
 wtf.db.sources.ChunkedDataSource.prototype.processJsonEventDataChunk_ =
     function(chunk) {
+  var db = this.getDatabase();
+
   // TODO(benvanik): get resources.
 
   // Grab the event data buffer.
@@ -220,16 +231,10 @@ wtf.db.sources.ChunkedDataSource.prototype.processJsonEventDataChunk_ =
   var buffer = part.getValue();
   goog.asserts.assert(buffer);
 
-  // Lock the DB for insertion.
-  var db = this.getDatabase();
-  db.beginInsertingEvents(this);
-
   for (var n = 0; n < buffer.length; n++) {
     var entry = buffer[n];
     // TODO(benvanik): reimplement JSON event parsing.
   }
-
-  db.endInsertingEvents();
 };
 
 
@@ -306,6 +311,8 @@ wtf.db.sources.ChunkedDataSource.prototype.setupBinaryDispatchTable_ =
  */
 wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
     function(chunk) {
+  var db = this.getDatabase();
+
   // TODO(benvanik): get resources.
 
   // Grab the event data buffer.
@@ -313,10 +320,7 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
   goog.asserts.assert(part instanceof wtf.io.cff.parts.BinaryEventBufferPart);
   var buffer = part.getValue();
   goog.asserts.assert(buffer);
-
-  // Lock the DB for insertion.
-  var db = this.getDatabase();
-  db.beginInsertingEvents(this);
+  buffer.offset = 0;
 
   // Read all events from the buffer.
   var successful = true;
@@ -337,8 +341,7 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
     var eventType = eventWireTable[eventWireId];
     if (!eventType) {
       successful = false;
-      db.sourceError(
-          this,
+      this.error(
           'Undefined event type',
           'The file tried to reference an event it didn\'t define. Perhaps ' +
           'it\'s corrupted?');
@@ -372,6 +375,4 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
           args);
     }
   }
-
-  db.endInsertingEvents();
 };

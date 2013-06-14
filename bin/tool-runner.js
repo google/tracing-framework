@@ -113,18 +113,11 @@ exports.launch = function(toolFn) {
   var platform = wtf.pal.getPlatform();
 
   // Execute the tool, potentially async.
-  var returnValue = toolFn(platform, args);
-  if (returnValue === undefined) {
-    // Tool will return whenever it wants.
-  } else if (typeof returnValue == 'number') {
-    process.exit(returnValue);
-  } else if (typeof returnValue == 'function') {
-    returnValue(function(opt_arg) {
-      process.exit(opt_arg || 0);
-    });
-  } else {
-    process.exit(0);
-  }
+  toolFn(platform, args, function(returnValue) {
+    if (returnValue) {
+      process.exit(returnValue);
+    }
+  });
 };
 
 

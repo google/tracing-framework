@@ -15,6 +15,7 @@ goog.provide('wtf.io.cff.parts.JsonEventBufferPart');
 
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.cff.Part');
 goog.require('wtf.io.cff.PartType');
 
@@ -67,7 +68,8 @@ wtf.io.cff.parts.JsonEventBufferPart.prototype.initFromBlobData =
     function(data) {
   var deferred = new goog.async.Deferred();
 
-  this.readBinaryAsString(data, function(value) {
+  var blob = wtf.io.Blob.create([data]);
+  blob.readAsText(function(value) {
     value = value ? goog.global.JSON.parse(value) : null;
     if (!value || goog.isArray(value)) {
       this.value_ = /** @type {Array} */ (value);
@@ -86,7 +88,7 @@ wtf.io.cff.parts.JsonEventBufferPart.prototype.initFromBlobData =
  */
 wtf.io.cff.parts.JsonEventBufferPart.prototype.toBlobData = function() {
   var value = goog.global.JSON.stringify(this.value_);
-  var blob = new Blob([value]);
+  var blob = wtf.io.Blob.create([value]);
   return blob;
 };
 

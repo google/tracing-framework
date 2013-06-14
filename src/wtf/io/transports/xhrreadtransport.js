@@ -104,18 +104,18 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
   var self = this;
   this.xhr_.onprogress = function(e) {
     if (e.lengthComputable) {
-      this.emitProgressEvent(e.loaded, e.total);
+      self.emitProgressEvent(e.loaded, e.total);
     }
   };
   this.xhr_.onload = function(e) {
     var data = e.target.response;
-    this.emitReceiveData(data);
+    self.emitReceiveData(data);
     goog.dispose(self);
   };
   this.xhr_.onerror = function(e) {
     var err = new Error(
         'Error fetching data: ' + e.target.status + ' ' + e.target.statusText);
-    this.emitErrorEvent(err);
+    self.emitErrorEvent(err);
     goog.dispose(self);
   };
 

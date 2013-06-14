@@ -14,6 +14,7 @@
 goog.provide('wtf.io.transports.XhrWriteTransport');
 
 goog.require('goog.asserts');
+goog.require('wtf.io.Blob');
 goog.require('wtf.io.WriteTransport');
 
 
@@ -122,7 +123,8 @@ wtf.io.transports.XhrWriteTransport.prototype.flush = function() {
   };
 
   // Create blob and send.
-  var blob = new Blob(this.data_, {
+  var parts = wtf.io.Blob.toNativeParts(this.data_);
+  var blob = new Blob(parts, {
     'type': mimeType
   });
   this.xhr_.open('POST', this.url_, true);

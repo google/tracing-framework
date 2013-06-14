@@ -133,7 +133,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.requestSnapshots = function(
 
   this.childWorkers_.forEach(function(worker) {
     goog.result.wait(worker.requestSnapshot(), function(result) {
-      var buffers = /** @type {Array.<wtf.io.ByteArray>} */ (result.getValue());
+      var buffers = /** @type {Array.<!wtf.io.Blob>} */ (result.getValue());
       if (!buffers || !buffers.length ||
           result.getState() == goog.result.Result.State.ERROR) {
         // Failed!

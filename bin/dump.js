@@ -22,23 +22,35 @@ toolRunner.launch(runTool);
  * Dump tool.
  * @param {!wtf.pal.IPlatform} platform Platform abstraction layer.
  * @param {!Array.<string>} args Command line arguments.
- * @return {number|!goog.async.Deferred} Return code or a deferred that is
- *     called back when the tool exits.
+ * @param {function(number)} done Call to end the program with a return code.
  */
-function runTool(platform, args) {
+function runTool(platform, args, done) {
   var inputFile = args[0];
   if (!inputFile) {
     console.log('usage: dump.js file.wtf-trace');
-    return -1;
+    done(1);
+    return;
   }
   console.log('Dumping ' + inputFile + '...');
   console.log('');
 
-  var db = wtf.db.load(inputFile);
-  if (!db) {
-    return -1;
-  }
+  wtf.db.load(inputFile, function(db) {
+    if (db instanceof Error) {
+      console.log('ERROR: unable to open ' + inputFile, db, db.stack);
+      done(1);
+    } else {
+      done(dumpDatabase(db));
+    }
+  });
+};
 
+
+/**
+ * Dump the database.
+ * @param {!wtf.db.Database} db Database.
+ * @return {number} Return code.
+ */
+function dumpDatabase(db) {
   var sources = db.getSources();
   for (var n = 0; n < sources.length; n++) {
     util.logContextInfo(sources[n].getContextInfo());
@@ -49,6 +61,7 @@ function runTool(platform, args) {
     console.log('No zones');
     return 0;
   }
+
   var zone = zones[0];
   var eventList = zone.getEventList();
   var it = eventList.begin();
