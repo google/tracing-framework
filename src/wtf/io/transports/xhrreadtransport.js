@@ -24,10 +24,12 @@ goog.require('wtf.io.ReadTransport');
  * Reads data from an XHR GET.
  *
  * @param {string} url Target URL.
+ * @param {XMLHttpRequest=} opt_xhr An XHR object to use. It should be opened
+ *     but not sent.
  * @constructor
  * @extends {wtf.io.ReadTransport}
  */
-wtf.io.transports.XhrReadTransport = function(url) {
+wtf.io.transports.XhrReadTransport = function(url, opt_xhr) {
   goog.base(this);
 
   /**
@@ -42,7 +44,7 @@ wtf.io.transports.XhrReadTransport = function(url) {
    * @type {XMLHttpRequest}
    * @private
    */
-  this.xhr_ = null;
+  this.xhr_ = opt_xhr || null;
 };
 goog.inherits(wtf.io.transports.XhrReadTransport, wtf.io.ReadTransport);
 
@@ -77,9 +79,12 @@ wtf.io.transports.XhrReadTransport.prototype.disposeInternal = function() {
 wtf.io.transports.XhrReadTransport.prototype.resume = function() {
   goog.base(this, 'resume');
 
-  // Create the XHR.
-  goog.asserts.assert(!this.xhr_);
-  this.xhr_ = new XMLHttpRequest();
+  // Setup the XHR.
+  // Note that we may have been passed an XHR to use, so track that.
+  var reusingXhr = !!this.xhr_;
+  if (!reusingXhr) {
+    this.xhr_ = new XMLHttpRequest();
+  }
   this.xhr_.timeout = wtf.io.transports.XhrReadTransport.TIMEOUT_MS_;
 
   // Pick response type based on desired format. This avoids any conversion.
@@ -121,6 +126,8 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
 
   // Open.
   // If we wanted to support POST reads, this would be where to do it.
-  this.xhr_.open('GET', this.url_, true);
+  if (!reusingXhr) {
+    this.xhr_.open('GET', this.url_, true);
+  }
   this.xhr_.send();
 };
