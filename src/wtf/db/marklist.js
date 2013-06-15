@@ -25,20 +25,20 @@ goog.require('wtf.events.EventType');
 /**
  * Mark list.
  *
- * @param {!wtf.db.Zone} zone Parent zone.
+ * @param {!wtf.db.EventList} eventList Event list.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  * @implements {wtf.db.IAncillaryList}
  */
-wtf.db.MarkList = function(zone) {
+wtf.db.MarkList = function(eventList) {
   goog.base(this);
 
   /**
-   * Parent zone.
-   * @type {!wtf.db.Zone}
+   * Event list that this instance is using to detect marks.
+   * @type {!wtf.db.EventList}
    * @private
    */
-  this.zone_ = zone;
+  this.eventList_ = eventList;
 
   /**
    * A densely packed list of marks.
@@ -47,8 +47,7 @@ wtf.db.MarkList = function(zone) {
    */
   this.markList_ = [];
 
-  var eventList = this.zone_.getEventList();
-  eventList.registerAncillaryList(this);
+  this.eventList_.registerAncillaryList(this);
 };
 goog.inherits(wtf.db.MarkList, wtf.events.EventEmitter);
 
@@ -57,18 +56,8 @@ goog.inherits(wtf.db.MarkList, wtf.events.EventEmitter);
  * @override
  */
 wtf.db.MarkList.prototype.disposeInternal = function() {
-  var eventList = this.zone_.getEventList();
-  eventList.unregisterAncillaryList(this);
+  this.eventList_.unregisterAncillaryList(this);
   goog.base(this, 'disposeInternal');
-};
-
-
-/**
- * Gets the parent zone.
- * @return {!wtf.db.Zone} Parent zone.
- */
-wtf.db.MarkList.prototype.getZone = function() {
-  return this.zone_;
 };
 
 
@@ -135,12 +124,18 @@ wtf.db.MarkList.prototype.forEachIntersecting = function(
   var index = goog.array.binarySelect(
       this.markList_, wtf.db.Mark.selector, { time: timeStart });
   if (index < 0) {
-    index = -index - 2;
+    index = -index - 1;
+    // Select the previous frame.
+    // The loop will move it ahead if needed.
+    index--;
   }
   index = goog.math.clamp(index, 0, this.markList_.length - 1);
 
   for (var n = index; n < this.markList_.length; n++) {
     var mark = this.markList_[n];
+    if (mark.getEndTime() < timeStart) {
+      continue;
+    }
     if (mark.getTime() > timeEnd) {
       break;
     }
@@ -190,16 +185,13 @@ wtf.db.MarkList.prototype.endRebuild = function() {
   // Set the last mark to the end of the zone time.
   if (this.markList_.length) {
     var mark = this.markList_[this.markList_.length - 1];
-    mark.setEndTime(this.zone_.getEventList().getLastEventTime());
+    mark.setEndTime(this.eventList_.getLastEventTime());
   }
 
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };
 
 
-goog.exportProperty(
-    wtf.db.MarkList.prototype, 'getZone',
-    wtf.db.MarkList.prototype.getZone);
 goog.exportProperty(
     wtf.db.MarkList.prototype, 'getCount',
     wtf.db.MarkList.prototype.getCount);
