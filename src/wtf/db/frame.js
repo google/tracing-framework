@@ -23,6 +23,13 @@ goog.provide('wtf.db.Frame');
  */
 wtf.db.Frame = function(number) {
   /**
+   * Ordinal in the frame list.
+   * @type {number}
+   * @private
+   */
+  this.ordinal_ = 0;
+
+  /**
    * Frame number.
    * @type {number}
    * @private
@@ -76,6 +83,24 @@ wtf.db.Frame.prototype.setStartEvent = function(it) {
 wtf.db.Frame.prototype.setEndEvent = function(it) {
   this.frameEndEventId_ = it.getId();
   this.endTime_ = it.getTime();
+};
+
+
+/**
+ * Gets the ordinal of the frame in the parent frame list.
+ * @return {number} Ordinal in the frame list.
+ */
+wtf.db.Frame.prototype.getOrdinal = function() {
+  return this.ordinal_;
+};
+
+
+/**
+ * Sets the value of the ordinal of the frame in the parent frame list.
+ * @param {number} value Ordinal.
+ */
+wtf.db.Frame.prototype.setOrdinal = function(value) {
+  this.ordinal_ = value;
 };
 
 
