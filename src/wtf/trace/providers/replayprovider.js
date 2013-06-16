@@ -155,7 +155,9 @@ wtf.trace.providers.ReplayProvider.prototype.initializeRandom_ = function() {
 wtf.trace.providers.ReplayProvider.prototype.injectDate_ = function() {
   // We only emit a time advance event when the value queried is not the last
   // value emitted. This limits us to 1 event/ms, which is acceptable.
-  var lastDateQuery = 0;
+  // TODO(benvanik): solve the issues here around time advancing.
+  //     For now we just disable this optimization and write all queries.
+  //var lastDateQuery = 0;
 
   var advanceTimeEvent = wtf.trace.events.createInstance(
       'wtf.replay#advanceTime(uint32 value)',
@@ -180,10 +182,12 @@ wtf.trace.providers.ReplayProvider.prototype.injectDate_ = function() {
   newDate['UTC'] = originalDate['UTC'];
   newDate['now'] = function() {
     var time = originalDate.now();
-    if (time != lastDateQuery) {
-      lastDateQuery = time;
-      advanceTimeEvent(time);
-    }
+    // TODO(benvanik): re-enable duplication optimization.
+    advanceTimeEvent(time);
+    // if (time != lastDateQuery) {
+    //   lastDateQuery = time;
+    //   advanceTimeEvent(time);
+    // }
     return time;
   };
 };
