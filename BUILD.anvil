@@ -45,6 +45,11 @@ closure_soy_library(
     srcs=glob('src/wtf/app/ui/**/*.soy'),
     deps=':wtf_ui_soy_js',
     compiler_jar=SOY_COMPILER_JAR)
+closure_soy_library(
+    name='wtf_replay_soy_js',
+    srcs=glob('src/wtf/replay/**/*.soy'),
+    deps=':wtf_ui_soy_js',
+    compiler_jar=SOY_COMPILER_JAR)
 
 file_set(
     name='all_soy_js',
@@ -52,6 +57,7 @@ file_set(
         ':wtf_ui_soy_js',
         ':wtf_hud_soy_js',
         ':wtf_app_soy_js',
+        ':wtf_replay_soy_js',
         ])
 
 
@@ -113,6 +119,7 @@ closure_js_library(
         'wtf.db.exports',
         'wtf.hud.exports',
         'wtf.remote.exports',
+        'wtf.replay.timeTravel.exports',
         'wtf.trace.exports',
     ],
     srcs=[
@@ -316,6 +323,7 @@ WTF_UI_SRCS=[
     ':wtf_src_js',
     ':wtf_ui_soy_js',
     ':wtf_app_soy_js',
+    ':wtf_replay_soy_js',
     ]
 
 # All uncompiled JS
@@ -339,6 +347,7 @@ WTF_UI_ENTRY_POINTS=[
     'wtf.app.background.exports',
     'wtf.app.ui.exports',
     'wtf.db.exports',
+    'wtf.replay.timeTravel.exports',
     ]
 
 # wtf_ui_js_uncompiled
@@ -366,6 +375,7 @@ closure_js_library(
         '--define=wtf.app.background.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.ui.exports.ENABLE_EXPORTS=true',
         '--define=wtf.db.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.replay.timeTravel.exports.ENABLE_EXPORTS=true',
         ],
     wrap_with_global='window')
 
