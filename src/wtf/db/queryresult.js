@@ -18,11 +18,10 @@ goog.provide('wtf.db.QueryResultType');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
-goog.require('wgxpath.XPathExpression');
 
 
 /**
- * @typedef {(wgxpath.XPathExpression|RegExp|string)}
+ * @typedef {(RegExp|string)}
  */
 wtf.db.CompiledQueryExpression;
 

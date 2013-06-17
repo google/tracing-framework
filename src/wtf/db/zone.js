@@ -307,8 +307,8 @@ wtf.db.Zone.prototype.query = function(expr) {
     // Create the XPath expression.
     // NOTE: this may throw!
     // TODO(benvanik): better error handling around this?
-    var xexpr = new wgxpath.XPathExpression(expr || '.');
-    compiledExpr = xexpr;
+    // var xexpr = new wgxpath.XPathExpression(expr || '.');
+    // compiledExpr = xexpr;
 
     // Run the XPath query on the database.
     // var context = this;

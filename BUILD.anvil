@@ -75,7 +75,6 @@ file_set(
     name='third_party_js',
     srcs=[
         'third_party/d3/colorbrewer.js',
-        'third_party/wicked-good-xpath:all_js',
         ])
 
 # Testing support files
