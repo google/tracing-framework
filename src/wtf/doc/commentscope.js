@@ -140,12 +140,12 @@ wtf.doc.CommentScope.prototype.forEach = function(
     timeStart, timeEnd, callback, opt_scope) {
   // TODO(benvanik): binary search start point.
   this.list_.forEach(function(value) {
-    value = /** @type {!wtf.doc.Comment} */ (value);
-    if (value.timeStart_ > timeEnd) {
+    var comment = /** @type {!wtf.doc.Comment} */ (value);
+    if (comment.getStartTime() > timeEnd) {
       return false;
     }
-    if (value.timeEnd_ >= timeStart ||
-        value.timeStart_ >= timeStart) {
+    if (comment.getTimeEnd() >= timeStart ||
+        comment.getStartTime() >= timeStart) {
       callback.call(opt_scope, value);
     }
   });

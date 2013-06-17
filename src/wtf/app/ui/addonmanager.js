@@ -135,7 +135,9 @@ wtf.app.ui.AddonManager.prototype.loadAddon = function(addon) {
   idoc.head.appendChild(baseEl);
 
   // Export API.
-  this.setupAddonApi_(addon, iframe.contentWindow);
+  var contentWindow = iframe.contentWindow;
+  goog.asserts.assert(contentWindow);
+  this.setupAddonApi_(addon, contentWindow);
 
   // Add scripts.
   for (var n = 0; n < info.scripts.length; n++) {
@@ -154,7 +156,7 @@ wtf.app.ui.AddonManager.prototype.loadAddon = function(addon) {
 /**
  * Sets up the addon API in the addon window.
  * @param {!wtf.addon.AppAddon} addon Owning addon.
- * @param {!Object} addonGlobal Addon global scope.
+ * @param {!Window} addonGlobal Addon global scope.
  * @private
  */
 wtf.app.ui.AddonManager.prototype.setupAddonApi_ = function(

@@ -103,14 +103,8 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   this.navbarCanvas_ = /** @type {!HTMLCanvasElement} */ (
       this.getChildElement(goog.getCssName('canvas')));
 
-  /**
-   * Tooltip.
-   * @type {!wtf.ui.Tooltip}
-   * @private
-   */
-  this.tooltip_ = new wtf.ui.Tooltip(dom);
-  this.registerDisposable(this.tooltip_);
-  this.setTooltip(this.tooltip_);
+  // Create a tooltip.
+  this.setTooltip(new wtf.ui.Tooltip(dom));
 
   /**
    * Statistics boxes.

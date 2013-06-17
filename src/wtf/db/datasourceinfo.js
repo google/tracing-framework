@@ -16,6 +16,9 @@ goog.provide('wtf.db.DataSourceInfo');
 goog.provide('wtf.db.DriveDataSourceInfo');
 goog.provide('wtf.db.UrlDataSourceInfo');
 
+/** @suppress {extraRequire} */
+goog.require('wtf.io.drive.DriveFile');
+
 
 
 /**
@@ -81,7 +84,7 @@ wtf.db.DriveDataSourceInfo = function(filename, contentType, fileId,
   /**
    * Drive file data.
    * This is optional but can speed up downloading.
-   * @type {wtf.io.drive.DriveFile}
+   * @type {?wtf.io.drive.DriveFile}
    */
   this.driveFile = opt_driveFile || null;
 };

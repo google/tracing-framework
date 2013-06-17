@@ -57,6 +57,24 @@ wtf.doc.Comment = function(author, timeStart, timeEnd, value) {
 
 
 /**
+ * Gets the wall time the comment range starts at.
+ * @return {number} Wall time.
+ */
+wtf.doc.Comment.prototype.getStartTime = function() {
+  return this.timeStart_;
+};
+
+
+/**
+ * Gets the wall time the comment range ends at.
+ * @return {number} Wall time.
+ */
+wtf.doc.Comment.prototype.getEndTime = function() {
+  return this.timeEnd_;
+};
+
+
+/**
  * Compares two comments by start time.
  * @param {!wtf.doc.Comment} a First comment.
  * @param {!wtf.doc.Comment} b Second comment.
