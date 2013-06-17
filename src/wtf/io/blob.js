@@ -61,6 +61,16 @@ wtf.io.Blob.prototype.close = goog.nullFunction;
 
 
 /**
+ * Reads the entire blob contents as an ArrayBuffer.
+ * @param {!function(this:T, ArrayBuffer)} callback Callback that receives the
+ *     array buffer value. If the conversion fails a null value is passed.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.io.Blob.prototype.readAsArrayBuffer = goog.nullFunction;
+
+
+/**
  * Reads the entire blob contents as a text string.
  * @param {!function(this:T, string?)} callback Callback that receives the
  *     string value. If the conversion fails a null value is passed.
@@ -231,6 +241,25 @@ wtf.io.BrowserBlob_.prototype.close = function() {
 /**
  * @override
  */
+wtf.io.BrowserBlob_.prototype.readAsArrayBuffer = function(
+    callback, opt_scope) {
+  goog.asserts.assert(this.blob_);
+  if (!this.blob_.size) {
+    callback.call(opt_scope, (new Uint8Array(0)).buffer);
+    return;
+  }
+
+  var fileReader = new FileReader();
+  fileReader.onload = function() {
+    callback.call(opt_scope, /** @type {ArrayBuffer} */ (fileReader.result));
+  };
+  fileReader.readAsArrayBuffer(this.blob_);
+};
+
+
+/**
+ * @override
+ */
 wtf.io.BrowserBlob_.prototype.readAsText = function(callback, opt_scope) {
   goog.asserts.assert(this.blob_);
   if (!this.blob_.size) {
@@ -390,6 +419,21 @@ wtf.io.NodeBlob_.prototype.slice = function(
  */
 wtf.io.NodeBlob_.prototype.close = function() {
   // No-op.
+};
+
+
+/**
+ * @override
+ */
+wtf.io.NodeBlob_.prototype.readAsArrayBuffer = function(
+    callback, opt_scope) {
+  var result = new Uint8Array(this.buffer_.length);
+  for (var n = 0; n < this.buffer_.length; n++) {
+    result[n] = this.buffer_[n];
+  }
+
+  // TODO(benvanik): make this async?
+  callback.call(opt_scope, result.buffer);
 };
 
 
