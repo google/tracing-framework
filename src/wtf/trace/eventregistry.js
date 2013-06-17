@@ -45,7 +45,7 @@ wtf.trace.EventRegistry = function() {
    * @type {!Array.<!wtf.trace.EventType>}
    * @private
    */
-  this.eventTypes_ = [];
+  this.eventTypesList_ = [];
 
   /**
    * All events mapped by their name.
@@ -77,7 +77,7 @@ wtf.trace.EventRegistry.prototype.registerEventType = function(eventType) {
     return;
   }
 
-  this.eventTypes_.push(eventType);
+  this.eventTypesList_.push(eventType);
   this.eventTypesByName_[eventType.name] = eventType;
 
   this.eventTypeBuilder_ = new wtf.trace.EventTypeBuilder();
@@ -103,7 +103,7 @@ wtf.trace.EventRegistry.EventType = {
  *     events. Do not modified.
  */
 wtf.trace.EventRegistry.prototype.getEventTypes = function() {
-  return this.eventTypes_;
+  return this.eventTypesList_;
 };
 
 

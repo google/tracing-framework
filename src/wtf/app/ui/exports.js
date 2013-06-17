@@ -14,6 +14,10 @@
 
 goog.provide('wtf.app.ui.exports');
 
+/** @suppress {extraRequire} */
+goog.require('goog.events.EventWrapper');
+/** @suppress {extraRequire} */
+goog.require('goog.vec.Vec3');
 goog.require('wtf.app.ui');
 
 

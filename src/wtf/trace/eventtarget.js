@@ -465,7 +465,6 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['removeEventListener'] =
 /**
  * Indicates that the given event type should be tracked on the target object.
  * @param {string} type Event type name.
- * @protected
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.beginTrackingEvent =
     goog.abstractMethod;
@@ -475,7 +474,6 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.beginTrackingEvent =
  * Indicates that the given event type should be stop being tracked on the
  * target object.
  * @param {string} type Event type name.
- * @protected
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.endTrackingEvent =
     goog.abstractMethod;
@@ -488,7 +486,6 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.endTrackingEvent =
  * @param {function(this:T, !Event)} callback Callback.
  * @param {T=} opt_scope Callback scope.
  * @template T
- * @protected
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.setEventHook = function(
     type, callback, opt_scope) {

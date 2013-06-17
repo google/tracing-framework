@@ -493,7 +493,6 @@ wtf.ui.Painter.prototype.layoutInternal = function(availableBounds) {
  * This should be used instead of repainting inline in JS callbacks to help
  * the browser draw things optimally. Only call repaint directly if the results
  * *must* be displayed immediately, such as in the case of a resize.
- * @protected
  */
 wtf.ui.Painter.prototype.requestRepaint = function() {
   if (this.parentPainter_) {

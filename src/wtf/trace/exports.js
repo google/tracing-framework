@@ -18,6 +18,8 @@
 goog.provide('wtf.trace.exports');
 
 /** @suppress {extraRequire} */
+goog.require('goog.events.EventWrapper');
+/** @suppress {extraRequire} */
 goog.require('wtf.data.EventClass');
 /** @suppress {extraRequire} */
 goog.require('wtf.data.EventFlag');

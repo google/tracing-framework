@@ -190,9 +190,10 @@ wtf.trace.sessions.SnapshottingSession.prototype.beginWriteSnapshot_ =
       wtf.trace.sessions.SnapshottingSession.SNAPSHOT_INIT_BUFFER_SIZE_);
 
   // Log out zones and event definitions.
-  this.traceManager_.writeEventHeader(
+  var traceManager = this.getTraceManager();
+  traceManager.writeEventHeader(
       snapshotDataChunk.getBinaryBuffer(), false);
-  this.traceManager_.appendAllZones(
+  traceManager.appendAllZones(
       snapshotDataChunk.getBinaryBuffer());
 
   // Log out discontinuity event.

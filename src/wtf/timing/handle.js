@@ -34,8 +34,9 @@ wtf.timing.Handle = function(func) {
 
 /**
  * Issues the interval callback function.
+ * @param {...*} var_args Arguments.
  */
-wtf.timing.Handle.prototype.callback = function() {
+wtf.timing.Handle.prototype.callback = function(var_args) {
   // Always check callback function - a previous callback this same tick could
   // have cleared this instance
   if (this.func_) {

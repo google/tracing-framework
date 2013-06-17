@@ -597,7 +597,7 @@ wtf.trace.timeStamp = wtf.trace.BuiltinEvents.timeStamp;
 
 
 /**
- * @typedef {Object}
+ * @typedef {Object|number}
  */
 wtf.trace.TimeRange;
 
