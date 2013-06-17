@@ -83,7 +83,7 @@ wtf.db.Zone = function(db, name, type, location) {
    * @type {!wtf.db.FrameList}
    * @private
    */
-  this.frameList_ = new wtf.db.FrameList(this);
+  this.frameList_ = new wtf.db.FrameList(this.eventList_);
   this.registerDisposable(this.frameList_);
 
   /**
@@ -91,7 +91,7 @@ wtf.db.Zone = function(db, name, type, location) {
    * @type {!wtf.db.MarkList}
    * @private
    */
-  this.markList_ = new wtf.db.MarkList(this);
+  this.markList_ = new wtf.db.MarkList(this.eventList_);
   this.registerDisposable(this.markList_);
 
   /**
@@ -99,7 +99,7 @@ wtf.db.Zone = function(db, name, type, location) {
    * @type {!wtf.db.TimeRangeList}
    * @private
    */
-  this.timeRangeList_ = new wtf.db.TimeRangeList(this);
+  this.timeRangeList_ = new wtf.db.TimeRangeList(this.eventList_);
   this.registerDisposable(this.timeRangeList_);
 
   /**

@@ -25,20 +25,20 @@ goog.require('wtf.events.EventType');
 /**
  * Time range list.
  *
- * @param {!wtf.db.Zone} zone Parent zone.
+ * @param {!wtf.db.EventList} eventList Event list.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  * @implements {wtf.db.IAncillaryList}
  */
-wtf.db.TimeRangeList = function(zone) {
+wtf.db.TimeRangeList = function(eventList) {
   goog.base(this);
 
   /**
-   * Parent zone.
-   * @type {!wtf.db.Zone}
+   * Event list that this instance is using to detect time ranges.
+   * @type {!wtf.db.EventList}
    * @private
    */
-  this.zone_ = zone;
+  this.eventList_ = eventList;
 
   /**
    * A map of time ranges by global time range ID.
@@ -71,8 +71,7 @@ wtf.db.TimeRangeList = function(zone) {
     overlap: 0
   };
 
-  var eventList = this.zone_.getEventList();
-  eventList.registerAncillaryList(this);
+  this.eventList_.registerAncillaryList(this);
 };
 goog.inherits(wtf.db.TimeRangeList, wtf.events.EventEmitter);
 
@@ -81,18 +80,8 @@ goog.inherits(wtf.db.TimeRangeList, wtf.events.EventEmitter);
  * @override
  */
 wtf.db.TimeRangeList.prototype.disposeInternal = function() {
-  var eventList = this.zone_.getEventList();
-  eventList.unregisterAncillaryList(this);
+  this.eventList_.unregisterAncillaryList(this);
   goog.base(this, 'disposeInternal');
-};
-
-
-/**
- * Gets the parent zone.
- * @return {!wtf.db.Zone} Parent zone.
- */
-wtf.db.TimeRangeList.prototype.getZone = function() {
-  return this.zone_;
 };
 
 
@@ -120,6 +109,16 @@ wtf.db.TimeRangeList.prototype.getCount = function() {
  */
 wtf.db.TimeRangeList.prototype.getAllTimeRanges = function() {
   return this.timeRangeList_;
+};
+
+
+/**
+ * Gets a time range by ID.
+ * @param {number} id Time range ID.
+ * @return {wtf.db.TimeRange} Time range, if it exists.
+ */
+wtf.db.TimeRangeList.prototype.getTimeRange = function(id) {
+  return this.timeRanges_[id] || null;
 };
 
 
@@ -161,7 +160,10 @@ wtf.db.TimeRangeList.prototype.forEachIntersecting = function(
   var index = goog.array.binarySelect(
       this.timeRangeList_, wtf.db.TimeRange.selector, { time: timeStart });
   if (index < 0) {
-    index = -index - 2;
+    index = -index - 1;
+    // Select the previous frame.
+    // The loop will move it ahead if needed.
+    index--;
   }
   index = goog.math.clamp(index, 0, this.timeRangeList_.length - 1);
 
@@ -242,9 +244,6 @@ wtf.db.TimeRangeList.prototype.endRebuild = function() {
 };
 
 
-goog.exportProperty(
-    wtf.db.TimeRangeList.prototype, 'getZone',
-    wtf.db.TimeRangeList.prototype.getZone);
 goog.exportProperty(
     wtf.db.TimeRangeList.prototype, 'getMaximumLevel',
     wtf.db.TimeRangeList.prototype.getMaximumLevel);
