@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <script>
+    document.addEventListener('DOMNodeInserted', function(e) {
+      console.log('DOMNodeInserted');
+    }, false);
+    document.addEventListener('DOMNodeInsertedIntoDocument', function(e) {
+      console.log('DOMNodeInsertedIntoDocument');
+    }, false);
+    document.addEventListener('DOMSubtreeModified', function(e) {
+      console.log('DOMSubtreeModified');
+    }, false);
+
+    (function swap() {
+      var deferredScripts = [];
+      var allScripts = document.getElementsByTagName('script');
+      for (var n = 0; n < allScripts.length; n++) {
+        var script = allScripts[n];
+        deferredScripts.push(script.innerHTML);
+        var clone = document.createElement('script-disabled');
+        clone.innerHTML = script.innerHTML;
+        script.parentNode.replaceChild(clone, script);
+      }
+    })();
+
+    window.loadDone = function loadDone() {
+      window.location.reload();
+    };
+
+    var ch = window.open('', 'controller', 'width=300,height=300,toolbar=0,status=0,scrollbars=0', true);
+    console.log(ch);
+    var s = [
+      'var xhr = new XMLHttpRequest();',
+      'xhr.responseType = "arraybuffer";',
+      'xhr.onload = function() { window.hasDatabase = true; window.opener.loadDone(); };',
+      'xhr.open("GET", "http://localhost:8080/private/aquarium-calls.wtf-trace", true);',
+      'xhr.send();'
+    ].join('\n');
+    if (!ch.hasDatabase) {
+      //ch.document.writeln('<script>' + s + '</sc' + 'ript>');
+      ch.loadDatabase = function() {
+        var xhr = new XMLHttpRequest();
+        xhr.responseType = "arraybuffer";
+        xhr.onload = function() { ch.hasDatabase = true; ch.opener.loadDone(); };
+        xhr.open("GET", "http://localhost:8080/private/aquarium-calls.wtf-trace", true);
+        xhr.send();
+      };
+      ch.loadDatabase();
+    }
+    // var count = 0;
+    // while (!ch.hasDatabase) {
+    //   // wait
+    //   count++;
+    //   if (count == 300000000000) {
+    //     throw 'nope';
+    //   }
+    // }
+    console.log('has a db: ' + ch.hasDatabase);
+
+  </script>
+<script>
+var Xpath = {};
+Xpath.getElementXPath = function(element) {
+    if (element && element.id)
+        return '//*[@id="' + element.id + '"]';
+    else
+        return Xpath.getElementTreeXPath(element);
+};
+Xpath.getElementTreeXPath = function(element, relativeTo) {
+    var paths = [];
+    for (; element && element.nodeType == 1 && (!relativeTo || element !== relativeTo); element = element.parentNode) {
+        var index = 0;
+        for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling) {
+            if (sibling.nodeType == Node.DOCUMENT_TYPE_NODE)
+                continue;
+            if (sibling.nodeName == element.nodeName)
+                ++index;
+        }
+        var tagName = element.nodeName.toLowerCase();
+        var pathIndex = "[" + (index + 1) + "]"
+        paths.splice(0, 0, tagName + pathIndex);
+    }
+    return paths.length ? "/" + paths.join("/") : null;
+};
+</script>
+  </head>
+  <body>
+    <div id="a">
+      <div id="b">
+        <div id="c">
+          hi
+          <div>
+            bi
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      var lastEvent;
+      var lastPath;
+      document.addEventListener('click', function(e) {
+        console.log(e, e.target);
+        lastEvent = e;
+        lastPath = getElementPath(e.target);
+      }, true);
+
+      document.getElementById('c').addEventListener('click', function(e) {
+        console.log('c ', e);
+      }, false);
+
+      function getElementPath(el) {
+        var path = Xpath.getElementXPath(el);
+        console.log(path);
+        return path;
+      };
+
+      function findElementFromPath(path) {
+        var result = document.evaluate(path, document, null, 9, null);
+        return result.singleNodeValue;
+      };
+
+      function dispatchEvent() {
+        var e = document.createEvent('MouseEvent');
+        e.initMouseEvent(
+            lastEvent.type,
+            lastEvent.bubbles,
+            lastEvent.cancelable,
+            lastEvent.view,
+            lastEvent.detail,
+            lastEvent.screenX,
+            lastEvent.screenY,
+            lastEvent.clientX,
+            lastEvent.clientY,
+            lastEvent.ctrlKey,
+            lastEvent.altKey,
+            lastEvent.shiftKey,
+            lastEvent.metaKey,
+            lastEvent.button,
+            lastEvent.relatedTarget);
+        e.timeStamp = lastEvent.timeStamp;
+        var target = findElementFromPath(lastPath);
+        target.dispatchEvent(lastEvent);
+      }
+    </script>
+  </body>
+</html>

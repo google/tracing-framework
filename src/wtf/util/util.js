@@ -151,27 +151,30 @@ wtf.util.getCompiledMemberName = function(obj, memberValue) {
  * The callback may be issued immediately if the DOM is already ready.
  * @param {!Function} callback Function to call.
  * @param {Object=} opt_scope Scope to call the function in.
+ * @param {Document=} opt_document Document, if not the current one.
  */
-wtf.util.callWhenDomReady = function(callback, opt_scope) {
+wtf.util.callWhenDomReady = function(callback, opt_scope, opt_document) {
+  var doc = opt_document || goog.global.document;
+
   // TODO(benvanik): prevent leaking these events.
-  if (document.readyState == 'complete' ||
-      document.readyState == 'interactive') {
+  if (doc.readyState == 'complete' ||
+      doc.readyState == 'interactive') {
     callback.call(opt_scope);
   } else {
-    if (document.addEventListener) {
+    if (doc.addEventListener) {
       var listener = function() {
-        document.removeEventListener('DOMContentLoaded', listener, false);
+        doc.removeEventListener('DOMContentLoaded', listener, false);
         callback.call(opt_scope);
       };
       listener['__wtf_ignore__'] = true;
-      document.addEventListener('DOMContentLoaded', listener, false);
-    } else if (document.attachEvent) {
+      doc.addEventListener('DOMContentLoaded', listener, false);
+    } else if (doc.attachEvent) {
       var listener = function() {
-        document.detachEvent('onload', listener);
+        doc.detachEvent('onload', listener);
         callback.call(opt_scope);
       };
       listener['__wtf_ignore__'] = true;
-      document.attachEvent('onload', listener);
+      doc.attachEvent('onload', listener);
     }
   }
 };
