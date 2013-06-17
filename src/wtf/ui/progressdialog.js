@@ -14,6 +14,7 @@
 goog.provide('wtf.ui.ProgressDialog');
 
 goog.require('goog.asserts');
+goog.require('goog.dom.classes');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.ui.Dialog');
@@ -33,7 +34,7 @@ goog.require('wtf.ui.progressdialog');
 wtf.ui.ProgressDialog = function(parentElement, title, opt_dom) {
   /**
    * Dialog title.
-   * @type {boolean}
+   * @type {string}
    * @private
    */
   this.title_ = title;
@@ -70,6 +71,18 @@ wtf.ui.ProgressDialog.prototype.addTask = function(task) {
 };
 
 
+/**
+ * Task bar styling.
+ * @enum {number}
+ */
+wtf.ui.ProgressDialog.TaskStyle = {
+  /** Primary task style. */
+  PRIMARY: 0,
+  /** Secondary task style. */
+  SECONDARY: 1
+};
+
+
 
 /**
  * A tracked task in a progress dialog.
@@ -91,7 +104,7 @@ wtf.ui.ProgressDialog.Task = function(opt_taskName) {
 
   /**
    * DOM helper.
-   * @type {!goog.dom.DomHelper}
+   * @type {goog.dom.DomHelper}
    * @private
    */
   this.dom_ = null;
@@ -151,4 +164,27 @@ wtf.ui.ProgressDialog.Task.prototype.setProgress = function(current, total) {
   var percent = Math.floor(current / total * 100);
   goog.style.setWidth(this.progressTrackEl_, percent + '%');
   dom.setTextContent(this.progressTextEl_, String(percent));
+};
+
+
+/**
+ * Sets the task bar styling.
+ * @param {wtf.ui.ProgressDialog.TaskStyle} value New value.
+ */
+wtf.ui.ProgressDialog.Task.prototype.setStyle = function(value) {
+  switch (value) {
+    default:
+    case wtf.ui.ProgressDialog.TaskStyle.PRIMARY:
+      goog.dom.classes.addRemove(
+          this.progressTrackEl_,
+          goog.getCssName('green'),
+          goog.getCssName('blue'));
+      break;
+    case wtf.ui.ProgressDialog.TaskStyle.SECONDARY:
+      goog.dom.classes.addRemove(
+          this.progressTrackEl_,
+          goog.getCssName('blue'),
+          goog.getCssName('green'));
+      break;
+  }
 };

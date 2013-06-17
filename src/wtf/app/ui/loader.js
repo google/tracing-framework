@@ -27,10 +27,12 @@ goog.require('wtf.db.BlobDataSourceInfo');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.DriveDataSourceInfo');
 goog.require('wtf.db.UrlDataSourceInfo');
+goog.require('wtf.db.sources.CallsDataSource');
 goog.require('wtf.db.sources.ChunkedDataSource');
 goog.require('wtf.doc.Document');
 goog.require('wtf.io');
 goog.require('wtf.io.Blob');
+goog.require('wtf.io.ReadTransport');
 goog.require('wtf.io.cff.BinaryStreamSource');
 goog.require('wtf.io.cff.JsonStreamSource');
 goog.require('wtf.io.drive');
@@ -103,6 +105,8 @@ wtf.app.ui.Loader.prototype.inferContentType_ = function(filename) {
     return 'application/x-extension-wtf-trace';
   } else if (goog.string.endsWith(filename, '.wtf-json')) {
     return 'application/x-extension-wtf-json';
+  } else if (goog.string.endsWith(filename, '.wtf-calls')) {
+    return 'application/x-extension-wtf-calls';
   }
   // Default. Maybe we should just return null.
   return 'application/x-extension-wtf-trace';
@@ -174,6 +178,7 @@ wtf.app.ui.Loader.prototype.requestLocalOpenDialog = function(
   inputElement['accept'] = [
     '.wtf-trace,application/x-extension-wtf-trace',
     '.wtf-json,application/x-extension-wtf-json',
+    '.wtf-calls,application/x-extension-wtf-calls',
     '.part,application/x-extension-part'
   ].join(',');
   inputElement.click();
@@ -524,19 +529,31 @@ wtf.app.ui.Loader.Entry_.prototype.start = function(db) {
     switch (this.sourceInfo.contentType) {
       default:
       case 'application/x-extension-wtf-trace':
-        streamSource = new wtf.io.cff.BinaryStreamSource(transport);
+        this.source = new wtf.db.sources.ChunkedDataSource(
+            db, this.sourceInfo, new wtf.io.cff.BinaryStreamSource(transport));
         break;
       case 'application/x-extension-wtf-json':
-        streamSource = new wtf.io.cff.JsonStreamSource(transport);
+        this.source = new wtf.db.sources.ChunkedDataSource(
+            db, this.sourceInfo, new wtf.io.cff.JsonStreamSource(transport));
+        break;
+      case 'application/x-extension-wtf-calls':
+        this.source = new wtf.db.sources.CallsDataSource(
+            db, this.sourceInfo, transport);
         break;
     }
 
-    // Create data source.
-    this.source = new wtf.db.sources.ChunkedDataSource(
-        db, this.sourceInfo, streamSource);
-
     // Add to database.
     db.addSource(this.source);
+
+    // Listen for transport progress events to update the task.
+    transport.addListener(wtf.io.ReadTransport.EventType.PROGRESS,
+        function(loaded, total) {
+          this.task.setProgress(loaded, total);
+        }, this);
+    transport.addListener(wtf.io.ReadTransport.EventType.END, function() {
+      // Switch into 'processing' mode.
+      this.task.setStyle(wtf.ui.ProgressDialog.TaskStyle.SECONDARY);
+    }, this);
 
     // Kick off the source.
     this.source.start().chainDeferred(deferred);
