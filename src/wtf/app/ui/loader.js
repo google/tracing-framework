@@ -154,7 +154,7 @@ wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
           contentSources[n], contentTypes[n], blob));
     } else {
       sourceInfos.push(new wtf.db.UrlDataSourceInfo(
-          contentSources[n], contentUrls[n]));
+          contentUrls[n], contentTypes[n]));
     }
   }
 
