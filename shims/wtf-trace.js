@@ -48,7 +48,7 @@ WTF.trace.events = {};
 // goog.nullFunction
 function nullFunction() {};
 // goog.identityFunction
-function identifyFunction(a) { return a; };
+function identityFunction(a) { return a; };
 
 
 /**
