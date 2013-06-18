@@ -14,6 +14,7 @@
 goog.provide('wtf.replay.graphics.ContextPool');
 
 goog.require('goog.Disposable');
+goog.require('goog.dom');
 goog.require('goog.json');
 
 
@@ -23,10 +24,11 @@ goog.require('goog.json');
  * Contains a collection of contexts with certain types and attributes for
  * use. Creates new contexts when the need arises.
  *
+ * @param {goog.dom.DomHelper=} opt_dom DOM helper.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.replay.graphics.ContextPool = function() {
+wtf.replay.graphics.ContextPool = function(opt_dom) {
   goog.base(this);
 
   /**
@@ -35,6 +37,13 @@ wtf.replay.graphics.ContextPool = function() {
    * @private
    */
   this.contexts_ = {};
+
+  /**
+   * DOM Helper.
+   * @type {!goog.dom.DomHelper}
+   * @private
+   */
+  this.dom_ = opt_dom || goog.dom.getDomHelper();
 };
 goog.inherits(wtf.replay.graphics.ContextPool, goog.Disposable);
 
@@ -95,7 +104,7 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
     this.resetWebGLContext_(retrievedContext);
     return retrievedContext;
   }
-  var newCanvas = document.createElement('canvas');
+  var newCanvas = this.dom_.createElement('canvas');
   var newContext = newCanvas.getContext(contextType, attributes);
   newContext[wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME] =
       contextHash;
@@ -117,7 +126,7 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
     ctx.vertexAttribPointer(ii, 4, ctx.FLOAT, false, 0, 0);
     ctx.vertexAttrib1f(ii, 0);
   }
-  
+
   ctx.deleteBuffer(tmp);
   var numTextureUnits = ctx.getParameter(ctx.MAX_TEXTURE_IMAGE_UNITS);
   for (var ii = 0; ii < numTextureUnits; ++ii) {
@@ -168,5 +177,5 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
   ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT | ctx.STENCIL_BUFFER_BIT);
 
   // TODO: This should NOT be needed but Firefox fails with 'hint'
-  while(ctx.getError());
+  while (ctx.getError());
 };
