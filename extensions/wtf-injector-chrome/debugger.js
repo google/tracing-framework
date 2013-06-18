@@ -14,6 +14,114 @@
 
 
 /**
+ * Shared dispatch table for debugger events.
+ * Modern Chromes only allow a single event handler to be registered on
+ * chrome.debugger, so we have to map it back to the right place here.
+ * @constructor
+ */
+var DebuggerDispatchTable = function() {
+  /**
+   * Total number of attached debugger instances.
+   * @type {number}
+   * @private
+   */
+  this.count_ = 0;
+
+  /**
+   * Registered tabs, mapped by tab ID.
+   * @type {!Object.<number, !Debugger>}
+   * @private
+   */
+  this.tabs_ = {};
+
+  /**
+   * Registered event handlers.
+   * @type {!Object}
+   * @private
+   */
+  this.eventHandlers_ = {
+    onEvent: this.onEvent_.bind(this),
+    onDetach: this.onDetach_.bind(this)
+  };
+};
+
+
+/**
+ * Registers a debugger instance.
+ * @param {number} tabId Tab ID being debugged.
+ * @param {!Debugger} target Debugger instance to send events to.
+ */
+DebuggerDispatchTable.prototype.register = function(tabId, target) {
+  if (this.tabs_[tabId]) {
+    // Replacing?
+    this.count_--;
+  }
+  this.tabs_[tabId] = target;
+
+  this.count_++;
+  if (this.count_ == 1) {
+    try {
+      chrome.debugger.onEvent.addListener(this.eventHandlers_.onEvent);
+      chrome.debugger.onDetach.addListener(this.eventHandlers_.onDetach);
+    } catch (e) {
+      // I'd rather try and fail to get a debugger attached than kill the app.
+      // Terrible API.
+      console.log('Unable to add debugger event listeners.');
+    }
+  }
+};
+
+
+/**
+ * Unregisters a debugger instance.
+ * @param {number} tabId Tab ID being debugged.
+ */
+DebuggerDispatchTable.prototype.unregister = function(tabId) {
+  if (!this.tabs_[tabId]) {
+    return;
+  }
+  delete this.tabs_[tabId];
+
+  this.count_--;
+  if (!this.count_) {
+    chrome.debugger.onEvent.removeListener(this.eventHandlers_.onEvent);
+    chrome.debugger.onDetach.removeListener(this.eventHandlers_.onDetach);
+  }
+};
+
+
+/**
+ * Handles incoming debugger events.
+ * @param {!{tabId: number}} source Source tab.
+ * @param {string} method Remote debugger method name.
+ * @param {!Object} params Parameters.
+ * @private
+ */
+DebuggerDispatchTable.prototype.onEvent_ = function(source, method, params) {
+  var target = this.tabs_[source.tabId];
+  if (!target) {
+    return;
+  }
+  target.onEvent_(method, params);
+};
+
+
+/**
+ * Handles incoming debugger detaches.
+ * @param {!{tabId: number}} source Source tab.
+ * @private
+ */
+DebuggerDispatchTable.prototype.onDetach_ = function(source) {
+  var target = this.tabs_[source.tabId];
+  if (!target) {
+    return;
+  }
+  target.onDetach_();
+};
+
+
+
+/**
  * Debugger data proxy.
  * This connects to a tab and sets up a debug session that is used for reading
  * out events from the page.
@@ -61,16 +169,6 @@ var Debugger = function(tabId, pageOptions) {
   this.attached_ = false;
 
   /**
-   * Registered event handlers.
-   * @type {!Object}
-   * @private
-   */
-  this.eventHandlers_ = {
-    onEvent: this.onEvent_.bind(this),
-    onDetach: this.onDetach_.bind(this)
-  };
-
-  /**
    * Interval ID used for polling memory statistics.
    * @type {number|null}
    * @private
@@ -86,18 +184,14 @@ var Debugger = function(tabId, pageOptions) {
    */
   this.lastGcStartTime_ = 0;
 
+  // Register us for dispatch.
+  Debugger.dispatchTable_.register(this.tabId_, this);
+
   // Attach to the target tab.
   chrome.debugger.attach(this.debugee_, '1.0', (function() {
     this.attached_ = true;
     this.beginListening_();
   }).bind(this));
-
-  // Listen for incoming debugger events.
-  chrome.debugger.onEvent.addListener(this.eventHandlers_.onEvent);
-
-  // Listen for detaches. These are either from us or from the dev tools
-  // being attached to a page.
-  chrome.debugger.onDetach.addListener(this.eventHandlers_.onDetach);
 };
 
 
@@ -115,22 +209,25 @@ Debugger.prototype.dispose = function() {
     chrome.debugger.detach(this.debugee_);
   }
 
-  chrome.debugger.onEvent.removeListener(this.eventHandlers_.onEvent);
-  chrome.debugger.onDetach.removeListener(this.eventHandlers_.onDetach);
+  Debugger.dispatchTable_.unregister(this.tabId_);
 
   this.records_.length = 0;
 };
 
 
 /**
- * Handles incoming debugger detaches.
- * @param {!{tabId: number}} source Source tab.
+ * Shared dispatch table.
+ * @type {!DebuggerDispatchTable}
  * @private
  */
-Debugger.prototype.onDetach_ = function(source) {
-  if (source.tabId != this.debugee_.tabId) {
-    return;
-  }
+Debugger.dispatchTable_ = new DebuggerDispatchTable();
+
+
+/**
+ * Handles incoming debugger detaches.
+ * @private
+ */
+Debugger.prototype.onDetach_ = function() {
   if (!this.attached_) {
     return;
   }
@@ -376,16 +473,11 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
 
 /**
  * Handles incoming debugger events.
- * @param {!{tabId: number}} source Source tab.
  * @param {string} method Remote debugger method name.
  * @param {!Object} params Parameters.
  * @private
  */
-Debugger.prototype.onEvent_ = function(source, method, params) {
-  if (source.tabId != this.debugee_.tabId) {
-    return;
-  }
-
+Debugger.prototype.onEvent_ = function(method, params) {
   function logRecord(record, indent) {
     indent += '  ';
     console.log(indent + record.type);
