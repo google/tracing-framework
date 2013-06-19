@@ -7,7 +7,6 @@
 
 goog.provide('wtf.replay.graphics.ContextPool_test');
 
-goog.require('goog.dom');
 goog.require('wtf.replay.graphics.ContextPool');
 
 
@@ -30,28 +29,41 @@ wtf.replay.graphics.ContextPool_test =
   test('#getContext', function() {
     var contextPool = new wtf.replay.graphics.ContextPool();
     var attributes = {
-        alpha : true,
-        depth : true,
-        premultipliedAlpha : true
+      alpha: false,
+      premultipliedAlpha: true,
+      preserveDrawingBuffer: true
     };
     var retrievedContext = contextPool.getContext('webgl', attributes);
     assert.isNotNull(retrievedContext);
     var retrievedAttributes = retrievedContext.getContextAttributes();
     assert.equal(attributes.alpha, retrievedAttributes.alpha);
-    assert.equal(attributes.depth, retrievedAttributes.depth);
-    assert.equal(attributes.premultipliedAlpha,
-        retrievedAttributes.premultipliedAlpha);
+    assert.equal(
+        attributes.premultipliedAlpha, retrievedAttributes.premultipliedAlpha);
+    assert.equal(attributes.preserveDrawingBuffer,
+        retrievedAttributes.preserveDrawingBuffer);
   });
   test('#releaseContext', function() {
     var contextPool = new wtf.replay.graphics.ContextPool();
     var attributes = {
-        alpha : true,
-        depth : true,
-        premultipliedAlpha : true
+      alpha: false,
+      depth: true,
+      premultipliedAlpha: true
     };
     var retrievedContext = contextPool.getContext('webgl', attributes);
     contextPool.releaseContext(retrievedContext);
+
+    // Different type and attributes, so the two contexts should differ.
+    var newAttributes = {
+      alpha: true,
+      depth: true,
+      premultipliedAlpha: false
+    };
+    var differentContext = contextPool.getContext('webgl', newAttributes);
+    assert.notStrictEqual(retrievedContext, differentContext);
+
+    // Same type and attributes, so the two contexts should be the exact same.
     var laterRetrievedContext = contextPool.getContext('webgl', attributes);
+    assert.strictEqual(retrievedContext, laterRetrievedContext);
     assert.deepEqual(retrievedContext.getContextAttributes(),
         laterRetrievedContext.getContextAttributes());
   });
