@@ -1,0 +1,182 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * @fileoverview ContextPool. A pool of <canvas> contexts for use.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+goog.provide('wtf.replay.graphics.ContextPool');
+
+goog.require('goog.Disposable');
+goog.require('goog.dom');
+goog.require('goog.json');
+goog.require('goog.webgl');
+
+
+
+/**
+ * A pool of <canvas> contexts based on types and attributes.
+ * Contains a collection of contexts with certain types and attributes for use.
+ * Creates new contexts when the need arises.
+ *
+ * @param {goog.dom.DomHelper=} opt_dom DOM helper.
+ * @constructor
+ * @extends {goog.Disposable}
+ */
+wtf.replay.graphics.ContextPool = function(opt_dom) {
+  goog.base(this);
+
+  /**
+   * Mapping from hashes to lists of contexts.
+   * @type {!Object.<!Array.<!WebGLRenderingContext>>}
+   * @private
+   */
+  this.contexts_ = {};
+
+  /**
+   * DOM Helper.
+   * @type {!goog.dom.DomHelper}
+   * @private
+   */
+  this.dom_ = opt_dom || goog.dom.getDomHelper();
+};
+goog.inherits(wtf.replay.graphics.ContextPool, goog.Disposable);
+
+
+/**
+ * Name of the property stored on a context for the hash.
+ * @type {string}
+ * @const
+ * @private
+ */
+wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_ = '__context_pool_hash__';
+
+
+/**
+ * Generates a hash string for a context.
+ * @param {string} contextType The type of context.
+ * @param {WebGLContextAttributes=} opt_attributes Context attributes.
+ * @return {string} A hash string for the context.
+ * @private
+ */
+wtf.replay.graphics.ContextPool.prototype.getContextHash_ =
+    function(contextType, opt_attributes) {
+  return contextType + goog.json.serialize(opt_attributes || {});
+};
+
+
+/**
+ * Releases a context into the pool. The context must have been originally
+ * gotten from this pool.
+ * @param {!WebGLRenderingContext} context A context to release.
+ */
+wtf.replay.graphics.ContextPool.prototype.releaseContext = function(context) {
+  var contextHash =
+      context[wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_];
+  var contextList = this.contexts_[contextHash];
+  if (contextList) {
+    contextList.push(context);
+  } else {
+    this.contexts_[contextHash] = [context];
+  }
+};
+
+
+/**
+ * Creates a new context or gets an existing one from the pool.
+ * @param {string} contextType The type of context.
+ * @param {WebGLContextAttributes=} opt_attributes Context attributes.
+ * @return {!WebGLRenderingContext} A context.
+ */
+wtf.replay.graphics.ContextPool.prototype.getContext =
+    function(contextType, opt_attributes) {
+  var contextHash = this.getContextHash_(contextType, opt_attributes);
+  var contextList = this.contexts_[contextHash];
+
+  // If context with desired type and attributes exists, return it.
+  if (contextList && contextList.length) {
+    var retrievedContext = contextList.pop();
+    this.resetWebGLContext_(retrievedContext);
+    return retrievedContext;
+  }
+  var newCanvas = this.dom_.createElement('canvas');
+  var newContext = newCanvas.getContext(contextType, opt_attributes);
+  newContext[wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_] =
+      contextHash;
+  return newContext;
+};
+
+
+/**
+ * Resets a context to its initial state.
+ * @param {!WebGLRenderingContext} ctx A context.
+ * @private
+ */
+wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
+    function(ctx) {
+  var numAttribs = ctx.getParameter(goog.webgl.MAX_VERTEX_ATTRIBS);
+  var tmp = ctx.createBuffer();
+  ctx.bindBuffer(goog.webgl.ARRAY_BUFFER, tmp);
+  for (var ii = 0; ii < numAttribs; ++ii) {
+    ctx.disableVertexAttribArray(ii);
+    ctx.vertexAttribPointer(ii, 4, goog.webgl.FLOAT, false, 0, 0);
+    ctx.vertexAttrib1f(ii, 0);
+  }
+
+  ctx.deleteBuffer(tmp);
+  var numTextureUnits = ctx.getParameter(goog.webgl.MAX_TEXTURE_IMAGE_UNITS);
+  for (var ii = 0; ii < numTextureUnits; ++ii) {
+    ctx.activeTexture(goog.webgl.TEXTURE0 + ii);
+    ctx.bindTexture(goog.webgl.TEXTURE_CUBE_MAP, null);
+    ctx.bindTexture(goog.webgl.TEXTURE_2D, null);
+  }
+  ctx.activeTexture(goog.webgl.TEXTURE0);
+  ctx.useProgram(null);
+  ctx.bindBuffer(goog.webgl.ARRAY_BUFFER, null);
+  ctx.bindBuffer(goog.webgl.ELEMENT_ARRAY_BUFFER, null);
+  ctx.bindFramebuffer(goog.webgl.FRAMEBUFFER, null);
+  ctx.bindRenderbuffer(goog.webgl.RENDERBUFFER, null);
+  ctx.disable(goog.webgl.BLEND);
+  ctx.disable(goog.webgl.CULL_FACE);
+  ctx.disable(goog.webgl.DEPTH_TEST);
+  ctx.disable(goog.webgl.DITHER);
+  ctx.disable(goog.webgl.SCISSOR_TEST);
+  ctx.blendColor(0, 0, 0, 0);
+  ctx.blendEquation(goog.webgl.FUNC_ADD);
+  ctx.blendFunc(goog.webgl.ONE, goog.webgl.ZERO);
+  ctx.clearColor(0, 0, 0, 0);
+  ctx.clearDepth(1);
+  ctx.clearStencil(0);
+  ctx.colorMask(true, true, true, true);
+  ctx.cullFace(goog.webgl.BACK);
+  ctx.depthFunc(goog.webgl.LESS);
+  ctx.depthMask(true);
+  ctx.depthRange(0, 1);
+  ctx.frontFace(goog.webgl.CCW);
+  ctx.hint(goog.webgl.GENERATE_MIPMAP_HINT, goog.webgl.DONT_CARE);
+  ctx.lineWidth(1);
+  ctx.pixelStorei(goog.webgl.PACK_ALIGNMENT, 4);
+  ctx.pixelStorei(goog.webgl.UNPACK_ALIGNMENT, 4);
+  ctx.pixelStorei(goog.webgl.UNPACK_FLIP_Y_WEBGL, false);
+  ctx.pixelStorei(goog.webgl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  ctx.pixelStorei(goog.webgl.UNPACK_COLORSPACE_CONVERSION_WEBGL,
+      goog.webgl.BROWSER_DEFAULT_WEBGL);
+  ctx.polygonOffset(0, 0);
+  ctx.sampleCoverage(1, false);
+  ctx.scissor(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.stencilFunc(goog.webgl.ALWAYS, 0, 0xFFFFFFFF);
+  ctx.stencilMask(0xFFFFFFFF);
+  ctx.stencilOp(goog.webgl.KEEP, goog.webgl.KEEP, goog.webgl.KEEP);
+  ctx.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.clear(goog.webgl.COLOR_BUFFER_BIT |
+      goog.webgl.DEPTH_BUFFER_BIT | goog.webgl.STENCIL_BUFFER_BIT);
+
+  // TODO: This should NOT be needed but Firefox fails with 'hint'
+  while (ctx.getError());
+};
