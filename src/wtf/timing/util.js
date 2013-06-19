@@ -55,7 +55,7 @@ wtf.timing.util.getWindowFunction_ = function(specName) {
     }
     return (function(fn) {
       return function() {
-        fn.apply(goog.global, arguments);
+        return fn.apply(goog.global, arguments);
       };
     })(fn);
   }

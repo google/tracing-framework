@@ -476,7 +476,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
             var scope = eventType(target, data, usage, []);
             return wtf.trace.leaveScope(scope, fn.apply(this, arguments));
           } else {
-            var dataLength = data.length;
+            var dataLength = data.byteLength;
             if (includeResources) {
               if (data instanceof ArrayBuffer) {
                 data = new Uint8Array(data);
