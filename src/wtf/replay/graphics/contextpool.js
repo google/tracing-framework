@@ -71,7 +71,8 @@ wtf.replay.graphics.ContextPool.prototype.getContextHash_ =
 
 
 /**
- * Releases a context into the pool.
+ * Releases a context into the pool. The context must have been originally
+ * gotten from this pool.
  * @param {!WebGLRenderingContext} context A context to release.
  */
 wtf.replay.graphics.ContextPool.prototype.releaseContext = function(context) {
@@ -81,7 +82,7 @@ wtf.replay.graphics.ContextPool.prototype.releaseContext = function(context) {
   if (contextList) {
     contextList.push(context);
   } else {
-    contextList[contextHash] = [context];
+    this.contexts_[contextHash] = [context];
   }
 };
 
