@@ -64,7 +64,5 @@ wtf.replay.graphics.ContextPool_test =
     // Same type and attributes, so the two contexts should be the exact same.
     var laterRetrievedContext = contextPool.getContext('webgl', attributes);
     assert.strictEqual(retrievedContext, laterRetrievedContext);
-    assert.deepEqual(retrievedContext.getContextAttributes(),
-        laterRetrievedContext.getContextAttributes());
   });
 });
