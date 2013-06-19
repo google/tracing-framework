@@ -113,8 +113,9 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
 
 
 /**
- * Resets a context.
+ * Resets a context to its initial state.
  * @param {!WebGLRenderingContext} ctx A context.
+ * @private
  */
 wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
     function(ctx) {
