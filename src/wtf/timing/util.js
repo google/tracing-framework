@@ -98,20 +98,26 @@ wtf.timing.util.getRequestAnimationFrame = function(opt_enableFallback) {
 
 
 /**
- * Gets the browser-supported cancelRequestAnimationFrame method or an
+ * Gets the browser-supported cancelAnimationFrame method or an
  * equivalent.
  * @param {boolean=} opt_enableFallback Whether to enable fallback support. If
- *     true then even if cancelRequestAnimationFrame is not supported a function
+ *     true then even if cancelAnimationFrame is not supported a function
  *     will be returned that simulates the behavior.
  * @return {?function(number): void} An implementation of
  *     cancelRequestAnimationFrame.
  */
-wtf.timing.util.getCancelRequestAnimationFrame =
+wtf.timing.util.getCancelAnimationFrame =
     function(opt_enableFallback) {
   var windowFunction = /** @type {?function(number): void} */ (
+      wtf.timing.util.getWindowFunction_('cancelAnimationFrame') ||
       wtf.timing.util.getWindowFunction_('cancelRequestAnimationFrame'));
   if (windowFunction) {
     return windowFunction;
+  }
+
+  // If we have requestAnimationFrame but not cancel, we just return a no-op.
+  if (!wtf.timing.util.getWindowFunction_('requestAnimationFrame')) {
+    return goog.nullFunction;
   }
 
   if (opt_enableFallback) {
