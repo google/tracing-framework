@@ -41,6 +41,10 @@ wtf.replay.graphics.ContextPool_test =
         attributes.premultipliedAlpha, retrievedAttributes.premultipliedAlpha);
     assert.equal(attributes.preserveDrawingBuffer,
         retrievedAttributes.preserveDrawingBuffer);
+
+    // If the context type is unsupported, null should be returned.
+    var invalidContext = contextPool.getContext('some_invalid_ctx_type');
+    assert.isNull(invalidContext);
   });
   test('#releaseContext', function() {
     var contextPool = new wtf.replay.graphics.ContextPool();
@@ -54,7 +58,6 @@ wtf.replay.graphics.ContextPool_test =
 
     // Different type and attributes, so the two contexts should differ.
     var newAttributes = {
-      alpha: true,
       depth: true,
       premultipliedAlpha: false
     };
