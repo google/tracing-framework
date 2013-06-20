@@ -89,10 +89,12 @@ wtf.replay.graphics.ContextPool.prototype.releaseContext = function(context) {
 
 
 /**
- * Creates a new context or gets an existing one from the pool.
+ * Creates a new context or gets an existing one from the pool. Returns null
+ * if the context type is not supported.
  * @param {string} contextType The type of context.
  * @param {WebGLContextAttributes=} opt_attributes Context attributes.
- * @return {!WebGLRenderingContext} A context.
+ * @return {WebGLRenderingContext} A context. Or null if the context type is
+ * not supported (ie 'experimental-webgl' may be supported, but not 'webgl').
  */
 wtf.replay.graphics.ContextPool.prototype.getContext =
     function(contextType, opt_attributes) {
@@ -107,6 +109,12 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
   }
   var newCanvas = this.dom_.createElement('canvas');
   var newContext = newCanvas.getContext(contextType, opt_attributes);
+
+  // If context type is unsupported, return null.
+  if (!newContext) {
+    return null;
+  }
+
   newContext[wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_] =
       contextHash;
   return newContext;
