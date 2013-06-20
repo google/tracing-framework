@@ -54,8 +54,8 @@ wtf.timing.RenderTimer = function() {
    * @type {?function(number):void}
    * @private
    */
-  this.browserCancelRequestAnimationFrame_ =
-      wtf.timing.util.getCancelRequestAnimationFrame() ||
+  this.browserCancelAnimationFrame_ =
+      wtf.timing.util.getCancelAnimationFrame() ||
       goog.nullFunction;
 
   /**
@@ -164,7 +164,7 @@ wtf.timing.RenderTimer.prototype.clearInterval = function(interval) {
   if (!this.intervals_.length) {
     if (this.browserRequestAnimationFrame_) {
       goog.asserts.assert(this.browserRequestAnimationId_ !== null);
-      this.browserCancelRequestAnimationFrame_(/** @type {number} */ (
+      this.browserCancelAnimationFrame_(/** @type {number} */ (
           this.browserRequestAnimationId_));
       this.browserRequestAnimationId_ = null;
     } else {

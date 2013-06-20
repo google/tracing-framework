@@ -281,7 +281,7 @@ wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
 wtf.trace.providers.TimingProvider.RAF_NAMES_ = [
   'requestAnimationFrame', 'cancelAnimationFrame',
   'mozRequestAnimationFrame', 'mozCancelAnimationFrame',
-  'msRequestAnimationFrame', 'msCAncelAnimationFrame',
+  'msRequestAnimationFrame', 'msCancelAnimationFrame',
   'oRequestAnimationFrame', 'oCancelAnimationFrame',
   'webkitRequestAnimationFrame', 'webkitCancelAnimationFrame'
 ];
