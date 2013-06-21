@@ -14,23 +14,23 @@
 
 goog.provide('wtf.replay.graphics.Playback');
 
+goog.require('goog.events');
 goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
+goog.require('wtf.timing.util');
 
 
 
 /**
- * Playback.
  * Plays an animation once. Does not play immediately after construction.
  *
- * @param {!wtf.db.EventList} events Event list for an entire animation.
+ * @param {!wtf.db.EventList} eventList Event list for an entire animation.
+ * @param {!wtf.db.FrameList} frameList Frame list for an entire animation.
  * @param {!wtf.replay.graphics.ContextPool} contextPool Pool of contexts.
- * @param {number=} opt_startEvent ID of event to start playing from.
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.replay.graphics.Playback =
-    function(events, contextPool, opt_startEvent) {
+wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   goog.base(this);
 
   /**
@@ -38,7 +38,14 @@ wtf.replay.graphics.Playback =
    * @type {!wtf.db.EventList}
    * @private
    */
-  this.events_ = events;
+  this.eventList_ = eventList;
+
+  /**
+   * List of frames for an entire animation.
+   * @type {!wtf.db.FrameList}
+   * @private
+   */
+  this.frameList_ = frameList;
 
   /**
    * An iterator through events. Updated while playing. Points to event about
@@ -46,15 +53,15 @@ wtf.replay.graphics.Playback =
    * @type {!wtf.db.EventIterator}
    * @private
    */
-  this.currentEvent_ = events.begin();
+  this.currentEvent_ = eventList.begin();
 
   /**
-   * The ID of the frame that has not yet finished being drawn (or the frame
-   * that will be finished next).
-   * @type {number}
+   * The frame that has not yet finished being drawn (or the frame that will
+   * be finished next).
+   * @type {!wtf.db.Frame}
    * @private
    */
-  this.currentFrame_ = 1;
+  this.currentFrame_ = frameList.getAllFrames()[0];
 
   /**
    * A pool of contexts.
@@ -71,7 +78,7 @@ wtf.replay.graphics.Playback =
   this.contexts_ = {};
 
   /**
-   * A mapping of event IDs to elements for resources such as images.
+   * A mapping of event Ids to elements for resources such as images.
    * @type {!Array.<!Element>}
    * @private
    */
@@ -92,34 +99,26 @@ wtf.replay.graphics.Playback =
   this.resourcesDoneLoading_ = false;
 
   /**
-   * The ID of event at which playing begins.
-   * @type {number}
-   * @private
-   */
-  this.startEvent_ = opt_startEvent || 0;
-
-
-  /**
    * A mapping of handles to WebGL objects.
    * @type {!Object.<number, !Object>}
    * @private
    */
-  this.objs_ = {};
+  this.objects_ = {};
 
   /**
    * The frame we are aiming for while seeking. This exists because a seek may
    * occur while an asynchronous backwards seek is already going on.
-   * @type {number}
+   * @type {wtf.db.Frame}
    * @private
    */
-  this.targetFrame_ = 0;
+  this.targetFrame_ = null;
 
   /**
    * Indicates whether a backwards seek is going on now.
    * @type {boolean}
    * @private
    */
-  this.backwardsSeek_ = false;
+  this.seekingBackwards_ = false;
 
   /**
    * Handler for animation request.
@@ -127,6 +126,21 @@ wtf.replay.graphics.Playback =
    * @private
    */
   this.animationRequest_ = null;
+
+  /**
+   * The function for requesting an animation frame.
+   * @type {?function(Function):(number|undefined)}
+   * @private
+   */
+  this.requestAnimationFrame_ = wtf.timing.util.getRequestAnimationFrame();
+
+  /**
+   * The function for canceling an animation frame.
+   * @type {?function(number): void}
+   * @private
+   */
+  this.cancelAnimationFrame_ =
+      wtf.timing.util.getCancelRequestAnimationFrame();
 
   /**
    * True if playing is occuring or if playing will occur as soon as possible.
@@ -149,35 +163,152 @@ wtf.replay.graphics.Playback =
    */
   this.currentContext_ = null;
 
-  // Obtain all resources and play from starting event.
-  this.fetchResources_(goog.bind(function() {
-    this.quicklyRealizeEvents_(this.startEvent_);
-  }, this));
+  /**
+   * The set of supported extensions.
+   * @type {!Object.<string, null>}
+   * @private
+   */
+  this.supportedExtensions_ = this.getSupportedExtensions_();
 };
 goog.inherits(wtf.replay.graphics.Playback, wtf.events.EventEmitter);
 
 
 /**
  * Name of the property used to store an object's context.
+ * @const
  * @type {string}
  * @private
  */
-wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME = '__gl_context__';
+wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME_ = '__gl_context__';
 
 
 /**
- * Clears all requests for preparing for or executing a frame.
+ * Events related to playing.
+ * @enum {string}
+ */
+wtf.replay.graphics.Playback.EventType = {
+  /**
+   * Playing began.
+   */
+  BEGIN_PLAY: goog.events.getUniqueId('play_began'),
+
+  /**
+   * The current frame changed.
+   */
+  NEW_FRAME: goog.events.getUniqueId('new_frame'),
+
+  /**
+   * A context was created. Has the context.
+   */
+  CONTEXT_CREATED: goog.events.getUniqueId('context_created'),
+
+  /**
+   * A context was set. Has the context.
+   */
+  CONTEXT_SET: goog.events.getUniqueId('context_set'),
+
+  /**
+   * Playing ended at the end of the animation.
+   */
+  END_PLAY: goog.events.getUniqueId('play_ended'),
+
+  /**
+   * Premature call to play was made.
+   */
+  PLAY_NOT_READY: goog.events.getUniqueId('play_not_ready'),
+
+  /**
+   * Resources finished loading.
+   */
+  RESOURCES_DONE: goog.events.getUniqueId('done_loading_playback_resources'),
+
+  /**
+   * Error on loading a resource.
+   */
+  RESOURCE_ERROR: goog.events.getUniqueId('resource_error'),
+
+  /**
+   * Unsupported extension(s) found. Has a list of unsupported extensions.
+   */
+  UNSUPPORTED_EXTENSIONS: goog.events.getUniqueId('unsupported_extension')
+};
+
+
+/**
+ * Loads the playback.
+ */
+wtf.replay.graphics.Playback.prototype.load = function() {
+  this.fetchResources_();
+};
+
+
+/**
+ * Fetches all the resources needed for playback. Also checks for unsupported
+ *     extensions and throws an event if there are any.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.clearRequests_ = function() {
-  if (this.animationRequest_ !== null) {
-    cancelAnimationFrame(this.animationRequest_);
-    this.animationRequest_ = null;
+wtf.replay.graphics.Playback.prototype.fetchResources_ = function() {
+  // First, find out what resources must be loaded, and check extensions.
+  var eventsWithResourcesToLoad = [];
+  var unsupportedExtensions = [];
+  for (var ev = this.eventList_.begin(); !ev.done(); ev.next()) {
+    switch (ev.getName()) {
+      case 'WebGLRenderingContext#texImage2D':
+      case 'WebGLRenderingContext#texSubImage2D':
+        var dataType = ev.getArguments().get('dataType');
+        if (dataType != 'pixels' && dataType != 'null') {
+          eventsWithResourcesToLoad.push(ev.getId());
+        }
+        break;
+      case 'WebGLRenderingContext#getExtension':
+        var extensionName = ev.getArguments().get('name');
+        if (!(extensionName in this.supportedExtensions_)) {
+          unsupportedExtensions.push(extensionName);
+        }
+        break;
+    }
   }
-  if (this.prepareFrameTimeout_ !== null) {
-    clearTimeout(this.prepareFrameTimeout_);
-    this.prepareFrameTimeout_ = null;
+  // If at least one unsupported extension found, emit an event indicating so.
+  if (unsupportedExtensions.length) {
+    this.emitEvent(
+        wtf.replay.graphics.Playback.EventType.UNSUPPORTED_EXTENSIONS,
+        unsupportedExtensions);
   }
+  this.resourcesLeftToLoad_ = eventsWithResourcesToLoad.length;
+  // If no resources to load, just indicate that resources are done loading.
+  if (!this.resourcesLeftToLoad_) {
+    this.resourcesDoneLoading_ = true;
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.RESOURCES_DONE);
+    return;
+  }
+  // Now, actually load the resources.
+  for (var i = 0; i < eventsWithResourcesToLoad.length; ++i) {
+    var ev = this.eventList_.getEvent(eventsWithResourcesToLoad[i]);
+    var args = ev.getArguments();
+    var dataType = args.get('dataType');
+    var url = (dataType.indexOf('image/') == 0) ?
+        this.createBlobURL_(dataType, args.get('pixels')) : dataType;
+    this.loadImage_(eventsWithResourcesToLoad[i], url);
+  }
+};
+
+
+/**
+ * Gets a set of supported extensions.
+ * @return {!Object.<string, null>} An object whose keys are the supported
+ *     extensions.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.getSupportedExtensions_ = function() {
+  var webglContext = this.contextPool_.getContext('webgl') ||
+      this.contextPool_.getContext('experimental-webgl');
+  var supportedExtensionsList = webglContext.getSupportedExtensions();
+  var supportedExtensionsSet = {};
+  for (var i = 0; i < supportedExtensionsList.length; ++i) {
+    supportedExtensionsSet[supportedExtensionsList[i]] = null;
+  }
+  this.contextPool_.releaseContext(webglContext);
+  return supportedExtensionsSet;
 };
 
 
@@ -190,119 +321,69 @@ wtf.replay.graphics.Playback.prototype.clearRequests_ = function() {
  */
 wtf.replay.graphics.Playback.prototype.createBlobURL_ =
     function(mimeType, data) {
-  return webkitURL.createObjectURL(new Blob([data], {
+  var blob = new Blob([data], {
     type: mimeType
-  }));
-};
-
-
-/**
- * Decrements the number of resources that must still be loaded.
- * @param {!Function} callback Function called when no resources left to load.
- * @private
- */
-wtf.replay.graphics.Playback.prototype.decrementResourcesLeftToLoad_ =
-    function(callback) {
-  this.resourcesLeftToLoad_ -= 1;
-  if (this.resourcesLeftToLoad_ == 0) {
-    console.log('Finished loading all resources.');
-    this.resourcesDoneLoading_ = true;
-    callback();
-  }
-};
-
-
-/**
- * Draws the next frame.
- * @private
- */
-wtf.replay.graphics.Playback.prototype.drawFrame_ = function() {
-  if (this.currentEvent_.done()) {
-    console.log('done playing');
-    // TODO(chizeng): Fire a done playing event.
-    return;
-  } else {
-    var ev = this.events_.beginEventRange(
-        this.currentEvent_.getId(), this.events_.getCount() - 1);
-    var finalEventID = this.currentEvent_.getId();
-    for (; !ev.done() && ev.getName() != 'wtf.timing#frameEnd'; ev.next()) {
-      ++finalEventID;
-    }
-    this.animationRequest_ = requestAnimationFrame(goog.bind(function() {
-      this.quicklyRealizeEvents_(finalEventID);
-      this.prepareFrame_();
-    }, this));
-  }
-};
-
-
-/**
- * Fetches all the resources needed for playback.
- * @param {!Function} callback The callback to run after fetching resources is
- * done.
- * @private
- */
-wtf.replay.graphics.Playback.prototype.fetchResources_ = function(callback) {
-  // First, find out what resources must be loaded.
-  var eventsWithResourcesToLoad = [];
-  for (var ev = this.events_.begin(); !ev.done(); ev.next()) {
-    switch (ev.getName()) {
-      case 'WebGLRenderingContext#texImage2D':
-      case 'WebGLRenderingContext#texSubImage2D':
-        var dataType = ev.getArguments().get('dataType');
-        if (dataType != 'pixels' && dataType != 'null') {
-          eventsWithResourcesToLoad.push(ev.getId());
-        }
-    }
-  }
-  // Now, actually load the resources.
-  this.resourcesLeftToLoad_ = eventsWithResourcesToLoad.length;
-  if (this.resourcesLeftToLoad_) {
-    for (var i = 0; i < eventsWithResourcesToLoad.length; ++i) {
-      var ev = this.events_.getEvent(eventsWithResourcesToLoad[i]);
-      var args = ev.getArguments();
-      var dataType = args.get('dataType');
-      var url = (dataType.indexOf('image/') == 0) ?
-          this.createBlobURL_(dataType, args.get('pixels')) : dataType;
-      this.loadImage_(eventsWithResourcesToLoad[i], url, callback);
-    }
-  } else {
-    // If no resources to load, just call the callback function.
-    callback();
-  }
+  });
+  // Use the right URL creation tool based on the browser.
+  var standardURLObject = goog.global['URL'];
+  var urlCreationObject = standardURLObject ?
+      standardURLObject : goog.global['webkitURL'];
+  return urlCreationObject.createObjectURL(blob);
 };
 
 
 /**
  * Loads a single image from a URL.
- * @param {number} eventID the ID of the event.
+ * @param {number} eventId the Id of the event.
  * @param {string} url The URL of the resource to load.
- * @param {!Function} callback Called when all resources have loaded.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.loadImage_ =
-    function(eventID, url, callback) {
+wtf.replay.graphics.Playback.prototype.loadImage_ = function(eventId, url) {
   var img = new Image();
   var playback = this;
   img.onload = function() {
-    playback.decrementResourcesLeftToLoad_(callback);
+    playback.decrementResourcesLeftToLoad_();
   };
   img.onerror = function() {
-    console.warn('Error while trying to load image with url ' + url);
-    playback.decrementResourcesLeftToLoad_(callback);
+    var error = new Error('Error while trying to load image with url ' + url);
+    this.emitEvent(
+        wtf.replay.graphics.Playback.EventType.RESOURCE_ERROR, error);
+    playback.decrementResourcesLeftToLoad_();
   };
   img.src = url;
-  this.resources_[eventID] = img;
+  this.resources_[eventId] = img;
 };
 
 
 /**
- * Extracts the name of a method from the current event.
- * @return {string} The name of the method associated with the current event.
+ * Decrements the number of resources that must still be loaded. Emits an
+ * event indicating that all resources are done loaded when applicable.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.methodName_ = function() {
-  return this.currentEvent_.getName().split('#')[1];
+wtf.replay.graphics.Playback.prototype.decrementResourcesLeftToLoad_ =
+    function() {
+  --this.resourcesLeftToLoad_;
+  if (!this.resourcesLeftToLoad_) {
+    this.resourcesDoneLoading_ = true;
+    // Fire an event indicating that resources are done loading.
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.RESOURCES_DONE);
+  }
+};
+
+
+/**
+ * Clears all timeouts and animation requests for playing frames.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.clearTimeouts_ = function() {
+  if (this.animationRequest_ !== null) {
+    this.cancelAnimationFrame_(this.animationRequest_);
+    this.animationRequest_ = null;
+  }
+  if (this.prepareFrameTimeout_ !== null) {
+    clearTimeout(this.prepareFrameTimeout_);
+    this.prepareFrameTimeout_ = null;
+  }
 };
 
 
@@ -311,13 +392,15 @@ wtf.replay.graphics.Playback.prototype.methodName_ = function() {
  * resources have loaded.
  */
 wtf.replay.graphics.Playback.prototype.play = function() {
-  // Do not play if resources are loading.
-  if (this.resourcesDoneLoading_) {
-    console.log('begin play');
-    // TODO(chizeng): Emit a play event with more details.
-    this.emitEvent('BEGIN_PLAY');
-    this.prepareFrame_();
+  // Throw an exception if play was called before resources finished loading.
+  if (!this.resourcesDoneLoading_) {
+    var error = new Error('Playing began before resources loaded.');
+    this.emitEvent(
+        wtf.replay.graphics.Playback.EventType.PLAY_NOT_READY, error);
+    return;
   }
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.PLAY);
+  this.prepareFrame_();
 };
 
 
@@ -327,41 +410,87 @@ wtf.replay.graphics.Playback.prototype.play = function() {
  */
 wtf.replay.graphics.Playback.prototype.prepareFrame_ = function() {
   if (this.currentEvent_.done()) {
-    console.log('done playing');
-    // TODO(chizeng): Fire a done playing event.
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.END_PLAY);
     return;
-  } else {
-    var ev = this.events_.beginEventRange(
-        this.currentEvent_.getId(), this.events_.getCount() - 1);
-    while (ev.getName() != 'wtf.timing#frameStart') {
-      ev.next();
-      // If we're done while preparing for a frame, no more frames to draw.
-      if (ev.done()) {
-        return;
-      }
+  }
+  // Play up to start event of next frame (but don't call the start event).
+  if (!this.currentFrame_) {
+    // We're done playing.
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.END_PLAY);
+    return;
+  }
+  var eventToPlayUpTo = this.currentFrame_.getStartEventId();
+  this.prepareFrameTimeout_ = setTimeout(goog.bind(function() {
+    this.playUpToEvent_(eventToPlayUpTo);
+    this.drawFrame_();
+  }, this), 0);
+};
+
+
+/**
+ * Draws the next frame.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.drawFrame_ = function() {
+  // Finish playing this frame.
+  var finalEventId = this.currentFrame_.getEndEventId() + 1;
+  this.animationRequest_ = this.requestAnimationFrame_(goog.bind(function() {
+    this.playUpToEvent_(finalEventId);
+    this.emitEvent(
+        wtf.replay.graphics.Playback.EventType.NEW_FRAME,
+        this.currentFrame_);
+    this.prepareFrame_();
+  }, this));
+};
+
+
+/**
+ * Seeks to the beginning event of a certain frame. After this function, the
+ * current frame will be |frame|, and the current event will be the beginning
+ * event of |frame|. That event will not yet have been realized.
+ * @param {!wtf.db.Frame} targetFrame The frame to seek.
+ */
+wtf.replay.graphics.Playback.prototype.seekFrame = function(targetFrame) {
+  // If backwards seek in progress, record new frame target, seek it later.
+  this.targetFrame_ = targetFrame;
+  if (!this.backwardsSeek_) {
+    this.clearTimeouts_();
+    var currentFrame = this.currentFrame_;
+    var targetFrameBeginEventId = currentFrame.getStartEventId();
+    // If forward seek, go forward.
+    if (targetFrame.getOrdinal() > currentFrame.getOrdinal()) {
+      this.playUpToEvent_(targetFrameBeginEventId);
+    } else if (targetFrame.getOrdinal() < currentFrame.getOrdinal()) {
+      // TODO(chizeng): Do a backwards seek.
     }
-    this.prepareFrameTimeout_ = setTimeout(goog.bind(function() {
-      this.quicklyRealizeEvents_(ev.getId());
-      this.drawFrame_();
-    }, this), 0);
   }
 };
 
 
 /**
- * Quickly realizes events until the current event has the input ID. Does
- * nothing if the input ID is not greater than the ID of the current event.
+ * Quickly plays events until the current event has the input Id. Does nothing
+ * if the input Id is not greater than the Id of the current event.
  * Updates the current frame as events are realized. After this function, the
- * event to realize next is the one with the input ID.
- * @param {number} eventID The ID of the current event after this function is
- * called. Must be greater than the ID of the current event.
+ * event to call next is the one with the input Id.
+ * @param {number} targetEventId The Id of the current event after this
+ *     function is called. Must be greater than the Id of the current event.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.quicklyRealizeEvents_ =
-    function(eventID) {
-  while (this.currentEvent_.getId() < eventID) {
+wtf.replay.graphics.Playback.prototype.playUpToEvent_ =
+    function(targetEventId) {
+  var currentEvent = this.currentEvent_;
+  // TODO(chizeng): Fix this comparison of event Ids.
+  while (currentEvent.getId() != targetEventId) {
     this.realizeEvent_();
+    // If we just finished a frame, note that we're working on the next one.
+    if (currentEvent.getName() == 'wtf.timing#frameEnd') {
+      this.currentFrame_ = this.frameList_.getNextFrame(this.currentFrame_);
+    }
+    currentEvent.next();
   }
+  // Note that the current frame changed.
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.NEW_FRAME, this.currentFrame_);
 };
 
 
@@ -375,394 +504,403 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
   // current frame as we do so.
   // argument data.
   var args = this.currentEvent_.getArguments();
-  var objs = this.objs_;
+  var objs = this.objects_;
+  var currentContext = this.currentContext_;
 
   // parse functions and arguments.
   switch (this.currentEvent_.getName()) {
     case 'WebGLRenderingContext#attachShader':
-      this.currentContext_.attachShader(
+      currentContext.attachShader(
           objs[args.get('program')], objs[args.get('shader')]);
       break;
     case 'WebGLRenderingContext#activeTexture':
-      this.currentContext_.activeTexture(args.get('texture'));
+      currentContext.activeTexture(args.get('texture'));
       break;
     case 'WebGLRenderingContext#bindAttribLocation':
-      this.currentContext_.bindAttribLocation(
+      currentContext.bindAttribLocation(
           objs[args.get('program')], args.get('index'), args.get('name'));
       // TODO(chizeng): Figure out if we want to build a mapping.
       // addAttribToProgram(
       //     args.get('program'), args.get('index'), args.get('index'));
       break;
     case 'WebGLRenderingContext#bindBuffer':
-      this.currentContext_.bindBuffer(
+      currentContext.bindBuffer(
           args.get('target'), objs[args.get('buffer')]);
       break;
     case 'WebGLRenderingContext#bindFramebuffer':
-      this.currentContext_.bindFramebuffer(
+      currentContext.bindFramebuffer(
           args.get('target'), objs[args.get('framebuffer')]);
       break;
     case 'WebGLRenderingContext#bindRenderbuffer':
-      this.currentContext_.bindRenderbuffer(
+      currentContext.bindRenderbuffer(
           args.get('target'), objs[args.get('renderbuffer')]);
       break;
     case 'WebGLRenderingContext#bindTexture':
-      this.currentContext_.bindTexture(
+      currentContext.bindTexture(
           args.get('target'), objs[args.get('texture')]);
       break;
     case 'WebGLRenderingContext#blendColor':
-      this.currentContext_.blendColor(
+      currentContext.blendColor(
           args.get('red'), args.get('green'), args.get('blue'),
           args.get('alpha'));
       break;
     case 'WebGLRenderingContext#blendEquation':
-      this.currentContext_.blendEquation(args.get('mode'));
+      currentContext.blendEquation(args.get('mode'));
       break;
     case 'WebGLRenderingContext#blendEquationSeparate':
-      this.currentContext_.blendEquationSeparate(
+      currentContext.blendEquationSeparate(
           args.get('modeRGB'), args.get('modeAlpha'));
       break;
     case 'WebGLRenderingContext#blendFunc':
-      this.currentContext_.blendFunc(args.get('sfactor'), args.get('dfactor'));
+      currentContext.blendFunc(args.get('sfactor'), args.get('dfactor'));
       break;
     case 'WebGLRenderingContext#blendFuncSeparate':
-      this.currentContext_.blendFuncSeparate(
+      currentContext.blendFuncSeparate(
           args.get('srcRGB'), args.get('dstRGB'), args.get('srcAlpha'),
           args.get('dstAlpha'));
       break;
     case 'WebGLRenderingContext#bufferData':
       var data = args.get('data');
-      if (data.length < args.get('size')) {
-        data = args.get('size'); // sometimes data is empty. odd.
+      // TODO(chizeng): Remove the length check after db is fixed.
+      if (!data || data.byteLength != args.get('size')) {
+        data = args.get('size');
       }
-      this.currentContext_.bufferData(
+      currentContext.bufferData(
           args.get('target'), data, args.get('usage'));
       break;
     case 'WebGLRenderingContext#bufferSubData':
-      this.currentContext_.bufferSubData(
+      currentContext.bufferSubData(
           args.get('target'), args.get('offset'), args.get('data'));
       break;
     case 'WebGLRenderingContext#checkFramebufferStatus':
-      this.currentContext_.checkFramebufferStatus(args.get('target'));
+      currentContext.checkFramebufferStatus(args.get('target'));
       break;
     case 'WebGLRenderingContext#clear':
-      this.currentContext_.clear(args.get('mask'));
+      currentContext.clear(args.get('mask'));
       break;
     case 'WebGLRenderingContext#clearColor':
-      this.currentContext_.clearColor(
+      currentContext.clearColor(
           args.get('red'), args.get('green'), args.get('blue'),
           args.get('alpha'));
       break;
     case 'WebGLRenderingContext#clearDepth':
-      this.currentContext_.clearDepth(args.get('depth'));
+      currentContext.clearDepth(args.get('depth'));
       break;
     case 'WebGLRenderingContext#clearStencil':
-      this.currentContext_.clearStencil(args.get('s'));
+      currentContext.clearStencil(args.get('s'));
       break;
     case 'WebGLRenderingContext#colorMask':
-      this.currentContext_.colorMask(
+      currentContext.colorMask(
           args.get('red'), args.get('green'), args.get('blue'),
           args.get('alpha'));
       break;
     case 'WebGLRenderingContext#compileShader':
-      this.currentContext_.compileShader(objs[args.get('shader')]);
+      currentContext.compileShader(objs[args.get('shader')]);
       break;
     case 'WebGLRenderingContext#compressedTexImage2D':
-      this.currentContext_.compressedTexImage2D(
+      currentContext.compressedTexImage2D(
           args.get('target'), args.get('level'), args.get('internalformat'),
           args.get('width'), args.get('height'), args.get('border'),
           args.get('data'));
       break;
     case 'WebGLRenderingContext#compressedTexSubImage2D':
-      this.currentContext_.compressedTexSubImage2D(
+      currentContext.compressedTexSubImage2D(
           args.get('target'), args.get('level'), args.get('xoffset'),
           args.get('yoffset'), args.get('width'), args.get('height'),
           args.get('format'), args.get('data'));
       break;
     case 'WebGLRenderingContext#copyTexImage2D':
-      this.currentContext_.copyTexImage2D(
+      currentContext.copyTexImage2D(
           args.get('target'), args.get('level'), args.get('internalformat'),
           args.get('x'), args.get('y'), args.get('width'),
           args.get('height'), args.get('border'));
       break;
     case 'WebGLRenderingContext#copyTexSubImage2D':
-      this.currentContext_.copyTexSubImage2D(
+      currentContext.copyTexSubImage2D(
           args.get('target'), args.get('level'), args.get('xoffset'),
           args.get('yoffset'), args.get('x'), args.get('y'),
           args.get('width'), args.get('height'));
       break;
-    // And now, we have a slew of fxns that create resources.
     case 'WebGLRenderingContext#createBuffer':
+      objs[args.get('value')] = currentContext.createBuffer();
+      this.setOwningContext_(objs[args.get('value')], currentContext);
+      break;
     case 'WebGLRenderingContext#createFramebuffer':
+      objs[args.get('value')] = currentContext.createFramebuffer();
+      this.setOwningContext_(objs[args.get('value')], currentContext);
+      break;
     case 'WebGLRenderingContext#createRenderbuffer':
+      objs[args.get('value')] = currentContext.createRenderbuffer();
+      this.setOwningContext_(objs[args.get('value')], currentContext);
+      break;
     case 'WebGLRenderingContext#createTexture':
-      var nm = this.methodName_();
-      objs[args.get('value')] = this.currentContext_[nm]();
-      this.rememberContext_(objs[args.get('value')], this.currentContext_);
+      objs[args.get('value')] = currentContext.createTexture();
+      this.setOwningContext_(objs[args.get('value')], currentContext);
       break;
     case 'WebGLRenderingContext#createProgram':
-      objs[args.get('value')] = this.currentContext_.createProgram();
+      objs[args.get('value')] = currentContext.createProgram();
       objs[args.get('value')]['__num_attribs__'] =
-          this.currentContext_.getProgramParameter(
+          currentContext.getProgramParameter(
               objs[args.get('value')], goog.webgl.ACTIVE_ATTRIBUTES);
-      this.rememberContext_(objs[args.get('value')], this.currentContext_);
+      this.setOwningContext_(objs[args.get('value')], currentContext);
       break;
     case 'WebGLRenderingContext#createShader':
       objs[args.get('value')] =
-          this.currentContext_.createShader(args.get('type'));
-      this.rememberContext_(objs[args.get('value')], this.currentContext_);
+          currentContext.createShader(args.get('type'));
+      this.setOwningContext_(objs[args.get('value')], currentContext);
       break;
     case 'WebGLRenderingContext#cullFace':
-      this.currentContext_.cullFace(args.get('mode'));
+      currentContext.cullFace(args.get('mode'));
       break;
     // And now, we have a slew of fxns that delete resources.
     case 'WebGLRenderingContext#deleteBuffer':
+      currentContext.deleteBuffer(objs[args.get('value')]);
+      break;
     case 'WebGLRenderingContext#deleteFramebuffer':
+      currentContext.deleteFramebuffer(objs[args.get('value')]);
+      break;
     case 'WebGLRenderingContext#deleteProgram':
+      currentContext.deleteProgram(objs[args.get('value')]);
+      break;
     case 'WebGLRenderingContext#deleteRenderbuffer':
+      currentContext.deleteRenderbuffer(objs[args.get('value')]);
+      break;
     case 'WebGLRenderingContext#deleteShader':
+      currentContext.deleteShader(objs[args.get('value')]);
+      break;
     case 'WebGLRenderingContext#deleteTexture':
-      var nm = this.methodName_();
-      this.currentContext_[nm](objs[args.get('value')]);
+      currentContext.deleteTexture(objs[args.get('value')]);
       break;
     case 'WebGLRenderingContext#depthFunc':
-      this.currentContext_.depthFunc(args.get('func'));
+      currentContext.depthFunc(args.get('func'));
       break;
     case 'WebGLRenderingContext#depthMask':
-      this.currentContext_.depthMask(args.get('flag'));
+      currentContext.depthMask(args.get('flag'));
       break;
     case 'WebGLRenderingContext#depthRange':
-      this.currentContext_.depthRange(args.get('zNear'), args.get('zFar'));
+      currentContext.depthRange(args.get('zNear'), args.get('zFar'));
       break;
     case 'WebGLRenderingContext#detachShader':
-      this.currentContext_.detachShader(
+      currentContext.detachShader(
           args.get('program'), args.get('shader'));
       break;
     case 'WebGLRenderingContext#disable':
-      this.currentContext_.disable(args.get('cap'));
+      currentContext.disable(args.get('cap'));
       break;
     case 'WebGLRenderingContext#disableVertexAttribArray':
-      this.currentContext_.disableVertexAttribArray(args.get('index'));
+      currentContext.disableVertexAttribArray(args.get('index'));
       break;
     case 'WebGLRenderingContext#drawArrays':
-      this.currentContext_.drawArrays(
+      currentContext.drawArrays(
           args.get('mode'), args.get('first'), args.get('count'));
       break;
     case 'WebGLRenderingContext#drawElements':
-      this.currentContext_.drawElements(
+      currentContext.drawElements(
           args.get('mode'), args.get('count'), args.get('type'),
           args.get('offset'));
       break;
     case 'WebGLRenderingContext#enable':
-      this.currentContext_.enable(args.get('cap'));
+      currentContext.enable(args.get('cap'));
       break;
     case 'WebGLRenderingContext#enableVertexAttribArray':
-      this.currentContext_.enableVertexAttribArray(args.get('index'));
+      currentContext.enableVertexAttribArray(args.get('index'));
       break;
     case 'WebGLRenderingContext#finish':
-      this.currentContext_.finish();
+      currentContext.finish();
       break;
     case 'WebGLRenderingContext#flush':
-      this.currentContext_.flush();
+      currentContext.flush();
       break;
     case 'WebGLRenderingContext#framebufferRenderbuffer':
-      this.currentContext_.framebufferRenderbuffer(args.get('target'),
+      currentContext.framebufferRenderbuffer(args.get('target'),
           args.get('attachment'), args.get('renderbuffertarget'),
           objs[args.get('renderbuffer')]);
       break;
     case 'WebGLRenderingContext#framebufferTexture2D':
-      this.currentContext_.framebufferTexture2D(args.get('target'),
+      currentContext.framebufferTexture2D(args.get('target'),
           args.get('attachment'), args.get('textarget'),
           objs[args.get('texture')], args.get('level'));
       break;
     case 'WebGLRenderingContext#frontFace':
-      this.currentContext_.frontFace(args.get('mode'));
+      currentContext.frontFace(args.get('mode'));
       break;
     case 'WebGLRenderingContext#generateMipmap':
-      this.currentContext_.generateMipmap(args.get('target'));
+      currentContext.generateMipmap(args.get('target'));
       break;
     case 'WebGLRenderingContext#getActiveAttrib':
-      // TODO(chi): modify this to make it work with varying locations.
-      this.currentContext_.getActiveAttrib(
+      // TODO(chizeng): modify this to make it work with varying locations.
+      currentContext.getActiveAttrib(
           objs[args.get('program')], args.get('index'));
       break;
     case 'WebGLRenderingContext#getActiveUniform':
       // maybe we must modify this to obtain the new active uniform.
-      this.currentContext_.getActiveUniform(
+      currentContext.getActiveUniform(
           objs[args.get('program')], args.get('index'));
       break;
     case 'WebGLRenderingContext#getAttachedShaders':
-      this.currentContext_.getAttachedShaders(objs[args.get('program')]);
+      currentContext.getAttachedShaders(objs[args.get('program')]);
       break;
     case 'WebGLRenderingContext#getAttribLocation':
-      // TODO(chi): create a mapping to actual attrib locations.
-      this.currentContext_.getAttribLocation(
+      currentContext.getAttribLocation(
           objs[args.get('program')], args.get('name'));
-      this.currentContext_.bindAttribLocation(
-          objs[args.get('program')], args.get('value'), args.get('name'));
       break;
     case 'WebGLRenderingContext#getBufferParameter':
-      this.currentContext_.getBufferParameter(
+      currentContext.getBufferParameter(
           args.get('target'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#getError':
-      this.currentContext_.getError();
+      currentContext.getError();
       break;
     case 'WebGLRenderingContext#getFramebufferAttachmentParameter':
-      this.currentContext_.getFramebufferAttachmentParameter(
+      currentContext.getFramebufferAttachmentParameter(
           args.get('target'), args.get('attachment'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#getExtension':
-      // TODO(chi): possibly store the extension?
-      if (!this.currentContext_.getExtension(args.get('name'))) {
-        console.warn('Your GPU does not support extension ' +
-            args.get('name'));
-      }
+      // TODO(chizeng): Possibly store the extension?
+      currentContext.getExtension(args.get('name'));
       break;
     case 'WebGLRenderingContext#getParameter':
-      this.currentContext_.getParameter(args.get('pname'));
+      currentContext.getParameter(args.get('pname'));
       break;
     case 'WebGLRenderingContext#getFramebufferAttachmentParameter':
-      this.currentContext_.getFramebufferAttachmentParameter(
+      currentContext.getFramebufferAttachmentParameter(
           args.get('target'), args.get('attachment'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#getProgramParameter':
-      this.currentContext_.getProgramParameter(
+      currentContext.getProgramParameter(
           objs[args.get('program')], args.get('pname'));
       break;
     case 'WebGLRenderingContext#getProgramInfoLog':
-      this.currentContext_.getProgramInfoLog(objs[args.get('program')]);
+      currentContext.getProgramInfoLog(objs[args.get('program')]);
       break;
     case 'WebGLRenderingContext#getRenderbufferParameter':
-      this.currentContext_.getRenderbufferParameter(
+      currentContext.getRenderbufferParameter(
           args.get('target'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#getShaderParameter':
-      this.currentContext_.getShaderParameter(
+      currentContext.getShaderParameter(
           objs[args.get('shader')], args.get('pname'));
       break;
     case 'WebGLRenderingContext#getShaderPrecisionFormat':
-      this.currentContext_.getShaderPrecisionFormat(
+      currentContext.getShaderPrecisionFormat(
           args.get('shadertype'), args.get('precisiontype'));
       break;
     case 'WebGLRenderingContext#getShaderInfoLog':
-      this.currentContext_.getShaderInfoLog(objs[args.get('shader')]);
+      currentContext.getShaderInfoLog(objs[args.get('shader')]);
       break;
     case 'WebGLRenderingContext#getShaderSource':
-      this.currentContext_.getShaderSource(objs[args.get('shader')]);
+      currentContext.getShaderSource(objs[args.get('shader')]);
       break;
     case 'WebGLRenderingContext#getTexParameter':
-      this.currentContext_.getTexParameter(
+      currentContext.getTexParameter(
           args.get('target'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#getUniform':
-      this.currentContext_.getUniform(
+      currentContext.getUniform(
           objs[args.get('program')], objs[args.get('location')]);
       break;
     case 'WebGLRenderingContext#getUniformLocation':
-      // maybe this must change because we need a mapping.
-      objs[args.get('value')] = this.currentContext_.getUniformLocation(
+      // TODO(chizeng): Maybe this must change because we need a mapping.
+      objs[args.get('value')] = currentContext.getUniformLocation(
           objs[args.get('program')], args.get('name'));
       if (objs[args.get('value')]) {
-        this.rememberContext_(objs[args.get('value')], this.currentContext_);
+        this.setOwningContext_(objs[args.get('value')], currentContext);
       }
       break;
     case 'WebGLRenderingContext#getVertexAttrib':
-      // TODO(chi): maybe this must have a mapping.
-      this.currentContext_.getVertexAttrib(
+      currentContext.getVertexAttrib(
           args.get('index'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#getVertexAttribOffset':
-      this.currentContext_.getVertexAttribOffset(
+      currentContext.getVertexAttribOffset(
           args.get('index'), args.get('pname'));
       break;
     case 'WebGLRenderingContext#hint':
-      this.currentContext_.hint(args.get('target'), args.get('mode'));
+      currentContext.hint(args.get('target'), args.get('mode'));
       break;
     case 'WebGLRenderingContext#isBuffer':
-      this.currentContext_.isBuffer(objs[args.get('buffer')]);
+      currentContext.isBuffer(objs[args.get('buffer')]);
       break;
     case 'WebGLRenderingContext#isEnabled':
-      this.currentContext_.isEnabled(args.get('cap'));
+      currentContext.isEnabled(args.get('cap'));
       break;
     case 'WebGLRenderingContext#isFramebuffer':
-      this.currentContext_.isFramebuffer(objs[args.get('framebuffer')]);
+      currentContext.isFramebuffer(objs[args.get('framebuffer')]);
       break;
     case 'WebGLRenderingContext#isProgram':
-      this.currentContext_.isProgram(objs[args.get('program')]);
+      currentContext.isProgram(objs[args.get('program')]);
       break;
     case 'WebGLRenderingContext#isRenderbuffer':
-      this.currentContext_.isRenderbuffer(objs[args.get('renderbuffer')]);
+      currentContext.isRenderbuffer(objs[args.get('renderbuffer')]);
       break;
     case 'WebGLRenderingContext#isShader':
-      this.currentContext_.isShader(objs[args.get('shader')]);
+      currentContext.isShader(objs[args.get('shader')]);
       break;
     case 'WebGLRenderingContext#isTexture':
-      this.currentContext_.isTexture(objs[args.get('texture')]);
+      currentContext.isTexture(objs[args.get('texture')]);
       break;
     case 'WebGLRenderingContext#lineWidth':
-      this.currentContext_.lineWidth(args.get('width'));
+      currentContext.lineWidth(args.get('width'));
       break;
     case 'WebGLRenderingContext#linkProgram':
       // Do all the attribute bindings, then link.
       var attribMap = args.get('attribs');
       for (var attribName in attribMap) {
-        if (attribMap.hasOwnProperty(attribName)) {
-          this.currentContext_.bindAttribLocation(
-              objs[args.get('program')], attribMap[attribName], attribName);
-        }
+        currentContext.bindAttribLocation(
+            objs[args.get('program')], attribMap[attribName], attribName);
       }
-      this.currentContext_.linkProgram(objs[args.get('program')]);
+      currentContext.linkProgram(objs[args.get('program')]);
       break;
     case 'WebGLRenderingContext#pixelStorei':
-      this.currentContext_.pixelStorei(args.get('pname'), args.get('param'));
+      currentContext.pixelStorei(args.get('pname'), args.get('param'));
       break;
     case 'WebGLRenderingContext#polygonOffset':
-      this.currentContext_.polygonOffset(
+      currentContext.polygonOffset(
           args.get('factor'), args.get('units'));
       break;
     case 'WebGLRenderingContext#readPixels':
-      this.currentContext_.readPixels(args.get('x'), args.get('y'),
+      currentContext.readPixels(args.get('x'), args.get('y'),
           args.get('width'), args.get('height'), args.get('format'),
           args.get('type'), args.get('pixels'));
       break;
     case 'WebGLRenderingContext#renderbufferStorage':
-      this.currentContext_.renderbufferStorage(args.get('target'),
+      currentContext.renderbufferStorage(args.get('target'),
           args.get('internalformat'), args.get('width'), args.get('height'));
       break;
     case 'WebGLRenderingContext#sampleCoverage':
-      this.currentContext_.sampleCoverage(
+      currentContext.sampleCoverage(
           args.get('value'), args.get('invert'));
       break;
     case 'WebGLRenderingContext#scissor':
-      this.currentContext_.scissor(args.get('x'), args.get('y'),
+      currentContext.scissor(args.get('x'), args.get('y'),
           args.get('width'), args.get('height'));
       break;
     case 'WebGLRenderingContext#shaderSource':
-      this.currentContext_.shaderSource(
+      currentContext.shaderSource(
           objs[args.get('shader')], args.get('source'));
       break;
     case 'WebGLRenderingContext#stencilFunc':
-      this.currentContext_.stencilFunc(
+      currentContext.stencilFunc(
           args.get('func'), args.get('ref'), args.get('mask'));
       break;
     case 'WebGLRenderingContext#stencilFuncSeparate':
-      this.currentContext_.stencilFuncSeparate(
+      currentContext.stencilFuncSeparate(
           args.get('face'), args.get('func'), args.get('ref'),
           args.get('mask'));
       break;
     case 'WebGLRenderingContext#stencilMask':
-      this.currentContext_.stencilMask(args.get('mask'));
+      currentContext.stencilMask(args.get('mask'));
       break;
     case 'WebGLRenderingContext#stencilMaskSeparate':
-      this.currentContext_.stencilMaskSeparate(
+      currentContext.stencilMaskSeparate(
           args.get('face'), args.get('mask'));
       break;
     case 'WebGLRenderingContext#stencilOp':
-      this.currentContext_.stencilOp(
+      currentContext.stencilOp(
           args.get('fail'), args.get('zfail'), args.get('zpass'));
       break;
     case 'WebGLRenderingContext#stencilOpSeparate':
-      this.currentContext_.stencilOpSeparate(
+      currentContext.stencilOpSeparate(
           args.get('face'), args.get('fail'), args.get('zfail'),
           args.get('zpass'));
       break;
@@ -771,7 +909,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
       // texImage2D is overloaded.
       var dataType = args.get('dataType');
       if (dataType == 'pixels') {
-        this.currentContext_.texImage2D(
+        currentContext.texImage2D(
             args.get('target'),
             args.get('level'),
             args.get('internalformat'),
@@ -783,7 +921,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
             args.get('pixels')
         );
       } else if (dataType == 'null') {
-        this.currentContext_.texImage2D(
+        currentContext.texImage2D(
             args.get('target'),
             args.get('level'),
             args.get('internalformat'),
@@ -795,7 +933,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
             null
         );
       } else {
-        this.currentContext_.texImage2D(
+        currentContext.texImage2D(
             args.get('target'),
             args.get('level'),
             args.get('internalformat'),
@@ -808,7 +946,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
     case 'WebGLRenderingContext#texSubImage2D':
       var dataType = args.get('dataType');
       if (dataType == 'pixels') {
-        this.currentContext_.texSubImage2D(
+        currentContext.texSubImage2D(
             args.get('target'),
             args.get('level'),
             args.get('xoffset'),
@@ -820,7 +958,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
             args.get('pixels')
         );
       } else if (dataType == 'null') {
-        this.currentContext_.texSubImage2D(
+        currentContext.texSubImage2D(
             args.get('target'),
             args.get('level'),
             args.get('xoffset'),
@@ -832,7 +970,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
             null
         );
       } else {
-        this.currentContext_.texSubImage2D(
+        currentContext.texSubImage2D(
             args.get('target'),
             args.get('level'),
             args.get('xoffset'),
@@ -844,183 +982,169 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function() {
       }
       break;
     case 'WebGLRenderingContext#texParameterf':
+      currentContext.texParameterf(
+          args.get('target'), args.get('pname'), args.get('param'));
+      break;
     case 'WebGLRenderingContext#texParameteri':
-      var nm = this.methodName_();
-      this.currentContext_[nm](
+      currentContext.texParameteri(
           args.get('target'), args.get('pname'), args.get('param'));
       break;
     case 'WebGLRenderingContext#uniform1f':
-      this.currentContext_.uniform1f(
+      currentContext.uniform1f(
           objs[args.get('location')], args.get('x'));
       break;
     case 'WebGLRenderingContext#uniform1fv':
-      this.currentContext_.uniform1fv(
+      currentContext.uniform1fv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform1i':
-      this.currentContext_.uniform1i(
+      currentContext.uniform1i(
           objs[args.get('location')], args.get('x'));
       break;
     case 'WebGLRenderingContext#uniform1iv':
-      this.currentContext_.uniform1iv(
+      currentContext.uniform1iv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform2f':
-      this.currentContext_.uniform2f(
+      currentContext.uniform2f(
           objs[args.get('location')], args.get('x'), args.get('y'));
       break;
     case 'WebGLRenderingContext#uniform2fv':
-      this.currentContext_.uniform2fv(
+      currentContext.uniform2fv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform2i':
-      this.currentContext_.uniform2i(
+      currentContext.uniform2i(
           objs[args.get('location')], args.get('x'), args.get('y'));
       break;
     case 'WebGLRenderingContext#uniform2iv':
-      this.currentContext_.uniform2iv(
+      currentContext.uniform2iv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform3f':
-      this.currentContext_.uniform3f(
+      currentContext.uniform3f(
           objs[args.get('location')], args.get('x'), args.get('y'),
           args.get('z'));
       break;
     case 'WebGLRenderingContext#uniform3fv':
-      this.currentContext_.uniform3fv(
+      currentContext.uniform3fv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform3i':
-      this.currentContext_.uniform3i(
+      currentContext.uniform3i(
           objs[args.get('location')], args.get('x'), args.get('y'),
           args.get('z'));
       break;
     case 'WebGLRenderingContext#uniform3iv':
-      this.currentContext_.uniform3iv(
+      currentContext.uniform3iv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform4f':
-      this.currentContext_.uniform4f(
+      currentContext.uniform4f(
           objs[args.get('location')], args.get('x'), args.get('y'),
           args.get('z'), args.get('w'));
       break;
     case 'WebGLRenderingContext#uniform4fv':
-      this.currentContext_.uniform4fv(
+      currentContext.uniform4fv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniform4i':
-      this.currentContext_.uniform4i(
+      currentContext.uniform4i(
           objs[args.get('location')], args.get('x'), args.get('y'),
           args.get('z'), args.get('w'));
       break;
     case 'WebGLRenderingContext#uniform4iv':
-      this.currentContext_.uniform4iv(
+      currentContext.uniform4iv(
           objs[args.get('location')], args.get('v'));
       break;
     case 'WebGLRenderingContext#uniformMatrix2fv':
+      currentContext.uniformMatrix2fv(
+          objs[args.get('location')], args.get('transpose'), args.get('value'));
+      break;
     case 'WebGLRenderingContext#uniformMatrix3fv':
+      currentContext.uniformMatrix3fv(
+          objs[args.get('location')], args.get('transpose'), args.get('value'));
+      break;
     case 'WebGLRenderingContext#uniformMatrix4fv':
-      var nm = this.methodName_();
-      this.currentContext_[nm](
+      currentContext.uniformMatrix4fv(
           objs[args.get('location')], args.get('transpose'), args.get('value'));
       break;
     case 'WebGLRenderingContext#useProgram':
-      this.currentContext_.useProgram(objs[args.get('program')]);
+      currentContext.useProgram(objs[args.get('program')]);
       break;
     case 'WebGLRenderingContext#validateProgram':
-      var nm = this.methodName_();
-      this.currentContext_[nm](objs[args.get('program')]);
+      currentContext.validateProgram(objs[args.get('program')]);
       break;
     case 'WebGLRenderingContext#vertexAttrib1fv':
+      currentContext.vertexAttrib1fv(args.get('indx'), args.get('values'));
+      break;
     case 'WebGLRenderingContext#vertexAttrib2fv':
+      currentContext.vertexAttrib2fv(args.get('indx'), args.get('values'));
+      break;
     case 'WebGLRenderingContext#vertexAttrib3fv':
+      currentContext.vertexAttrib3fv(args.get('indx'), args.get('values'));
+      break;
     case 'WebGLRenderingContext#vertexAttrib4fv':
-      var nm = this.methodName_();
-      this.currentContext_[nm](
-          args.get('indx'), args.get('values'));
+      currentContext.vertexAttrib4fv(args.get('indx'), args.get('values'));
       break;
     case 'WebGLRenderingContext#vertexAttrib1f':
-      this.currentContext_.vertexAttrib1f(
-          args.get('indx'), args.get('x'));
+      currentContext.vertexAttrib1f(args.get('indx'), args.get('x'));
       break;
     case 'WebGLRenderingContext#vertexAttrib2f':
-      this.currentContext_.vertexAttrib2f(
+      currentContext.vertexAttrib2f(
           args.get('indx'), args.get('x'), args.get('y'));
       break;
     case 'WebGLRenderingContext#vertexAttrib3f':
-      this.currentContext_.vertexAttrib3f(
+      currentContext.vertexAttrib3f(
           args.get('indx'), args.get('x'), args.get('y'), args.get('z'));
       break;
     case 'WebGLRenderingContext#vertexAttrib4f':
-      this.currentContext_.vertexAttrib4f(
+      currentContext.vertexAttrib4f(
           args.get('indx'), args.get('x'), args.get('y'), args.get('z'),
           args.get('w'));
       break;
     case 'WebGLRenderingContext#vertexAttribPointer':
-      this.currentContext_.vertexAttribPointer(args.get('indx'),
+      currentContext.vertexAttribPointer(args.get('indx'),
           args.get('size'), args.get('type'), args.get('normalized'),
           args.get('stride'), args.get('offset'));
       break;
     case 'WebGLRenderingContext#viewport':
-      this.currentContext_.viewport(args.get('x'), args.get('y'),
-          args.get('width'), args.get('height'));
-      break;
-    case 'wtf.timing#frameEnd':
-      this.currentFrame_ += 1;
+      currentContext.viewport(args.get('x'), args.get('y'), args.get('width'),
+          args.get('height'));
       break;
     case 'wtf.webgl#createContext':
       var attributes = args.get('attributes');
       // Assume that the context is webgl for now.
-      this.currentContext_ =
+      currentContext =
           contextPool.getContext('webgl', attributes) ||
           contextPool.getContext('experimental-webgl', attributes);
-      this.contexts_[args.get('handle')] = this.currentContext_;
-      // TODO(chizeng): Fire an event indicating a new context was made.
+      this.contexts_[args.get('handle')] = currentContext;
+      this.currentContext_ = currentContext;
+      this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
+          currentContext);
       break;
     case 'wtf.webgl#setContext':
       var contextHandle = args.get('handle');
       var height = args.get('height');
       var width = args.get('width');
-      this.currentContext_ = this.contexts_[contextHandle];
-      this.currentContext_.canvas.height = height;
-      this.currentContext_.canvas.width = width;
-      this.currentContext_.viewport(0, 0, width, height);
-      // TODO(chizeng): Fire an event indicating a new context was set.
+      currentContext = this.contexts_[contextHandle];
+      currentContext.canvas.height = height;
+      currentContext.canvas.width = width;
+      currentContext.viewport(0, 0, width, height);
+      this.currentContext_ = currentContext;
+      this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_SET,
+          currentContext);
       break;
   }
-  this.currentEvent_.next();
 };
 
 
 /**
  * Stores the context of a canvas-related object as a property of that object.
- * @param {!Object} obj The object to remember the context of.
+ * @param {!Object} obj The object to set the context of.
  * @param {!WebGLRenderingContext} ctx The context of the object.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.rememberContext_ = function(obj, ctx) {
-  obj[wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME] = ctx;
-};
-
-
-/**
- * Seeks to the beginning event of a certain frame. After this function, the
- * current frame will have number |frameID|, and the current event will be the
- * beginning event of that frame. That event will not yet have been realized.
- * @param {number} frameID ID of the frame to seek.
- */
-wtf.replay.graphics.Playback.prototype.seekFrame = function(frameID) {
-  // If backwards seek in progress, record new frame target, seek it later.
-  this.targetFrame_ = frameID;
-  if (!this.backwardsSeek_) {
-    this.clearRequests_();
-    // If forward seek, go forward.
-    if (frameID > this.currentFrame_) {
-      while (frameID > this.currentFrame_) {
-        this.realizeEvent_();
-      }
-    } else if (frameID < this.currentFrame_) {
-      // TODO(chizeng): Do a backwards seek.
-    }
-  }
+wtf.replay.graphics.Playback.prototype.setOwningContext_ = function(obj, ctx) {
+  obj[wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME_] = ctx;
 };
