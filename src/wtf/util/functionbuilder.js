@@ -148,10 +148,11 @@ wtf.util.FunctionBuilder.prototype.end = function(name) {
   var combinedSource = this.currentSource_.join('\n');
 
   // Build closure wrapper.
+  var cleanName = name.replace(/[^a-zA-Z_]/g, '_');
   var sourceUrl = name.replace(/#/g, '/');
   var creator = new Function(this.currentScopeVariableNames_, [
     '"use strict";',
-    'return function(' + this.currentArgs_.join(', ') + ') {',
+    'return function ' + cleanName + '(' + this.currentArgs_.join(', ') + ') {',
     combinedSource,
     '};',
     '//# sourceURL=x://wtf/' + sourceUrl

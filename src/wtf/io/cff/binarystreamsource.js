@@ -28,8 +28,8 @@ goog.require('wtf.io.cff.PartType');
 goog.require('wtf.io.cff.StreamSource');
 goog.require('wtf.io.cff.chunks.EventDataChunk');
 goog.require('wtf.io.cff.chunks.FileHeaderChunk');
-goog.require('wtf.io.cff.parts.BinaryEventBufferPart');
 goog.require('wtf.io.cff.parts.FileHeaderPart');
+goog.require('wtf.io.cff.parts.LegacyEventBufferPart');
 goog.require('wtf.version');
 
 
@@ -170,35 +170,30 @@ wtf.io.cff.BinaryStreamSource.prototype.parseHeader_ = function(data) {
     throw new Error('Invalid file magic header/header too small.');
   }
 
-  var header = new wtf.io.Buffer(
-      data.byteLength, undefined, new Uint8Array(data));
-  var magicValue = header.readUint32();
-  if (magicValue != 0xDEADBEEF) {
-    throw new Error('File magic bytes mismatch.');
-  }
+  var header = new Uint32Array(data, 0, HEADER_LENGTH);
+  var magicValue = header[0];
+  if (magicValue == 0xEFBEADDE) {
+    // Legacy file format in big-endian.
+    return this.parseLegacyHeader_(data);
+  } else if (magicValue == 0xDEADBEEF) {
+    // Modern file format in little-endian.
+    var wtfVersion = header[1];
+    if (wtfVersion > wtf.version.getValue()) {
+      // Data is from a newer version. Unsupported.
+      throw new Error('Data is from a newer version of WTF. Unable to parse.');
+    }
 
-  var wtfVersion = header.readUint32();
-  if (wtfVersion > wtf.version.getValue()) {
-    // Data is from a newer version. Unsupported.
-    throw new Error('Data is from a newer version of WTF. Unable to parse.');
-  }
+    // We support the old format and the new chunked file format.
+    var fileVersion = header[2];
+    if (fileVersion != wtf.data.formats.ChunkedFileFormat.VERSION) {
+      // Don't support any other versions right now.
+      throw new Error('Data version ' + fileVersion + ' not supported.');
+    }
+    this.hasReadHeader_ = true;
 
-  // We support the old format and the new chunked file format.
-  var fileVersion = header.readUint32();
-  if (fileVersion == wtf.data.formats.BinaryTrace.VERSION) {
-    // Legacy file format.
-    this.legacyFormat_ = true;
-  } else if (fileVersion != wtf.data.formats.ChunkedFileFormat.VERSION) {
-    // Don't support any other versions right now.
-    throw new Error('Data version ' + fileVersion + ' not supported.');
-  }
-  this.hasReadHeader_ = true;
-
-  // If needed, parse the legacy header chunk.
-  if (this.legacyFormat_) {
-    return this.parseLegacyHeader_(data, HEADER_LENGTH);
-  } else {
     return HEADER_LENGTH;
+  } else {
+    throw new Error('File magic bytes mismatch.');
   }
 };
 
@@ -207,21 +202,35 @@ wtf.io.cff.BinaryStreamSource.prototype.parseHeader_ = function(data) {
  * Parses legacy header data from a blob.
  * Throws eerors on failure.
  * @param {!ArrayBuffer} data Binary buffer.
- * @param {number} o Offset in the buffer.
  * @return {number} New data offset after the header.
  * @private
  */
-wtf.io.cff.BinaryStreamSource.prototype.parseLegacyHeader_ = function(data, o) {
+wtf.io.cff.BinaryStreamSource.prototype.parseLegacyHeader_ = function(data) {
   // Switches us into a mode where we have to handle legacy features.
   this.legacyFormat_ = true;
 
-  // Wrap in a buffer.
   var buffer = new wtf.io.Buffer(
       data.byteLength, undefined, new Uint8Array(data));
-  buffer.offset = o;
+  var magicValue = buffer.readUint32();
+  if (magicValue != 0xDEADBEEF) {
+    throw new Error('File magic bytes mismatch.');
+  }
+
+  var wtfVersion = buffer.readUint32();
+  if (wtfVersion > wtf.version.getValue()) {
+    // Data is from a newer version. Unsupported.
+    throw new Error('Data is from a newer version of WTF. Unable to parse.');
+  }
+
+  // We support the old format and the new chunked file format.
+  var fileVersion = buffer.readUint32();
+  if (fileVersion != wtf.data.formats.BinaryTrace.VERSION) {
+    throw new Error('Legacy data version ' + fileVersion + ' not supported.');
+  }
+  this.hasReadHeader_ = true;
 
   // Read context information.
-  var contextInfo = wtf.data.ContextInfo.parse(buffer);
+  var contextInfo = this.parseLegacyContextInfo_(buffer);
   if (!contextInfo) {
     // Bad context info or unknown context.
     throw new Error('Invalid context information.');
@@ -263,6 +272,26 @@ wtf.io.cff.BinaryStreamSource.prototype.parseLegacyHeader_ = function(data, o) {
 
 
 /**
+ * Parses context information from the given buffer.
+ * The appropriate subclass type will be returned.
+ * @param {!wtf.io.Buffer} buffer Source buffer.
+ * @return {wtf.data.ContextInfo} Parsed context information.
+ */
+wtf.io.cff.BinaryStreamSource.prototype.parseLegacyContextInfo_ =
+    function(buffer) {
+  var jsonString = buffer.readUtf8String();
+  if (!jsonString) {
+    return null;
+  }
+  var json = /** @type {Object} */ (goog.global.JSON.parse(jsonString));
+  if (!json) {
+    return null;
+  }
+  return wtf.data.ContextInfo.parse(json);
+};
+
+
+/**
  * Parses legacy chunk data from a blob.
  * Throws errors on failure.
  * @param {!wtf.io.ByteArray} data Binary buffer.
@@ -271,7 +300,7 @@ wtf.io.cff.BinaryStreamSource.prototype.parseLegacyHeader_ = function(data, o) {
 wtf.io.cff.BinaryStreamSource.prototype.parseLegacyChunk_ = function(data) {
   // Create the buffer containing all the data.
   var buffer = new wtf.io.Buffer(data.byteLength, undefined, data);
-  var part = new wtf.io.cff.parts.BinaryEventBufferPart(buffer);
+  var part = new wtf.io.cff.parts.LegacyEventBufferPart(buffer);
 
   // Queue the chunk and process.
   var chunk = new wtf.io.cff.chunks.EventDataChunk(1);
@@ -293,22 +322,21 @@ wtf.io.cff.BinaryStreamSource.prototype.parseLegacyChunk_ = function(data) {
  * @private
  */
 wtf.io.cff.BinaryStreamSource.prototype.parseChunk_ = function(data, o) {
-  if (data.byteLength - o < 6 * 4) {
+  var HEADER_LENGTH = 6 * 4;
+  if (data.byteLength - o < HEADER_LENGTH) {
     throw new Error('Chunk header too small.');
   }
 
-  var header = new wtf.io.Buffer(
-      data.byteLength, undefined, new Uint8Array(data));
-  header.offset = o;
-  var chunkId = header.readUint32();
-  var chunkType = wtf.io.cff.ChunkType.fromInteger(header.readUint32());
-  var chunkLength = header.readUint32();
-  var startTime = header.readUint32();
-  var endTime = header.readUint32();
-  var partCount = header.readUint32();
+  var header = new Uint32Array(data, o);
+  var chunkId = header[0];
+  var chunkType = wtf.io.cff.ChunkType.fromInteger(header[1]);
+  var chunkLength = header[2];
+  var startTime = header[3];
+  var endTime = header[4];
+  var partCount = header[5];
 
-  var headerByteLength = (6 + partCount * 3) * 4;
-  if (chunkLength < 6 + partCount * 3) {
+  var headerByteLength = HEADER_LENGTH + (partCount * 3) * 4;
+  if (chunkLength < headerByteLength) {
     throw new Error('Chunk header missing part lengths.');
   }
 
@@ -338,10 +366,11 @@ wtf.io.cff.BinaryStreamSource.prototype.parseChunk_ = function(data, o) {
   // Create parts.
   var waiters = [];
   var recognizedParts = [];
-  for (var n = 0; n < partCount; n++) {
-    var partType = header.readUint32();
-    var partOffset = header.readUint32();
-    var partLength = header.readUint32();
+  var oi = HEADER_LENGTH / 4;
+  for (var n = 0; n < partCount; n++, oi += 3) {
+    var partType = header[oi + 0];
+    var partOffset = header[oi + 1];
+    var partLength = header[oi + 2];
     var partData = new Uint8Array(
         data, o + headerByteLength + partOffset, partLength);
     var part = this.parsePart_(partType, partData, waiters);

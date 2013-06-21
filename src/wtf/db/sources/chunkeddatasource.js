@@ -21,11 +21,10 @@ goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
 goog.require('wtf.db.TimeRange');
 goog.require('wtf.db.Unit');
+goog.require('wtf.io.BufferView');
 goog.require('wtf.io.cff.ChunkType');
 goog.require('wtf.io.cff.PartType');
 goog.require('wtf.io.cff.StreamSource');
-goog.require('wtf.io.cff.parts.BinaryEventBufferPart');
-goog.require('wtf.io.cff.parts.JsonEventBufferPart');
 
 
 
@@ -155,6 +154,10 @@ wtf.db.sources.ChunkedDataSource.prototype.streamEnded_ = function() {
  * @private
  */
 wtf.db.sources.ChunkedDataSource.prototype.chunkReceived_ = function(chunk) {
+  if (this.hasErrored) {
+    return;
+  }
+
   var db = this.getDatabase();
   switch (chunk.getType()) {
     case wtf.io.cff.ChunkType.FILE_HEADER:
@@ -167,11 +170,17 @@ wtf.db.sources.ChunkedDataSource.prototype.chunkReceived_ = function(chunk) {
       var part = eventDataChunk.getEventData();
       goog.asserts.assert(part);
       switch (part.getType()) {
-        case wtf.io.cff.PartType.JSON_EVENT_BUFFER:
-          this.processJsonEventDataChunk_(eventDataChunk);
+        case wtf.io.cff.PartType.LEGACY_EVENT_BUFFER:
+          this.processLegacyEventBuffer_(
+              /** @type {!wtf.io.cff.parts.LegacyEventBufferPart} */ (part));
           break;
         case wtf.io.cff.PartType.BINARY_EVENT_BUFFER:
-          this.processBinaryEventDataChunk_(eventDataChunk);
+          this.processBinaryEventBuffer_(
+              /** @type {!wtf.io.cff.parts.BinaryEventBufferPart} */ (part));
+          break;
+        case wtf.io.cff.PartType.JSON_EVENT_BUFFER:
+          this.processJsonEventBuffer_(
+              /** @type {!wtf.io.cff.parts.JsonEventBufferPart} */ (part));
           break;
         default:
           this.error(
@@ -211,30 +220,6 @@ wtf.db.sources.ChunkedDataSource.prototype.processFileHeaderChunk_ =
         'Unable to initialize data source',
         'File corrupt or invalid.');
     return;
-  }
-};
-
-
-/**
- * Processes incoming event data chunks in JSON format.
- * @param {!wtf.io.cff.chunks.EventDataChunk} chunk Chunk.
- * @private
- */
-wtf.db.sources.ChunkedDataSource.prototype.processJsonEventDataChunk_ =
-    function(chunk) {
-  var db = this.getDatabase();
-
-  // TODO(benvanik): get resources.
-
-  // Grab the event data buffer.
-  var part = chunk.getEventData();
-  goog.asserts.assert(part instanceof wtf.io.cff.parts.JsonEventBufferPart);
-  var buffer = part.getValue();
-  goog.asserts.assert(buffer);
-
-  for (var n = 0; n < buffer.length; n++) {
-    var entry = buffer[n];
-    // TODO(benvanik): reimplement JSON event parsing.
   }
 };
 
@@ -307,18 +292,84 @@ wtf.db.sources.ChunkedDataSource.prototype.setupBinaryDispatchTable_ =
 
 /**
  * Processes incoming event data chunks in binary format.
- * @param {!wtf.io.cff.chunks.EventDataChunk} chunk Chunk.
+ * @param {!wtf.io.cff.parts.BinaryEventBufferPart} part Part.
  * @private
  */
-wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
-    function(chunk) {
+wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventBuffer_ =
+    function(part) {
   var db = this.getDatabase();
 
   // TODO(benvanik): get resources.
 
   // Grab the event data buffer.
-  var part = chunk.getEventData();
-  goog.asserts.assert(part instanceof wtf.io.cff.parts.BinaryEventBufferPart);
+  var bufferView = part.getValue();
+  goog.asserts.assert(bufferView);
+
+  // Read all events from the buffer.
+  var successful = true;
+  var uint32Array = bufferView['uint32Array'];
+  var eventWireTable = this.eventWireTable_;
+  var offset = 0;
+  var capacity = wtf.io.BufferView.getCapacity(bufferView) >> 2;
+  wtf.io.BufferView.setOffset(bufferView, 0);
+  while (offset < capacity) {
+    // Read common event header.
+    var eventWireId = uint32Array[offset + 0];
+    var time = uint32Array[offset + 1];
+    offset += 2;
+
+    // Lookup event.
+    var eventType = eventWireTable[eventWireId];
+    if (!eventType) {
+      successful = false;
+      this.error(
+          'Undefined event type',
+          'The file tried to reference an event it didn\'t define. Perhaps ' +
+          'it\'s corrupted?');
+      break;
+    }
+
+    // Parse argument data, if it exists.
+    var args = null;
+    if (eventType.parseBinaryArguments) {
+      wtf.io.BufferView.setOffset(bufferView, offset << 2);
+      args = new wtf.db.ArgumentData(
+          eventType.parseBinaryArguments(bufferView));
+      offset = wtf.io.BufferView.getOffset(bufferView) >> 2;
+    }
+
+    // Handle built-in events.
+    var insertEvent = true;
+    if (eventType.flags & wtf.data.EventFlag.BUILTIN) {
+      var dispatchFn = this.binaryDispatch_[eventType.name];
+      if (dispatchFn) {
+        insertEvent = dispatchFn.call(this, eventType, args);
+      }
+    }
+
+    if (insertEvent) {
+      var eventList = this.currentZone_.getEventList();
+      eventList.insert(
+          eventType,
+          Math.max(0, time + this.getTimeDelay()),
+          args);
+    }
+  }
+};
+
+
+/**
+ * Processes incoming event data chunks in the legacy binary format.
+ * @param {!wtf.io.cff.parts.LegacyEventBufferPart} part Part.
+ * @private
+ */
+wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
+    function(part) {
+  var db = this.getDatabase();
+
+  // TODO(benvanik): get resources.
+
+  // Grab the event data buffer.
   var buffer = part.getValue();
   goog.asserts.assert(buffer);
   buffer.offset = 0;
@@ -351,15 +402,11 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
 
     // Parse argument data, if it exists.
     var args = null;
-    if (eventType.parseBinaryArguments) {
-      args = new wtf.db.ArgumentData(eventType.parseBinaryArguments(buffer));
+    if (eventType.parseLegacyArguments) {
+      args = new wtf.db.ArgumentData(eventType.parseLegacyArguments(buffer));
     }
 
     // Handle built-in events.
-    // TODO(benvanik): something much more efficient for builtins.
-    // Should be simple: snoop event defines to setup a wire ID-based dispatch
-    // table instead of an event name one. The array lookup should be much
-    // better than the string variant.
     var insertEvent = true;
     if (eventType.flags & wtf.data.EventFlag.BUILTIN) {
       var dispatchFn = this.binaryDispatch_[eventType.name];
@@ -375,5 +422,27 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventDataChunk_ =
           Math.max(0, time + this.getTimeDelay()),
           args);
     }
+  }
+};
+
+
+/**
+ * Processes incoming event data chunks in JSON format.
+ * @param {!wtf.io.cff.parts.JsonEventBufferPart} part Part.
+ * @private
+ */
+wtf.db.sources.ChunkedDataSource.prototype.processJsonEventBuffer_ =
+    function(part) {
+  var db = this.getDatabase();
+
+  // TODO(benvanik): get resources.
+
+  // Grab the event data buffer.
+  var buffer = part.getValue();
+  goog.asserts.assert(buffer);
+
+  for (var n = 0; n < buffer.length; n++) {
+    var entry = buffer[n];
+    // TODO(benvanik): reimplement JSON event parsing.
   }
 };

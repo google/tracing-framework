@@ -154,7 +154,7 @@ wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
           contentSources[n], contentTypes[n], blob));
     } else {
       sourceInfos.push(new wtf.db.UrlDataSourceInfo(
-          contentUrls[n], contentTypes[n]));
+          contentSources[n], contentTypes[n], contentUrls[n]));
     }
   }
 
@@ -260,7 +260,8 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
         // TODO(benvanik): log errors?
         this.loadFailed_(
             'Unable to load files',
-            'An error occurred while trying to fetch a file from Drive.');
+            'An error occurred while trying to fetch a file from Drive.',
+            true);
         return;
       }
 
@@ -297,7 +298,7 @@ wtf.app.ui.Loader.prototype.loadUrls = function(urls) {
     var url = urls[n];
     var contentType = this.inferContentType_(url);
     sourceInfos.push(new wtf.db.UrlDataSourceInfo(
-        url, contentType));
+        url, contentType, url));
   }
   this.loadDataSources_(sourceInfos);
 };
@@ -366,7 +367,8 @@ wtf.app.ui.Loader.prototype.loadDataSources_ = function(
         function(args) {
           this.loadFailed_(
               'Unable to load snapshot',
-              'Source files could not be fetched.');
+              'Source files could not be fetched.',
+              false);
         }, this);
   }, this);
 };
@@ -438,17 +440,20 @@ wtf.app.ui.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
  * Handles load failures.
  * @param {string} title Error title.
  * @param {string} message Error message/details.
+ * @param {boolean} showDialog Whether to show the error dialog.
  * @private
  */
-wtf.app.ui.Loader.prototype.loadFailed_ = function(title, message) {
+wtf.app.ui.Loader.prototype.loadFailed_ = function(title, message, showDialog) {
   _gaq.push(['_trackEvent', 'app', 'load_failed', title]);
 
   // Close the progress dialog.
   goog.dispose(this.progressDialog_);
   this.progressDialog_ = null;
 
-  // Let them know we failed.
-  wtf.ui.ErrorDialog.show(title, message, this.dom_);
+  if (showDialog) {
+    // Let them know we failed.
+    wtf.ui.ErrorDialog.show(title, message, this.dom_);
+  }
 };
 
 
@@ -505,7 +510,7 @@ wtf.app.ui.Loader.Entry_ = function(sourceInfo) {
         }, this);
   } else if (sourceInfo instanceof wtf.db.UrlDataSourceInfo) {
     // Simple URL (or blob URL) transport.
-    var transport = new wtf.io.transports.XhrReadTransport(sourceInfo.filename);
+    var transport = new wtf.io.transports.XhrReadTransport(sourceInfo.url);
     this.transportDeferred_.callback(transport);
   } else {
     throw new Error('Unknown data source type.');

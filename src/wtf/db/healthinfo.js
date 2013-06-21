@@ -207,7 +207,7 @@ wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(db, table) {
   var overheadPerNow = 0;
   if (sources.length) {
     var metadata = sources[0].getMetadata();
-    overheadPerNow = metadata['now_time_ns'] || 0;
+    overheadPerNow = metadata['nowTimeNs'] || 0;
   }
   if (overheadPerNow) {
     // Value was present - use it to compute the timings.

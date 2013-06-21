@@ -202,13 +202,13 @@ The file header is encoded in JSON.
 
 TODO
 
-### Part Type 0x20001/binary_event_buffer: Binary-format Event Buffer
+### Part Type 0x20002/binary_event_buffer: Binary-format Event Buffer
 
 Each event data entry shares a standard header followed by a variable number
 of bytes containing the event-specific arguments:
 
 ```
-2b  event wire ID
+4b  event wire ID
 4b  time/value
 *   argument data, if any
 ```
