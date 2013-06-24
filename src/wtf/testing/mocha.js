@@ -38,25 +38,13 @@ wtf.testing.mocha.setup_ = function() {
    * @param {!wtf.io.ByteArray} b Second array.
    */
   assert.arraysEqual = function(a, b) {
-    assert.lengthOf(a, b.length, 'byte arrays differ in length');
+    if (a.length != b.length) {
+      assert.fail(a, b, 'byte arrays differ in length');
+      return;
+    }
     for (var n = 0; n < a.length; n++) {
       if (a[n] != b[n]) {
         assert.fail(a, b, 'byte arrays differ');
-        return;
-      }
-    }
-  };
-
-  /**
-   * Asserts that an array has the given prefix.
-   * @param {!wtf.io.ByteArray} a First array.
-   * @param {!wtf.io.ByteArray} prefix Second array that is the prefix.
-   */
-  assert.arrayPrefix = function(a, prefix) {
-    assert(a <= prefix, 'Target array must be at least as large as the prefix');
-    for (var n = 0; n < prefix.length; n++) {
-      if (a[n] != prefix[n]) {
-        assert.fail(a[n], prefix[n], 'byte arrays differ');
         return;
       }
     }
@@ -117,6 +105,54 @@ wtf.testing.mocha.setup_ = function() {
     target.addListener(eventType, handler);
     return function() {
       target.removeListener(eventType, handler);
+    };
+  };
+
+  /**
+   * Asserts that a sequence of events is called in order and allows for
+   * staged validation.
+   * <code>
+   * assert.expectEventSequence(obj, [
+   *   ['MY_EVENT_1', function() { assert.isTrue(obj.foo); }],
+   *   ['MY_EVENT_2', function() { assert.isTrue(obj.foo); }],
+   *   ['MY_EVENT_1', function() { assert.isTrue(obj.foo); }]
+   * ]);
+   * </code>
+   * @param {!wtf.events.EventEmitter} target Event emitter.
+   * @param {!Array.<!Array>} sequence A list of (event name, callback) tuples.
+   */
+  assert.expectEventSequence = function(target, sequence) {
+    // Gather events.
+    var eventList = [];
+    var callbackList = [];
+    var allEventTypes = {};
+    for (var n = 0; n < sequence.length; n++) {
+      var eventType = sequence[n][0];
+      var callback = sequence[n][1];
+      eventList.push(eventType);
+      callbackList.push(callback);
+      allEventTypes[eventType] = true;
+    }
+    for (var eventType in allEventTypes) {
+      target.addListener(eventType, goog.partial(handler, eventType));
+    }
+
+    var index = 0;
+    function handler(eventType) {
+      if (eventType != eventList[index]) {
+        assert.fail('Event ' + eventType + ' called when ' +
+            eventList[index] + ' was expected');
+        return;
+      }
+      if (index >= eventList.length) {
+        assert.fail('Too many events called');
+        return;
+      }
+
+      var args = Array.prototype.slice.call(arguments, 1);
+      callbackList[index].apply(null, args);
+
+      index++;
     };
   };
 };

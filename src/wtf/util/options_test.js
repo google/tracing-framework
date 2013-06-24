@@ -507,4 +507,22 @@ wtf.util.Options_test = suite('wtf.util.Options', function() {
     check();
     assert.deepEqual(options.getValues(), {a: [2]});
   });
+
+  test('changeSequence', function() {
+    var options = new wtf.util.Options();
+    assert.expectEventSequence(options, [
+      [wtf.util.Options.EventType.CHANGED, function() {
+        assert.deepEqual(options.getValues(), {'a': [1]});
+      }],
+      [wtf.util.Options.EventType.CHANGED, function() {
+        assert.deepEqual(options.getValues(), {});
+      }],
+      [wtf.util.Options.EventType.CHANGED, function() {
+        assert.deepEqual(options.getValues(), {'b': true});
+      }],
+    ]);
+    options.addArrayValue('a', 1);
+    options.clear();
+    options.setBoolean('b', true);
+  });
 });

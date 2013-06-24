@@ -116,9 +116,9 @@ wtf.events.EventEmitter.prototype.removeListener = function(
 wtf.events.EventEmitter.prototype.listenOnce = function(
     eventType, callback, opt_scope) {
   var self = this;
-  var newCallback = function() {
+  var newCallback = function(var_args) {
     try {
-      callback.apply(opt_scope);
+      callback.apply(opt_scope, arguments);
     } finally {
       self.removeListener(eventType, newCallback);
     }
