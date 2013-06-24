@@ -13,7 +13,6 @@
 
 goog.provide('wtf.replay.timeTravel.ReplaySession');
 
-goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.dom');
@@ -21,9 +20,17 @@ goog.require('goog.style');
 goog.require('wtf.data.webidl');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.EventIterator');
+goog.require('wtf.db.UrlDataSourceInfo');
+goog.require('wtf.db.sources.ChunkedDataSource');
+goog.require('wtf.events.EventEmitter');
+goog.require('wtf.io.ReadTransport');
+goog.require('wtf.io.cff.BinaryStreamSource');
+goog.require('wtf.io.transports.XhrReadTransport');
 goog.require('wtf.math.MersenneTwister');
 goog.require('wtf.replay.timeTravel.Controller');
+goog.require('wtf.ui.Dialog');
 goog.require('wtf.ui.ErrorDialog');
+goog.require('wtf.ui.ProgressDialog');
 goog.require('wtf.util');
 goog.require('wtf.util.Options');
 
@@ -90,16 +97,18 @@ wtf.replay.timeTravel.ReplaySession = function(databasePath, opt_options) {
   this.loadDeferred_ = null;
 
   // TODO(benvanik): remove UI from core bits?
+  var body = this.dom_.getDocument().body;
+  goog.asserts.assert(body);
   /**
    * Popup controller UI.
    * @type {!wtf.replay.timeTravel.Controller}
    * @private
    */
   this.controller_ = new wtf.replay.timeTravel.Controller(
-      this.dom_.getDocument().body, this.dom_);
+      body, this.dom_);
   this.registerDisposable(this.controller_);
 };
-goog.inherits(wtf.replay.timeTravel.ReplaySession, goog.Disposable);
+goog.inherits(wtf.replay.timeTravel.ReplaySession, wtf.events.EventEmitter);
 
 
 /**
@@ -108,7 +117,9 @@ goog.inherits(wtf.replay.timeTravel.ReplaySession, goog.Disposable);
  * @return {!Window} Global object.
  */
 wtf.replay.timeTravel.ReplaySession.prototype.getPageGlobal = function() {
-  return goog.global.opener;
+  var opener = goog.global.opener;
+  goog.asserts.assert(opener);
+  return opener;
 };
 
 
@@ -147,32 +158,53 @@ wtf.replay.timeTravel.ReplaySession.prototype.prepareFirstUse = function() {
     throw new Error('Attempting to prepare an existing session for first use.');
   }
 
-  var deferred = new goog.async.Deferred();
-  this.loadDeferred_ = deferred;
+  this.loadDeferred_ = new goog.async.Deferred();
 
-  // TODO(benvanik): use progress dialog once the cff branch is merged in.
+  // Create the data source.
+  var sourceInfo = new wtf.db.UrlDataSourceInfo(
+      this.databasePath_, '', this.databasePath_);
+  var transport = new wtf.io.transports.XhrReadTransport(this.databasePath_);
+  var streamSource = new wtf.io.cff.BinaryStreamSource(transport);
+  var dataSource = new wtf.db.sources.ChunkedDataSource(
+      db, sourceInfo, streamSource);
+  db.addSource(dataSource);
 
-  // Start loading the database. That's all we can really do right now.
-  var xhr = new XMLHttpRequest();
-  xhr.onload = function() {
-    db.addBinarySource(new Uint8Array(xhr.response));
-    deferred.callback();
-  };
-  xhr.onerror = function() {
-    deferred.errback(new Error('Unable to fetch database: ' + xhr.statusText));
-  };
-  xhr.responseType = 'arraybuffer';
-  xhr.open('GET', this.databasePath_, true);
-  xhr.send();
+  // Show the loading dialog.
+  // Don't registerDisposable it so that we don't leak it.
+  var body = this.dom_.getDocument().body;
+  goog.asserts.assert(body);
+  var progressDialog = new wtf.ui.ProgressDialog(
+      body, 'Loading traces...', this.dom_);
+  var task = new wtf.ui.ProgressDialog.Task(this.databasePath_);
+  // Listen for transport progress events to update the task.
+  transport.addListener(wtf.io.ReadTransport.EventType.PROGRESS,
+      function(loaded, total) {
+        task.setProgress(loaded, total);
+      }, this);
+  transport.addListener(wtf.io.ReadTransport.EventType.END, function() {
+    // Switch into 'processing' mode.
+    task.setStyle(wtf.ui.ProgressDialog.TaskStyle.SECONDARY);
+  }, this);
+  progressDialog.addTask(task);
+  progressDialog.center();
+
+  // Wait until the dialog is displayed.
+  progressDialog.addListener(wtf.ui.Dialog.EventType.OPENED, function() {
+    dataSource.start().chainDeferred(this.loadDeferred_);
+  }, this);
 
   // Note: we track this in a deferred in case the load takes multiple stages.
   this.loadDeferred_.addCallbacks(
       function() {
-        // Load completed.
-        // Reload the parent page now.
-        goog.global.opener.location.reload();
+        progressDialog.close(function() {
+          // Load completed.
+          // Reload the parent page now.
+          this.getPageGlobal().location.reload();
+        }, this);
       },
       function(e) {
+        goog.dispose(progressDialog);
+
         // Failed to load. That's not good.
         wtf.ui.ErrorDialog.show(
             'Unable to load trace.',
@@ -191,8 +223,7 @@ wtf.replay.timeTravel.ReplaySession.prototype.prepareReuse = function() {
   goog.asserts.assert(this.loadDeferred_);
   goog.asserts.assert(this.loadDeferred_.hasFired());
   if (!this.loadDeferred_ ||
-      !this.loadDeferred_.hasFired() ||
-      this.loadDeferred_.isError()) {
+      !this.loadDeferred_.hasFired()) {
     throw new Error('Attempting to reuse an unprepared session.');
   }
 
@@ -276,7 +307,7 @@ wtf.replay.timeTravel.ReplaySession.prototype.initializeRandom_ = function() {
       disableRandom = true;
     } else {
       // Found (at least one). Use the first.
-      seed = it.getArgument('value');
+      seed = Number(it.getArgument('value'));
     }
   }
 

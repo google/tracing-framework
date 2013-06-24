@@ -239,7 +239,8 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
       // This call will kick off a bunch of API calls to get file metadata/etc.
       goog.result.wait(wtf.io.drive.queryFile(fileId), function(result) {
         remaining--;
-        var driveFile = result.getValue();
+        var driveFile =
+            /** @type {wtf.io.drive.DriveFile} */ (result.getValue());
         if (driveFile) {
           sourceInfos.push(new wtf.db.DriveDataSourceInfo(
               driveFile.filename, contentType, fileId, driveFile));
@@ -502,10 +503,13 @@ wtf.app.ui.Loader.Entry_ = function(sourceInfo) {
     this.transportDeferred_.callback(transport);
   } else if (sourceInfo instanceof wtf.db.DriveDataSourceInfo) {
     // Drive URL - need to make some drive calls first.
-    goog.result.wait(wtf.io.drive.downloadFile(sourceInfo.driveFile),
+    var driveFile = sourceInfo.driveFile;
+    goog.asserts.assert(driveFile);
+    goog.result.wait(wtf.io.drive.downloadFile(driveFile),
         function(result) {
           var transport = new wtf.io.transports.XhrReadTransport(
-              sourceInfo.filename, result.getValue());
+              sourceInfo.filename,
+              /** @type {!XMLHttpRequest} */ (result.getValue()));
           this.transportDeferred_.callback(transport);
         }, this);
   } else if (sourceInfo instanceof wtf.db.UrlDataSourceInfo) {
