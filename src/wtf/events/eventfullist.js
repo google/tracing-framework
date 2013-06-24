@@ -184,9 +184,10 @@ wtf.events.EventfulList.prototype.binarySearch = goog.abstractMethod;
 
 /**
  * Iterates over all values in the list.
- * @param {function(wtf.events.ListValueType):(boolean|undefined)}
+ * @param {function(this: T, wtf.events.ListValueType):(boolean|undefined)}
  *     callback Function to receive the value. Return false to abort iteration.
- * @param {Object=} opt_scope Scope to call the callback in.
+ * @param {T=} opt_scope Scope to call the callback in.
+ * @template T
  */
 wtf.events.EventfulList.prototype.forEach = goog.abstractMethod;
 
