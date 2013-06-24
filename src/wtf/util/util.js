@@ -267,6 +267,17 @@ wtf.util.findElementByXPath = function(path, opt_document) {
 };
 
 
+/**
+ * Creates and returns a URL from a blob.
+ * @param {!Blob} A blob of data.
+ * @return {string} A URL for the blob.
+ */
+wtf.util.getBlobUrl = function(blob) {
+  var urlCreationObject = goog.global['URL'] || goog.global['webkitURL'];
+  return urlCreationObject.createObjectURL(blob);
+}
+
+
 goog.exportSymbol(
     'wtf.util.formatTime',
     wtf.util.formatTime);
