@@ -523,11 +523,13 @@ wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
       // Download directly.
       platform.writeBinaryFile(
           filename,
-          wtf.io.Blob.toNative(sourceInfo.blob),
+          /** @type {!Blob} */ (wtf.io.Blob.toNative(sourceInfo.blob)),
           sourceInfo.contentType);
     } else if (sourceInfo instanceof wtf.db.DriveDataSourceInfo) {
       // Drive fetch the target.
-      goog.result.wait(wtf.io.drive.downloadFile(sourceInfo.driveFile),
+      var driveFile = sourceInfo.driveFile;
+      goog.asserts.assert(driveFile);
+      goog.result.wait(wtf.io.drive.downloadFile(driveFile),
           goog.partial(sendXhrDownload, filename, sourceInfo.contentType),
           this);
     } else if (sourceInfo instanceof wtf.db.UrlDataSourceInfo) {

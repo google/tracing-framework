@@ -82,7 +82,8 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.update = function(
   var allRows = [];
   table.forEach(function(entry) {
     // Ignore system events.
-    if (entry.eventType.flags & wtf.data.EventFlag.INTERNAL) {
+    var eventType = entry.getEventType();
+    if (eventType.flags & wtf.data.EventFlag.INTERNAL) {
       return;
     }
 
