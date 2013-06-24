@@ -107,9 +107,7 @@
 
     // Sort test names.
     // TODO(benvanik): sort by namespaces?
-    names.sort(function(a, b) {
-      return a < b;
-    });
+    names.sort();
 
     for (var n = 0; n < names.length; n++) {
       var entry = registeredBenchmarks[names[n]];
@@ -141,13 +139,14 @@
 
     var options = {
       'wtf.trace.mode': 'snapshotting',
-      'wtf.trace.target': 'file://'
+      'wtf.trace.target': 'file://',
+      'wtf.trace.disableProviders': true
     };
     wtf.trace.prepare(options);
     wtf.trace.start();
 
     suite.run({
-      //'async': true,
+      'async': true,
       'delay': 1,
       'initCount': 10000
     });

@@ -18,13 +18,11 @@ goog.provide('wtf.data.UserAgent');
 
 goog.require('goog.Uri');
 goog.require('goog.asserts');
-goog.require('goog.json');
 goog.require('goog.string');
 goog.require('goog.userAgent');
 goog.require('goog.userAgent.platform');
 goog.require('goog.userAgent.product');
 goog.require('wtf');
-goog.require('wtf.io.Buffer');
 
 
 /**
@@ -79,19 +77,6 @@ wtf.data.ContextInfo.prototype.serialize = goog.abstractMethod;
 
 
 /**
- * Writes the context information to the given buffer.
- * @param {!wtf.io.Buffer} buffer Target buffer.
- * @return {boolean} True if the write succeeded.
- */
-wtf.data.ContextInfo.prototype.write = function(buffer) {
-  var json = this.serialize();
-  var jsonString = goog.json.serialize(json);
-  buffer.writeUtf8String(jsonString);
-  return true;
-};
-
-
-/**
  * Gets a human-readable version of the context info.
  * @return {string} String version.
  */
@@ -101,25 +86,10 @@ wtf.data.ContextInfo.prototype.toString = goog.abstractMethod;
 /**
  * Parses context information from the given buffer.
  * The appropriate subclass type will be returned.
- * @param {!(wtf.io.Buffer|Object)} source Source buffer or JSON object.
+ * @param {!Object} json Source JSON object.
  * @return {wtf.data.ContextInfo} Parsed context information.
  */
-wtf.data.ContextInfo.parse = function(source) {
-  var json;
-  if (source instanceof wtf.io.Buffer) {
-    var buffer = /** @type {!wtf.io.Buffer} */ (source);
-    var jsonString = buffer.readUtf8String();
-    if (!jsonString) {
-      return null;
-    }
-    json = /** @type {Object} */ (goog.global.JSON.parse(jsonString));
-  } else {
-    json = /** @type {Object} */ (source);
-  }
-  if (!json) {
-    return null;
-  }
-
+wtf.data.ContextInfo.parse = function(json) {
   // Create appropriate subclass.
   var contextInfo;
   var contextType = /** @type {wtf.data.ContextType} */ (json['contextType']);

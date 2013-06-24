@@ -533,7 +533,7 @@ wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
     } else if (sourceInfo instanceof wtf.db.UrlDataSourceInfo) {
       // XHR fetch the target.
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', sourceInfo.filename, true);
+      xhr.open('GET', sourceInfo.url, true);
       sendXhrDownload(filename, sourceInfo.contentType, xhr);
     } else {
       // Unknown - ignore.

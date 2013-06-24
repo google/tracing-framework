@@ -94,9 +94,7 @@ function setupTesting() {
 
   // Sort test names.
   // TODO(benvanik): sort by namespaces?
-  benchmarkNames.sort(function(a, b) {
-    return a < b;
-  });
+  benchmarkNames.sort();
 
   // Set page title.
   document.title = 'WTF Benchmark: ' + benchmarkNames.join(', ');

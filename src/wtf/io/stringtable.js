@@ -84,6 +84,9 @@ wtf.io.StringTable.prototype.addString = function(value) {
  * @return {string?} String value, if present.
  */
 wtf.io.StringTable.prototype.getString = function(ordinal) {
+  if (ordinal == 0xFFFFFFFF) {
+    return null;
+  }
   if (this.hasNullTerminators_) {
     ordinal *= 2;
   }
@@ -149,3 +152,11 @@ wtf.io.StringTable.prototype.serialize = function() {
   var blob = wtf.io.Blob.create(values);
   return blob;
 };
+
+
+goog.exportProperty(
+    wtf.io.StringTable.prototype, 'addString',
+    wtf.io.StringTable.prototype.addString);
+goog.exportProperty(
+    wtf.io.StringTable.prototype, 'getString',
+    wtf.io.StringTable.prototype.getString);

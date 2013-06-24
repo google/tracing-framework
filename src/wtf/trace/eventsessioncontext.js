@@ -57,8 +57,8 @@ wtf.trace.EventSessionContext.init = function(context, session) {
 /**
  * Sets the buffer on the context.
  * @param {!wtf.trace.EventSessionContextType} context Context.
- * @param {!wtf.io.Buffer} buffer New buffer.
+ * @param {!wtf.io.BufferView.Type} bufferView New buffer.
  */
-wtf.trace.EventSessionContext.setBuffer = function(context, buffer) {
-  context[1] = buffer;
+wtf.trace.EventSessionContext.setBuffer = function(context, bufferView) {
+  context[1] = bufferView;
 };

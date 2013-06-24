@@ -15,7 +15,6 @@ goog.provide('wtf.io.cff.BinaryStreamTarget');
 
 goog.require('wtf.data.formats.ChunkedFileFormat');
 goog.require('wtf.io.Blob');
-goog.require('wtf.io.Buffer');
 goog.require('wtf.io.cff.ChunkType');
 goog.require('wtf.io.cff.PartType');
 goog.require('wtf.io.cff.StreamTarget');
@@ -35,11 +34,11 @@ wtf.io.cff.BinaryStreamTarget = function(transport) {
   goog.base(this, transport);
 
   // Write magic header.
-  var header = new wtf.io.Buffer(3 * 4);
-  header.writeUint32(0xDEADBEEF);
-  header.writeUint32(wtf.version.getValue());
-  header.writeUint32(wtf.data.formats.ChunkedFileFormat.VERSION);
-  transport.write(header.data);
+  var header = new Uint32Array(3);
+  header[0] = 0xDEADBEEF;
+  header[1] = wtf.version.getValue();
+  header[2] = wtf.data.formats.ChunkedFileFormat.VERSION;
+  transport.write(header);
 };
 goog.inherits(wtf.io.cff.BinaryStreamTarget, wtf.io.cff.StreamTarget);
 
@@ -90,20 +89,21 @@ wtf.io.cff.BinaryStreamTarget.prototype.writeChunk = function(chunk) {
 
   // Build the header (now that we have all the lengths/etc).
   var headerByteLength = (6 + (3 * parts.length)) * 4;
-  var header = new wtf.io.Buffer(headerByteLength);
-  header.writeUint32(chunk.getId());
-  header.writeUint32(wtf.io.cff.ChunkType.toInteger(chunk.getType()));
-  header.writeUint32(headerByteLength + totalLength);
-  header.writeUint32(chunk.getStartTime());
-  header.writeUint32(chunk.getEndTime());
-  header.writeUint32(parts.length);
+  var header = new Uint32Array(headerByteLength / 4);
+  var o = 0;
+  header[o++] = chunk.getId();
+  header[o++] = wtf.io.cff.ChunkType.toInteger(chunk.getType());
+  header[o++] = headerByteLength + totalLength;
+  header[o++] = chunk.getStartTime();
+  header[o++] = chunk.getEndTime();
+  header[o++] = parts.length;
   for (var n = 0; n < parts.length; n++) {
     var part = parts[n];
-    header.writeUint32(wtf.io.cff.PartType.toInteger(part.getType()));
-    header.writeUint32(partOffsets[n]);
-    header.writeUint32(partLengths[n]);
+    header[o++] = wtf.io.cff.PartType.toInteger(part.getType());
+    header[o++] = partOffsets[n];
+    header[o++] = partLengths[n];
   }
-  blobParts.unshift(header.data);
+  blobParts.unshift(header.buffer);
   totalLength += headerByteLength;
 
   // If the chunk length is not 4b aligned, pad it.
