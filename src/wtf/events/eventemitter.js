@@ -107,6 +107,27 @@ wtf.events.EventEmitter.prototype.removeListener = function(
 
 
 /**
+ * Adds a listener to this event type. After the event fires, the event
+ * listener is removed from the target.
+ * @param {string} eventType Event type name.
+ * @param {!Function} callback Callback function.
+ * @param {Object=} opt_scope Scope for the callback function.
+ */
+wtf.events.EventEmitter.prototype.listenOnce = function(
+    eventType, callback, opt_scope) {
+  var self = this;
+  var newCallback = function() {
+    try {
+      callback.apply(opt_scope);
+    } finally {
+      self.removeListener(eventType, newCallback);
+    }
+  };
+  this.addListener(eventType, newCallback);
+};
+
+
+/**
  * Removes all listeners for all events or, if given, an individual event type.
  * @param {string=} opt_eventType Event type name, if removing for just one
  *     event.
