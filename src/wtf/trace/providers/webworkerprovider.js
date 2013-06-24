@@ -15,6 +15,7 @@ goog.provide('wtf.trace.providers.WebWorkerProvider');
 
 goog.require('goog.Uri');
 goog.require('goog.array');
+goog.require('goog.fs');
 goog.require('goog.object');
 goog.require('goog.result');
 goog.require('goog.result.Result');
@@ -219,9 +220,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     var shimBlob = new Blob([shimScriptLines.join('\n')], {
       'type': 'text/javascript'
     });
-    var shimScriptUrl = goog.global['URL'] ?
-        goog.global['URL'].createObjectURL(shimBlob) :
-        goog.global['webkitURL'].createObjectURL(shimBlob);
+    var shimScriptUrl = goog.fs.createObjectUrl(shimBlob);
 
     return shimScriptUrl;
   };

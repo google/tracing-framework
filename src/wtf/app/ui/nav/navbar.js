@@ -121,7 +121,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   this.setPaintContext(paintContext);
 
   // Clicking on non-handled space will center the viewport there.
-  paintContext.onClickInternal = goog.bind(function(x, y, modifiers, bounds) {
+  paintContext.setDefaultClickHandler(function(x, y, modifiers, bounds) {
     var localView = this.documentView_.getLocalView();
     var timeStart = localView.getVisibleTimeStart();
     var timeEnd = localView.getVisibleTimeEnd();
@@ -199,7 +199,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   // This allows us to show where each view is looking.
   var viewList = doc.getViewList();
   viewList.forEach(function(view) {
-    this.setupView_(view);
+    this.setupView_(/** @type {!wtf.doc.View} */ (view));
   }, this);
   viewList.addListener(
       wtf.events.ListEventType.VALUES_ADDED,

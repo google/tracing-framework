@@ -170,6 +170,14 @@ wtf.ui.Painter = function(canvas) {
   this.repaintPending_ = false;
 
   /**
+   * A click handler used if {@see #onClickInternal} is not overridden.
+   * @type {(function(number, number, number, !goog.math.Rect):
+   *     (boolean|undefined))?}
+   * @private
+   */
+  this.defaultClickHandler_ = null;
+
+  /**
    * Whether the context is ready for painting.
    * If false, the context (and all children) will not be drawn.
    * @type {boolean}
@@ -748,7 +756,24 @@ wtf.ui.Painter.prototype.onClick = function(x, y, modifiers) {
  * @return {boolean|undefined} True if the event was handled.
  * @protected
  */
-wtf.ui.Painter.prototype.onClickInternal = goog.nullFunction;
+wtf.ui.Painter.prototype.onClickInternal = function(x, y, modifiers, bounds) {
+  return this.defaultClickHandler_ ?
+      this.defaultClickHandler_(x, y, modifiers, bounds) : undefined;
+};
+
+
+/**
+ * Sets the default click handler used when {@see #onClickInternal} is not
+ * overridden.
+ * @param {!function(this:T, number, number, number, !goog.math.Rect):
+ *     (boolean|undefined)} callback Callback function.
+ * @param {T=} opt_scope Callback scope.
+ * @template T
+ */
+wtf.ui.Painter.prototype.setDefaultClickHandler = function(
+    callback, opt_scope) {
+  this.defaultClickHandler_ = goog.bind(callback, opt_scope);
+};
 
 
 /**

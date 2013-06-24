@@ -33,7 +33,9 @@ goog.require('wtf.ui.Control');
 wtf.app.ui.TabPanel = function(documentView, path, name) {
   var dom = documentView.getDom();
   var fragment = dom.getDocument().createDocumentFragment();
-  goog.base(this, /** @type {!Element} */ (fragment), dom);
+  var fragmentDiv = dom.createElement(goog.dom.TagName.DIV);
+  fragment.appendChild(fragmentDiv);
+  goog.base(this, fragmentDiv, dom);
 
   /**
    * Parent document view.

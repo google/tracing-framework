@@ -132,9 +132,10 @@ wtf.doc.CommentScope.prototype.removeComment = function(comment) {
  * Iterates over the list returning all comments in the given time range.
  * @param {number} timeStart Start wall-time range.
  * @param {number} timeEnd End wall-time range.
- * @param {!function(!wtf.doc.Comment)} callback Function to call
+ * @param {!function(this: T, !wtf.doc.Comment)} callback Function to call
  *     with the comments.
- * @param {Object=} opt_scope Scope to call the function in.
+ * @param {T=} opt_scope Scope to call the function in.
+ * @template T
  */
 wtf.doc.CommentScope.prototype.forEach = function(
     timeStart, timeEnd, callback, opt_scope) {
@@ -144,9 +145,9 @@ wtf.doc.CommentScope.prototype.forEach = function(
     if (comment.getStartTime() > timeEnd) {
       return false;
     }
-    if (comment.getTimeEnd() >= timeStart ||
+    if (comment.getEndTime() >= timeStart ||
         comment.getStartTime() >= timeStart) {
-      callback.call(opt_scope, value);
+      callback.call(opt_scope, comment);
     }
   });
 };

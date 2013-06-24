@@ -35,7 +35,6 @@ goog.inherits(wtf.app.background.ServiceEndpoint, wtf.events.EventEmitter);
  * Emits a new snapshot.
  * @param {!string} contentType Snapshot content type.
  * @param {!Uint8Array} data Snapshot data.
- * @protected
  */
 wtf.app.background.ServiceEndpoint.prototype.emitSnapshot = function(
     contentType, data) {
@@ -49,7 +48,6 @@ wtf.app.background.ServiceEndpoint.prototype.emitSnapshot = function(
  * @param {string} sessionId Session ID.
  * @param {string} streamId Stream ID.
  * @param {string} contentType Session content type.
- * @protected
  */
 wtf.app.background.ServiceEndpoint.prototype.emitStreamCreated = function(
     sessionId, streamId, contentType) {
@@ -63,7 +61,6 @@ wtf.app.background.ServiceEndpoint.prototype.emitStreamCreated = function(
  * @param {string} sessionId Session ID.
  * @param {string} streamId Stream ID.
  * @param {!wtf.io.ByteArray} data Data buffer.
- * @protected
  */
 wtf.app.background.ServiceEndpoint.prototype.emitStreamAppended = function(
     sessionId, streamId, data) {
