@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.sessions.SnapshottingSession');
 
+goog.require('wtf.io.BufferView');
 goog.require('wtf.io.cff.chunks.EventDataChunk');
 goog.require('wtf.io.cff.chunks.FileHeaderChunk');
 goog.require('wtf.trace.Session');
@@ -220,14 +221,14 @@ wtf.trace.sessions.SnapshottingSession.prototype.writeEventData_ =
     if (!chunk) {
       continue;
     }
-    var buffer = chunk.getBinaryBuffer();
+    var bufferView = chunk.getBinaryBuffer();
 
     // Ignore buffer if it is not dirty or empty.
     var dirty = this.dirtyChunks_[index];
     if (this.resetOnSnapshot_) {
       this.dirtyChunks_[index] = false;
     }
-    if (!dirty || !buffer.offset) {
+    if (!dirty || !bufferView.offset) {
       continue;
     }
 
@@ -259,11 +260,11 @@ wtf.trace.sessions.SnapshottingSession.prototype.nextChunk = function() {
     chunk.init(this.bufferSize);
     this.chunks_[this.nextChunkIndex_] = chunk;
   }
-  var buffer = chunk.getBinaryBuffer();
+  var bufferView = chunk.getBinaryBuffer();
 
   // Mark it as undirty and reset, as it's being reused.
   this.dirtyChunks_[this.nextChunkIndex_] = false;
-  buffer.reset();
+  wtf.io.BufferView.reset(bufferView);
 
   this.nextChunkIndex_ = (this.nextChunkIndex_ + 1) % this.chunks_.length;
   return chunk;

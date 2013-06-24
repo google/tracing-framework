@@ -141,7 +141,7 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   // Clicking on non-handled space will clear the filter.
   var commandManager = wtf.events.getCommandManager();
-  paintContext.onClickInternal = goog.bind(function(x, y, modifiers, bounds) {
+  paintContext.setDefaultClickHandler(function(x, y, modifiers, bounds) {
     commandManager.execute('filter_events', this, null, '');
   }, this);
 

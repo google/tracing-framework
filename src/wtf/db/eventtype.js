@@ -67,20 +67,35 @@ wtf.db.EventType = function(name, eventClass, flags, args) {
   this.args = args;
 
   var builder = wtf.db.EventType.getBuilder_();
+
   /**
    * Parse function.
    * Parses only the additional data arguments, if any.
    * @type {wtf.db.EventType.ParseFunction?}
    */
   this.parseBinaryArguments = args.length ? builder.generate(this) : null;
+
+  /**
+   * Parse function for the legacy format.
+   * Parses only the additional data arguments, if any.
+   * @type {wtf.db.EventType.LegacyParseFunction?}
+   */
+  this.parseLegacyArguments = args.length ? builder.generateLegacy(this) : null;
 };
+
+
+/**
+ * Takes a buffer offset to the event data and returns the parsed values.
+ * @typedef {function(!wtf.io.BufferView.Type):!Object}
+ */
+wtf.db.EventType.ParseFunction;
 
 
 /**
  * Takes a buffer offset to the event data and returns the parsed values.
  * @typedef {function(!wtf.io.Buffer):!Object}
  */
-wtf.db.EventType.ParseFunction;
+wtf.db.EventType.LegacyParseFunction;
 
 
 /**

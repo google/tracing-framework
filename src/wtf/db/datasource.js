@@ -141,6 +141,14 @@ wtf.db.DataSource = function(db, sourceInfo) {
    * @private
    */
   this.timeDelay_ = 0;
+
+  /**
+   * Whether an error has been fired.
+   * This should be used to prevent further processing.
+   * @type {boolean}
+   * @protected
+   */
+  this.hasErrored = false;
 };
 goog.inherits(wtf.db.DataSource, goog.Disposable);
 
@@ -305,6 +313,8 @@ wtf.db.DataSource.prototype.initialize = function(
  * @protected
  */
 wtf.db.DataSource.prototype.error = function(message, opt_detail) {
+  this.hasErrored = true;
+
   this.db_.sourceError(this, message, opt_detail);
 
   if (this.deferred_) {

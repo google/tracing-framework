@@ -91,10 +91,10 @@ wtf.trace.Session = function(traceManager, options, defaultBufferSize) {
   /**
    * Data buffer in the {@see #currentChunk}, held here to make accessing it
    * easier on each call to {@see #acquireBuffer}.
-   * @type {wtf.io.Buffer}
+   * @type {wtf.io.BufferView.Type?}
    * @private
    */
-  this.currentBuffer_ = null;
+  this.currentBufferView_ = null;
 
   /**
    * Whether the event stream has a discontinuity.
@@ -126,7 +126,7 @@ wtf.trace.Session.prototype.disposeInternal = function() {
   if (this.currentChunk) {
     this.retireChunk(this.currentChunk);
     this.currentChunk = null;
-    this.currentBuffer_ = null;
+    this.currentBufferView_ = null;
   }
 
   goog.base(this, 'disposeInternal');
@@ -173,7 +173,7 @@ wtf.trace.Session.prototype.startInternal = function() {
   // Allocate a new buffer.
   goog.asserts.assert(!this.currentChunk);
   this.currentChunk = this.nextChunk();
-  this.currentBuffer_ = this.currentChunk.getBinaryBuffer();
+  this.currentBufferView_ = this.currentChunk.getBinaryBuffer();
 };
 
 
@@ -208,14 +208,15 @@ wtf.trace.Session.prototype.retireChunk = goog.abstractMethod;
  *
  * @param {number} time Current time.
  * @param {number} size Size, in bytes, that will be written.
- * @return {wtf.io.Buffer} A buffer with the requested size available.
+ * @return {wtf.io.BufferView.Type?} A buffer with the requested size available.
  */
 wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
   // If the current buffer has space return it for reuse.
-  var buffer = this.currentBuffer_;
-  if (buffer) {
-    if (buffer.capacity - buffer.offset >= size) {
-      return buffer;
+  var bufferView = this.currentBufferView_;
+  if (bufferView) {
+    // This is the 99% path. It should be very, very fast.
+    if (bufferView['capacity'] - bufferView['offset'] >= size) {
+      return bufferView;
     }
   }
 
@@ -229,42 +230,42 @@ wtf.trace.Session.prototype.acquireBuffer = function(time, size) {
   if (this.currentChunk) {
     this.retireChunk(this.currentChunk);
     this.currentChunk = null;
-    this.currentBuffer_ = null;
+    this.currentBufferView_ = null;
   }
 
   // Attempt to allocate a new buffer.
   this.currentChunk = this.nextChunk();
-  this.currentBuffer_ =
+  this.currentBufferView_ =
       this.currentChunk ? this.currentChunk.getBinaryBuffer() : null;
-  buffer = this.currentBuffer_;
+  bufferView = this.currentBufferView_;
 
   // If no buffer could be allocated, flag a discontinuity.
-  if (!buffer) {
+  if (!bufferView) {
     this.hasDiscontinuity_ = true;
   } else if (this.hasDiscontinuity_) {
     // Handle resuming from discontinuities.
     // Note: this must occur after currentBuffer has been set, as append is
     // re-entrant to this function.
     this.hasDiscontinuity_ = false;
-    wtf.trace.BuiltinEvents.discontinuity(time, buffer);
+    wtf.trace.BuiltinEvents.discontinuity(time, bufferView);
   }
 
-  if (buffer) {
+  if (bufferView) {
     // Write current zone. This can be a bit redundant, but ensures that all
     // buffers (even if snapshotted) have the correct zone and prevents a bunch
     // of nasty state tracking.
     var zone = this.traceManager_.getCurrentZone();
     if (zone) {
-      wtf.trace.BuiltinEvents.setZone(zone.id, time, buffer);
+      wtf.trace.BuiltinEvents.setZone(zone.id, time, bufferView);
     }
 
     // Ignore if size can't fit in the buffer.
-    if (size > buffer.capacity - buffer.offset) {
+    if (size > bufferView.capacity - bufferView.offset) {
       return null;
     }
   }
 
-  return buffer;
+  return bufferView;
 };
 
 

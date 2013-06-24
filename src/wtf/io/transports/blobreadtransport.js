@@ -13,7 +13,6 @@
 
 goog.provide('wtf.io.transports.BlobReadTransport');
 
-goog.require('goog.fs.Error');
 goog.require('wtf.io.Blob');
 goog.require('wtf.io.DataFormat');
 goog.require('wtf.io.ReadTransport');
@@ -62,11 +61,12 @@ wtf.io.transports.BlobReadTransport = function(blob) {
     self.emitProgressEvent(e.loaded, e.loaded);
     if (reader.result) {
       // Succeeded.
-      self.emitReceiveData(reader.result);
+      self.emitReceiveData(/** @type {!wtf.io.BlobData} */ (reader.result));
     } else {
       // Failed.
-      self.emitErrorEvent(new Error(
-          goog.fs.Error.getDebugMessage(/** @type {number} */ (reader.error))));
+      self.emitErrorEvent(
+          /** @type {Error} */ (reader['error']) ||
+          new Error('Unknown blob read error'));
     }
     self.end();
   };
@@ -83,7 +83,7 @@ wtf.io.transports.BlobReadTransport.prototype.resume = function() {
   if (!this.hasStartedRead_) {
     this.hasStartedRead_ = true;
 
-    var blob = wtf.io.Blob.toNative(this.blob_);
+    var blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(this.blob_));
 
     switch (this.getPreferredFormat()) {
       case wtf.io.DataFormat.STRING:
