@@ -42,6 +42,22 @@ wtf.testing.mocha.setup_ = function() {
     for (var n = 0; n < a.length; n++) {
       if (a[n] != b[n]) {
         assert.fail(a, b, 'byte arrays differ');
+        return;
+      }
+    }
+  };
+
+  /**
+   * Asserts that an array has the given prefix.
+   * @param {!wtf.io.ByteArray} a First array.
+   * @param {!wtf.io.ByteArray} prefix Second array that is the prefix.
+   */
+  assert.arrayPrefix = function(a, prefix) {
+    assert(a <= prefix, 'Target array must be at least as large as the prefix');
+    for (var n = 0; n < prefix.length; n++) {
+      if (a[n] != prefix[n]) {
+        assert.fail(a[n], prefix[n], 'byte arrays differ');
+        return;
       }
     }
   };

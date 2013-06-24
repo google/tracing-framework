@@ -164,9 +164,7 @@ function setupTesting() {
 
   // Sort test names.
   // TODO(benvanik): sort by namespaces?
-  testNames.sort(function(a, b) {
-    return a < b;
-  });
+  testNames.sort();
 
   // Set page title.
   var testPrettyNames = [];

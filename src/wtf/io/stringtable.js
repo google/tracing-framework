@@ -86,6 +86,8 @@ wtf.io.StringTable.prototype.addString = function(value) {
 wtf.io.StringTable.prototype.getString = function(ordinal) {
   if (ordinal == 0xFFFFFFFF) {
     return null;
+  } else if (ordinal == 0xFFFFFFFE) {
+    return '';
   }
   if (this.hasNullTerminators_) {
     ordinal *= 2;

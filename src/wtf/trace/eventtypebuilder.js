@@ -122,7 +122,7 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
 
     // If variable size, get the expression.
     if (writer.computeSize) {
-      sizeExpressions.push(writer.computeSize(arg.name + '_'));
+      sizeExpressions.push('(' + writer.computeSize(arg.name + '_') + ')');
     }
 
     // Setup code, if any.
@@ -267,7 +267,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
   uses: ['int32Array', 'int8Array'],
   size: 0,
   setup: function(a) {
-    return ['var ' + a + 'Length = ' + a + '.length;'];
+    return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
   },
   computeSize: function(a) {
     return '4 + ((' + a + 'Length + 3) & ~0x3)';
@@ -313,7 +313,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
   uses: ['int32Array', 'int16Array'],
   size: 0,
   setup: function(a) {
-    return ['var ' + a + 'Length = ' + a + '.length;'];
+    return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
   },
   computeSize: function(a) {
     return '4 + (((' + a + 'Length + 1) << 1) & 0x3)';
@@ -359,7 +359,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
   uses: ['int32Array'],
   size: 0,
   setup: function(a) {
-    return ['var ' + a + 'Length = ' + a + '.length;'];
+    return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
   },
   computeSize: function(a) {
     return a + 'Length << 2';
@@ -405,7 +405,7 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
   uses: ['int32Array', 'float32Array'],
   size: 0,
   setup: function(a) {
-    return ['var ' + a + 'Length = ' + a + '.length;'];
+    return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
   },
   computeSize: function(a) {
     return a + 'Length << 2';
@@ -437,8 +437,12 @@ wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
   computeSize: null,
   write: function(a, offset) {
     return [
-      'int32Array[' + offset + '] = ' + a + ' ? ' +
-          'stringTable.addString(' + a + ') : -1;'
+      'if (typeof ' + a + ' == "string") {',
+      '  int32Array[' + offset + '] = ' + a + '.length ? ' +
+          'stringTable.addString(' + a + ') : -2;',
+      '} else {',
+      '  int32Array[' + offset + '] = -1;',
+      '}'
     ];
   }
 };
