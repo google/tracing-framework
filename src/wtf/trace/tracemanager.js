@@ -265,9 +265,9 @@ wtf.trace.TraceManager.prototype.deleteZone = function(zone) {
 
 /**
  * Appends all zones to the given buffer.
- * @param {!wtf.io.Buffer} buffer Buffer to write to.
+ * @param {!wtf.io.BufferView.Type} bufferView Buffer to write to.
  */
-wtf.trace.TraceManager.prototype.appendAllZones = function(buffer) {
+wtf.trace.TraceManager.prototype.appendAllZones = function(bufferView) {
   // Note that since zone IDs are unique per stream it's ok if there are
   // multiple create events. Clients must dedupe these (and use the last created
   // time) or not show ones never referenced.
@@ -275,12 +275,12 @@ wtf.trace.TraceManager.prototype.appendAllZones = function(buffer) {
     var zone = this.allZones_[key];
     // Note that we use 0 instead of zone.timestamp to prevent skewing traces
     wtf.trace.BuiltinEvents.createZone(
-        zone.id, zone.name, zone.type, zone.location, 0, buffer);
+        zone.id, zone.name, zone.type, zone.location, 0, bufferView);
   }
 
   var currentZone = this.getCurrentZone();
   if (currentZone) {
-    wtf.trace.BuiltinEvents.setZone(currentZone.id, 0, buffer);
+    wtf.trace.BuiltinEvents.setZone(currentZone.id, 0, bufferView);
   }
 };
 
@@ -482,11 +482,12 @@ wtf.trace.TraceManager.prototype.eventTypeRegistered_ = function(eventType) {
  * Writes the event header to the given buffer.
  * This header contains all event metadata that can be used for parsing events
  * on the other side.
- * @param {!wtf.io.Buffer} buffer Target buffer.
+ * @param {!wtf.io.BufferView.Type} bufferView Target buffer.
  * @param {boolean=} opt_all True to write all events, regardless of use.
  * @return {boolean} True if the header was written successfully.
  */
-wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer, opt_all) {
+wtf.trace.TraceManager.prototype.writeEventHeader = function(
+    bufferView, opt_all) {
   // Write event metadata.
   var registry = wtf.trace.EventRegistry.getShared();
   var eventTypes = registry.getEventTypes();
@@ -508,7 +509,7 @@ wtf.trace.TraceManager.prototype.writeEventHeader = function(buffer, opt_all) {
         eventType.name,
         eventType.getArgString(),
         undefined,
-        buffer);
+        bufferView);
   }
 
   return true;

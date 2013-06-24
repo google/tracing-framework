@@ -17,8 +17,6 @@ goog.require('goog.asserts');
 goog.require('goog.json');
 goog.require('wtf');
 goog.require('wtf.data.EventClass');
-goog.require('wtf.io.Buffer');
-goog.require('wtf.io.floatConverter');
 goog.require('wtf.trace.EventType');
 goog.require('wtf.util.FunctionBuilder');
 
@@ -41,13 +39,6 @@ wtf.trace.EventTypeBuilder = function() {
    * @private
    */
   this.eventTypeNames_ = wtf.trace.EventType.getNameMap();
-
-  /**
-   * Names of compiled members on {@see wtf.io.Buffer}.
-   * @type {!Object.<string>}
-   * @private
-   */
-  this.bufferNames_ = wtf.io.Buffer.getNameMap();
 };
 goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
 
@@ -63,15 +54,13 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
 
   // Context structure, from eventsessioncontext.js:
   // [0] = wtf.trace.Session?
-  // [1] = wtf.io.Buffer?
+  // [1] = wtf.io.BufferView.Type?
 
   // Begin building the function with default args.
   this.begin();
   this.addScopeVariable('context', context);
   this.addScopeVariable('eventType', eventType);
   this.addScopeVariable('now', wtf.now);
-  this.addScopeVariable('writeFloat32',
-      wtf.io.floatConverter.float32ToUint8Array);
   this.addScopeVariable('stringify', function(value) {
     // TODO(benvanik): make this even faster.
     var json = null;
@@ -100,68 +89,113 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
   this.append('eventType.' + this.eventTypeNames_.count + '++;');
 
   // Setup arguments.
-  // This adds arguments to the function and for any arguments that require
-  // preparation (variable length/encoded) this is done here to get their
-  // size.
-  var minSize = 2 + 4;
-  // TODO(benvanik): add support for extension data here
+  // Scan arguments to figure out which buffers we need and try to compute
+  // the size.
+  // We try very hard to use constant offsets, but if the user has any
+  // variable-length arguments we need to switch to variable offsets.
+  var requiredBuffers = {
+    'int32Array': true
+  };
+  var minSize = 4 + 4;
+  var sizeExpressions = [];
   var args = eventType.args;
   for (var n = 0; n < args.length; n++) {
     var arg = args[n];
+
+    // Add argument.
     this.addArgument(arg.name + '_');
+
+    // Ensure we support the type.
     var writer = writers[arg.typeName];
     goog.asserts.assert(writer);
-    minSize += writer.size; // 0 if variable sized
-  }
-  this.append('var size = ' + minSize + ';');
-  for (var n = 0; n < args.length; n++) {
-    var arg = args[n];
-    var writer = writers[arg.typeName];
-    if (writer.prepare) {
-      this.append.apply(this, writer.prepare(arg.name + '_'));
+
+    // Track required buffers.
+    for (var m = 0; m < writer.uses.length; m++) {
+      requiredBuffers[writer.uses[m]] = true;
     }
+
+    // Track minimum size.
+    if (writer.size) {
+      minSize += writer.size < 4 ?
+          (writer.size + (4 - (writer.size % 4))) : 4;
+    }
+
+    // If variable size, get the expression.
+    if (writer.computeSize) {
+      sizeExpressions.push(writer.computeSize(arg.name + '_'));
+    }
+
+    // Setup code, if any.
+    if (writer.setup) {
+      this.append.apply(this, writer.setup(arg.name + '_'));
+    }
+  }
+  if (sizeExpressions.length) {
+    this.append(
+        'var size = ' + minSize + ' + ' + sizeExpressions.join(' + ') + ';');
+  } else {
+    this.append(
+        'var size = ' + minSize + ';');
   }
 
   // Additional optional arguments.
   this.addArgument('opt_time');
   this.addArgument('opt_buffer');
 
+  // TODO(benvanik): optimize this.
   this.append(
       'var buffer = opt_buffer || context[1];',
       'var session = context[0];',
-      'if (!buffer || buffer.' + this.bufferNames_.capacity + ' - ' +
-          'buffer.' + this.bufferNames_.offset + ' < size) {',
+      'if (!buffer || buffer.capacity - buffer.offset < size) {',
       '  buffer = session ? session.acquireBuffer(time, size) : null;',
       '  context[1] = buffer;',
       '}',
       'if (!buffer || !session) return undefined;');
 
+  // Add all buffer getters.
+  for (var name in requiredBuffers) {
+    this.append('var ' + name + ' = buffer.' + name + ';');
+  }
+
   // Write event header.
-  // This is manually inlined because it's so common and we don't get any
-  // jscompiler inlining optimizations at runtime.
   this.append(
-      'var d = buffer.' + this.bufferNames_.data + ';',
-      'var o = buffer.' + this.bufferNames_.offset + ';',
-      'd[o++] = ' + ((eventType.wireId >> 8) & 0xFF) + ';',
-      'd[o++] = ' + (eventType.wireId & 0xFF) + ';',
-      'var itime = (time * 1000) >>> 0;',
-      'd[o++] = (itime >>> 24) & 0xFF;',
-      'd[o++] = (itime >>> 16) & 0xFF;',
-      'd[o++] = (itime >>> 8) & 0xFF;',
-      'd[o++] = itime & 0xFF;');
+      'var o = buffer.offset >> 2;',
+      'int32Array[o + 0] = ' + eventType.wireId + ';',
+      'int32Array[o + 1] = time * 1000;');
 
   // Append arguments.
+  // We track a constant offset from 'o' used when writing things. when we
+  // hit something with variable length (array/etc), we use 'o' to track the
+  // offset and reset our constant back to 0.
+  var offset = 1 + 1;
   if (args.length) {
-    this.append('var t = 0;');
     for (var n = 0; n < args.length; n++) {
       var arg = args[n];
       var writer = writers[arg.typeName];
-      this.append.apply(this, writer.write(arg.name + '_', this.bufferNames_));
+
+      // Update the offset if we are about to write a variable-lengthed thing.
+      if (!writer.size && offset) {
+        this.append('o += ' + offset + ';');
+        offset = 0;
+      }
+
+      // Append the variable write.
+      this.append.apply(this, writer.write(arg.name + '_', 'o + ' + offset));
+
+      // Fixup constant offset.
+      if (writer.size) {
+        // Pad out to 4b.
+        offset += (writer.size + 3) >> 2;
+      }
     }
   }
 
   // Stash back the buffer offset.
-  this.append('buffer.' + this.bufferNames_.offset + ' = o;');
+  if (offset) {
+    this.append('buffer.offset = (o + ' + offset + ') << 2;');
+  } else {
+    this.append('buffer.offset = o << 2;');
+  }
 
   // Enter scope/flow/etc.
   if (eventType.eventClass == wtf.data.EventClass.SCOPE) {
@@ -180,9 +214,11 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
 
 /**
  * @typedef {{
+ *   uses: !Array.<string>,
  *   size: number,
- *   prepare: (function(string):(!Array.<string>))?,
- *   write: function(string, !Object):(!Array.<string>)
+ *   setup: (function(string):(!Array.<string>))?,
+ *   computeSize: (function(string):string)?,
+ *   write: function(string, (number|string)):(!Array.<string>)
  * }}
  * @private
  */
@@ -194,11 +230,13 @@ wtf.trace.EventTypeBuilder.Writer_;
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
+  uses: ['int8Array'],
   size: 1,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'd[o++] = ' + a + ' ? 1 : 0;'
+      'int8Array[(' + offset + ') << 2] = ' + a + ' ? 1 : 0;'
     ];
   }
 };
@@ -209,11 +247,13 @@ wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
+  uses: ['int8Array'],
   size: 1,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'd[o++] = ' + a + ' & 0xFF;'
+      'int8Array[(' + offset + ') << 2] = ' + a + ';'
     ];
   }
 };
@@ -224,24 +264,24 @@ wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
+  uses: ['int32Array', 'int8Array'],
   size: 0,
-  prepare: function(a) {
-    return [
-      'size += ' + a + '.length;'
-    ];
+  setup: function(a) {
+    return ['var ' + a + 'Length = ' + a + '.length;'];
   },
-  write: function(a, bufferNames) {
+  computeSize: function(a) {
+    return '4 + ((' + a + 'Length + 3) & ~0x3)';
+  },
+  write: function(a, offset) {
     return [
-      'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >>> 24) & 0xFF;',
-      '  d[o++] = (t >>> 16) & 0xFF;',
-      '  d[o++] = (t >>> 8) & 0xFF;',
-      '  d[o++] = t & 0xFF;',
-      '  for (var n = 0; n < t; n++, o++) {',
-      '    d[o] = ' + a + '[n];',
-      '  }',
+      'if (!' + a + ') {',
+      '  int32Array[o++] = -1;',
       '} else {',
-      '  d[o++] = d[o++] = d[o++] = d[o++] = 0;',
+      '  int32Array[o++] = ' + a + 'Length;',
+      '  for (var n = 0, oi = o << 2; n < ' + a + 'Length; n++) {',
+      '    int8Array[oi + n] = ' + a + '[n];',
+      '  }',
+      '  o += (' + a + 'Length + 3) >> 2;',
       '}'
     ];
   }
@@ -253,12 +293,13 @@ wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT16_ = {
+  uses: ['int16Array'],
   size: 2,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'd[o++] = (' + a + ' >> 8) & 0xFF;',
-      'd[o++] = ' + a + ' & 0xFF;'
+      'int16Array[(' + offset + ') << 1] = ' + a + ';'
     ];
   }
 };
@@ -269,26 +310,24 @@ wtf.trace.EventTypeBuilder.WRITE_INT16_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
+  uses: ['int32Array', 'int16Array'],
   size: 0,
-  prepare: function(a) {
-    return [
-      'size += ' + a + '.length * 2;'
-    ];
+  setup: function(a) {
+    return ['var ' + a + 'Length = ' + a + '.length;'];
   },
-  write: function(a, bufferNames) {
+  computeSize: function(a) {
+    return '4 + (((' + a + 'Length + 1) << 1) & 0x3)';
+  },
+  write: function(a, offset) {
     return [
-      'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >>> 24) & 0xFF;',
-      '  d[o++] = (t >>> 16) & 0xFF;',
-      '  d[o++] = (t >>> 8) & 0xFF;',
-      '  d[o++] = t & 0xFF;',
-      '  for (var n = 0; n < t; n++, o += 2) {',
-      '    var v = ' + a + '[n];',
-      '    d[o] = (v >> 8) & 0xFF;',
-      '    d[o + 1] = v & 0xFF;',
-      '  }',
+      'if (!' + a + ') {',
+      '  int32Array[o++] = -1;',
       '} else {',
-      '  d[o++] = d[o++] = d[o++] = d[o++] = 0;',
+      '  int32Array[o++] = ' + a + 'Length;',
+      '  for (var n = 0, oi = o << 1; n < ' + a + 'Length; n++) {',
+      '    int16Array[oi + n] = ' + a + '[n];',
+      '  }',
+      '  o += (' + a + 'Length + 1) >> 1;',
       '}'
     ];
   }
@@ -300,15 +339,13 @@ wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
+  uses: ['int32Array'],
   size: 4,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'var ' + a + '_ = ' + a + ' >>> 0;',
-      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
-      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
-      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
-      'd[o++] = ' + a + '_ & 0xFF;'
+      'int32Array[' + offset + '] = ' + a + ';'
     ];
   }
 };
@@ -319,28 +356,24 @@ wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
+  uses: ['int32Array'],
   size: 0,
-  prepare: function(a) {
-    return [
-      'size += ' + a + '.length * 4;'
-    ];
+  setup: function(a) {
+    return ['var ' + a + 'Length = ' + a + '.length;'];
   },
-  write: function(a, bufferNames) {
+  computeSize: function(a) {
+    return a + 'Length << 2';
+  },
+  write: function(a, offset) {
     return [
-      'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >>> 24) & 0xFF;',
-      '  d[o++] = (t >>> 16) & 0xFF;',
-      '  d[o++] = (t >>> 8) & 0xFF;',
-      '  d[o++] = t & 0xFF;',
-      '  for (var n = 0; n < t; n++, o += 4) {',
-      '    var v = ' + a + '[n] >>> 0;',
-      '    d[o] = (v >>> 24) & 0xFF;',
-      '    d[o + 1] = (v >>> 16) & 0xFF;',
-      '    d[o + 2] = (v >>> 8) & 0xFF;',
-      '    d[o + 3] = v & 0xFF;',
-      '  }',
+      'if (!' + a + ') {',
+      '  int32Array[o++] = -1;',
       '} else {',
-      '  d[o++] = d[o++] = d[o++] = d[o++] = 0;',
+      '  int32Array[o++] = ' + a + 'Length;',
+      '  for (var n = 0; n < ' + a + 'Length; n++) {',
+      '    int32Array[o + n] = ' + a + '[n];',
+      '  }',
+      '  o += ' + a + 'Length;',
       '}'
     ];
   }
@@ -352,11 +385,13 @@ wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = {
+  uses: ['float32Array'],
   size: 4,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'writeFloat32(' + a + ', d, o); o += 4;'
+      'float32Array[' + offset + '] = ' + a + ';'
     ];
   }
 };
@@ -367,24 +402,24 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
+  uses: ['int32Array', 'float32Array'],
   size: 0,
-  prepare: function(a) {
-    return [
-      'size += ' + a + '.length * 4;'
-    ];
+  setup: function(a) {
+    return ['var ' + a + 'Length = ' + a + '.length;'];
   },
-  write: function(a, bufferNames) {
+  computeSize: function(a) {
+    return a + 'Length << 2';
+  },
+  write: function(a, offset) {
     return [
-      'if (' + a + ' && (t = ' + a + '.length)) {',
-      '  d[o++] = (t >>> 24) & 0xFF;',
-      '  d[o++] = (t >>> 16) & 0xFF;',
-      '  d[o++] = (t >>> 8) & 0xFF;',
-      '  d[o++] = t & 0xFF;',
-      '  for (var n = 0; n < t; n++, o += 4) {',
-      '    writeFloat32(' + a + '[n], d, o);',
+      'if (!' + a + ') {',
+      '  int32Array[o++] = -1;',
+      '} else {',
+      '  int32Array[o++] = ' + a + 'Length;',
+      '  for (var n = 0; n < ' + a + 'Length; n++) {',
+      '    float32Array[o + n] = ' + a + '[n];',
       '  }',
-      '} else {',
-      '  d[o++] = d[o++] = d[o++] = d[o++] = 0;',
+      '  o += ' + a + 'Length;',
       '}'
     ];
   }
@@ -395,49 +430,15 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
  * @type {wtf.trace.EventTypeBuilder.Writer_}
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_ASCII_ = {
-  size: 0,
-  prepare: function(a) {
+wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
+  uses: ['int32Array', 'stringTable'],
+  size: 4,
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'size += ' + a + ' ? (2 + ' + a + '.length) : 2;'
-    ];
-  },
-  write: function(a, bufferNames) {
-    return [
-      'if (' + a + ' && ' + a + '.length) {',
-      // TODO(benvanik): fix APIs to prevent flush.
-      '  buffer.' + bufferNames.offset + ' = o;',
-      '  buffer.' + bufferNames.writeAsciiString + '(' + a + ');',
-      '  o = buffer.' + bufferNames.offset + ';',
-      '} else {',
-      '  d[o++] = d[o++] = 0;',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @private
- */
-wtf.trace.EventTypeBuilder.WRITE_UTF8_ = {
-  size: 0,
-  prepare: function(a) {
-    return [
-      'size += ' + a + ' ? (2 + 2 + ' + a + '.length * 3) : 2;'
-    ];
-  },
-  write: function(a, bufferNames) {
-    return [
-      'if (' + a + ' && ' + a + '.length) {',
-      // TODO(benvanik): fix APIs to prevent flush.
-      '  buffer.' + bufferNames.offset + ' = o;',
-      '  buffer.' + bufferNames.writeUtf8String + '(' + a + ');',
-      '  o = buffer.' + bufferNames.offset + ';',
-      '} else {',
-      '  d[o++] = d[o++] = 0;',
-      '}'
+      'int32Array[' + offset + '] = ' + a + ' ? ' +
+          'stringTable.addString(' + a + ') : -1;'
     ];
   }
 };
@@ -448,23 +449,14 @@ wtf.trace.EventTypeBuilder.WRITE_UTF8_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
-  size: 0,
-  prepare: function(a) {
+  uses: ['int32Array', 'stringTable'],
+  size: 4,
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'var ' + a + '_ = stringify(' + a + ');',
-      'size += ' + a + '_ ? (2 + 2 + ' + a + '_.length * 3) : 2;'
-    ];
-  },
-  write: function(a, bufferNames) {
-    return [
-      'if (' + a + '_ && ' + a + '_.length) {',
-      // TODO(benvanik): fix APIs to prevent flush.
-      '  buffer.' + bufferNames.offset + ' = o;',
-      '  buffer.' + bufferNames.writeUtf8String + '(' + a + '_);',
-      '  o = buffer.' + bufferNames.offset + ';',
-      '} else {',
-      '  d[o++] = d[o++] = 0;',
-      '}'
+      'int32Array[' + offset + '] = ' + a + ' ? ' +
+          'stringTable.addString(stringify(' + a + ')) : -1;'
     ];
   }
 };
@@ -475,15 +467,13 @@ wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
+  uses: ['int32Array'],
   size: 4,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'var ' + a + '_ = ' + a + ' ? (' + a + '.getId() >>> 0) : 0;',
-      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
-      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
-      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
-      'd[o++] = ' + a + '_ & 0xFF;'
+      'int32Array[' + offset + '] = ' + a + ' ? ' + a + '.getId() : 0;'
     ];
   }
 };
@@ -494,15 +484,13 @@ wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {
+  uses: ['int32Array'],
   size: 4,
-  prepare: null,
-  write: function(a, bufferNames) {
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
     return [
-      'var ' + a + '_ = (' + a + ' * 1000) >>> 0;',
-      'd[o++] = (' + a + '_ >>> 24) & 0xFF;',
-      'd[o++] = (' + a + '_ >>> 16) & 0xFF;',
-      'd[o++] = (' + a + '_ >>> 8) & 0xFF;',
-      'd[o++] = ' + a + '_ & 0xFF;'
+      'int32Array[' + offset + '] = ' + a + ' * 1000;'
     ];
   }
 };
@@ -529,8 +517,8 @@ wtf.trace.EventTypeBuilder.WRITERS_ = {
   'uint32[]': wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_,
   'float32': wtf.trace.EventTypeBuilder.WRITE_FLOAT32_,
   'float32[]': wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_,
-  'ascii': wtf.trace.EventTypeBuilder.WRITE_ASCII_,
-  'utf8': wtf.trace.EventTypeBuilder.WRITE_UTF8_,
+  'ascii': wtf.trace.EventTypeBuilder.WRITE_STRING_,
+  'utf8': wtf.trace.EventTypeBuilder.WRITE_STRING_,
   'any': wtf.trace.EventTypeBuilder.WRITE_ANY_,
   'flowId': wtf.trace.EventTypeBuilder.WRITE_FLOWID_,
   'time32': wtf.trace.EventTypeBuilder.WRITE_TIME32_
