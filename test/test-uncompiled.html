@@ -39,7 +39,7 @@
     wtf.trace.mark('body load');
     window.onload = function() {
       wtf.trace.mark('onload');
-      var arrayEvent = wtf.trace.events.createInstance('arrayEvent(uint8[] v)');
+      var arrayEvent = wtf.trace.events.createInstance('arrayEvent(uint8[] v, uint32 x)');
       var appendScopeData = wtf.trace.events.createInstance(
           'customAppendScopeData(uint32 xxx)',
           wtf.data.EventFlag.APPEND_SCOPE_DATA);
@@ -60,7 +60,7 @@
         wtf.trace.appendScopeData('hello', 'world');
         appendScopeData(12345);
 
-        arrayEvent(new Uint8Array([1, 2, 3]));
+        arrayEvent(new Uint8Array([1, 2, 3]), 5);
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'test-uncompiled.html?random=' + Math.random(), true);

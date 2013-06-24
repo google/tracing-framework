@@ -29,6 +29,7 @@ goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.hud.LiveGraph');
 goog.require('wtf.hud.overlay');
+goog.require('wtf.io');
 goog.require('wtf.io.Blob');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
@@ -637,20 +638,28 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
 
     var traceManager = wtf.trace.getTraceManager();
     var contextInfo = traceManager.detectContextInfo();
-    var contentSource = contextInfo.getFilename();
+    var contentSource = wtf.io.getTimedFilename(
+        '', contextInfo.getFilename(), 'application/x-extension-wtf-trace');
+
+    var blobUrls = [];
+    var blob = wtf.io.Blob.create(blobs, {
+      'type': 'application/x-extension-wtf-trace'
+    });
+    blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
+    blobUrls.push(goog.fs.createObjectUrl(blob));
+
+    var contentTypes = [];
+    var contentSources = [];
+    for (var n = 0; n < blobs.length; n++) {
+      contentTypes.push('application/x-extension-wtf-trace');
+      contentSources.push(contentSource);
+    }
 
     // TODO(benvanik): if the extension is attached always show snapshot through
     // it - this would ensure the UI runs in a different process.
     if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
       // Opening in an extension window, need to marshal through the content
       // script to get it open.
-
-      var blobUrls = [];
-      var blob = wtf.io.Blob.create(blobs, {
-        'type': 'application/x-extension-wtf-trace'
-      });
-      blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
-      blobUrls.push(goog.fs.createObjectUrl(blob));
 
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',
@@ -670,24 +679,15 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
       this.lastWindowName_ = windowName;
       var target = window.open(endpoint + '?expect_data', windowName);
 
-      var contentTypes = [];
-      var contentSources = [];
-      for (var n = 0; n < blobs.length; n++) {
-        contentTypes.push('application/x-extension-wtf-trace');
-        contentSources.push(contentSource);
-      }
-
-      // Convert to native blobs.
-      blobs = wtf.io.Blob.toNativeParts(blobs);
-
       // Wait for the child to connect.
       wtf.ipc.waitForChildWindow(function(channel) {
         channel.postMessage({
           'command': 'snapshot',
           'content_types': contentTypes,
           'content_sources': contentSources,
-          'content_buffers': blobs,
-          'content_length': contentLength
+          'content_urls': blobUrls,
+          'content_length': contentLength,
+          'revoke_blob_urls': true
         }, blobs);
       }, this);
     }

@@ -14,14 +14,14 @@
 goog.provide('wtf.io.cff.chunks.EventDataChunk');
 
 goog.require('goog.asserts');
-goog.require('wtf.io.Buffer');
-goog.require('wtf.io.StringTable');
+goog.require('wtf.io.BufferView');
 goog.require('wtf.io.cff.Chunk');
 goog.require('wtf.io.cff.ChunkType');
 goog.require('wtf.io.cff.PartType');
 goog.require('wtf.io.cff.parts.BinaryEventBufferPart');
 goog.require('wtf.io.cff.parts.BinaryResourcePart');
 goog.require('wtf.io.cff.parts.JsonEventBufferPart');
+goog.require('wtf.io.cff.parts.LegacyEventBufferPart');
 goog.require('wtf.io.cff.parts.StringResourcePart');
 goog.require('wtf.io.cff.parts.StringTablePart');
 
@@ -40,7 +40,8 @@ wtf.io.cff.chunks.EventDataChunk = function(opt_chunkId) {
   /**
    * Event data buffer part.
    * @type {wtf.io.cff.parts.BinaryEventBufferPart|
-   *     wtf.io.cff.parts.JsonEventBufferPart}
+   *     wtf.io.cff.parts.JsonEventBufferPart|
+   *     wtf.io.cff.parts.LegacyEventBufferPart}
    * @private
    */
   this.eventBufferPart_ = null;
@@ -81,6 +82,10 @@ wtf.io.cff.chunks.EventDataChunk.prototype.load = function(parts) {
         this.eventBufferPart_ =
             /** @type {!wtf.io.cff.parts.JsonEventBufferPart} */ (part);
         break;
+      case wtf.io.cff.PartType.LEGACY_EVENT_BUFFER:
+        this.eventBufferPart_ =
+            /** @type {!wtf.io.cff.parts.LegacyEventBufferPart} */ (part);
+        break;
       case wtf.io.cff.PartType.BINARY_EVENT_BUFFER:
         this.eventBufferPart_ =
             /** @type {!wtf.io.cff.parts.BinaryEventBufferPart} */ (part);
@@ -107,8 +112,11 @@ wtf.io.cff.chunks.EventDataChunk.prototype.load = function(parts) {
   // Wire up string table, if needed.
   if (this.stringTablePart_ &&
       this.eventBufferPart_ instanceof wtf.io.cff.parts.BinaryEventBufferPart) {
-    var buffer = this.eventBufferPart_.getValue();
-    buffer.stringTable = this.stringTablePart_.getValue();
+    var bufferView = this.eventBufferPart_.getValue();
+    goog.asserts.assert(bufferView);
+    var stringTable = this.stringTablePart_.getValue();
+    goog.asserts.assert(stringTable);
+    wtf.io.BufferView.setStringTable(bufferView, stringTable);
   }
 };
 
@@ -117,12 +125,8 @@ wtf.io.cff.chunks.EventDataChunk.prototype.load = function(parts) {
  * Initializes an event data chunk to empty.
  * If the chunk is currently initialized it will be reused (if options match).
  * @param {number} bufferSize Buffer size, in bytes.
- * @param {boolean=} opt_useStringTable Whether to enable the string table.
  */
-wtf.io.cff.chunks.EventDataChunk.prototype.init = function(
-    bufferSize, opt_useStringTable) {
-  var needsStringTable =
-      goog.isDef(opt_useStringTable) ? opt_useStringTable : true;
+wtf.io.cff.chunks.EventDataChunk.prototype.init = function(bufferSize) {
   var needsBuffer = true;
   if (this.eventBufferPart_) {
     goog.asserts.assert(
@@ -130,36 +134,27 @@ wtf.io.cff.chunks.EventDataChunk.prototype.init = function(
             wtf.io.cff.parts.BinaryEventBufferPart);
 
     // Buffer exists - verify size.
-    var buffer = this.eventBufferPart_.getValue();
-    if (buffer.capacity == bufferSize) {
-      // Bytes can be reused. May need to add/remove string table.
-      if (opt_useStringTable && !buffer.stringTable) {
-        needsStringTable = false;
-      }
-
+    var bufferView = this.eventBufferPart_.getValue();
+    goog.asserts.assert(bufferView);
+    if (wtf.io.BufferView.getCapacity(bufferView) == bufferSize) {
       // Reset the buffer (and its string table).
-      buffer.reset();
+      wtf.io.BufferView.reset(bufferView);
       needsBuffer = false;
     }
   }
 
   if (needsBuffer) {
-    var buffer = new wtf.io.Buffer(bufferSize);
-    this.eventBufferPart_ = new wtf.io.cff.parts.BinaryEventBufferPart(buffer);
-  }
-
-  if (needsStringTable) {
-    this.stringTablePart_ = new wtf.io.cff.parts.StringTablePart(
-        new wtf.io.StringTable());
-    this.eventBufferPart_.getValue().stringTable =
-        this.stringTablePart_.getValue();
+    var bufferView = wtf.io.BufferView.createEmpty(bufferSize);
+    this.eventBufferPart_ =
+        new wtf.io.cff.parts.BinaryEventBufferPart(bufferView);
+    var stringTable = wtf.io.BufferView.getStringTable(bufferView);
+    this.stringTablePart_ = new wtf.io.cff.parts.StringTablePart(stringTable);
   }
 
   this.removeAllParts();
-  var buffer = this.eventBufferPart_.getValue();
-  if (this.stringTablePart_) {
-    this.addPart(this.stringTablePart_);
-  }
+  goog.asserts.assert(this.stringTablePart_);
+  this.addPart(this.stringTablePart_);
+  goog.asserts.assert(this.eventBufferPart_);
   this.addPart(this.eventBufferPart_);
 };
 
@@ -181,15 +176,15 @@ wtf.io.cff.chunks.EventDataChunk.prototype.getEventData = function() {
  * Gets the event data buffer, assuming it's a binary buffer.
  * This is a convience method and callers must ensure it's only made when the
  * part is in binary format.
- * @return {!wtf.io.Buffer} Buffer.
+ * @return {!wtf.io.BufferView.Type} Buffer.
  */
 wtf.io.cff.chunks.EventDataChunk.prototype.getBinaryBuffer = function() {
   goog.asserts.assert(this.eventBufferPart_);
   goog.asserts.assert(
       this.eventBufferPart_ instanceof wtf.io.cff.parts.BinaryEventBufferPart);
-  var buffer = this.eventBufferPart_.getValue();
-  goog.asserts.assert(buffer);
-  return buffer;
+  var bufferView = this.eventBufferPart_.getValue();
+  goog.asserts.assert(bufferView);
+  return bufferView;
 };
 
 
@@ -243,10 +238,14 @@ wtf.io.cff.chunks.EventDataChunk.prototype.reset = function() {
     // Reset buffer data.
     // This also resets string table data, if present
     if (part instanceof wtf.io.cff.parts.BinaryEventBufferPart) {
-      var buffer = part.getValue();
-      buffer.reset();
+      var bufferView = part.getValue();
+      goog.asserts.assert(bufferView);
+      wtf.io.BufferView.reset(bufferView);
     } else if (part instanceof wtf.io.cff.parts.JsonEventBufferPart) {
       part.setValue([]);
+    } else if (part instanceof wtf.io.cff.parts.LegacyEventBufferPart) {
+      var buffer = part.getValue();
+      buffer.reset();
     }
   }
 };

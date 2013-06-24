@@ -26,6 +26,8 @@ wtf.io.cff.PartType = {
   FILE_HEADER: 'file_header',
   /** {@see wtf.io.cff.parts.JsonEventBufferPart} */
   JSON_EVENT_BUFFER: 'json_event_buffer',
+  /** {@see wtf.io.cff.parts.LegacyEventBufferPart} */
+  LEGACY_EVENT_BUFFER: 'legacy_event_buffer',
   /** {@see wtf.io.cff.parts.BinaryEventBufferPart} */
   BINARY_EVENT_BUFFER: 'binary_event_buffer',
   /** {@see wtf.io.cff.parts.StringTablePart} */
@@ -48,6 +50,7 @@ wtf.io.cff.PartType.isValid = function(value) {
   switch (value) {
     case wtf.io.cff.PartType.FILE_HEADER:
     case wtf.io.cff.PartType.JSON_EVENT_BUFFER:
+    case wtf.io.cff.PartType.LEGACY_EVENT_BUFFER:
     case wtf.io.cff.PartType.BINARY_EVENT_BUFFER:
     case wtf.io.cff.PartType.STRING_TABLE:
     case wtf.io.cff.PartType.BINARY_RESOURCE:
@@ -67,7 +70,8 @@ wtf.io.cff.PartType.isValid = function(value) {
 wtf.io.cff.IntegerPartType_ = {
   FILE_HEADER: 0x10000,
   JSON_EVENT_BUFFER: 0x20000,
-  BINARY_EVENT_BUFFER: 0x20001,
+  LEGACY_EVENT_BUFFER: 0x20001,
+  BINARY_EVENT_BUFFER: 0x20002,
   STRING_TABLE: 0x30000,
   BINARY_RESOURCE: 0x40000,
   STRING_RESOURCE: 0x40001,
@@ -87,6 +91,8 @@ wtf.io.cff.PartType.toInteger = function(value) {
       return wtf.io.cff.IntegerPartType_.FILE_HEADER;
     case wtf.io.cff.PartType.JSON_EVENT_BUFFER:
       return wtf.io.cff.IntegerPartType_.JSON_EVENT_BUFFER;
+    case wtf.io.cff.PartType.LEGACY_EVENT_BUFFER:
+      return wtf.io.cff.IntegerPartType_.LEGACY_EVENT_BUFFER;
     case wtf.io.cff.PartType.BINARY_EVENT_BUFFER:
       return wtf.io.cff.IntegerPartType_.BINARY_EVENT_BUFFER;
     case wtf.io.cff.PartType.STRING_TABLE:
@@ -113,6 +119,8 @@ wtf.io.cff.PartType.fromInteger = function(value) {
       return wtf.io.cff.PartType.FILE_HEADER;
     case wtf.io.cff.IntegerPartType_.JSON_EVENT_BUFFER:
       return wtf.io.cff.PartType.JSON_EVENT_BUFFER;
+    case wtf.io.cff.IntegerPartType_.LEGACY_EVENT_BUFFER:
+      return wtf.io.cff.PartType.LEGACY_EVENT_BUFFER;
     case wtf.io.cff.IntegerPartType_.BINARY_EVENT_BUFFER:
       return wtf.io.cff.PartType.BINARY_EVENT_BUFFER;
     case wtf.io.cff.IntegerPartType_.STRING_TABLE:

@@ -13,7 +13,7 @@
 
 goog.provide('wtf.db.EventTypeBuilder');
 
-goog.require('wtf.io.Buffer');
+goog.require('goog.asserts');
 goog.require('wtf.util.FunctionBuilder');
 
 
@@ -28,13 +28,6 @@ goog.require('wtf.util.FunctionBuilder');
  */
 wtf.db.EventTypeBuilder = function() {
   goog.base(this);
-
-  /**
-   * Names of compiled members on {@see wtf.io.Buffer}.
-   * @type {!Object.<string>}
-   * @private
-   */
-  this.bufferNames_ = wtf.io.Buffer.getNameMap();
 };
 goog.inherits(wtf.db.EventTypeBuilder, wtf.util.FunctionBuilder);
 
@@ -48,89 +41,384 @@ goog.inherits(wtf.db.EventTypeBuilder, wtf.util.FunctionBuilder);
 wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
   var readers = wtf.db.EventTypeBuilder.READERS_;
   if (!wtf.util.FunctionBuilder.isSupported()) {
-    // Fallback to non-codegen version.
-    var args = eventType.args;
-    return function(buffer) {
-      var value = {};
-      for (var n = 0; n < args.length; n++) {
-        var arg = args[n];
-        value[arg.name] = readers[arg.typeName].read(buffer);
-      }
-      return value;
-    };
+    // TODO(benvanik): implement the fallback reader path.
+    throw new Error(
+        'Fallback path for event type builder is not yet implemented');
   }
 
   this.begin();
-  this.addScopeVariable('jsonParse', function(str) {
-    return goog.global.JSON.parse(str);
-  });
   this.addArgument('buffer');
 
-  // Storage for data.
-  // Would be nice to avoid this or do it more compactly.
-  this.append('var value = {};');
+  // Scan arguments to figure out which buffers we need.
+  var anyVariableSized = false;
+  var requiredBuffers = {};
+  var args = eventType.args;
+  for (var n = 0; n < args.length; n++) {
+    var arg = args[n];
 
-  // Parse data arguments.
-  for (var n = 0; n < eventType.args.length; n++) {
-    var arg = eventType.args[n];
+    // Ensure we support the type.
     var reader = readers[arg.typeName];
-    this.append.apply(this, reader.readSource(arg.name, this.bufferNames_));
+    goog.asserts.assert(reader);
+
+    // Track required buffers.
+    for (var m = 0; m < reader.uses.length; m++) {
+      requiredBuffers[reader.uses[m]] = true;
+    }
+
+    // If we have any variable sized arguments we need to add some locals.
+    if (!reader.size) {
+      anyVariableSized = true;
+    }
   }
 
-  this.append('return value;');
+  // Add all buffer getters.
+  for (var name in requiredBuffers) {
+    this.append('var ' + name + ' = buffer.' + name + ';');
+  }
+
+  // Add locals required for variable sized arguments.
+  if (anyVariableSized) {
+    this.append('var t, len;');
+  }
+
+  // Grab offset.
+  this.append('var o = buffer.offset >> 2;');
+
+  // Parse data arguments.
+  // We track a constant offset from 'o' used when writing things. when we
+  // hit something with variable length (array/etc), we use 'o' to track the
+  // offset and reset our constant back to 0.
+  var offset = 0;
+  for (var n = 0; n < args.length; n++) {
+    var arg = args[n];
+    var reader = readers[arg.typeName];
+
+    // If the first variable sized argument, switch to non-constant mode.
+    if (!reader.size && offset) {
+      this.append('o += ' + offset + ';');
+      offset = 0;
+    }
+
+    // Append the variable read.
+    this.append.apply(this, reader.read(arg.name, 'o + ' + offset));
+
+    // Fixup offset.
+    if (reader.size) {
+      // Pad out to 4b.
+      offset += (reader.size + 3) >> 2;
+    }
+  }
+
+  // Stash back the buffer offset.
+  if (offset) {
+    this.append('buffer.offset = (o + ' + offset + ') << 2;');
+  } else {
+    this.append('buffer.offset = o << 2;');
+  }
+
+  // Build result object. We build an object literal from all the locals we've
+  // gathered to try to help v8 optimize things.
+  this.append('return {');
+  for (var n = 0; n < args.length; n++) {
+    var arg = args[n];
+    this.append(
+        '  "' + arg.name + '": ' + arg.name + '_' +
+            ((n < args.length - 1) ? ',' : ''));
+  }
+  this.append('};');
 
   return this.end(eventType.toString());
 };
 
 
 /**
- * @typedef {{
- *   read: function(!wtf.io.Buffer):(*),
- *   readSource: function(string, !Object):(!Array.<string>)
- * }}
+ * Reader information for supported types.
+ * @type {!Object.<!{
+ *   uses: !Array.<string>,
+ *   size: number,
+ *   read: function(string, (number|string)):(!Array.<string>)
+ * }>}
  * @private
  */
-wtf.db.EventTypeBuilder.Reader_;
+wtf.db.EventTypeBuilder.READERS_ = {
+  'bool': {
+    uses: ['uint8Array'],
+    size: 1,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = !!uint8Array[(' + offset + ') << 2];'
+      ];
+    }
+  },
+  'int8': {
+    uses: ['int8Array'],
+    size: 1,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = int8Array[(' + offset + ') << 2];'
+      ];
+    }
+  },
+  'int8[]': {
+    uses: ['uint32Array', 'int8Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Int8Array(len);',
+        '  for (var n = 0, oi = o << 2; n < t.length; n++) {',
+        '    t[n] = int8Array[oi + n];',
+        '  }',
+        '  o += (len + 3) >> 2;',
+        '}'
+      ];
+    }
+  },
+  'uint8': {
+    uses: ['uint8Array'],
+    size: 1,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = uint8Array[(' + offset + ') << 2];'
+      ];
+    }
+  },
+  'uint8[]': {
+    uses: ['uint32Array', 'uint8Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Uint8Array(len);',
+        '  for (var n = 0, oi = o << 2; n < t.length; n++) {',
+        '    t[n] = uint8Array[oi + n];',
+        '  }',
+        '  o += (len + 3) >> 2;',
+        '}'
+      ];
+    }
+  },
+  'int16': {
+    uses: ['int16Array'],
+    size: 2,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = int16Array[(' + offset + ') << 1];'
+      ];
+    }
+  },
+  'int16[]': {
+    uses: ['uint32Array', 'int16Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Int16Array(len);',
+        '  for (var n = 0, oi = o << 1; n < t.length; n++) {',
+        '    t[n] = int16Array[oi + n];',
+        '  }',
+        '  o += (len + 1) >> 1;',
+        '}'
+      ];
+    }
+  },
+  'uint16': {
+    uses: ['uint16Array'],
+    size: 2,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = uint16Array[(' + offset + ') << 1];'
+      ];
+    }
+  },
+  'uint16[]': {
+    uses: ['uint32Array', 'uint16Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Uint16Array(len);',
+        '  for (var n = 0, oi = o << 1; n < t.length; n++) {',
+        '    t[n] = uint16Array[oi + n];',
+        '  }',
+        '  o += (len + 1) >> 1;',
+        '}'
+      ];
+    }
+  },
+  'int32': {
+    uses: ['int32Array'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = int32Array[' + offset + '];'
+      ];
+    }
+  },
+  'int32[]': {
+    uses: ['uint32Array', 'int32Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Int32Array(len);',
+        '  for (var n = 0; n < t.length; n++) {',
+        '    t[n] = int32Array[o + n];',
+        '  }',
+        '  o += len;',
+        '}'
+      ];
+    }
+  },
+  'uint32': {
+    uses: ['uint32Array'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = uint32Array[' + offset + '];'
+      ];
+    }
+  },
+  'uint32[]': {
+    uses: ['uint32Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Uint32Array(len);',
+        '  for (var n = 0; n < t.length; n++) {',
+        '    t[n] = uint32Array[o + n];',
+        '  }',
+        '  o += len;',
+        '}'
+      ];
+    }
+  },
+  'float32': {
+    uses: ['float32Array'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = float32Array[' + offset + '];'
+      ];
+    }
+  },
+  'float32[]': {
+    uses: ['uint32Array', 'float32Array'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len != 0xFFFFFFFF) {',
+        '  ' + a + '_ = t = new Float32Array(len);',
+        '  for (var n = 0; n < t.length; n++) {',
+        '    t[n] = float32Array[o + n];',
+        '  }',
+        '  o += len;',
+        '}'
+      ];
+    }
+  },
+  'ascii': {
+    uses: ['uint32Array', 'stringTable'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = ' +
+            'stringTable.getString(uint32Array[' + offset + ']);'
+      ];
+    }
+  },
+  'utf8': {
+    uses: ['uint32Array', 'stringTable'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = ' +
+            'stringTable.getString(uint32Array[' + offset + ']);'
+      ];
+    }
+  },
+  'any': {
+    uses: ['uint32Array', 'stringTable'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = ' +
+            'JSON.parse(stringTable.getString(uint32Array[' + offset + ']));'
+      ];
+    }
+  },
+  'flowId': {
+    uses: ['uint32Array'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = uint32Array[' + offset + '];'
+      ];
+    }
+  },
+  'time32': {
+    uses: ['uint32Array'],
+    size: 4,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = uint32Array[' + offset + '] / 1000;'
+      ];
+    }
+  }
+};
 
 
 /**
- * @type {wtf.db.EventTypeBuilder.Reader_}
+ * Generates an event argument parsing function.
+ * This supports the legacy binary format that uses {@see wtf.io.Buffer}.
+ * @param {!wtf.db.EventType} eventType Event type.
+ * @return {wtf.db.EventType.LegacyParseFunction} Generated function based on
+ *     class.
+ */
+wtf.db.EventTypeBuilder.prototype.generateLegacy = function(eventType) {
+  var readers = wtf.db.EventTypeBuilder.LEGACY_READERS_;
+
+  // To reduce code size we just support the non-codegen version of things.
+  var args = eventType.args;
+  return function(buffer) {
+    var value = {};
+    for (var n = 0; n < args.length; n++) {
+      var arg = args[n];
+      value[arg.name] = readers[arg.typeName](buffer);
+    }
+    return value;
+  };
+};
+
+
+/**
+ * Reader information for supported types.
+ * @type {!Object.<!(function(!wtf.io.Buffer):(*))>}
  * @private
  */
-wtf.db.EventTypeBuilder.READ_BOOL_ = {
-  read: function(buffer) {
+wtf.db.EventTypeBuilder.LEGACY_READERS_ = {
+  'bool': function(buffer) {
     return !!buffer.readInt8();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = !!buffer.' + bufferNames.readInt8 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_INT8_ = {
-  read: function(buffer) {
+  'int8': function(buffer) {
     return buffer.readInt8();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readInt8 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_INT8ARRAY_ = {
-  read: function(buffer) {
+  'int8[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Int8Array(length);
     for (var n = 0; n < length; n++) {
@@ -138,41 +426,10 @@ wtf.db.EventTypeBuilder.READ_INT8ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Int8Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readInt8 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UINT8_ = {
-  read: function(buffer) {
+  'uint8': function(buffer) {
     return buffer.readUint8();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readUint8 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UINT8ARRAY_ = {
-  read: function(buffer) {
+  'uint8[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Uint8Array(length);
     for (var n = 0; n < length; n++) {
@@ -180,41 +437,10 @@ wtf.db.EventTypeBuilder.READ_UINT8ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Uint8Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readUint8 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_INT16_ = {
-  read: function(buffer) {
+  'int16': function(buffer) {
     return buffer.readInt16();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readInt16 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_INT16ARRAY_ = {
-  read: function(buffer) {
+  'int16[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Uint16Array(length);
     for (var n = 0; n < length; n++) {
@@ -222,41 +448,10 @@ wtf.db.EventTypeBuilder.READ_INT16ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Int16Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readUint16 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UINT16_ = {
-  read: function(buffer) {
+  'uint16': function(buffer) {
     return buffer.readUint16();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readUint16 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UINT16ARRAY_ = {
-  read: function(buffer) {
+  'uint16[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Uint16Array(length);
     for (var n = 0; n < length; n++) {
@@ -264,41 +459,10 @@ wtf.db.EventTypeBuilder.READ_UINT16ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Uint16Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readUint16 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_INT32_ = {
-  read: function(buffer) {
+  'int32': function(buffer) {
     return buffer.readInt32();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readInt32 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_INT32ARRAY_ = {
-  read: function(buffer) {
+  'int32[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Int32Array(length);
     for (var n = 0; n < length; n++) {
@@ -306,41 +470,10 @@ wtf.db.EventTypeBuilder.READ_INT32ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Int32Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readInt32 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UINT32_ = {
-  read: function(buffer) {
+  'uint32': function(buffer) {
     return buffer.readUint32();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readUint32 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UINT32ARRAY_ = {
-  read: function(buffer) {
+  'uint32[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Uint32Array(length);
     for (var n = 0; n < length; n++) {
@@ -348,41 +481,10 @@ wtf.db.EventTypeBuilder.READ_UINT32ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Uint32Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readUint32 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_FLOAT32_ = {
-  read: function(buffer) {
+  'float32': function(buffer) {
     return buffer.readFloat32();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readFloat32 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_FLOAT32ARRAY_ = {
-  read: function(buffer) {
+  'float32[]': function(buffer) {
     var length = buffer.readUint32();
     var result = new Float32Array(length);
     for (var n = 0; n < length; n++) {
@@ -390,125 +492,20 @@ wtf.db.EventTypeBuilder.READ_FLOAT32ARRAY_ = {
     }
     return result;
   },
-  readSource: function(a, bufferNames) {
-    return [
-      // TODO(benvanik): optimize big array reads.
-      'var ' + a + '_len = buffer.' + bufferNames.readUint32 + '();',
-      'var ' + a + '_ = value["' + a + '"] = new Float32Array(' + a + '_len);',
-      'for (var n = 0; n < ' + a + '_len; n++) {',
-      '  ' + a + '_[n] = buffer.' + bufferNames.readFloat32 + '();',
-      '}'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_ASCII_ = {
-  read: function(buffer) {
+  'ascii': function(buffer) {
     return buffer.readAsciiString();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readAsciiString + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_UTF8_ = {
-  read: function(buffer) {
+  'utf8': function(buffer) {
     return buffer.readUtf8String();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readUtf8String + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_ANY_ = {
-  read: function(buffer) {
+  'any': function(buffer) {
     var string = buffer.readUtf8String();
     return goog.global.JSON.parse(string);
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = jsonParse(' +
-          'buffer.' + bufferNames.readUtf8String + '());'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_FLOWID_ = {
-  read: function(buffer) {
+  'flowId': function(buffer) {
     return buffer.readUint32();
   },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readUint32 + '();'
-    ];
-  }
-};
-
-
-/**
- * @type {wtf.db.EventTypeBuilder.Reader_}
- * @private
- */
-wtf.db.EventTypeBuilder.READ_TIME32_ = {
-  read: function(buffer) {
+  'time32': function(buffer) {
     return buffer.readUint32() / 1000;
-  },
-  readSource: function(a, bufferNames) {
-    return [
-      'value["' + a + '"] = buffer.' + bufferNames.readUint32 + '() / 1000;'
-    ];
   }
-};
-
-
-/**
- * Reader information for supported types.
- * @type {!Object.<!wtf.db.EventTypeBuilder.Reader_>}
- * @private
- */
-wtf.db.EventTypeBuilder.READERS_ = {
-  'bool': wtf.db.EventTypeBuilder.READ_BOOL_,
-  'int8': wtf.db.EventTypeBuilder.READ_INT8_,
-  'int8[]': wtf.db.EventTypeBuilder.READ_INT8ARRAY_,
-  'uint8': wtf.db.EventTypeBuilder.READ_UINT8_,
-  'uint8[]': wtf.db.EventTypeBuilder.READ_UINT8ARRAY_,
-  'int16': wtf.db.EventTypeBuilder.READ_INT16_,
-  'int16[]': wtf.db.EventTypeBuilder.READ_INT16ARRAY_,
-  'uint16': wtf.db.EventTypeBuilder.READ_UINT16_,
-  'uint16[]': wtf.db.EventTypeBuilder.READ_UINT16ARRAY_,
-  'int32': wtf.db.EventTypeBuilder.READ_INT32_,
-  'int32[]': wtf.db.EventTypeBuilder.READ_INT32ARRAY_,
-  'uint32': wtf.db.EventTypeBuilder.READ_UINT32_,
-  'uint32[]': wtf.db.EventTypeBuilder.READ_UINT32ARRAY_,
-  'float32': wtf.db.EventTypeBuilder.READ_FLOAT32_,
-  'float32[]': wtf.db.EventTypeBuilder.READ_FLOAT32ARRAY_,
-  'ascii': wtf.db.EventTypeBuilder.READ_ASCII_,
-  'utf8': wtf.db.EventTypeBuilder.READ_UTF8_,
-  'any': wtf.db.EventTypeBuilder.READ_ANY_,
-  'flowId': wtf.db.EventTypeBuilder.READ_FLOWID_,
-  'time32': wtf.db.EventTypeBuilder.READ_TIME32_
 };

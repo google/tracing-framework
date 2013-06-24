@@ -23,6 +23,7 @@ goog.require('wtf.io.cff.parts.BinaryEventBufferPart');
 goog.require('wtf.io.cff.parts.BinaryResourcePart');
 goog.require('wtf.io.cff.parts.FileHeaderPart');
 goog.require('wtf.io.cff.parts.JsonEventBufferPart');
+goog.require('wtf.io.cff.parts.LegacyEventBufferPart');
 goog.require('wtf.io.cff.parts.StringResourcePart');
 goog.require('wtf.io.cff.parts.StringTablePart');
 
@@ -73,6 +74,8 @@ wtf.io.cff.StreamBase.prototype.createPartType = function(partType) {
       return new wtf.io.cff.parts.FileHeaderPart();
     case wtf.io.cff.PartType.JSON_EVENT_BUFFER:
       return new wtf.io.cff.parts.JsonEventBufferPart();
+    case wtf.io.cff.PartType.LEGACY_EVENT_BUFFER:
+      return new wtf.io.cff.parts.LegacyEventBufferPart();
     case wtf.io.cff.PartType.BINARY_EVENT_BUFFER:
       return new wtf.io.cff.parts.BinaryEventBufferPart();
     case wtf.io.cff.PartType.STRING_TABLE:
