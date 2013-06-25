@@ -16,7 +16,6 @@ goog.provide('wtf.db.sources.ChunkedDataSource');
 goog.require('goog.asserts');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.Variable');
-goog.require('wtf.db.ArgumentData');
 goog.require('wtf.db.DataSource');
 goog.require('wtf.db.EventType');
 goog.require('wtf.db.TimeRange');
@@ -242,7 +241,7 @@ wtf.db.sources.ChunkedDataSource.prototype.setupBinaryDispatchTable_ =
   this.eventWireTable_[1] = eventTypeTable.getByName('wtf.event#define');
 
   this.binaryDispatch_['wtf.event#define'] = function(eventType, args) {
-    var argString = args.get('args');
+    var argString = args['args'];
     var argMap = argString ?
         wtf.data.Variable.parseSignatureArguments(argString) : [];
     var argList = [];
@@ -250,39 +249,39 @@ wtf.db.sources.ChunkedDataSource.prototype.setupBinaryDispatchTable_ =
       argList.push(argMap[n].variable);
     }
     var newEventType = eventTypeTable.defineType(new wtf.db.EventType(
-        args.get('name'),
-        args.get('eventClass'),
-        args.get('flags'),
+        args['name'],
+        args['eventClass'],
+        args['flags'],
         argList));
-    this.eventWireTable_[args.get('wireId')] = newEventType;
+    this.eventWireTable_[args['wireId']] = newEventType;
     return false;
   };
 
   this.binaryDispatch_['wtf.zone#create'] = function(eventType, args) {
     var newZone = db.createOrGetZone(
-        args.get('name'), args.get('type'), args.get('location'));
-    this.zoneTable_[args.get('zoneId')] = newZone;
+        args['name'], args['type'], args['location']);
+    this.zoneTable_[args['zoneId']] = newZone;
     return false;
   };
   this.binaryDispatch_['wtf.zone#delete'] = function(eventType, args) {
-    //var deadZone = this.zoneTable_[args.get('zoneId')] || null;
+    //var deadZone = this.zoneTable_[args['zoneId']] || null;
     return false;
   };
   this.binaryDispatch_['wtf.zone#set'] = function(eventType, args) {
-    this.currentZone_ = this.zoneTable_[args.get('zoneId')] || null;
+    this.currentZone_ = this.zoneTable_[args['zoneId']] || null;
     return false;
   };
 
   this.binaryDispatch_['wtf.timeRange#begin'] =
       this.binaryDispatch_['wtf.timeRange#end'] = function(eventType, args) {
-    var wireRangeId = args.get('id');
+    var wireRangeId = args['id'];
     var clientId = this.timeRangeRenames_[wireRangeId];
     if (clientId === undefined) {
       // Needs a new ID.
       clientId = wtf.db.TimeRange.allocateId();
       this.timeRangeRenames_[wireRangeId] = clientId;
     }
-    args.set('id', clientId);
+    args['id'] = clientId;
     return true;
   };
 
@@ -333,8 +332,7 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventBuffer_ =
     var args = null;
     if (eventType.parseBinaryArguments) {
       wtf.io.BufferView.setOffset(bufferView, offset << 2);
-      args = new wtf.db.ArgumentData(
-          eventType.parseBinaryArguments(bufferView));
+      args = eventType.parseBinaryArguments(bufferView);
       offset = wtf.io.BufferView.getOffset(bufferView) >> 2;
     }
 
@@ -403,7 +401,7 @@ wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
     // Parse argument data, if it exists.
     var args = null;
     if (eventType.parseLegacyArguments) {
-      args = new wtf.db.ArgumentData(eventType.parseLegacyArguments(buffer));
+      args = eventType.parseLegacyArguments(buffer);
     }
 
     // Handle built-in events.
