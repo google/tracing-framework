@@ -418,7 +418,7 @@ wtf.db.EventIterator.prototype.getArguments = function() {
 wtf.db.EventIterator.prototype.getArgument = function(key) {
   // TODO(benvanik): cache until move
   var args = this.getArguments();
-  return args ? args.get(key) : undefined;
+  return args ? args[key] : undefined;
 };
 
 
@@ -520,7 +520,7 @@ wtf.db.EventIterator.prototype.buildArgumentString_ = function(
       s.push(argVar.name);
       s.push('=');
     }
-    var value = argData.get(argVar.name);
+    var value = argData[argVar.name];
     if (goog.isString(value)) {
       s.push('\'');
       s.push(value);
@@ -606,7 +606,7 @@ wtf.db.EventIterator.prototype.getScopeInfoString_ = function(units) {
 
   var args = this.getArguments();
   if (args) {
-    wtf.util.addArgumentLines(lines, args.toObject());
+    wtf.util.addArgumentLines(lines, args);
   }
 
   return lines.join('\n');
@@ -627,7 +627,7 @@ wtf.db.EventIterator.prototype.getInstanceInfoString_ = function(units) {
 
   var args = this.getArguments();
   if (args) {
-    wtf.util.addArgumentLines(lines, args.toObject());
+    wtf.util.addArgumentLines(lines, args);
   }
 
   return lines.join('\n');

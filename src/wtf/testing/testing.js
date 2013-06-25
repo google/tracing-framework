@@ -15,7 +15,6 @@ goog.provide('wtf.testing');
 goog.provide('wtf.testing.EventListDefinition');
 
 goog.require('goog.asserts');
-goog.require('wtf.db.ArgumentData');
 goog.require('wtf.db.EventList');
 goog.require('wtf.db.EventType');
 goog.require('wtf.db.EventTypeTable');
@@ -91,11 +90,11 @@ wtf.testing.insertEvents = function(eventList, obj) {
     goog.asserts.assert(eventType.args.length == eventInfo.length - 2);
     var argData = null;
     if (eventType.args.length) {
-      argData = new wtf.db.ArgumentData();
+      argData = {};
       for (var m = 0; m < eventType.args.length; m++) {
         var variable = eventType.args[m];
         var value = eventInfo[2 + m];
-        argData.set(variable.name, value);
+        argData[variable.name] = value;
       }
     }
 
