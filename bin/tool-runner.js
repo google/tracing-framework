@@ -196,7 +196,7 @@ var logEventSpacing = [-10, 1, 8, 1, 48, 13];
 exports.util.logEvent = function(it, zone) {
   var args = it.getArguments();
   if (args) {
-    args = JSON.stringify(args.toObject());
+    args = JSON.stringify(args);
   } else {
     args = undefined;
   }

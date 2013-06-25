@@ -11,7 +11,16 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+goog.provide('wtf.db.ArgumentData');
 goog.provide('wtf.db.EventStruct');
+
+
+/**
+ * Argument data storage.
+ * A simple key-value map with argument names and values.
+ * @typedef {Object}
+ */
+wtf.db.ArgumentData;
 
 
 /**

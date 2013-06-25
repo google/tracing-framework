@@ -519,7 +519,7 @@ wtf.util.Options_test = suite('wtf.util.Options', function() {
       }],
       [wtf.util.Options.EventType.CHANGED, function() {
         assert.deepEqual(options.getValues(), {'b': true});
-      }],
+      }]
     ]);
     options.addArrayValue('a', 1);
     options.clear();

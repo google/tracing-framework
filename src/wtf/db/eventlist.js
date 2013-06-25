@@ -19,7 +19,6 @@ goog.require('goog.array');
 goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
-goog.require('wtf.db.ArgumentData');
 goog.require('wtf.db.EventIterator');
 goog.require('wtf.db.EventStruct');
 goog.require('wtf.db.EventType');
@@ -319,9 +318,9 @@ wtf.db.EventList.prototype.insert = function(eventType, time, opt_argData) {
   // If we were provided argument data, set here.
   if (opt_argData) {
     var args = opt_argData;
-    args.id = this.nextArgumentDataId_++;
-    this.argumentData_[args.id] = args;
-    eventData[o + wtf.db.EventStruct.ARGUMENTS] = args.id;
+    var argsId = this.nextArgumentDataId_++;
+    this.argumentData_[argsId] = args;
+    eventData[o + wtf.db.EventStruct.ARGUMENTS] = argsId;
   }
 
   this.count++;
@@ -485,8 +484,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       // We replace this with an on-demand event type.
       var args =
           this.argumentData_[eventData[o + wtf.db.EventStruct.ARGUMENTS]];
-      var name = /** @type {string} */ (args.get('name')) ||
-          'unnamed.scope';
+      var name = /** @type {string} */ (args['name']) || 'unnamed.scope';
       var newEventType = this.eventTypeTable.getByName(name);
       if (!newEventType) {
         newEventType = this.eventTypeTable.defineType(
@@ -553,8 +551,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       // Replace with an on-demand event type.
       var args =
           this.argumentData_[eventData[o + wtf.db.EventStruct.ARGUMENTS]];
-      var name = /** @type {string} */ (args.get('name')) ||
-          'unnamed.instance';
+      var name = /** @type {string} */ (args['name']) || 'unnamed.instance';
       var newEventType = this.eventTypeTable.getByName(name);
       if (!newEventType) {
         newEventType = this.eventTypeTable.defineType(
@@ -619,6 +616,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
  */
 wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId,
     isBuiltin) {
+  // TODO(benvanik): optimize this to add data with no mixin.
+
   var eventData = this.eventData;
   var o = scopeId * wtf.db.EventStruct.STRUCT_SIZE;
   var scopeArgsId = eventData[o + wtf.db.EventStruct.ARGUMENTS];
@@ -628,10 +627,10 @@ wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId,
     scopeArgs = this.argumentData_[scopeArgsId];
   } else {
     // Scope had no args, so create.
-    scopeArgs = new wtf.db.ArgumentData();
-    scopeArgs.id = this.nextArgumentDataId_++;
-    this.argumentData_[scopeArgs.id] = scopeArgs;
-    eventData[o + wtf.db.EventStruct.ARGUMENTS] = scopeArgs.id;
+    scopeArgs = {};
+    scopeArgsId = this.nextArgumentDataId_++;
+    this.argumentData_[scopeArgsId] = scopeArgs;
+    eventData[o + wtf.db.EventStruct.ARGUMENTS] = scopeArgsId;
   }
 
   var srcArgs = this.argumentData_[argsId];
@@ -641,12 +640,10 @@ wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId,
   }
   if (isBuiltin) {
     // name=value
-    scopeArgs.set(
-        /** @type {string} */ (srcArgs.get('name')),
-        srcArgs.get('value'));
+    scopeArgs[srcArgs['name']] = srcArgs['value'];
   } else {
     // Many possible args, need to enumerate.
-    scopeArgs.merge(srcArgs);
+    goog.mixin(scopeArgs, srcArgs);
   }
 };
 
