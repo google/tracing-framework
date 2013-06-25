@@ -137,8 +137,10 @@ wtf.testing.mocha.setup_ = function() {
       target.addListener(eventType, goog.partial(handler, eventType));
     }
 
-    var index = 0;
+    var eventsActuallyEmitted = [];
     function handler(eventType) {
+      var index = eventsActuallyEmitted.length;
+      eventsActuallyEmitted.push(eventType);
       if (eventType != eventList[index]) {
         assert.fail('Event ' + eventType + ' called when ' +
             eventList[index] + ' was expected');
@@ -151,8 +153,6 @@ wtf.testing.mocha.setup_ = function() {
 
       var args = Array.prototype.slice.call(arguments, 1);
       callbackList[index].apply(null, args);
-
-      index++;
     };
   };
 };
