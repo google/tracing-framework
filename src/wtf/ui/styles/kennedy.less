@@ -556,8 +556,8 @@
   }
 
   .kSearchField {
-    height: 29px;
-    line-height: 27px;
+    .boxSizing(content-box);
+    height: 23px;
     font-size: 15px;
     color: #000;
   }
@@ -606,7 +606,8 @@
     cursor: default;
 
     background-color: #FFFFFF;
-    outline: 1px solid rgba(0,0,0,0.2);
+    border: 1px solid #CCCCCC;
+    outline: 0;
     white-space: nowrap;
 
     padding-top: 6px;

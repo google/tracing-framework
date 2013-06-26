@@ -87,24 +87,6 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
   }
   this.xhr_.timeout = wtf.io.transports.XhrReadTransport.TIMEOUT_MS_;
 
-  // Pick response type based on desired format. This avoids any conversion.
-  var responseType = 'text';
-  switch (this.format) {
-    case wtf.io.DataFormat.STRING:
-      responseType = 'text';
-      break;
-    case wtf.io.DataFormat.ARRAY_BUFFER:
-      responseType = 'arraybuffer';
-      break;
-    case wtf.io.DataFormat.BLOB:
-      responseType = 'blob';
-      break;
-    default:
-      goog.asserts.fail('Unknown data format.');
-      break;
-  }
-  this.xhr_.responseType = responseType;
-
   // Setup events.
   var self = this;
   this.xhr_.onprogress = function(e) {
@@ -129,5 +111,25 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
   if (!reusingXhr) {
     this.xhr_.open('GET', this.url_, true);
   }
+
+  // Pick response type based on desired format. This avoids any conversion.
+  var responseType = 'text';
+  switch (this.format) {
+    case wtf.io.DataFormat.STRING:
+      responseType = 'text';
+      break;
+    case wtf.io.DataFormat.ARRAY_BUFFER:
+      responseType = 'arraybuffer';
+      break;
+    case wtf.io.DataFormat.BLOB:
+      responseType = 'blob';
+      break;
+    default:
+      goog.asserts.fail('Unknown data format.');
+      break;
+  }
+  this.xhr_.responseType = responseType;
+
+  // Issue send.
   this.xhr_.send();
 };
