@@ -95,6 +95,9 @@ wtf.timing.setInterval = function(runMode, delay, callback, opt_scope) {
  * @param {wtf.timing.Handle} handle Interval handle to clear.
  */
 wtf.timing.clearInterval = function(handle) {
+  if (!handle) {
+    return;
+  }
   if (handle instanceof wtf.timing.RenderInterval) {
     if (!wtf.timing.renderTimer_) {
       return;
