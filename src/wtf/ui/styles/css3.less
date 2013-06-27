@@ -47,6 +47,13 @@
   -webkit-box-shadow: inset @hShadow @vShadow @blurRadius @color;
   box-shadow: inset @hShadow @vShadow @blurRadius @color;
 }
+.insetBoxShadow2(@hShadow1, @vShadow1, @blurRadius1, @color1,
+                 @hShadow2, @vShadow2, @blurRadius2, @color2) {
+  -webkit-box-shadow: inset @hShadow1 @vShadow1 @blurRadius1 @color1,
+                      inset @hShadow2, @vShadow2, @blurRadius2, @color2;
+  box-shadow: inset @hShadow1 @vShadow1 @blurRadius1 @color1,
+              inset @hShadow2, @vShadow2, @blurRadius2, @color2;
+}
 
 .borderRadius(@radius) {
   -webkit-border-radius: @radius;
