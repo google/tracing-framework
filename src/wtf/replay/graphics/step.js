@@ -23,12 +23,12 @@ goog.provide('wtf.replay.graphics.Step');
  * @param {!wtf.db.EventList} eventList Event list for an entire animation.
  * @param {number} startEventId Start event ID.
  * @param {number} endEventId End event ID.
- * @param {wtf.db.Frame=} frame Frame this step draws if and only if the step
- *     draws one.
+ * @param {wtf.db.Frame=} opt_frame Frame this step draws if and only if the
+ *     step draws one.
  * @constructor
  */
 wtf.replay.graphics.Step = function(
-    eventList, startEventId, endEventId, frame) {
+    eventList, startEventId, endEventId, opt_frame) {
 
   /**
    * List of events for entire animation.
@@ -57,7 +57,7 @@ wtf.replay.graphics.Step = function(
    * @type {wtf.db.Frame}
    * @private
    */
-  this.frame_ = frame || null;
+  this.frame_ = opt_frame || null;
 };
 
 

@@ -69,7 +69,6 @@ wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, bounds) {
   var n = 0;
   ctx.strokeStyle = '#000000';
   while (granularity >= this.maxGranularity_ / 100) {
-    var lineCount = duration / granularity;
     var lineSpacing = granularity / duration * bounds.width;
     if (lineSpacing < 5) {
       break;

@@ -50,12 +50,14 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   /**
    * List of steps for an entire animation.
    * @type {!Array.<!wtf.replay.graphics.Step>}
+   * @private
    */
   this.steps_ = this.constructStepsList_(eventList, frameList);
 
   /**
    * The index of the step that is about to be executed.
    * @type {number}
+   * @private
    */
   this.currentStepIndex_ = 0;
 

@@ -89,13 +89,6 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.lastWindowName_ = 'wtf_ui';
 
   /**
-   * Tracing session.
-   * @type {!wtf.trace.Session}
-   * @private
-   */
-  this.session_ = session;
-
-  /**
    * Options.
    * @type {!wtf.util.Options}
    * @private
@@ -677,7 +670,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
         windowName = 'wtf_ui' + Date.now();
       }
       this.lastWindowName_ = windowName;
-      var target = window.open(endpoint + '?expect_data', windowName);
+      window.open(endpoint + '?expect_data', windowName);
 
       // Wait for the child to connect.
       wtf.ipc.waitForChildWindow(function(channel) {

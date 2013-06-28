@@ -112,7 +112,6 @@ wtf.io.transports.XhrWriteTransport.prototype.flush = function() {
   this.xhr_.timeout = wtf.io.transports.XhrWriteTransport.TIMEOUT_MS_;
   this.xhr_.setRequestHeader('Content-Type', mimeType);
 
-  var self = this;
   this.xhr_.onload = function(e) {
     // Done sending, have response.
     // TODO(benvanik): emit event.

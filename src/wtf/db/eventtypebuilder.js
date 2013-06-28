@@ -50,7 +50,6 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
   this.addArgument('buffer');
 
   // Scan arguments to figure out which buffers we need.
-  var anyVariableSized = false;
   var uses = {};
   var args = eventType.args;
   for (var n = 0; n < args.length; n++) {
@@ -63,11 +62,6 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
     // Track required buffers.
     for (var m = 0; m < reader.uses.length; m++) {
       uses[reader.uses[m]] = true;
-    }
-
-    // If we have any variable sized arguments we need to add some locals.
-    if (!reader.size) {
-      anyVariableSized = true;
     }
   }
 
@@ -141,6 +135,7 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
  *   size: number,
  *   read: function(string, (number|string)):(!Array.<string>)
  * }>}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.db.EventTypeBuilder.READERS_ = {
@@ -472,6 +467,7 @@ wtf.db.EventTypeBuilder.prototype.generateLegacy = function(eventType) {
 /**
  * Reader information for supported types.
  * @type {!Object.<!(function(!wtf.io.Buffer):(*))>}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.db.EventTypeBuilder.LEGACY_READERS_ = {

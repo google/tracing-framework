@@ -232,7 +232,6 @@ wtf.ui.VirtualTable.prototype.layoutInternal = function() {
  * @private
  */
 wtf.ui.VirtualTable.prototype.setupScrolling_ = function() {
-  var dom = this.getDom();
   var eh = this.getHandler();
 
   // Scroll thumb dragging.
@@ -250,7 +249,7 @@ wtf.ui.VirtualTable.prototype.setupScrolling_ = function() {
     var startClientY = e.clientY;
 
     // Scroll with the dragging.
-    var eventKey = goog.events.listen(
+    goog.events.listen(
         dragger, goog.fx.Dragger.EventType.DRAG, function(e) {
           // Calculate new scroll top.
           var deltaY = e.clientY - startClientY;

@@ -16,6 +16,7 @@
 goog.provide('wtf.app.background.BackgroundPage');
 
 goog.require('goog.Disposable');
+goog.require('goog.asserts');
 goog.require('wtf.app.background.HttpServiceEndpoint');
 goog.require('wtf.app.background.ServiceEndpoint');
 goog.require('wtf.ipc');
@@ -78,6 +79,7 @@ wtf.app.background.BackgroundPage = function(options) {
   // Wait for channels.
   // This may fire multiple times (if the child window is reloaded/etc).
   wtf.ipc.listenForChildWindows(function(channel) {
+    goog.asserts.assert(this.pendingChannel_);
     this.pendingChannel_ = false;
     goog.dispose(this.channel_);
     this.channel_ = channel;
@@ -109,7 +111,7 @@ wtf.app.background.BackgroundPage = function(options) {
   chrome.app.runtime.onLaunched.addListener(goog.bind(
       this.appLaunched_, this));
   chrome.runtime.onSuspend.addListener(goog.bind(function() {
-    window.console.log('unloading');
+    goog.global.console.log('unloading');
   }, this));
 };
 goog.inherits(wtf.app.background.BackgroundPage, goog.Disposable);
@@ -176,7 +178,7 @@ wtf.app.background.BackgroundPage.prototype.bindEndpoints_ =
  * @private
  */
 wtf.app.background.BackgroundPage.prototype.browserStarted_ = function() {
-  window.console.log('browser started');
+  goog.global.console.log('browser started');
 };
 
 
@@ -187,7 +189,7 @@ wtf.app.background.BackgroundPage.prototype.browserStarted_ = function() {
  * @private
  */
 wtf.app.background.BackgroundPage.prototype.appInstalled_ = function() {
-  window.console.log('app installed');
+  goog.global.console.log('app installed');
 };
 
 

@@ -16,7 +16,6 @@ goog.provide('wtf.db.EventListStatistics');
 goog.provide('wtf.db.IAncillaryList');
 
 goog.require('goog.array');
-goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.EventIterator');
@@ -338,12 +337,10 @@ wtf.db.EventList.prototype.insert = function(eventType, time, opt_argData) {
  */
 wtf.db.EventList.prototype.rebuild = function() {
   // Sort all events by time|id.
-  var t0 = wtf.now();
   if (this.resortNeeded_) {
     this.resortEvents_();
     this.resortNeeded_ = false;
   }
-  var t1 = wtf.now();
 
   // Reset stats.
   this.statistics_ = {
@@ -364,18 +361,10 @@ wtf.db.EventList.prototype.rebuild = function() {
   // Setup all scopes.
   // This builds parenting relationships and computes times.
   // It must occur after renumbering so that references are valid.
-  var t2 = wtf.now();
   this.rescopeEvents_();
-  var t3 = wtf.now();
 
   // Rebuild all ancillary lists.
-  var t4 = wtf.now();
   this.rebuildAncillaryLists_(this.ancillaryLists_);
-  var t5 = wtf.now();
-
-  // goog.global.console.log('db resort', t1 - t0);
-  // goog.global.console.log('db rescope', t3 - t2);
-  // goog.global.console.log('db ancillary', t5 - t4);
 };
 
 

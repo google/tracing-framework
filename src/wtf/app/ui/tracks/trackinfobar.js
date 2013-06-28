@@ -18,7 +18,6 @@ goog.require('goog.soy');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.MenuItem');
 goog.require('goog.ui.PopupMenu');
-goog.require('wtf');
 goog.require('wtf.app.ui.tracks.StatisticsTableSource');
 goog.require('wtf.app.ui.tracks.trackinfobar');
 goog.require('wtf.db.SortMode');
@@ -225,10 +224,8 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.layoutInternal = function() {
  * @private
  */
 wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
-  var beginTime = wtf.now();
+  // This will generate the stats on demand and may take some time.
   var table = this.selection_.getSelectionStatistics();
-  var updateDuration = wtf.now() - beginTime;
-  //goog.global.console.log('update info', updateDuration);
 
   var db = this.tracksPanel_.getDocumentView().getDatabase();
   this.tableSource_.setUnits(db.getUnits());

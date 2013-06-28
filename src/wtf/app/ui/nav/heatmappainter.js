@@ -250,11 +250,9 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
   }
 
   var bucketTimeLeft = timeLeft - timeLeft % bucketDuration;
-  var bucketTimeRight = bucketTimeLeft + bucketDuration * bucketCount;
-  var bucketLeft = wtf.math.remap(
-      bucketTimeLeft, timeLeft, timeRight, 0, bounds.width);
-  var bucketMax = 0;
+  // var bucketTimeRight = bucketTimeLeft + bucketDuration * bucketCount;
 
+  var bucketMax = 0;
   for (var n = 0; n < this.indices_.length; n++) {
     var index = this.indices_[n];
     // TODO(benvanik): limit to bucketTimeLeft, bucketTimeRight

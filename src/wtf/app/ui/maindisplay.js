@@ -326,7 +326,7 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
  * @private
  */
 wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
-  var sessionId = data['session_id'];
+  // var sessionId = data['session_id'];
   var streamId = data['stream_id'] || '0';
   var contentType = data['content_type'];
 
@@ -348,7 +348,7 @@ wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
  * @private
  */
 wtf.app.ui.MainDisplay.prototype.handleStreamAppendedCommand_ = function(data) {
-  var sessionId = data['session_id'];
+  // var sessionId = data['session_id'];
   var streamId = data['stream_id'] || '0';
   var datas = data['contents'];
 

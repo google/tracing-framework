@@ -62,7 +62,8 @@ wtf.db.load = function(input, callback, opt_scope) {
       var fileData = platform.readBinaryFile(input);
       if (!fileData) {
         goog.dispose(db);
-        return null;
+        callback.call(opt_scope, null);
+        return;
       }
       goog.asserts.assert(fileData);
       deferred = wtf.db.loadBinarySource_(db, sourceInfo, fileData);
@@ -70,7 +71,8 @@ wtf.db.load = function(input, callback, opt_scope) {
       var jsonSource = platform.readTextFile(input);
       if (!jsonSource) {
         goog.dispose(db);
-        return null;
+        callback.call(opt_scope, null);
+        return;
       }
       deferred = wtf.db.loadJsonSource_(db, sourceInfo, jsonSource);
     } else {

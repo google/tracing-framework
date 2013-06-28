@@ -160,7 +160,6 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
   // TODO(benvanik): add flow ID tracking code
 
   var originalWorker = goog.global['Worker'];
-  var prefix = 'Worker';
 
   // Get all event types from the IDL store.
   // This will be a map of event name to the {@code EVENT_TYPES} objects.
@@ -233,13 +232,6 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
    */
   var ProxyWorker = function(scriptUrl) {
     goog.base(this, descriptor);
-
-    /**
-     * Script URL.
-     * @type {string}
-     * @private
-     */
-    this.scriptUrl_ = scriptUrl;
 
     /**
      * Tracking ID.
@@ -409,7 +401,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
  */
 wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
     function() {
-  var workerId = goog.global['WTF_WORKER_ID'];
+  // var workerId = goog.global['WTF_WORKER_ID'];
   var baseUri = new goog.Uri(goog.global['WTF_WORKER_BASE_URI']);
 
   // Get all event types from the IDL store.

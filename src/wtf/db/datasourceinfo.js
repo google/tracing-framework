@@ -96,6 +96,7 @@ goog.inherits(wtf.db.DriveDataSourceInfo, wtf.db.DataSourceInfo);
  * Source information for a URL-based resource.
  * @param {string} filename Filename.
  * @param {string} contentType MIME type.
+ * @param {string} url Source URL.
  * @extends {wtf.db.DataSourceInfo}
  * @constructor
  */

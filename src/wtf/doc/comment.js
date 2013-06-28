@@ -57,6 +57,15 @@ wtf.doc.Comment = function(author, timeStart, timeEnd, value) {
 
 
 /**
+ * Gets the author name.
+ * @return {string} Author.
+ */
+wtf.doc.Comment.prototype.getAuthor = function() {
+  return this.author_;
+};
+
+
+/**
  * Gets the wall time the comment range starts at.
  * @return {number} Wall time.
  */
@@ -71,6 +80,15 @@ wtf.doc.Comment.prototype.getStartTime = function() {
  */
 wtf.doc.Comment.prototype.getEndTime = function() {
   return this.timeEnd_;
+};
+
+
+/**
+ * Gets the comment value.
+ * @return {string} Comment value.
+ */
+wtf.doc.Comment.prototype.getValue = function() {
+  return this.value_;
 };
 
 

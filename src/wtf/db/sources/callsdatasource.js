@@ -113,7 +113,6 @@ wtf.db.sources.CallsDataSource.prototype.dataReceived_ = function(data) {
  * @private
  */
 wtf.db.sources.CallsDataSource.prototype.transportErrored_ = function(e) {
-  var db = this.getDatabase();
   this.error(
       'Error loading trace data',
       e.toString());
@@ -125,8 +124,6 @@ wtf.db.sources.CallsDataSource.prototype.transportErrored_ = function(e) {
  * @private
  */
 wtf.db.sources.CallsDataSource.prototype.transportEnded_ = function() {
-  var db = this.getDatabase();
-
   // Stitch together all the input parts.
   var blob = wtf.io.Blob.create(this.blobParts_);
 
@@ -251,20 +248,23 @@ wtf.db.sources.CallsDataSource.prototype.processData_ = function(buffer) {
   var headerModules = header['modules'];
   for (var moduleId in headerModules) {
     var headerModule = headerModules[moduleId];
-    var src = headerModule['src'];
+
     // TODO(benvanik): stash src/etc
+    // var src = headerModule['src'];
 
     // Create all function types.
     var fns = headerModule['fns'];
     for (var n = 0; n < fns.length; n += 4) {
       var fnId = fns[n + 0];
       var fnName = fns[n + 1];
-      var fnStart = fns[n + 2];
-      var fnEnd = fns[n + 3];
+      // var fnStart = fns[n + 2];
+      // var fnEnd = fns[n + 3];
+
       // TODO(rsturgell): Add any additional non-time attributes to the
       // eventtype (and write them in the loop below).
       eventTypes[fnId] = eventTypeTable.defineType(
           wtf.db.EventType.createScope(fnName));
+
       // TODO(benvanik): stash range/etc
     }
   }

@@ -33,7 +33,6 @@ goog.require('wtf.util');
 wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
     canvas, timeRangeList) {
   goog.base(this, canvas);
-  var dom = this.getDom();
 
   /**
    * Time range list.

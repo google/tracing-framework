@@ -125,9 +125,9 @@ wtf.util.FunctionBuilder.prototype.addArgument = function(name) {
 /**
  * Appends lines to the function.
  * Each line will be separated by a newline.
- * @param {...string} var_arg String lines.
+ * @param {...string} var_args String lines.
  */
-wtf.util.FunctionBuilder.prototype.append = function(var_arg) {
+wtf.util.FunctionBuilder.prototype.append = function(var_args) {
   goog.asserts.assert(this.isBuilding_);
 
   for (var n = 0; n < arguments.length; n++) {

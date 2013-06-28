@@ -97,7 +97,6 @@ wtf.trace.Flow.prototype.getId = function() {
  */
 wtf.trace.Flow.branch = function(name, opt_value, opt_parentFlow, opt_time) {
   // Infer parent flow, if needed.
-  var parentFlowId = wtf.trace.Flow.INVALID_ID;
   var parentFlow = opt_parentFlow || wtf.trace.Scope.getCurrentFlow();
   if (parentFlow && parentFlow.terminated_) {
     parentFlow = null;

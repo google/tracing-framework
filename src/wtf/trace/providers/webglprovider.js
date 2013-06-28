@@ -345,11 +345,6 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   var thisSetContext = function() {
     setCurrentContext(this);
   };
-  var thisSetContextGenerator = function() {
-    return function() {
-      setCurrentContext(this);
-    };
-  };
 
   var mode = this.options.getString(
       'wtf.trace.provider.webgl.captureLevel', 'all_calls_with_arguments');
@@ -466,7 +461,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   !onlyDraws && wrapMethod(ctxproto,
       'blendFunc(uint32 sfactor, uint32 dfactor)');
   !onlyDraws && wrapMethod(ctxproto,
-      'blendFuncSeparate(uint32 srcRGB, uint32 dstRGB, uint32 srcAlpha, uint32 dstAlpha)');
+      'blendFuncSeparate(uint32 srcRGB, uint32 dstRGB, uint32 srcAlpha, ' +
+          'uint32 dstAlpha)');
   wrapMethod(ctxproto,
       'bufferData(uint32 target, uint32 size, uint32 usage, uint8[] data)',
       function(fn, eventType) {
@@ -532,13 +528,19 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       });
   // TODO(benvanik): compressedTexImage2D
   wrapMethod(ctxproto,
-      'compressedTexImage2D(uint32 target, int32 level, uint32 internalformat, int32 width, int32 height, int32 border, uint8[] data)');
+      'compressedTexImage2D(uint32 target, int32 level, ' +
+          'uint32 internalformat, int32 width, int32 height, int32 border, ' +
+          'uint8[] data)');
   wrapMethod(ctxproto,
-      'compressedTexSubImage2D(uint32 target, int32 level, int32 xoffset, int32 yoffset, int32 width, int32 height, uint32 format, uint8[] data)');
+      'compressedTexSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
+          'int32 yoffset, int32 width, int32 height, uint32 format, ' +
+          'uint8[] data)');
   wrapMethod(ctxproto,
-      'copyTexImage2D(uint32 target, int32 level, uint32 internalformat, int32 x, int32 y, int32 width, int32 height, int32 border)');
+      'copyTexImage2D(uint32 target, int32 level, uint32 internalformat, ' +
+          'int32 x, int32 y, int32 width, int32 height, int32 border)');
   wrapMethod(ctxproto,
-      'copyTexSubImage2D(uint32 target, int32 level, int32 xoffset, int32 yoffset, int32 x, int32 y, int32 widht, int32 height)');
+      'copyTexSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
+          'int32 yoffset, int32 x, int32 y, int32 widht, int32 height)');
   /**
    * @param {!Object} target Target.
    * @param {string} name Name.
@@ -620,7 +622,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   wrapMethod(ctxproto,
       'flush()');
   !onlyDraws && wrapMethod(ctxproto,
-      'framebufferRenderbuffer(uint32 target, uint32 attachment, uint32 renderbuffertarget, uint32 renderbuffer)',
+      'framebufferRenderbuffer(uint32 target, uint32 attachment, ' +
+          'uint32 renderbuffertarget, uint32 renderbuffer)',
       function(fn, eventType) {
         return function framebufferRenderbuffer(
             target, attachment, renderbuffertarget, renderbuffer) {
@@ -631,7 +634,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         };
       });
   !onlyDraws && wrapMethod(ctxproto,
-      'framebufferTexture2D(uint32 target, uint32 attachment, uint32 textarget, uint32 texture, int32 level)',
+      'framebufferTexture2D(uint32 target, uint32 attachment, ' +
+          'uint32 textarget, uint32 texture, int32 level)',
       function(fn, eventType) {
         return function framebufferTexture2D(
             target, attachment, textarget, texture, level) {
@@ -689,7 +693,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   !onlyDraws && wrapMethod(ctxproto,
       'getError()');
   !onlyDraws && wrapMethod(ctxproto,
-      'getFramebufferAttachmentParameter(uint32 target, uint32 attachment, uint32 pname)');
+      'getFramebufferAttachmentParameter(uint32 target, uint32 attachment, ' +
+          'uint32 pname)');
   !onlyDraws && wrapMethod(ctxproto,
       'getProgramParameter(uint32 program, uint32 pname)',
       function(fn, eventType) {
@@ -806,9 +811,11 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       'polygonOffset(float factor, float units)');
   // TODO(benvanik): log input data type/length.
   wrapMethod(ctxproto,
-      'readPixels(int32 x, int32 y, int32 width, int32 height, uint32 format, uint32 type)');
+      'readPixels(int32 x, int32 y, int32 width, int32 height, ' +
+          'uint32 format, uint32 type)');
   !onlyDraws && wrapMethod(ctxproto,
-      'renderbufferStorage(uint32 target, uint32 internalformat, int32 width, int32 height)');
+      'renderbufferStorage(uint32 target, uint32 internalformat, ' +
+          'int32 width, int32 height)');
   !onlyDraws && wrapMethod(ctxproto,
       'sampleCoverage(float value, uint8 invert)');
   !onlyDraws && wrapMethod(ctxproto,
@@ -833,9 +840,12 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   !onlyDraws && wrapMethod(ctxproto,
       'stencilOp(uint32 fail, uint32 zfail, uint32 zpass)');
   !onlyDraws && wrapMethod(ctxproto,
-      'stencilOpSeparate(uint32 face, uint32 fail, uint32 zfail, uint32 zpass)');
+      'stencilOpSeparate(uint32 face, uint32 fail, uint32 zfail, ' +
+          'uint32 zpass)');
   wrapMethod(ctxproto,
-      'texImage2D(uint32 target, int32 level, uint32 internalformat, int32 width, int32 height, int32 border, uint32 format, uint32 type, uint8[] pixels, ascii dataType)',
+      'texImage2D(uint32 target, int32 level, uint32 internalformat, ' +
+          'int32 width, int32 height, int32 border, uint32 format, ' +
+          'uint32 type, uint8[] pixels, ascii dataType)',
       function(fn, eventType) {
         return function texImage2D(target, level, internalformat) {
           setCurrentContext(this);
@@ -886,7 +896,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   !onlyDraws && wrapMethod(ctxproto,
       'texParameteri(uint32 target, uint32 pname, int32 param)');
   wrapMethod(ctxproto,
-      'texSubImage2D(uint32 target, int32 level, int32 xoffset, int32 yoffset, int32 width, int32 height, uint32 format, uint32 type, uint8[] pixels, ascii dataType)',
+      'texSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
+          'int32 yoffset, int32 width, int32 height, uint32 format, ' +
+          'uint32 type, uint8[] pixels, ascii dataType)',
       function(fn, eventType) {
         return function texSubImage2D(target, level, xoffset, yoffset) {
           setCurrentContext(this);
@@ -1099,7 +1111,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         };
       });
   !onlyDraws && wrapMethod(ctxproto,
-      'vertexAttribPointer(uint8 indx, int32 size, uint32 type, uint8 normalized, int32 stride, uint32 offset)');
+      'vertexAttribPointer(uint8 indx, int32 size, uint32 type, ' +
+          'uint8 normalized, int32 stride, uint32 offset)');
   wrapMethod(ctxproto,
       'viewport(int32 x, int32 y, int32 width, int32 height)');
 };
@@ -1130,6 +1143,7 @@ wtf.trace.providers.WebGLProvider.getHandle = function(obj) {
 /**
  * Sets the tracking handle on the given object.
  * @param {!Object} obj Target object.
+ * @param {number} value Handle value.
  */
 wtf.trace.providers.WebGLProvider.setHandle = function(obj, value) {
   obj['__wtf_glhandle__'] = value;

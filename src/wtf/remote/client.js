@@ -35,20 +35,6 @@ wtf.remote.Client = function(traceManager, options) {
   goog.base(this);
 
   /**
-   * Trace manager.
-   * @type {!wtf.trace.TraceManager}
-   * @private
-   */
-  this.traceManager_ = traceManager;
-
-  /**
-   * Options.
-   * @type {!wtf.util.Options}
-   * @private
-   */
-  this.options_ = options;
-
-  /**
    * Web socket, if connecting or connected.
    * @type {WebSocket}
    * @private

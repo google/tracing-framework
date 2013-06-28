@@ -19,7 +19,6 @@ goog.require('goog.math.Long');
 goog.require('wtf.data.ContextInfo');
 goog.require('wtf.data.formats.BinaryTrace');
 goog.require('wtf.data.formats.ChunkedFileFormat');
-goog.require('wtf.data.formats.FileFlags');
 goog.require('wtf.io');
 goog.require('wtf.io.Buffer');
 goog.require('wtf.io.DataFormat');
@@ -238,8 +237,6 @@ wtf.io.cff.BinaryStreamSource.prototype.parseLegacyHeader_ = function(data) {
 
   // Read flags information.
   var flags = buffer.readUint32();
-  var hasHighResolutionTimes =
-      !!(flags & wtf.data.formats.FileFlags.HAS_HIGH_RESOLUTION_TIMES);
   var longTimebase = goog.math.Long.fromBits(
       buffer.readUint32(), buffer.readUint32());
   var timebase = longTimebase.toNumber();
@@ -276,6 +273,7 @@ wtf.io.cff.BinaryStreamSource.prototype.parseLegacyHeader_ = function(data) {
  * The appropriate subclass type will be returned.
  * @param {!wtf.io.Buffer} buffer Source buffer.
  * @return {wtf.data.ContextInfo} Parsed context information.
+ * @private
  */
 wtf.io.cff.BinaryStreamSource.prototype.parseLegacyContextInfo_ =
     function(buffer) {

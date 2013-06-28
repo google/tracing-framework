@@ -111,6 +111,7 @@ wtf.db.DataSource = function(db, sourceInfo) {
    * These may be ignored. A bitmask of values of
    * {@see wtf.db.PresentationHint}.
    * @type {number}
+   * @private
    */
   this.presentationHints_ = 0;
 

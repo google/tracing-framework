@@ -69,7 +69,7 @@ wtf.trace.providers.ImageProvider.prototype.getSettingsSectionConfigs =
  * @private
  */
 wtf.trace.providers.ImageProvider.prototype.injectImage_ = function() {
-  var originalImage = goog.global['Image'];
+  // var originalImage = goog.global['Image'];
 
   // TODO(benvanik): inject both Image and HTMLImageElement
 

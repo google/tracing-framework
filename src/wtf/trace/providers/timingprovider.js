@@ -334,7 +334,6 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrame_ =
 wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
     function(requestName, cancelName, events) {
   var frameNumber = 0;
-  var frameStart = 0;
   var pendingRafs = [];
   var frameRafs = [];
 
@@ -357,7 +356,6 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ =
         frameNumber++;
         frameRafs.push.apply(frameRafs, pendingRafs);
         pendingRafs.length = 0;
-        frameStart = now;
         events.frameStart(frameNumber, now);
       }
 

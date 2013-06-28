@@ -13,7 +13,6 @@
 
 goog.provide('wtf.app.ui.tracks.ZonePainter');
 
-goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -34,7 +33,6 @@ goog.require('wtf.ui.color.Palette');
  */
 wtf.app.ui.tracks.ZonePainter = function ZonePainter(canvas, zone, selection) {
   goog.base(this, canvas);
-  var dom = this.getDom();
 
   /**
    * Zone.
@@ -103,8 +101,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 
-  var repaintStartTime = wtf.now();
-
   // Get a table of matching event types (if a filter is set).
   // This is used by the draw routines to quickly see if an event is filtered.
   var matchedEventTypes = null;
@@ -133,9 +129,6 @@ wtf.app.ui.tracks.ZonePainter.prototype.repaintInternal = function(
 
   // Draw flow lines.
   // TODO(benvanik): draw flow lines/arrows/etc.
-
-  var repaintDuration = wtf.now() - repaintStartTime;
-  //goog.global.console.log('zone paint', repaintDuration);
 };
 
 

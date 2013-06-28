@@ -332,13 +332,6 @@ wtf.ui.SettingsDialog.Pane_ = function(options, dom, title) {
   this.dom_ = dom;
 
   /**
-   * Pane title.
-   * @type {string}
-   * @private
-   */
-  this.title_ = title;
-
-  /**
    * All created sections.
    * @type {!Array.<!wtf.ui.SettingsDialog.Section_>}
    * @private
@@ -416,13 +409,6 @@ wtf.ui.SettingsDialog.Section_ = function(options, dom, title) {
    * @private
    */
   this.dom_ = dom;
-
-  /**
-   * Section title.
-   * @type {string}
-   * @private
-   */
-  this.title_ = title;
 
   /**
    * All created widgets.

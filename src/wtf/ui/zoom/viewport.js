@@ -843,7 +843,7 @@ wtf.ui.zoom.Viewport.prototype.mouseUp = function(x, y, button) {
   }, this);
 
   if (this.leftMouseDown_ && delta < 4) {
-    var sceneXY = this.screenToScene(x, y);
+    // var sceneXY = this.screenToScene(x, y);
     this.emitEvent(wtf.ui.zoom.Viewport.EventType.CLICK, x, y);
   }
 
@@ -893,8 +893,8 @@ wtf.ui.zoom.Viewport.prototype.mouseMove = function(x, y) {
           wtf.ui.zoom.TransitionMode.IMMEDIATE);
     }
   } else {
-    var sceneXY = this.screenToScene(x, y);
     // TODO(benvanik): fire move with x/y
+    // var sceneXY = this.screenToScene(x, y);
   }
 
   this.lastMouseX_ = x;

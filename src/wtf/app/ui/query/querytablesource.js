@@ -63,7 +63,6 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
     ctx, bounds, scrollBounds, rowOffset, rowHeight, first, last) {
   ctx.font = '11px monospace';
   var charWidth = ctx.measureText('0').width;
-  var charHeight = 11;
   var rowCenter = rowHeight / 2 + 10 / 2;
 
   // Gutter.

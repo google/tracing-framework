@@ -31,20 +31,6 @@ wtf.app.ui.nav.TimelinePainter = function TimelinePainter(canvas, db, zone) {
   goog.base(this, canvas);
 
   /**
-   * Database.
-   * @type {!wtf.db.Database}
-   * @private
-   */
-  this.db_ = db;
-
-  /**
-   * Zone index.
-   * @type {!wtf.db.Zone}
-   * @private
-   */
-  this.zone_ = zone;
-
-  /**
    * Frame list.
    * @type {wtf.db.FrameList}
    * @private

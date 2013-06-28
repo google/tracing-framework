@@ -339,7 +339,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['MarkDOMContent'] = function(record) {
     var startTime = record[1] - timebase;
-    var scope = domContentReadyEvent(record[2], startTime);
+    domContentReadyEvent(record[2], startTime);
   };
 
   // ScheduleStyleRecalculation: a style has been invalidated - expect a
@@ -442,9 +442,6 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
 wtf.trace.providers.ChromeDebugProvider.prototype.gatherData = function() {
   var deferred = new goog.async.Deferred();
   var requestId = this.nextRequestId_++;
-  var request = {
-    deferred: deferred
-  };
   this.pendingRequests_[requestId] = deferred;
   this.sendMessage_({
     'command': 'get_debugger_data',

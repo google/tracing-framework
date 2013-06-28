@@ -396,16 +396,21 @@ less_css_library(
 
 CLOSURE_LINTER_PATH='third_party/closure-linter/'
 
+file_set(
+    name='lint_src',
+    srcs=[':wtf_src_js'],
+    src_exclude_filter='eventbuffers_test.js|benchmark.js')
+
 closure_js_fixstyle(
     name='all_js_fixstyle',
     namespaces=['goog', 'wtf',],
-    srcs=[':wtf_src_js'],
+    srcs=[':lint_src'],
     linter_path=CLOSURE_LINTER_PATH)
 
 closure_js_lint(
     name='all_js_lint',
     namespaces=['goog', 'wtf',],
-    srcs=[':all_js_fixstyle'],
+    srcs=[':lint_src'],
     linter_path=CLOSURE_LINTER_PATH)
 
 

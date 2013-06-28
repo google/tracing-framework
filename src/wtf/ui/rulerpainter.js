@@ -43,13 +43,6 @@ wtf.ui.RulerPainter = function RulerPainter(canvas) {
   this.maxGranularity_ = 0;
 
   /**
-   * Units to display labels in.
-   * @type {wtf.db.Unit}
-   * @private
-   */
-  this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
-
-  /**
    * Whether to show the hover bar/time.
    * @type {boolean}
    * @private
@@ -129,14 +122,10 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
   var n = 0;
   ctx.fillStyle = '#000000';
   while (granularity >= this.maxGranularity_ / 10) {
-    var lineCount = duration / granularity;
     var lineSpacing = granularity / duration * width;
     if (lineSpacing < 25) {
       break;
     }
-
-    // Scalar used for text labels.
-    var g = 1 / granularity * 1000;
 
     ctx.globalAlpha = wtf.math.remap(lineSpacing, 25, 100, 0, 1);
 
@@ -148,7 +137,6 @@ wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
       }
       var x = wtf.math.remap(time, timeLeft, timeRight, 0, width);
       x = Math.round(x) + 0.5;
-      var timeValue = Math.round(time * g) / g;
       var timeString = wtf.db.Unit.format(time, this.units, true);
       ctx.fillText(timeString, bounds.left + x, bounds.top + 11);
     }

@@ -26,14 +26,14 @@ wtf.db.TimeRange = function() {
    * @type {number}
    * @private
    */
-  this.beginEventId_ = 0;
+  this.beginEventId_ = -1;
 
   /**
    * Event ID of the end.
    * @type {number}
    * @private
    */
-  this.endEventId_ = 0;
+  this.endEventId_ = -1;
 
   /**
    * Time range name.
@@ -91,6 +91,15 @@ wtf.db.TimeRange = function() {
 
 
 /**
+ * Gets the event ID of the time range begin event, if any.
+ * @return {number} Event ID or -1 if no event was set.
+ */
+wtf.db.TimeRange.prototype.getBeginEventId = function() {
+  return this.beginEventId_;
+};
+
+
+/**
  * Sets the time range data from the given start event.
  * @param {!wtf.db.EventIterator} it Event.
  * @param {number} level Level.
@@ -103,6 +112,15 @@ wtf.db.TimeRange.prototype.setBeginEvent = function(it, level, overlap) {
   this.time_ = it.getTime();
   this.level_ = level;
   this.overlap_ = overlap;
+};
+
+
+/**
+ * Gets the event ID of the time range end event, if any.
+ * @return {number} Event ID or -1 if no event was set.
+ */
+wtf.db.TimeRange.prototype.getEndEventId = function() {
+  return this.endEventId_;
 };
 
 
@@ -239,6 +257,12 @@ wtf.db.TimeRange.allocateId = function() {
 goog.exportSymbol(
     'wtf.db.TimeRange',
     wtf.db.TimeRange);
+goog.exportProperty(
+    wtf.db.TimeRange.prototype, 'getBeginEventId',
+    wtf.db.TimeRange.prototype.getBeginEventId);
+goog.exportProperty(
+    wtf.db.TimeRange.prototype, 'getEndEventId',
+    wtf.db.TimeRange.prototype.getEndEventId);
 goog.exportProperty(
     wtf.db.TimeRange.prototype, 'getName',
     wtf.db.TimeRange.prototype.getName);

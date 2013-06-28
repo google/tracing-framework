@@ -227,6 +227,7 @@ wtf.trace.EventTypeBuilder.Writer_;
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
@@ -244,6 +245,7 @@ wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
@@ -261,6 +263,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
@@ -290,6 +293,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT16_ = {
@@ -307,6 +311,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT16_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
@@ -336,6 +341,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
@@ -353,6 +359,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
@@ -382,6 +389,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = {
@@ -399,6 +407,7 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
@@ -428,6 +437,7 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
@@ -450,6 +460,7 @@ wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_CHAR_ = {
@@ -467,6 +478,7 @@ wtf.trace.EventTypeBuilder.WRITE_CHAR_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_ = {
@@ -496,6 +508,7 @@ wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_WCHAR_ = {
@@ -513,6 +526,7 @@ wtf.trace.EventTypeBuilder.WRITE_WCHAR_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_ = {
@@ -542,6 +556,7 @@ wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
@@ -560,6 +575,7 @@ wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
@@ -577,6 +593,7 @@ wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @return {*} Dummy to make the linter shut up.
  * @private
  */
 wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {

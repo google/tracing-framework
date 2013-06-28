@@ -71,6 +71,15 @@ wtf.db.Mark = function(eventId, name, value, time) {
 
 
 /**
+ * Gets the event ID of the mark.
+ * @return {number} Event ID.
+ */
+wtf.db.Mark.prototype.getEventId = function() {
+  return this.eventId_;
+};
+
+
+/**
  * Gets the mark name.
  * @return {string} Mark name.
  */
@@ -167,6 +176,9 @@ wtf.db.Mark.selector = function(target) {
 goog.exportSymbol(
     'wtf.db.Mark',
     wtf.db.Mark);
+goog.exportProperty(
+    wtf.db.Mark.prototype, 'getEventId',
+    wtf.db.Mark.prototype.getEventId);
 goog.exportProperty(
     wtf.db.Mark.prototype, 'getName',
     wtf.db.Mark.prototype.getName);

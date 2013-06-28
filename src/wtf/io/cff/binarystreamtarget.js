@@ -123,8 +123,6 @@ wtf.io.cff.BinaryStreamTarget.prototype.writeChunk = function(chunk) {
  * @override
  */
 wtf.io.cff.BinaryStreamTarget.prototype.end = function() {
-  var transport = this.getTransport();
-
   // TODO(benvanik): add a footer here? May be nice to have total chunk count
   //     or a chunk table/etc to help loaders.
 };

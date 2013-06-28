@@ -53,13 +53,13 @@ wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ =
   var timeRangeMap = {};
 
   // console.time
-  var originalTime = console['time'];
+  // var originalTime = console['time'];
   this.injectFunction(console, 'time', function time(timerName) {
     timeRangeMap[timerName] = wtf.trace.beginTimeRange(timerName);
   });
 
   // console.timeEnd
-  var originalTimeEnd = console['timeEnd'];
+  // var originalTimeEnd = console['timeEnd'];
   this.injectFunction(console, 'timeEnd', function timeEnd(timerName) {
     var timeRange = timeRangeMap[timerName];
     delete timeRangeMap[timerName];

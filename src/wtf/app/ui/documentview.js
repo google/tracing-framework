@@ -218,7 +218,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
       'view_trace_health', function() {
         var body = this.getDom().getDocument().body;
         goog.asserts.assert(body);
-        this.activeDialog_ = new wtf.app.ui.HealthDialog(
+        new wtf.app.ui.HealthDialog(
             db,
             this.healthInfo_,
             body,
@@ -250,7 +250,6 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
   commandManager.registerSimpleCommand(
       'goto_range', function(source, target, timeStart, timeEnd,
           opt_immediate) {
-        var firstEventTime = db.getFirstEventTime();
         var pad = (timeEnd - timeStart) * 0.05;
         view.setVisibleRange(
             timeStart - pad,
@@ -301,8 +300,6 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
  */
 wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
   var db = this.getDatabase();
-  var view = this.localView_;
-  var selection = this.selection_;
 
   var dom = this.getDom();
   var commandManager = wtf.events.getCommandManager();

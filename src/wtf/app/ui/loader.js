@@ -131,7 +131,6 @@ wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
   goog.asserts.assert(contentTypes.length == contentSources.length);
   var sourceInfos = [];
   for (var n = 0; n < contentTypes.length; n++) {
-    var entry = null;
     if (contentBuffers) {
       // Incoming arrays may be in many forms.
       // We may want to check content type and only string->[] if it's actually
@@ -405,8 +404,6 @@ wtf.app.ui.Loader.prototype.generateTitleFromEntries_ = function(entries) {
  * @private
  */
 wtf.app.ui.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
-  var db = doc.getDatabase();
-
   _gaq.push(['_trackEvent', 'app', 'open_files', null]);
 
   // Close the progress dialog.
@@ -534,7 +531,6 @@ wtf.app.ui.Loader.Entry_.prototype.start = function(db) {
 
     // Here be heuristics based on mime type.
     // TODO(benvanik): sniff contents/don't rely on mime type/etc.
-    var streamSource;
     switch (this.sourceInfo.contentType) {
       default:
       case 'application/x-extension-wtf-trace':

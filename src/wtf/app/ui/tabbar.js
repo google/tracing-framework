@@ -38,13 +38,6 @@ wtf.app.ui.Tabbar = function(documentView, parentElement) {
   goog.base(this, parentElement, dom);
 
   /**
-   * Parent document view.
-   * @type {!wtf.app.ui.DocumentView}
-   * @private
-   */
-  this.documentView_ = documentView;
-
-  /**
    * All panels, in their display order.
    * @type {!Array.<!wtf.app.ui.TabPanel>}
    * @private

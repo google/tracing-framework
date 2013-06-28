@@ -77,6 +77,6 @@ wtf.ui.ErrorDialog.prototype.createDom = function(dom) {
  * @param {goog.dom.DomHelper=} opt_dom DOM helper.
  */
 wtf.ui.ErrorDialog.show = function(message, detail, opt_dom) {
-  var dialog = new wtf.ui.ErrorDialog(message, detail, opt_dom);
+  new wtf.ui.ErrorDialog(message, detail, opt_dom);
   // TODO(benvanik): deferred until done? cancel? etc?
 };

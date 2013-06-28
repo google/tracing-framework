@@ -128,7 +128,6 @@ wtf.db.sources.ChunkedDataSource.prototype.start = function() {
  * @private
  */
 wtf.db.sources.ChunkedDataSource.prototype.streamErrored_ = function(e) {
-  var db = this.getDatabase();
   this.error(
       'Error loading trace data',
       e.toString());
@@ -157,7 +156,6 @@ wtf.db.sources.ChunkedDataSource.prototype.chunkReceived_ = function(chunk) {
     return;
   }
 
-  var db = this.getDatabase();
   switch (chunk.getType()) {
     case wtf.io.cff.ChunkType.FILE_HEADER:
       this.processFileHeaderChunk_(
@@ -296,8 +294,6 @@ wtf.db.sources.ChunkedDataSource.prototype.setupBinaryDispatchTable_ =
  */
 wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventBuffer_ =
     function(part) {
-  var db = this.getDatabase();
-
   // TODO(benvanik): get resources.
 
   // Grab the event data buffer.
@@ -305,7 +301,6 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventBuffer_ =
   goog.asserts.assert(bufferView);
 
   // Read all events from the buffer.
-  var successful = true;
   var uint32Array = bufferView['uint32Array'];
   var eventWireTable = this.eventWireTable_;
   var offset = 0;
@@ -320,7 +315,6 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventBuffer_ =
     // Lookup event.
     var eventType = eventWireTable[eventWireId];
     if (!eventType) {
-      successful = false;
       this.error(
           'Undefined event type',
           'The file tried to reference an event it didn\'t define. Perhaps ' +
@@ -363,8 +357,6 @@ wtf.db.sources.ChunkedDataSource.prototype.processBinaryEventBuffer_ =
  */
 wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
     function(part) {
-  var db = this.getDatabase();
-
   // TODO(benvanik): get resources.
 
   // Grab the event data buffer.
@@ -373,7 +365,6 @@ wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
   buffer.offset = 0;
 
   // Read all events from the buffer.
-  var successful = true;
   var data = buffer.data;
   var eventWireTable = this.eventWireTable_;
   while (buffer.offset < buffer.capacity) {
@@ -390,7 +381,6 @@ wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
     // Lookup event.
     var eventType = eventWireTable[eventWireId];
     if (!eventType) {
-      successful = false;
       this.error(
           'Undefined event type',
           'The file tried to reference an event it didn\'t define. Perhaps ' +
@@ -431,16 +421,14 @@ wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
  */
 wtf.db.sources.ChunkedDataSource.prototype.processJsonEventBuffer_ =
     function(part) {
-  var db = this.getDatabase();
-
   // TODO(benvanik): get resources.
 
   // Grab the event data buffer.
   var buffer = part.getValue();
   goog.asserts.assert(buffer);
 
-  for (var n = 0; n < buffer.length; n++) {
-    var entry = buffer[n];
-    // TODO(benvanik): reimplement JSON event parsing.
-  }
+  // TODO(benvanik): reimplement JSON event parsing.
+  // for (var n = 0; n < buffer.length; n++) {
+  //   var entry = buffer[n];
+  // }
 };

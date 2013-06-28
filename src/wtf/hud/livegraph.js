@@ -16,7 +16,6 @@ goog.provide('wtf.hud.LiveGraph');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
-goog.require('wtf');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.Painter');
 goog.require('wtf.util.canvas');
@@ -107,8 +106,8 @@ wtf.hud.LiveGraph.prototype.graphClicked_ = function(e) {
  * @param {number=} opt_time New time. Prefer using {@see wtf#now}.
  */
 wtf.hud.LiveGraph.prototype.advance = function(opt_time) {
-  var time = opt_time || wtf.now();
   // TODO(benvanik): advance time, update the overlay
+  // var time = opt_time || wtf.now();
 
   // Redraw after update.
   if (this.enabled_) {

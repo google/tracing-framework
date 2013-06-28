@@ -361,8 +361,6 @@ wtf.io.drive.queryFile = function(fileId) {
 wtf.io.drive.downloadFile = function(driveFile) {
   var result = new goog.result.SimpleResult();
 
-  var clientId = wtf.io.drive.getClientId_();
-
   // Authenticate first.
   // This is a no-op if the user has already authenticated.
   goog.result.wait(wtf.io.drive.authenticate(), function(result) {

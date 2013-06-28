@@ -15,7 +15,6 @@ goog.provide('wtf.db.Database');
 
 goog.require('goog.asserts');
 goog.require('goog.events');
-goog.require('wtf');
 goog.require('wtf.db.EventTypeTable');
 goog.require('wtf.db.Unit');
 goog.require('wtf.db.Zone');
@@ -123,14 +122,6 @@ wtf.db.Database = function() {
    * @private
    */
   this.insertingEvents_ = false;
-
-  /**
-   * Time the insertion batch began.
-   * Used for debugging.
-   * @type {number}
-   * @private
-   */
-  this.insertStartTime_ = 0;
 
   /**
    * The number of zones when insertion began.
@@ -418,7 +409,6 @@ wtf.db.Database.prototype.sourceEnded = function(source) {
 wtf.db.Database.prototype.beginInsertingEvents = function(source) {
   goog.asserts.assert(!this.insertingEvents_);
   this.insertingEvents_ = true;
-  this.insertStartTime_ = wtf.now();
 
   // For tracking newly created zones.
   this.beginningZoneCount_ = this.zoneList_.length;
@@ -436,11 +426,8 @@ wtf.db.Database.prototype.beginInsertingEvents = function(source) {
 wtf.db.Database.prototype.endInsertingEvents = function() {
   goog.asserts.assert(this.insertingEvents_);
   this.insertingEvents_ = false;
-  var insertEndTime = wtf.now();
-  //goog.global.console.log('db insert', insertEndTime - this.insertStartTime_);
 
   // Reconcile zone changes.
-  var rebuildStartTime = wtf.now();
   this.firstEventTime_ = Number.MAX_VALUE;
   this.lastEventTime_ = Number.MIN_VALUE;
   for (var n = 0; n < this.zoneList_.length; n++) {
@@ -456,8 +443,6 @@ wtf.db.Database.prototype.endInsertingEvents = function() {
     this.firstEventTime_ = 0;
     this.lastEventTime_ = 0;
   }
-  var rebuildEndTime = wtf.now();
-  //goog.global.console.log('db rebuild', rebuildEndTime - rebuildStartTime);
 
   // Track added zones and emit the event.
   if (this.beginningZoneCount_ != this.zoneList_.length) {

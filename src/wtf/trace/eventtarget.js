@@ -538,7 +538,7 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.dispatchToListener = function(
       listener['handleEvent'](e);
     } else {
       // Listener is a function.
-      return listener.call(this, e);
+      listener.call(this, e);
     }
   } finally {
     wtf.trace.Scope.leave(scope);
