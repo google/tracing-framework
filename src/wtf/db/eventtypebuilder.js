@@ -51,7 +51,7 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
 
   // Scan arguments to figure out which buffers we need.
   var anyVariableSized = false;
-  var requiredBuffers = {};
+  var uses = {};
   var args = eventType.args;
   for (var n = 0; n < args.length; n++) {
     var arg = args[n];
@@ -62,7 +62,7 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
 
     // Track required buffers.
     for (var m = 0; m < reader.uses.length; m++) {
-      requiredBuffers[reader.uses[m]] = true;
+      uses[reader.uses[m]] = true;
     }
 
     // If we have any variable sized arguments we need to add some locals.
@@ -71,14 +71,17 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
     }
   }
 
-  // Add all buffer getters.
-  for (var name in requiredBuffers) {
-    this.append('var ' + name + ' = buffer.' + name + ';');
-  }
-
-  // Add locals required for variable sized arguments.
-  if (anyVariableSized) {
-    this.append('var t, len;');
+  // Add all buffer/var getters.
+  for (var name in uses) {
+    switch (name) {
+      case 'temp':
+      case 'len':
+        this.append('var ' + name + ';');
+        break;
+      default:
+        this.append('var ' + name + ' = buffer.' + name + ';');
+        break;
+    }
   }
 
   // Grab offset.
@@ -160,16 +163,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'int8[]': {
-    uses: ['uint32Array', 'int8Array'],
+    uses: ['uint32Array', 'int8Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Int8Array(len);',
-        '  for (var n = 0, oi = o << 2; n < t.length; n++) {',
-        '    t[n] = int8Array[oi + n];',
+        '  ' + a + '_ = temp = new Int8Array(len);',
+        '  for (var n = 0, oi = o << 2; n < len; n++) {',
+        '    temp[n] = int8Array[oi + n];',
         '  }',
         '  o += (len + 3) >> 2;',
         '}'
@@ -186,16 +189,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'uint8[]': {
-    uses: ['uint32Array', 'uint8Array'],
+    uses: ['uint32Array', 'uint8Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Uint8Array(len);',
-        '  for (var n = 0, oi = o << 2; n < t.length; n++) {',
-        '    t[n] = uint8Array[oi + n];',
+        '  ' + a + '_ = temp = new Uint8Array(len);',
+        '  for (var n = 0, oi = o << 2; n < len; n++) {',
+        '    temp[n] = uint8Array[oi + n];',
         '  }',
         '  o += (len + 3) >> 2;',
         '}'
@@ -212,16 +215,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'int16[]': {
-    uses: ['uint32Array', 'int16Array'],
+    uses: ['uint32Array', 'int16Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Int16Array(len);',
-        '  for (var n = 0, oi = o << 1; n < t.length; n++) {',
-        '    t[n] = int16Array[oi + n];',
+        '  ' + a + '_ = temp = new Int16Array(len);',
+        '  for (var n = 0, oi = o << 1; n < len; n++) {',
+        '    temp[n] = int16Array[oi + n];',
         '  }',
         '  o += (len + 1) >> 1;',
         '}'
@@ -238,16 +241,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'uint16[]': {
-    uses: ['uint32Array', 'uint16Array'],
+    uses: ['uint32Array', 'uint16Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Uint16Array(len);',
-        '  for (var n = 0, oi = o << 1; n < t.length; n++) {',
-        '    t[n] = uint16Array[oi + n];',
+        '  ' + a + '_ = temp = new Uint16Array(len);',
+        '  for (var n = 0, oi = o << 1; n < len; n++) {',
+        '    temp[n] = uint16Array[oi + n];',
         '  }',
         '  o += (len + 1) >> 1;',
         '}'
@@ -264,16 +267,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'int32[]': {
-    uses: ['uint32Array', 'int32Array'],
+    uses: ['uint32Array', 'int32Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Int32Array(len);',
-        '  for (var n = 0; n < t.length; n++) {',
-        '    t[n] = int32Array[o + n];',
+        '  ' + a + '_ = temp = new Int32Array(len);',
+        '  for (var n = 0; n < len; n++) {',
+        '    temp[n] = int32Array[o + n];',
         '  }',
         '  o += len;',
         '}'
@@ -290,16 +293,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'uint32[]': {
-    uses: ['uint32Array'],
+    uses: ['uint32Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Uint32Array(len);',
-        '  for (var n = 0; n < t.length; n++) {',
-        '    t[n] = uint32Array[o + n];',
+        '  ' + a + '_ = temp = new Uint32Array(len);',
+        '  for (var n = 0; n < len; n++) {',
+        '    temp[n] = uint32Array[o + n];',
         '  }',
         '  o += len;',
         '}'
@@ -316,16 +319,16 @@ wtf.db.EventTypeBuilder.READERS_ = {
     }
   },
   'float32[]': {
-    uses: ['uint32Array', 'float32Array'],
+    uses: ['uint32Array', 'float32Array', 'temp', 'len'],
     size: 0,
     read: function(a, offset) {
       return [
         'var ' + a + '_ = null;',
         'len = uint32Array[o++];',
         'if (len != 0xFFFFFFFF) {',
-        '  ' + a + '_ = t = new Float32Array(len);',
-        '  for (var n = 0; n < t.length; n++) {',
-        '    t[n] = float32Array[o + n];',
+        '  ' + a + '_ = temp = new Float32Array(len);',
+        '  for (var n = 0; n < len; n++) {',
+        '    temp[n] = float32Array[o + n];',
         '  }',
         '  o += len;',
         '}'
@@ -349,6 +352,66 @@ wtf.db.EventTypeBuilder.READERS_ = {
       return [
         'var ' + a + '_ = ' +
             'stringTable.getString(uint32Array[' + offset + ']);'
+      ];
+    }
+  },
+  'char': {
+    uses: ['uint8Array'],
+    size: 1,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = String.fromCharCode(' +
+            'uint8Array[(' + offset + ') << 2]);'
+      ];
+    }
+  },
+  'char[]': {
+    uses: ['uint32Array', 'uint8Array', 'temp', 'len'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len == 0) {',
+        '  ' + a + '_ = \'\'',
+        '} else if (len != 0xFFFFFFFF) {',
+        '  temp = new Array(len);',
+        '  for (var n = 0, oi = o << 2; n < len; n++) {',
+        '    temp[n] = uint8Array[oi + n];',
+        '  }',
+        '  ' + a + '_ = String.fromCharCode.apply(null, temp);',
+        '  o += (len + 3) >> 2;',
+        '}'
+      ];
+    }
+  },
+  'wchar': {
+    uses: ['uint16Array'],
+    size: 2,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = String.fromCharCode(' +
+            'uint16Array[(' + offset + ') << 1]);'
+      ];
+    }
+  },
+  'wchar[]': {
+    uses: ['uint32Array', 'uint16Array', 'temp', 'len'],
+    size: 0,
+    read: function(a, offset) {
+      return [
+        'var ' + a + '_ = null;',
+        'len = uint32Array[o++];',
+        'if (len == 0) {',
+        '  ' + a + '_ = \'\'',
+        '} else if (len != 0xFFFFFFFF) {',
+        '  temp = new Array(len);',
+        '  for (var n = 0, oi = o << 1; n < len; n++) {',
+        '    temp[n] = uint16Array[oi + n];',
+        '  }',
+        '  ' + a + '_ = String.fromCharCode.apply(null, temp);',
+        '  o += (len + 1) >> 1;',
+        '}'
       ];
     }
   },

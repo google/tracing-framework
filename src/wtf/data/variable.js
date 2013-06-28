@@ -83,6 +83,8 @@ wtf.data.Variable.TYPE_MAP_ = {
   'float': 'float32',
   'ascii': 'ascii',
   'utf8': 'utf8',
+  'char': 'char',
+  'wchar': 'wchar',
   'DOMString': 'utf8',
   'any': 'any',
   'flowId': 'flowId',

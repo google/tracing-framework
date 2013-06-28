@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright 2013 Google, Inc. All Rights Reserved.
  *
  * Use of this source code is governed by a BSD-style license that can be
@@ -226,6 +226,38 @@ wtf.tests.EventBuffers_test = suite('wtf.tests.EventBuffers', function() {
     wtf.io.BufferView.setOffset(bufferView, 8);
     assert.deepEqual(ev.read(bufferView), {
       's': 'abcd',
+      's_empty': '',
+      's_null': null
+    });
+  });
+
+  test('primitiveArgChar', function() {
+    var bufferView = wtf.io.BufferView.createEmpty(1024);
+    var ev = setupTestEvent(
+        'primitiveArgChar(char c, char[] s, char[] s_empty, char[] s_null)');
+    ev.write('a', 'abcd', '', null, 1234567, bufferView);
+    assert.arraysEqual(wtf.io.BufferView.getUsedBytes(bufferView),
+        [1, 0, 0, 0, 88, 255, 149, 73, 97, 0, 0, 0, 4, 0, 0, 0, 97, 98, 99, 100, 0, 0, 0, 0, 255, 255, 255, 255]);
+    wtf.io.BufferView.setOffset(bufferView, 8);
+    assert.deepEqual(ev.read(bufferView), {
+      'c': 'a',
+      's': 'abcd',
+      's_empty': '',
+      's_null': null
+    });
+  });
+
+  test('primitiveArgWchar', function() {
+    var bufferView = wtf.io.BufferView.createEmpty(1024);
+    var ev = setupTestEvent(
+        'primitiveArgWchar(wchar c, wchar[] s, wchar[] s_empty, wchar[] s_null)');
+    ev.write('⁂', '⇱⇲↺↻', '', null, 1234567, bufferView);
+    assert.arraysEqual(wtf.io.BufferView.getUsedBytes(bufferView),
+        [1, 0, 0, 0, 88, 255, 149, 73, 66, 32, 0, 0, 4, 0, 0, 0, 241, 33, 242, 33, 186, 33, 187, 33, 0, 0, 0, 0, 255, 255, 255, 255]);
+    wtf.io.BufferView.setOffset(bufferView, 8);
+    assert.deepEqual(ev.read(bufferView), {
+      'c': '⁂',
+      's': '⇱⇲↺↻',
       's_empty': '',
       's_null': null
     });
