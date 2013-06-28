@@ -452,6 +452,98 @@ wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
  * @type {wtf.trace.EventTypeBuilder.Writer_}
  * @private
  */
+wtf.trace.EventTypeBuilder.WRITE_CHAR_ = {
+  uses: ['int8Array'],
+  size: 1,
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
+    return [
+      'int8Array[(' + offset + ') << 2] = ' + a + '.charCodeAt(0);'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
+wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_ = {
+  uses: ['int32Array', 'int8Array'],
+  size: 0,
+  setup: function(a) {
+    return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
+  },
+  computeSize: function(a) {
+    return '4 + ((' + a + 'Length + 3) & ~0x3)';
+  },
+  write: function(a, offset) {
+    return [
+      'if (' + a + ' === null || ' + a + ' === undefined) {',
+      '  int32Array[o++] = -1;',
+      '} else {',
+      '  int32Array[o++] = ' + a + 'Length;',
+      '  for (var n = 0, oi = o << 2; n < ' + a + 'Length; n++) {',
+      '    int8Array[oi + n] = ' + a + '.charCodeAt(n);',
+      '  }',
+      '  o += (' + a + 'Length + 3) >> 2;',
+      '}'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
+wtf.trace.EventTypeBuilder.WRITE_WCHAR_ = {
+  uses: ['int16Array'],
+  size: 2,
+  setup: null,
+  computeSize: null,
+  write: function(a, offset) {
+    return [
+      'int16Array[(' + offset + ') << 1] = ' + a + '.charCodeAt(0);'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
+wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_ = {
+  uses: ['int32Array', 'int16Array'],
+  size: 0,
+  setup: function(a) {
+    return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
+  },
+  computeSize: function(a) {
+    return '4 + (((' + a + 'Length + 1) << 1) & 0x3)';
+  },
+  write: function(a, offset) {
+    return [
+      'if (' + a + ' === null || ' + a + ' === undefined) {',
+      '  int32Array[o++] = -1;',
+      '} else {',
+      '  int32Array[o++] = ' + a + 'Length;',
+      '  for (var n = 0, oi = o << 1; n < ' + a + 'Length; n++) {',
+      '    int16Array[oi + n] = ' + a + '.charCodeAt(n);',
+      '  }',
+      '  o += (' + a + 'Length + 1) >> 1;',
+      '}'
+    ];
+  }
+};
+
+
+/**
+ * @type {wtf.trace.EventTypeBuilder.Writer_}
+ * @private
+ */
 wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
   uses: ['int32Array', 'stringTable'],
   size: 4,
@@ -523,6 +615,10 @@ wtf.trace.EventTypeBuilder.WRITERS_ = {
   'float32[]': wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_,
   'ascii': wtf.trace.EventTypeBuilder.WRITE_STRING_,
   'utf8': wtf.trace.EventTypeBuilder.WRITE_STRING_,
+  'char': wtf.trace.EventTypeBuilder.WRITE_CHAR_,
+  'char[]': wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_,
+  'wchar': wtf.trace.EventTypeBuilder.WRITE_WCHAR_,
+  'wchar[]': wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_,
   'any': wtf.trace.EventTypeBuilder.WRITE_ANY_,
   'flowId': wtf.trace.EventTypeBuilder.WRITE_FLOWID_,
   'time32': wtf.trace.EventTypeBuilder.WRITE_TIME32_
