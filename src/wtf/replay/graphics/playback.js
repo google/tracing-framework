@@ -235,7 +235,7 @@ wtf.replay.graphics.Playback.prototype.getSupportedExtensions_ = function() {
 /**
  * Constructs a list of steps.
  * @param {!wtf.db.EventList} eventList A list of events.
- * @param {!Wtf.db.FrameList} frameList A list of frames.
+ * @param {!wtf.db.FrameList} frameList A list of frames.
  * @return {!Array.<!wtf.replay.graphics.Step>} A list of steps.
  * @private
  */
@@ -273,7 +273,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       steps.push(new wtf.replay.graphics.Step(
           eventList, currentStartId, it.getId(), currentFrame));
       noEventsForPreviousStep = true;
-      currentFrame = frameList.getNextFrame(currentFrame);
+      if (currentFrame) {
+        currentFrame = frameList.getNextFrame(currentFrame);
+      }
       it.next();
       if (!it.done()) {
         currentStartId = it.getId();
