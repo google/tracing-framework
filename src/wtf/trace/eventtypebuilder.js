@@ -227,10 +227,9 @@ wtf.trace.EventTypeBuilder.Writer_;
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
+wtf.trace.EventTypeBuilder.WRITE_BOOL_ = ({
   uses: ['int8Array'],
   size: 1,
   setup: null,
@@ -240,15 +239,14 @@ wtf.trace.EventTypeBuilder.WRITE_BOOL_ = {
       'int8Array[(' + offset + ') << 2] = ' + a + ' ? 1 : 0;'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
+wtf.trace.EventTypeBuilder.WRITE_INT8_ = ({
   uses: ['int8Array'],
   size: 1,
   setup: null,
@@ -258,15 +256,14 @@ wtf.trace.EventTypeBuilder.WRITE_INT8_ = {
       'int8Array[(' + offset + ') << 2] = ' + a + ';'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
+wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = ({
   uses: ['int32Array', 'int8Array'],
   size: 0,
   setup: function(a) {
@@ -288,15 +285,14 @@ wtf.trace.EventTypeBuilder.WRITE_INT8ARRAY_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_INT16_ = {
+wtf.trace.EventTypeBuilder.WRITE_INT16_ = ({
   uses: ['int16Array'],
   size: 2,
   setup: null,
@@ -306,15 +302,14 @@ wtf.trace.EventTypeBuilder.WRITE_INT16_ = {
       'int16Array[(' + offset + ') << 1] = ' + a + ';'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
+wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = ({
   uses: ['int32Array', 'int16Array'],
   size: 0,
   setup: function(a) {
@@ -336,15 +331,14 @@ wtf.trace.EventTypeBuilder.WRITE_INT16ARRAY_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
+wtf.trace.EventTypeBuilder.WRITE_INT32_ = ({
   uses: ['int32Array'],
   size: 4,
   setup: null,
@@ -354,15 +348,14 @@ wtf.trace.EventTypeBuilder.WRITE_INT32_ = {
       'int32Array[' + offset + '] = ' + a + ';'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
+wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = ({
   uses: ['int32Array'],
   size: 0,
   setup: function(a) {
@@ -384,15 +377,14 @@ wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = {
+wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = ({
   uses: ['float32Array'],
   size: 4,
   setup: null,
@@ -402,15 +394,14 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32_ = {
       'float32Array[' + offset + '] = ' + a + ';'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
+wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = ({
   uses: ['int32Array', 'float32Array'],
   size: 0,
   setup: function(a) {
@@ -432,15 +423,14 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
+wtf.trace.EventTypeBuilder.WRITE_STRING_ = ({
   uses: ['int32Array', 'stringTable'],
   size: 4,
   setup: null,
@@ -455,15 +445,14 @@ wtf.trace.EventTypeBuilder.WRITE_STRING_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_CHAR_ = {
+wtf.trace.EventTypeBuilder.WRITE_CHAR_ = ({
   uses: ['int8Array'],
   size: 1,
   setup: null,
@@ -473,15 +462,14 @@ wtf.trace.EventTypeBuilder.WRITE_CHAR_ = {
       'int8Array[(' + offset + ') << 2] = ' + a + '.charCodeAt(0);'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_ = {
+wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_ = ({
   uses: ['int32Array', 'int8Array'],
   size: 0,
   setup: function(a) {
@@ -503,15 +491,14 @@ wtf.trace.EventTypeBuilder.WRITE_CHARARRAY_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_WCHAR_ = {
+wtf.trace.EventTypeBuilder.WRITE_WCHAR_ = ({
   uses: ['int16Array'],
   size: 2,
   setup: null,
@@ -521,15 +508,14 @@ wtf.trace.EventTypeBuilder.WRITE_WCHAR_ = {
       'int16Array[(' + offset + ') << 1] = ' + a + '.charCodeAt(0);'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_ = {
+wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_ = ({
   uses: ['int32Array', 'int16Array'],
   size: 0,
   setup: function(a) {
@@ -551,15 +537,14 @@ wtf.trace.EventTypeBuilder.WRITE_WCHARARRAY_ = {
       '}'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
+wtf.trace.EventTypeBuilder.WRITE_ANY_ = ({
   uses: ['int32Array', 'stringTable'],
   size: 4,
   setup: null,
@@ -570,15 +555,14 @@ wtf.trace.EventTypeBuilder.WRITE_ANY_ = {
           'stringTable.addString(stringify(' + a + ')) : -1;'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
+wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = ({
   uses: ['int32Array'],
   size: 4,
   setup: null,
@@ -588,15 +572,14 @@ wtf.trace.EventTypeBuilder.WRITE_FLOWID_ = {
       'int32Array[' + offset + '] = ' + a + ' ? ' + a + '.getId() : 0;'
     ];
   }
-};
+});
 
 
 /**
  * @type {wtf.trace.EventTypeBuilder.Writer_}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {
+wtf.trace.EventTypeBuilder.WRITE_TIME32_ = ({
   uses: ['int32Array'],
   size: 4,
   setup: null,
@@ -606,7 +589,7 @@ wtf.trace.EventTypeBuilder.WRITE_TIME32_ = {
       'int32Array[' + offset + '] = ' + a + ' * 1000;'
     ];
   }
-};
+});
 
 
 /**
