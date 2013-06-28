@@ -1307,8 +1307,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       var attributes = args['attributes'];
       // Assume that the context is webgl for now.
       currentContext =
-          contextPool.getContext('webgl', attributes) ||
-          contextPool.getContext('experimental-webgl', attributes);
+          this.contextPool_.getContext('webgl', attributes) ||
+          this.contextPool_.getContext('experimental-webgl', attributes);
       this.contexts_[args['handle']] = currentContext;
       this.currentContext_ = currentContext;
       this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,

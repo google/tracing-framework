@@ -186,5 +186,5 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
       goog.webgl.DEPTH_BUFFER_BIT | goog.webgl.STENCIL_BUFFER_BIT);
 
   // TODO: This should NOT be needed but Firefox fails with 'hint'
-  while (ctx.getError());
+  while (ctx.getError()) {}
 };
