@@ -24,7 +24,7 @@ goog.require('wtf.util');
 
 
 /**
- * @define {boolean} Whether to enable exporting of the wtf.replay.Graphics
+ * @define {boolean} Whether to enable exporting of the wtf.replay.graphics
  *     types and namespace.
  *
  * This should only be enabled in builds of the standalone library. If you're

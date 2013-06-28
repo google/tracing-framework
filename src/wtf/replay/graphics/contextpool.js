@@ -128,8 +128,8 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
  */
 wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
     function(ctx) {
-  var numAttribs = /** @type {number} */
-      ctx.getParameter(goog.webgl.MAX_VERTEX_ATTRIBS);
+  var numAttribs = /** @type {number} */ (
+      ctx.getParameter(goog.webgl.MAX_VERTEX_ATTRIBS));
   var tmp = ctx.createBuffer();
   ctx.bindBuffer(goog.webgl.ARRAY_BUFFER, tmp);
   for (var ii = 0; ii < numAttribs; ++ii) {
@@ -139,8 +139,8 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
   }
 
   ctx.deleteBuffer(tmp);
-  var numTextureUnits =
-      Number(ctx.getParameter(goog.webgl.MAX_TEXTURE_IMAGE_UNITS));
+  var numTextureUnits = /** @type {number} */ (
+      ctx.getParameter(goog.webgl.MAX_TEXTURE_IMAGE_UNITS));
   for (var ii = 0; ii < numTextureUnits; ++ii) {
     ctx.activeTexture(goog.webgl.TEXTURE0 + ii);
     ctx.bindTexture(goog.webgl.TEXTURE_CUBE_MAP, null);
