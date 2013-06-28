@@ -1,0 +1,2 @@
+#undef WTF_INSTANCE_EVENT
+#undef WTF_SCOPE_EVENT
