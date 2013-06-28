@@ -135,10 +135,9 @@ wtf.db.EventTypeBuilder.prototype.generate = function(eventType) {
  *   size: number,
  *   read: function(string, (number|string)):(!Array.<string>)
  * }>}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.db.EventTypeBuilder.READERS_ = {
+wtf.db.EventTypeBuilder.READERS_ = ({
   'bool': {
     uses: ['uint8Array'],
     size: 1,
@@ -438,7 +437,7 @@ wtf.db.EventTypeBuilder.READERS_ = {
       ];
     }
   }
-};
+});
 
 
 /**
@@ -467,10 +466,9 @@ wtf.db.EventTypeBuilder.prototype.generateLegacy = function(eventType) {
 /**
  * Reader information for supported types.
  * @type {!Object.<!(function(!wtf.io.Buffer):(*))>}
- * @return {*} Dummy to make the linter shut up.
  * @private
  */
-wtf.db.EventTypeBuilder.LEGACY_READERS_ = {
+wtf.db.EventTypeBuilder.LEGACY_READERS_ = ({
   'bool': function(buffer) {
     return !!buffer.readInt8();
   },
@@ -567,4 +565,4 @@ wtf.db.EventTypeBuilder.LEGACY_READERS_ = {
   'time32': function(buffer) {
     return buffer.readUint32() / 1000;
   }
-};
+});
