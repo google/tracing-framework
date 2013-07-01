@@ -21,7 +21,8 @@ goog.provide('wtf.replay.graphics');
  * @type {wtf.replay.graphics.Playback}
  * @private
  */
-wtf.replay.graphics.playback_ = null;
+// TODO(chizeng): Use playback_.
+// wtf.replay.graphics.playback_ = null;
 
 
 /**
