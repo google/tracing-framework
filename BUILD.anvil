@@ -118,6 +118,7 @@ closure_js_library(
         'wtf.db.exports',
         'wtf.hud.exports',
         'wtf.remote.exports',
+        'wtf.replay.graphics.exports',
         'wtf.replay.timeTravel.exports',
         'wtf.trace.exports',
     ],
@@ -346,6 +347,7 @@ WTF_UI_ENTRY_POINTS=[
     'wtf.app.background.exports',
     'wtf.app.ui.exports',
     'wtf.db.exports',
+    'wtf.replay.graphics.exports',
     'wtf.replay.timeTravel.exports',
     ]
 
@@ -374,6 +376,7 @@ closure_js_library(
         '--define=wtf.app.background.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.ui.exports.ENABLE_EXPORTS=true',
         '--define=wtf.db.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.replay.graphics.exports.ENABLE_EXPORTS=true',
         '--define=wtf.replay.timeTravel.exports.ENABLE_EXPORTS=true',
         ],
     wrap_with_global='window')
