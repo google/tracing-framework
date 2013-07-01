@@ -15,9 +15,6 @@
 
 goog.provide('wtf.replay.graphics');
 
-goog.require('wtf.replay.graphics.ContextPool');
-goog.require('wtf.replay.graphics.Playback');
-
 
 /**
  * Current playback, if any.
@@ -37,9 +34,10 @@ wtf.replay.graphics.setupStandalone = function(db) {
   if (!zone) {
     return;
   }
-  var playback = wtf.replay.graphics.playback_ ||
-      new wtf.replay.graphics.Playback(zone.getEventList(),
-          zone.getFrameList(), new wtf.replay.graphics.ContextPool());
+  // TODO(chizeng): Set up playing.
+  // var playback = wtf.replay.graphics.playback_ ||
+  //     new wtf.replay.graphics.Playback(zone.getEventList(),
+  //         zone.getFrameList(), new wtf.replay.graphics.ContextPool());
 };
 
 

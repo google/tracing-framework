@@ -1013,9 +1013,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
     case 'WebGLRenderingContext#getUniformLocation':
       // TODO(chizeng): Maybe this must change because we need a mapping.
       objs[args['value']] = /** @type {!Object} */ (
-          currentContext.getUniformLocation(
-            /** @type {WebGLProgram} */ (
-                objs[args['program']]), args['name']));
+          currentContext.getUniformLocation(/** @type {WebGLProgram} */ (
+              objs[args['program']]), args['name']));
       if (objs[args['value']]) {
         this.setOwningContext_(objs[args['value']], currentContext);
       }
@@ -1032,7 +1031,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       currentContext.hint(args['target'], args['mode']);
       break;
     case 'WebGLRenderingContext#isBuffer':
-      currentContext.isBuffer(/** @type {WebGLBuffer} */ (objs[args['buffer']]));
+      currentContext.isBuffer(
+          /** @type {WebGLBuffer} */ (objs[args['buffer']]));
       break;
     case 'WebGLRenderingContext#isEnabled':
       currentContext.isEnabled(args['cap']);
@@ -1160,7 +1160,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
             args['format'],
             args['type'],
             /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
-                (this.resources_[it.getId()])
+            (this.resources_[it.getId()])
         );
       }
       break;
@@ -1199,7 +1199,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
             args['format'],
             args['type'],
             /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
-                (this.resources_[it.getId()])
+            (this.resources_[it.getId()])
         );
       }
       break;
@@ -1276,7 +1276,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       currentContext.uniform4f(
           /** @type {WebGLUniformLocation} */ (
               objs[args['location']]), args['x'], args['y'], args['z'],
-              args['w']);
+      args['w']);
       break;
     case 'WebGLRenderingContext#uniform4fv':
       currentContext.uniform4fv(
@@ -1287,7 +1287,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       currentContext.uniform4i(
           /** @type {WebGLUniformLocation} */ (
               objs[args['location']]), args['x'], args['y'], args['z'],
-              args['w']);
+      args['w']);
       break;
     case 'WebGLRenderingContext#uniform4iv':
       currentContext.uniform4iv(
