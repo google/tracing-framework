@@ -13,7 +13,6 @@
 
 goog.provide('wtf.app.ui.tracks.ZonePainter');
 
-goog.require('wtf.data.EventFlag');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
@@ -157,11 +156,7 @@ wtf.app.ui.tracks.ZonePainter.prototype.drawEvents_ = function(
 
   while (!it.done()) {
     // Ignore internal events.
-    var flags = it.getTypeFlags();
-    if (flags & (
-        wtf.data.EventFlag.INTERNAL |
-        wtf.data.EventFlag.APPEND_SCOPE_DATA |
-        wtf.data.EventFlag.APPEND_FLOW_DATA)) {
+    if (it.isHidden()) {
       it.next();
       continue;
     }
@@ -335,6 +330,9 @@ wtf.app.ui.tracks.ZonePainter.prototype.hitTest_ = function(x, y, bounds) {
     it.moveToParent();
   }
   if (it.done()) {
+    return null;
+  }
+  if (it.isHidden()) {
     return null;
   }
 

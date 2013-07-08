@@ -13,6 +13,7 @@
 
 goog.provide('wtf.db.EventIterator');
 
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.EventStruct');
 goog.require('wtf.db.Unit');
 goog.require('wtf.util');
@@ -306,6 +307,19 @@ wtf.db.EventIterator.prototype.getName = function() {
  */
 wtf.db.EventIterator.prototype.getTypeFlags = function() {
   return this.eventData_[this.offset_ + wtf.db.EventStruct.TYPE] >>> 16;
+};
+
+
+/**
+ * Gets a value indicating whether the event is internal/hidden.
+ * @return {boolean} True if the event should not be shown to the user.
+ */
+wtf.db.EventIterator.prototype.isHidden = function() {
+  var flags = this.getTypeFlags();
+  return !!(flags & (
+      wtf.data.EventFlag.INTERNAL |
+      wtf.data.EventFlag.APPEND_SCOPE_DATA |
+      wtf.data.EventFlag.APPEND_FLOW_DATA));
 };
 
 
@@ -673,6 +687,9 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.EventIterator.prototype, 'getName',
     wtf.db.EventIterator.prototype.getName);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'isHidden',
+    wtf.db.EventIterator.prototype.isHidden);
 goog.exportProperty(
     wtf.db.EventIterator.prototype, 'getTypeFlags',
     wtf.db.EventIterator.prototype.getTypeFlags);
