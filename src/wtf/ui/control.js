@@ -218,6 +218,11 @@ wtf.ui.Control.prototype.createDom = goog.abstractMethod;
  * @protected
  */
 wtf.ui.Control.prototype.enterDocument = function(parentElement) {
+  // Support DOM-less controls.
+  if (parentElement == this.rootElement_) {
+    return;
+  }
+
   this.dom_.appendChild(this.parentElement_, this.rootElement_);
 };
 

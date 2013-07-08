@@ -187,6 +187,16 @@ wtf.ui.ResizableControl.SizeFrom = {
 
 
 /**
+ * @override
+ */
+wtf.ui.ResizableControl.prototype.createDom = function(dom) {
+  // This function si only here to allow us to be used as a non-subclassed
+  // control.
+  return this.getParentElement();
+};
+
+
+/**
  * Sets the direction the control sizes from.
  * @param {wtf.ui.ResizableControl.SizeFrom} value New value.
  */
