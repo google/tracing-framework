@@ -13,7 +13,6 @@
 
 goog.provide('wtf.trace.providers.XhrProvider');
 
-goog.require('wtf.data.webidl');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.Provider');
@@ -78,7 +77,18 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
 
   // Get all event types from the IDL store.
   // This will be a map of event name to the {@code EVENT_TYPES} objects.
-  var eventTypes = wtf.data.webidl.getAllEvents('XMLHttpRequest');
+  // NOTE: disabled full events until Issue #365.
+  // var eventTypes = wtf.data.webidl.getAllEvents('XMLHttpRequest');
+  var eventTypes = {
+    'loadstart': null,
+    'progress': null,
+    'abort': null,
+    'error': null,
+    'load': null,
+    'timeout': null,
+    'loadend': null,
+    'readystatechange': null
+  };
 
   var descriptor = wtf.trace.eventtarget.createDescriptor(
       'XMLHttpRequest', eventTypes);

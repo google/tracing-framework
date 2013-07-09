@@ -13,7 +13,6 @@
 
 goog.provide('wtf.trace.providers.ImageProvider');
 
-goog.require('wtf.data.webidl');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.eventtarget');
 
@@ -86,7 +85,13 @@ wtf.trace.providers.ImageProvider.prototype.injectImage_ = function() {
 
   // Get all event types from the IDL store.
   // This will be a map of event name to the {@code EVENT_TYPES} objects.
-  var eventTypes = wtf.data.webidl.getAllEvents('HTMLImageElement', eventNames);
+  // NOTE: disabled full events until Issue #365.
+  // var eventTypes = wtf.data.webidl.getAllEvents(
+  //     'HTMLImageElement', eventNames);
+  var eventTypes = {};
+  for (var n = 0; n < eventNames.length; n++) {
+    eventTypes[eventNames[n]] = null;
+  }
 
   // Create a descriptor object.
   var descriptor = wtf.trace.eventtarget.createDescriptor(
