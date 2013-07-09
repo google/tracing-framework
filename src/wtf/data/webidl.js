@@ -83,7 +83,7 @@ wtf.data.webidl.EVENT_TYPES = {
 
   // https://chromium.googlesource.com/chromium/blink/+/master/Source/core/dom/KeyboardEvent.idl
   'KeyboardEvent': {
-    inherits: 'KeyboardEvent',
+    inherits: 'UIEvent',
     attributes: {
       'keyIdentifier': 'utf8',
       'keyLocation': 'uint32',
@@ -226,6 +226,7 @@ wtf.data.webidl.OBJECTS = {
     // Not really, but it does get its events.
     inherits: 'Element',
     events: {
+      'DOMContentLoaded': null,
       'webkitpointerlockchange': null,
       'webkitpointerlockerror': null
     }
@@ -268,6 +269,82 @@ wtf.data.webidl.OBJECTS = {
     }
   }
 };
+
+
+/**
+ * The names of all DOM-like objects.
+ * @type {!Array.<string>}
+ * @const
+ */
+wtf.data.webidl.DOM_OBJECTS = [
+  'HTMLAnchorElement',
+  'HTMLAppletElement',
+  'HTMLAreaElement',
+  'HTMLAudioElement',
+  'HTMLBRElement',
+  'HTMLBaseElement',
+  'HTMLBaseFontElement',
+  'HTMLBodyElement',
+  'HTMLButtonElement',
+  'HTMLCanvasElement',
+  'HTMLContentElement',
+  'HTMLDListElement',
+  'HTMLDirectoryElement',
+  'HTMLDivElement',
+  'HTMLDocument',
+  'HTMLElement',
+  'HTMLEmbedElement',
+  'HTMLFieldSetElement',
+  'HTMLFontElement',
+  'HTMLFormElement',
+  'HTMLFrameElement',
+  'HTMLFrameSetElement',
+  'HTMLHRElement',
+  'HTMLHeadElement',
+  'HTMLHeadingElement',
+  'HTMLHtmlElement',
+  'HTMLIFrameElement',
+  'HTMLImageElement',
+  'HTMLInputElement',
+  'HTMLKeygenElement',
+  'HTMLLIElement',
+  'HTMLLabelElement',
+  'HTMLLegendElement',
+  'HTMLLinkElement',
+  'HTMLMapElement',
+  'HTMLMarqueeElement',
+  'HTMLMediaElement',
+  'HTMLMenuElement',
+  'HTMLMetaElement',
+  'HTMLMeterElement',
+  'HTMLModElement',
+  'HTMLOListElement',
+  'HTMLObjectElement',
+  'HTMLOptGroupElement',
+  'HTMLOptionElement',
+  'HTMLOutputElement',
+  'HTMLParagraphElement',
+  'HTMLPreElement',
+  'HTMLProgressElement',
+  'HTMLQuoteElement',
+  'HTMLScriptElement',
+  'HTMLSelectElement',
+  'HTMLSourceElement',
+  'HTMLSpanElement',
+  'HTMLStyleElement',
+  'HTMLTableCaptionElement',
+  'HTMLTableCellElement',
+  'HTMLTableColElement',
+  'HTMLTableElement',
+  'HTMLTableRowElement',
+  'HTMLTableSectionElement',
+  'HTMLTextAreaElement',
+  'HTMLTitleElement',
+  'HTMLTrackElement',
+  'HTMLUListElement',
+  'HTMLUnknownElement',
+  'HTMLVideoElement'
+];
 
 
 /**
@@ -356,7 +433,7 @@ wtf.data.webidl.getEventAttributes = function(eventType) {
  */
 wtf.data.webidl.getEventSignature = function(objectName, eventName, eventType,
     opt_suffix) {
-  var s = objectName + '#on' + eventName + (opt_suffix ? opt_suffix : '') + '(';
+  var s = objectName + '#' + eventName + (opt_suffix ? opt_suffix : '') + '(';
 
   if (eventType) {
     // Grab all attributes, in order.

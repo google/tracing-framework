@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.providers.ReplayProvider');
 
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.webidl');
@@ -205,35 +206,48 @@ wtf.trace.providers.ReplayProvider.prototype.injectEvents_ = function() {
   // always want full argument data and want to be able to differentiate these
   // replay events from the normal ones.
 
-  this.injectCaptureEvents_(goog.global['Window'], 'Window', [
-  ]);
-  this.injectCaptureEvents_(goog.global['document'], 'Document', [
-    'click',
-    'mousedown',
-    'mousemove',
-    'mouseup'
-  ]);
+  // This is the list of all objects that will have their events tracked.
+  // It's used to build a complete map of event names and types that will be
+  // listened for on the window.
+  var allObjectNames = [
+    'Document',
+    'Window'
+  ];
+  goog.array.extend(allObjectNames, wtf.data.webidl.DOM_OBJECTS);
+
+  var allEventTypes = {};
+  for (var n = 0; n < allObjectNames.length; n++) {
+    var eventTypes = wtf.data.webidl.getAllEvents(allObjectNames[n]);
+    for (var eventName in eventTypes) {
+      var existingType = allEventTypes[eventName];
+      if (existingType && existingType != eventTypes[eventName]) {
+        // This is bad - we have two events with the same name but different
+        // types.
+        goog.asserts.fail('Redefined event type/duplicate keys');
+        continue;
+      }
+      allEventTypes[eventName] = eventTypes[eventName];
+    }
+  }
+
+  this.injectCaptureEvents_(goog.global, allEventTypes);
 };
 
 
 /**
  * Injects capturing event listeners for the given events.
  * @param {!Object} target Event listener that will have events added to it.
- * @param {string} objectName Object name, like 'Window'.
- * @param {!Array.<string>} eventNames A list of event names, like 'click'.
- *     These events will be instrumented for replaying.
+ * @param {!Object.<!Object>} eventTypes All events mapped by name to their type
+ *     object.
  * @private
  */
 wtf.trace.providers.ReplayProvider.prototype.injectCaptureEvents_ =
-    function(target, objectName, eventNames) {
-  // Grab all event types, filter by required names.
-  var eventTypes = wtf.data.webidl.getAllEvents(objectName);
-  for (var n = 0; n < eventNames.length; n++) {
-    var eventName = eventNames[n];
+    function(target, eventTypes) {
+  for (var eventName in eventTypes) {
     var eventType = eventTypes[eventName];
 
     // Generate event listener function.
-    var listener = this.buildListener_(objectName, eventName, eventType);
+    var listener = this.buildListener_(eventName, eventType);
 
     // Add capture event.
     // The hope is that we are the first thing to run, so we are the first to
@@ -248,17 +262,16 @@ wtf.trace.providers.ReplayProvider.prototype.injectCaptureEvents_ =
 //     type so that it can be shared with other providers.
 /**
  * Builds a WTF event and listener function for a given event.
- * @param {string} objectName Object name, like 'Window'.
  * @param {string} eventName Event name, like 'click'.
  * @param {!Object} eventType Event type from {@see wtf.data.webidl}.
  * @return {!Function} Listener function.
  * @private
  */
 wtf.trace.providers.ReplayProvider.prototype.buildListener_ =
-    function(objectName, eventName, eventType) {
+    function(eventName, eventType) {
   // Generate the event signature.
   var signature = wtf.data.webidl.getEventSignature(
-      objectName, eventName, eventType, ':replay');
+      'wtf.replay.dispatch', eventName, eventType);
 
   // Create instance event. We don't care about duration.
   var recordEvent = wtf.trace.events.createInstance(
@@ -301,5 +314,5 @@ wtf.trace.providers.ReplayProvider.prototype.buildListener_ =
 
   builder.append('    );');
 
-  return builder.end(objectName + '#on' + eventName + ':capture');
+  return builder.end('wtf.replay.dispatch#' + eventName + ':capture');
 };

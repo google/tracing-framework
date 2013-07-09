@@ -17,6 +17,7 @@ goog.require('goog.asserts');
 /** @suppress {extraRequire} */
 goog.require('goog.debug.ErrorHandler');
 goog.require('goog.string');
+goog.require('goog.userAgent.product');
 
 
 /**
@@ -213,19 +214,27 @@ wtf.util.convertUint8ArrayToAsciiString = function(value) {
 
 /**
  * Generates an XPath expression that tries to uniquely identify a DOM element.
- * @param {Element} targetElement DOM element.
+ * @param {Element|Object} targetElement DOM element.
  * @return {?string} XPath string or null if not possible.
  */
 wtf.util.getElementXPath = function(targetElement) {
   if (!targetElement) {
     // No element is null.
     return null;
+  } else if (targetElement == goog.global) {
+    return 'window';
   } else if (targetElement.id) {
     // Element has an ID - easy.
     return '//*[@id="' + targetElement.id + '"]';
   }
 
+  // TODO(benvanik): evaluate caching this string instance. We could check the
+  //     cached copy on the element by walking up the tree - if it doesn't match
+  //     (meaning the element has moved) we regenerate then. This would remove
+  //     allocations in the common case.
+
   // Slow path - build a full xpath string.
+  // We build the list of parts in reverse and then flip before joining.
   var paths = [];
   for (var el = targetElement;
       el && el.nodeType == Node.ELEMENT_NODE; el = el.parentNode) {
@@ -239,11 +248,19 @@ wtf.util.getElementXPath = function(targetElement) {
         index++;
       }
     }
-    var tagName = el.nodeName.toLowerCase();
-    var pathIndex = '[' + (index + 1) + ']';
-    paths.splice(0, 0, tagName + pathIndex);
+    paths.push(el.nodeName + '[' + (index + 1) + ']');
   }
-  return paths.length ? '/' + paths.join('/') : null;
+  if (!paths.length) {
+    return null;
+  }
+
+  // Add a leading '' to force a leading /.
+  paths.push('');
+
+  // Reverse the paths.
+  wtf.util.reverse(paths);
+
+  return paths.join('/');
 };
 
 
@@ -251,11 +268,13 @@ wtf.util.getElementXPath = function(targetElement) {
  * Attempts to find an element int he DOM by XPath.
  * @param {string?} path XPath query string.
  * @param {Document=} opt_document Document to query.
- * @return {Element} Element, if found.
+ * @return {Element|Object} Element, if found.
  */
 wtf.util.findElementByXPath = function(path, opt_document) {
   if (!path) {
     return null;
+  } else if (path == 'window') {
+    return goog.global;
   }
   var result = document.evaluate(
       path,
@@ -264,6 +283,26 @@ wtf.util.findElementByXPath = function(path, opt_document) {
       XPathResult.FIRST_ORDERED_NODE_TYPE,
       null);
   return result.singleNodeValue;
+};
+
+
+/**
+ * Reverses the contents of the array inline.
+ * This is up to 2x faster than the native browser reverse() in Chrome, but
+ * slower in most other browsers.
+ * @param {!Array} array Array to reverse.
+ */
+wtf.util.reverse = goog.userAgent.product.CHROME ? function(array) {
+  var length = array.length;
+  var halfLength = length >> 1;
+  for (var n = 0; n < halfLength; n++) {
+    var m = length - n - 1;
+    var tmp = array[n];
+    array[n] = array[m];
+    array[m] = tmp;
+  }
+} : function(array) {
+  array.reverse();
 };
 
 

@@ -537,7 +537,7 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['dispatchEvent'] = function(e) {
  * @param {Array.<!{
  *   callback: Function,
  *   scope: !Object
- * }} hooks Event hooks.
+ * }>} hooks Event hooks.
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.dispatchToListener = function(
     e, listener, hooks) {
@@ -601,7 +601,7 @@ wtf.trace.eventtarget.EventRegistration = function() {
    * @type {Array.<!{
    *   callback: Function,
    *   scope: !Object
-   * }}
+   * }>}
    */
   this.hooks = null;
 };
