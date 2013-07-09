@@ -14,6 +14,7 @@
 goog.provide('wtf.trace.eventtarget');
 goog.provide('wtf.trace.eventtarget.BaseEventTarget');
 goog.provide('wtf.trace.eventtarget.Descriptor');
+goog.provide('wtf.trace.eventtarget.EventRegistration');
 
 goog.require('wtf.data.webidl');
 goog.require('wtf.trace.Scope');
@@ -379,30 +380,10 @@ wtf.trace.eventtarget.BaseEventTarget = function(descriptor) {
 
   /**
    * Event listeners.
-   * @type {!Object.<!Array.<!{
-   *   listener: (Function|Object),
-   *   capture: boolean
-   * }>>}
+   * @type {!Object.<!wtf.trace.eventtarget.EventRegistration>}
    * @private
    */
-  this.listeners_ = {};
-
-  /**
-   * on* listeners.
-   * @type {!Object.<Function?>}
-   * @private
-   */
-  this.onListeners_ = {};
-
-  /**
-   * Event hooks, by event name.
-   * @type {!Object.<!{
-   *   callback: Function,
-   *   scope: !Object
-   * }>}
-   * @private
-   */
-  this.eventHooks_ = {};
+  this.registrations_ = {};
 };
 
 
@@ -419,16 +400,23 @@ wtf.trace.eventtarget.BaseEventTarget = function(descriptor) {
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype['addEventListener'] = function(
     type, listener, opt_capture) {
-  var list = this.listeners_[type] || [];
-  this.listeners_[type] = list;
+  var registration = this.registrations_[type];
+  if (!registration) {
+    registration = this.registrations_[type] =
+        new wtf.trace.eventtarget.EventRegistration();
+  }
+
+  var list = registration.dom2 || [];
+  registration.dom2 = list;
   list.push({
     listener: listener,
     capture: opt_capture || false
   });
 
-  if (list.length == 1) {
+  if (!registration.handlerCount) {
     this.beginTrackingEvent(type);
   }
+  registration.handlerCount++;
 };
 
 
@@ -445,19 +433,27 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['addEventListener'] = function(
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype['removeEventListener'] =
     function(type, listener, opt_capture) {
-  var list = this.listeners_[type];
-  if (list) {
-    for (var n = 0; n < list.length; n++) {
-      if (list[n].listener == listener &&
-          list[n].capture == opt_capture) {
-        list.splice(n, 1);
-        break;
-      }
+  var registration = this.registrations_[type];
+  if (!registration) {
+    return;
+  }
+
+  var list = registration.dom2;
+  if (!list || !list.length) {
+    return;
+  }
+
+  for (var n = 0; n < list.length; n++) {
+    if (list[n].listener == listener &&
+        list[n].capture == opt_capture) {
+      list.splice(n, 1);
+      break;
     }
-    if (!list.length) {
-      delete this.listeners_[type];
-      this.endTrackingEvent(type);
-    }
+  }
+
+  registration.handlerCount--;
+  if (!registration.handlerCount) {
+    this.endTrackingEvent(type);
   }
 };
 
@@ -489,10 +485,18 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.endTrackingEvent =
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.setEventHook = function(
     type, callback, opt_scope) {
-  this.eventHooks_[type] = {
+  var registration = this.registrations_[type];
+  if (!registration) {
+    registration = this.registrations_[type] =
+        new wtf.trace.eventtarget.EventRegistration();
+  }
+
+  var list = registration.hooks || [];
+  registration.hooks = list;
+  list.push({
     callback: callback,
     scope: opt_scope || this
-  };
+  });
 };
 
 
@@ -506,13 +510,21 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['dispatchEvent'] = function(e) {
     return;
   }
 
-  var onListener = this.onListeners_[e.type];
-  if (onListener) {
-    this.dispatchToListener(e, onListener);
-  } else {
-    var list = this.listeners_[e.type];
+  var registration = this.registrations_[e.type];
+  if (!registration) {
+    return;
+  }
+
+  // Dispatch DOM 0 events first.
+  if (registration.dom0) {
+    this.dispatchToListener(e, registration.dom0, registration.hooks);
+  }
+
+  // Dispatch DOM 2 events second.
+  var list = registration.dom2;
+  if (list) {
     for (var n = 0; n < list.length; n++) {
-      this.dispatchToListener(e, list[n].listener);
+      this.dispatchToListener(e, list[n].listener, registration.hooks);
     }
   }
 };
@@ -522,16 +534,26 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['dispatchEvent'] = function(e) {
  * Dispatches an event ot a listener, wrapping it in a scope.
  * @param {Event} e Event.
  * @param {Function|Object} listener Event listener.
+ * @param {Array.<!{
+ *   callback: Function,
+ *   scope: !Object
+ * }} hooks Event hooks.
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.dispatchToListener = function(
-    e, listener) {
+    e, listener, hooks) {
+  // Begin tracing scope.
   var eventKey = e.type;
   var eventType = this.descriptor_.eventMap[eventKey];
-  var hook = this.eventHooks_[eventKey];
   var scope = this['__wtf_ignore__'] ? null : (eventType ? eventType() : null);
-  if (hook) {
-    hook.callback.call(hook.scope, e);
+
+  // Callback registered hooks.
+  if (hooks && hooks.length) {
+    for (var n = 0; n < hooks.length; n++) {
+      hooks[n].callback.call(hooks[n].scope, e);
+    }
   }
+
+  // Dispatch the event.
   try {
     if (listener['handleEvent']) {
       // Listener is an EventListener.
@@ -543,4 +565,43 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.dispatchToListener = function(
   } finally {
     wtf.trace.Scope.leave(scope);
   }
+};
+
+
+
+/**
+ * Event listener registration collection.
+ * @constructor
+ */
+wtf.trace.eventtarget.EventRegistration = function() {
+  /**
+   * Total number of event listeners.
+   * This is used as a quick toggle for calling the tracking functions.
+   * @type {number}
+   */
+  this.handlerCount = 0;
+
+  /**
+   * DOM level 0 handler, if any.
+   * @type {Function?}
+   */
+  this.dom0 = null;
+
+  /**
+   * A list of DOM level 2 handlers, if any.
+   * @type {Array.<!{
+   *   listener: (Function|Object),
+   *   capture: boolean
+   * }>}
+   */
+  this.dom2 = null;
+
+  /**
+   * A list of tracing hooks that will be called on each dispatch, if any.
+   * @type {Array.<!{
+   *   callback: Function,
+   *   scope: !Object
+   * }}
+   */
+  this.hooks = null;
 };
