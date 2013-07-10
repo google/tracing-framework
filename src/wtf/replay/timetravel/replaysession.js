@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.timeTravel.ReplaySession');
 
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.dom');
@@ -244,7 +245,8 @@ wtf.replay.timeTravel.ReplaySession.prototype.prepareReuse = function() {
  * @private
  */
 wtf.replay.timeTravel.ReplaySession.prototype.neuterPageEvents_ = function() {
-  var pageDom = goog.dom.getDomHelper(this.getPageGlobal().document);
+  var pageGlobal = this.getPageGlobal();
+  var pageDom = goog.dom.getDomHelper(pageGlobal.document);
   var pageDocument = pageDom.getDocument();
 
   // Add an overlay to the page to attempt to block events before they reach
@@ -265,7 +267,20 @@ wtf.replay.timeTravel.ReplaySession.prototype.neuterPageEvents_ = function() {
   }, this, pageDocument);
 
   // We also add capturing handlers for events so that we can prevent them.
-  var eventTypes = wtf.data.webidl.getAllEvents('Document');
+  // This should match what was done at recording time so that no events
+  // we recorded will slip through.
+  var allObjectNames = [
+    'Document',
+    'Window'
+  ];
+  goog.array.extend(allObjectNames, wtf.data.webidl.DOM_OBJECTS);
+  var allEventTypes = wtf.data.webidl.getAllEventTypes(allObjectNames);
+
+  // Exclude a few events.
+  // Unload events will cause a confirm dialog to be displayed on reload.
+  delete allEventTypes['beforeunload'];
+  delete allEventTypes['unload'];
+
   function eventDisabler(e) {
     // Allow our events to pass through.
     if (e['__wtf_dispatched__']) {
@@ -276,8 +291,8 @@ wtf.replay.timeTravel.ReplaySession.prototype.neuterPageEvents_ = function() {
     e.stopPropagation();
     return false;
   };
-  for (var eventName in eventTypes) {
-    pageDocument.addEventListener(eventName, eventDisabler, true);
+  for (var eventName in allEventTypes) {
+    pageGlobal.addEventListener(eventName, eventDisabler, true);
   }
 };
 

@@ -214,22 +214,9 @@ wtf.trace.providers.ReplayProvider.prototype.injectEvents_ = function() {
     'Window'
   ];
   goog.array.extend(allObjectNames, wtf.data.webidl.DOM_OBJECTS);
+  var allEventTypes = wtf.data.webidl.getAllEventTypes(allObjectNames);
 
-  var allEventTypes = {};
-  for (var n = 0; n < allObjectNames.length; n++) {
-    var eventTypes = wtf.data.webidl.getAllEvents(allObjectNames[n]);
-    for (var eventName in eventTypes) {
-      var existingType = allEventTypes[eventName];
-      if (existingType && existingType != eventTypes[eventName]) {
-        // This is bad - we have two events with the same name but different
-        // types.
-        goog.asserts.fail('Redefined event type/duplicate keys');
-        continue;
-      }
-      allEventTypes[eventName] = eventTypes[eventName];
-    }
-  }
-
+  // Inject the event handlers onto window for all event types.
   this.injectCaptureEvents_(goog.global, allEventTypes);
 };
 

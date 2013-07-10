@@ -31,7 +31,8 @@ wtf.data.webidl.EVENT_TYPES = {
   'Event': {
     attributes: {
       'target': 'dompath',
-      'currentTarget': 'dompath',
+      // Ignore current path, as it's set by the dispatcher.
+      // 'currentTarget': 'dompath',
       'timeStamp': 'uint32'
 
       // clipboardData
@@ -63,6 +64,7 @@ wtf.data.webidl.EVENT_TYPES = {
   'UIEvent': {
     inherits: 'Event',
     attributes: {
+      'detail': 'any',
       'keyCode': 'int32',
       'charCode': 'int32',
       'layerX': 'int32',
@@ -345,6 +347,31 @@ wtf.data.webidl.DOM_OBJECTS = [
   'HTMLUnknownElement',
   'HTMLVideoElement'
 ];
+
+
+/**
+ * Gets a unioned set of all event types for all of the given objects.
+ * @param {!Array.<string>} objectNames Object names, as a key into
+ *     {@code OBJECTS}.
+ * @return {!Object.<!Object>} All events mapped by name to their type object.
+ */
+wtf.data.webidl.getAllEventTypes = function(objectNames) {
+  var result = {};
+  for (var n = 0; n < objectNames.length; n++) {
+    var eventTypes = wtf.data.webidl.getAllEvents(objectNames[n]);
+    for (var eventName in eventTypes) {
+      var existingType = result[eventName];
+      if (existingType && existingType != eventTypes[eventName]) {
+        // This is bad - we have two events with the same name but different
+        // types.
+        goog.asserts.fail('Redefined event type/duplicate keys');
+        continue;
+      }
+      result[eventName] = eventTypes[eventName];
+    }
+  }
+  return result;
+};
 
 
 /**

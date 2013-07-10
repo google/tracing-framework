@@ -271,14 +271,15 @@ wtf.util.getElementXPath = function(targetElement) {
  * @return {Element|Object} Element, if found.
  */
 wtf.util.findElementByXPath = function(path, opt_document) {
+  var doc = opt_document || goog.global['document'];
   if (!path) {
     return null;
   } else if (path == 'window') {
-    return goog.global;
+    return doc['defaultView'];
   }
-  var result = document.evaluate(
+  var result = doc.evaluate(
       path,
-      opt_document || goog.global['document'],
+      doc,
       null,
       XPathResult.FIRST_ORDERED_NODE_TYPE,
       null);
