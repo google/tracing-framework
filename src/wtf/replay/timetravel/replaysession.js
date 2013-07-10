@@ -18,6 +18,7 @@ goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.style');
+goog.require('goog.userAgent');
 goog.require('wtf.data.webidl');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.EventIterator');
@@ -29,6 +30,7 @@ goog.require('wtf.io.cff.BinaryStreamSource');
 goog.require('wtf.io.transports.XhrReadTransport');
 goog.require('wtf.math.MersenneTwister');
 goog.require('wtf.replay.timeTravel.Controller');
+goog.require('wtf.timing');
 goog.require('wtf.ui.Dialog');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ProgressDialog');
@@ -236,6 +238,8 @@ wtf.replay.timeTravel.ReplaySession.prototype.prepareReuse = function() {
 
   // Setup Date.
   this.injectDate_();
+
+  this.foo();
 };
 
 
@@ -350,4 +354,155 @@ wtf.replay.timeTravel.ReplaySession.prototype.initializeRandom_ = function() {
  */
 wtf.replay.timeTravel.ReplaySession.prototype.injectDate_ = function() {
   // TODO(benvanik): advanceTime/Date replacement/etc.
+};
+
+
+wtf.replay.timeTravel.ReplaySession.prototype.foo = function() {
+  var pageGlobal = this.getPageGlobal();
+  var pageDocument = pageGlobal.document;
+
+  if (goog.userAgent.GECKO) {
+    // http://blog.stchur.com/2008/07/03/firefox-3-pagex-pagey-bug/
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=411031
+    var dummyEvent = pageDocument.createEvent('MouseEvent');
+    dummyEvent.__proto__.__proto__.__defineGetter__('pageX', function() {
+      return this['clientX'] + pageGlobal['pageXOffset'];
+    });
+    dummyEvent.__proto__.__proto__.__defineGetter__('pageY', function() {
+      return this['clientY'] + pageGlobal['pageYOffset'];
+    });
+    var uiEventProto = dummyEvent.__proto__.__proto__;
+    delete uiEventProto['layerX'];
+    delete uiEventProto['layerY'];
+    Object.defineProperty(uiEventProto, 'layerX', {
+      configurable: true,
+      enumerable: true,
+      get: function() {
+        return this['layerX_'];
+      }
+    });
+    Object.defineProperty(uiEventProto, 'layerY', {
+      configurable: true,
+      enumerable: true,
+      get: function() {
+        return this['layerY_'];
+      }
+    });
+    dummyEvent['layerX_'] = 123;
+  }
+
+  var zone = this.db_.getDefaultZone();
+  var queryResult = zone.query('/wtf.replay.dispatch#/');
+  if (!queryResult) {
+    goog.global.console.log('no dispatch events');
+    return;
+  }
+  var it = queryResult.getValue();
+
+  var objectNames = [
+    'Window',
+    'Document'
+  ];
+  goog.array.extend(objectNames, wtf.data.webidl.DOM_OBJECTS);
+  var eventTypes = wtf.data.webidl.getAllEventTypes(objectNames);
+
+  var pump = function pump() {
+    if (it.done()) {
+      return;
+    }
+
+    goog.global.console.log(it.getLongString(true));
+
+    //
+    var args = it.getArguments();
+    var targetPath = args['target'];
+    var target = wtf.util.findElementByXPath(targetPath, pageDocument);
+    var currentTargetPath = args['currentTarget'];
+    var currentTarget = null;
+    if (targetPath == currentTargetPath) {
+      currentTarget = target;
+    } else {
+      currentTarget = wtf.util.findElementByXPath(currentTargetPath, pageDocument);
+    }
+    if (!target) {
+      // No target - uh oh.
+      goog.global.console.log('no target!');
+    } else {
+      goog.global.console.log('would dispatch to ', target, currentTarget);
+    }
+
+    var eventName = it.getName().substr('wtf.replay.dispatch#'.length);
+    var eventType = eventTypes[eventName];
+    goog.asserts.assert(eventType);
+    var e = null;
+    if (eventType) {
+      if (eventType == wtf.data.webidl.EVENT_TYPES['MouseEvent']) {
+        var relatedTarget = wtf.util.findElementByXPath(
+            args['relatedTarget'], pageDocument);
+        e = document.createEvent('MouseEvent');
+        e.initMouseEvent(
+            eventName, // type
+            true, // canBubble,
+            true, // cancelable
+            pageGlobal, // view
+            args['detail'], // detail
+            args['screenX'], // screenX
+            args['screenY'], // screenY
+            args['clientX'], // clientX
+            args['clientY'], // clientY
+            args['ctrlKey'], // ctrlKey
+            args['shiftKey'], // altKey
+            args['altKey'], // shiftKey
+            args['metaKey'], // metaKey
+            args['button'], // buttonArg
+            relatedTarget // relatedTarget
+        );
+        e['which'] = args['which'];
+        e['layerX'] = args['offsetX'];
+        e['layerY'] = args['offsetY'];
+        if (goog.userAgent.GECKO) {
+          e['layerX_'] = args['offsetX'];
+          e['layerY_'] = args['offsetY'];
+        }
+        e['target'] = target;
+        if (goog.userAgent.WEBKIT) {
+          e['webkitMovementX'] = args['webkitMovementX'];
+          e['webkitMovementY'] = args['webkitMovementY'];
+        } else if (goog.userAgent.GECKO) {
+          e['mozMovementX'] = args['webkitMovementX'];
+          e['mozMovementY'] = args['webkitMovementY'];
+        }
+      }
+    }
+    if (e && target) {
+      e['__wtf_dispatched__'] = true;
+      target.dispatchEvent(e);
+    } else {
+      if (!e) {
+        goog.global.console.log('unknown event type', eventName);
+      }
+    }
+
+    var time = it.getTime();
+    it.next();
+    if (it.done()) {
+      goog.global.console.log('done!');
+      return;
+    }
+
+    var timeDelay = Math.floor(it.getTime() - time);
+    if (timeDelay) {
+      wtf.timing.setTimeout(timeDelay, pump);
+    } else {
+      wtf.timing.setImmediate(pump);
+    }
+  };
+
+  goog.global['go'] = function() {
+    if (it.done()) {
+      pageGlobal.location.reload();
+      return;
+    }
+    pump();
+  };
 };

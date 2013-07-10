@@ -35,7 +35,7 @@ wtf.trace.providers.setup = function(traceManager) {
 
   // Replay provider must go first, as it does some really crazy things.
   if (!wtf.NODE &&
-      options.getBoolean('wtf.trace.replayable', false)) {
+      options.getBoolean('wtf.trace.replayable', true)) {
     traceManager.addProvider(
         new wtf.trace.providers.ReplayProvider(traceManager, options));
   }
