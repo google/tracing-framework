@@ -22,6 +22,7 @@ goog.require('goog.ui.KeyboardShortcutHandler');
 goog.require('goog.userAgent');
 goog.require('wtf.events.CommandManager');
 goog.require('wtf.events.EventEmitter');
+goog.require('wtf.util');
 
 
 
@@ -202,7 +203,8 @@ wtf.events.Keyboard.getWindowKeyboard = function(opt_window) {
     opt_window = opt_window.getWindow();
   }
   var targetWindow = opt_window || goog.global;
-  var uid = goog.getUid(targetWindow);
+  var stash = wtf.util.getGlobalCacheObject('keyboard', targetWindow);
+  var uid = goog.getUid(stash);
   var keyboard = wtf.events.Keyboard.keyboardInstances_[uid];
   if (!keyboard) {
     keyboard = new wtf.events.Keyboard(targetWindow);

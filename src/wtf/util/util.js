@@ -307,6 +307,46 @@ wtf.util.reverse = goog.userAgent.product.CHROME ? function(array) {
 };
 
 
+/**
+ * Property name used to store the cache on the global object.
+ * @type {string}
+ * @const
+ * @private
+ */
+wtf.util.GLOBAL_CACHE_KEY_ = 'wtf_util_global_cache';
+
+
+/**
+ * Gets a global cache object that can be used to store *cache only* data.
+ * Use this instead of stashing properties on the global object yourself.
+ * Since anything placed on here essentially leaks, it should only be used for
+ * non-reference data (strings/numbers/etc) that is used for identity lookups
+ * and such.
+ *
+ * <code>
+ * var stash = wtf.util.getGlobalCacheObject('foo');
+ * stash.someId = 53;
+ * </code>
+ *
+ * @param {string} key Application-unique key.
+ * @param {Object=} opt_global Global object to use instead of
+ *     {@code goog.global}.
+ * @return {!Object} An object that can be used to stash values.
+ */
+wtf.util.getGlobalCacheObject = function(key, opt_global) {
+  var global = opt_global || goog.global;
+  var root = global[wtf.util.GLOBAL_CACHE_KEY_];
+  if (!root) {
+    root = global[wtf.util.GLOBAL_CACHE_KEY_] = {};
+  }
+  var stash = root[key];
+  if (!stash) {
+    stash = root[key] = {};
+  }
+  return stash;
+};
+
+
 goog.exportSymbol(
     'wtf.util.formatTime',
     wtf.util.formatTime);

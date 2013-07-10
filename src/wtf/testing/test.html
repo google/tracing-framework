@@ -9,7 +9,10 @@
       var allMochaFailures = [];
       mocha.setup({
         'ui': 'tdd',
-        'globals': ['mochaCompletionWaiter'],
+        'globals': [
+          'mochaCompletionWaiter',
+          'wtf_util_global_cache'
+        ],
         'reporter': function(runner, root) {
           // Intercept the test reporter to log all failures.
           Mocha.reporters.HTML.call(this, runner, root);
