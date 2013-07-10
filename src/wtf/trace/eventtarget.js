@@ -503,6 +503,7 @@ wtf.trace.eventtarget.BaseEventTarget.prototype.setEventHook = function(
 /**
  * Dispatches an event.
  * @param {Event} e Event.
+ * @this {wtf.trace.eventtarget.BaseEventTarget}
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype['dispatchEvent'] = function(e) {
   // Ignore events marked by implementations as being WTF-specific.
