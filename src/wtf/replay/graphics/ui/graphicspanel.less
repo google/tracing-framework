@@ -1,0 +1,52 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Graphics replay controller LESS file.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+
+.graphicsReplayPanel {
+  @defaultWidth: 300px;
+  @toolbarHeight: 100px;
+  .graphicsReplayToolbarContainer {}
+
+  .graphicsReplayRangeSeekerContainer {}
+
+  .graphicsReplayMainContent {
+    position: absolute;
+    left: 0;
+    top: @toolbarHeight;
+    right: 0;
+    bottom: 0;
+  }
+
+  .graphicsReplayStepEventNavigation {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 300px;
+    overflow: hidden;
+
+    .graphicsReplayEventNavigatorContainer {}
+
+    .graphicsReplayMainSplitter {}
+  }
+
+  .graphicsReplayMainDisplay {
+    position: absolute;
+    left: 300px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}

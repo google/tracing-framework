@@ -128,7 +128,8 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
  */
 wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
     function(ctx) {
-  var numAttribs = ctx.getParameter(goog.webgl.MAX_VERTEX_ATTRIBS);
+  var numAttribs = /** @type {number} */ (
+      ctx.getParameter(goog.webgl.MAX_VERTEX_ATTRIBS));
   var tmp = ctx.createBuffer();
   ctx.bindBuffer(goog.webgl.ARRAY_BUFFER, tmp);
   for (var ii = 0; ii < numAttribs; ++ii) {
@@ -138,7 +139,8 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
   }
 
   ctx.deleteBuffer(tmp);
-  var numTextureUnits = ctx.getParameter(goog.webgl.MAX_TEXTURE_IMAGE_UNITS);
+  var numTextureUnits = /** @type {number} */ (
+      ctx.getParameter(goog.webgl.MAX_TEXTURE_IMAGE_UNITS));
   for (var ii = 0; ii < numTextureUnits; ++ii) {
     ctx.activeTexture(goog.webgl.TEXTURE0 + ii);
     ctx.bindTexture(goog.webgl.TEXTURE_CUBE_MAP, null);
@@ -171,8 +173,8 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
   ctx.lineWidth(1);
   ctx.pixelStorei(goog.webgl.PACK_ALIGNMENT, 4);
   ctx.pixelStorei(goog.webgl.UNPACK_ALIGNMENT, 4);
-  ctx.pixelStorei(goog.webgl.UNPACK_FLIP_Y_WEBGL, false);
-  ctx.pixelStorei(goog.webgl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  ctx.pixelStorei(goog.webgl.UNPACK_FLIP_Y_WEBGL, 0);
+  ctx.pixelStorei(goog.webgl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
   ctx.pixelStorei(goog.webgl.UNPACK_COLORSPACE_CONVERSION_WEBGL,
       goog.webgl.BROWSER_DEFAULT_WEBGL);
   ctx.polygonOffset(0, 0);
@@ -186,5 +188,5 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
       goog.webgl.DEPTH_BUFFER_BIT | goog.webgl.STENCIL_BUFFER_BIT);
 
   // TODO: This should NOT be needed but Firefox fails with 'hint'
-  while (ctx.getError());
+  while (ctx.getError()) {}
 };
