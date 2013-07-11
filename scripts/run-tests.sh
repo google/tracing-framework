@@ -32,4 +32,4 @@ node_modules/mocha/bin/mocha \
     --reporter dot \
     --require src/wtf/bootstrap/mocha.js \
     --grep "$GREP" \
-    --globals "mochaCompletionWaiter,wtf_util_global_cache"
+    --globals "mochaCompletionWaiter,wtf_util_global_cache,closure_uid_*"
