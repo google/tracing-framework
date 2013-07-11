@@ -13,11 +13,10 @@
 
 goog.provide('wtf.replay.graphics.ui.GraphicsPanel');
 
-goog.require('goog.asserts');
-goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
+goog.require('wtf.events');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.CanvasesArea');
 goog.require('wtf.replay.graphics.ui.EventNavigator');
@@ -58,12 +57,10 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
 
   /**
    * The viewport size monitor.
-   * @type {goog.dom.ViewportSizeMonitor}
+   * @type {!goog.dom.ViewportSizeMonitor}
    * @private
    */
-  this.viewportSizeMonitor_ =
-      goog.dom.ViewportSizeMonitor.getInstanceForWindow();
-  goog.asserts.assert(this.viewportSizeMonitor_);
+  this.viewportSizeMonitor_ = wtf.events.acquireViewportSizeMonitor();
   this.getHandler().listen(
       this.viewportSizeMonitor_,
       goog.events.EventType.RESIZE, this.layout, false, this);
@@ -116,6 +113,15 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
   this.registerDisposable(this.canvasesArea_);
 };
 goog.inherits(wtf.replay.graphics.ui.GraphicsPanel, wtf.ui.Control);
+
+
+/**
+ * @override
+ */
+wtf.replay.graphics.ui.GraphicsPanel.prototype.disposeInternal = function() {
+  wtf.events.releaseViewportSizeMonitor(this.viewportSizeMonitor_);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**

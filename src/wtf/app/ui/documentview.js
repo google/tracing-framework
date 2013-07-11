@@ -14,7 +14,6 @@
 goog.provide('wtf.app.ui.DocumentView');
 
 goog.require('goog.asserts');
-goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.events.EventType');
 goog.require('goog.result');
 goog.require('goog.soy');
@@ -71,6 +70,13 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
    */
   this.document_ = doc;
   this.registerDisposable(this.document_);
+
+  /**
+   * The viewport size monitor.
+   * @type {!goog.dom.ViewportSizeMonitor}
+   * @private
+   */
+  this.viewportSizeMonitor_ = wtf.events.acquireViewportSizeMonitor();
 
   /**
    * Local view into the document.
@@ -146,9 +152,10 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
   this.registerDisposable(this.extensionManager_);
 
   // Relayout as required.
-  var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
   this.getHandler().listen(
-      vsm, goog.events.EventType.RESIZE, this.layout, false);
+      this.viewportSizeMonitor_,
+      goog.events.EventType.RESIZE,
+      this.layout, false);
   this.navbar_.addListener(
       wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
       this.layout, this);
@@ -185,6 +192,9 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
   commandManager.unregisterCommand('goto_range');
   commandManager.unregisterCommand('goto_mark');
   commandManager.unregisterCommand('goto_frame');
+
+  wtf.events.releaseViewportSizeMonitor(this.viewportSizeMonitor_);
+
   goog.base(this, 'disposeInternal');
 };
 

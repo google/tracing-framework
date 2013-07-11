@@ -17,7 +17,6 @@ goog.provide('wtf.ui.DialogOptions');
 goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.dom.ViewportSizeMonitor');
 goog.require('goog.dom.classes');
 goog.require('goog.events');
 goog.require('goog.events.EventHandler');
@@ -52,6 +51,13 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
   goog.base(this, parentElement, opt_dom);
   var dom = this.getDom();
 
+  /**
+   * The viewport size monitor.
+   * @type {!goog.dom.ViewportSizeMonitor}
+   * @private
+   */
+  this.viewportSizeMonitor_ = wtf.events.acquireViewportSizeMonitor();
+
   var clickToClose = goog.isDef(options.clickToClose) ?
       options.clickToClose : true;
 
@@ -73,6 +79,15 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
   }
 };
 goog.inherits(wtf.ui.Dialog, wtf.ui.Control);
+
+
+/**
+ * @override
+ */
+wtf.ui.Dialog.prototype.disposeInternal = function() {
+  wtf.events.releaseViewportSizeMonitor(this.viewportSizeMonitor_);
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -105,9 +120,11 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   // Add dialog DOM to parent element instead of root user element.
   dom.appendChild(parentElement, el);
 
-  var vsm = goog.dom.ViewportSizeMonitor.getInstanceForWindow();
+  // Recenter as the window is resized.
   this.getHandler().listen(
-      vsm, goog.events.EventType.RESIZE, this.center, false);
+      this.viewportSizeMonitor_,
+      goog.events.EventType.RESIZE,
+      this.center, false);
   this.center();
 
   // Add after layout to prevent sliding.
