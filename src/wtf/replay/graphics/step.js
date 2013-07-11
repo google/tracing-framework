@@ -17,7 +17,6 @@ goog.provide('wtf.replay.graphics.Step');
 
 
 /**
- * Step.
  * Encapsulates events between 2 frames or within a frame.
  *
  * @param {!wtf.db.EventList} eventList Event list for an entire animation.

@@ -1,0 +1,33 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Graphics panel DOM.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+{namespace wtf.replay.graphics.ui.graphicsPanel}
+
+
+/**
+ * Graphics panel control UI.
+ */
+{template .controller}
+  <div class="{css graphicsReplayPanel}">
+    <div class="{css graphicsReplayToolbarContainer}"></div>
+    <div class="{css graphicsReplayRangeSeekerContainer}"></div>
+    <div class="{css graphicsReplayMainContent}">
+      <div class="{css graphicsReplayStepEventNavigation}">
+        <div class="{css graphicsReplayEventNavigatorContainer}"></div>
+        <div class="{css graphicsReplayMainSplitter}"></div>
+      </div>
+      <div class="{css graphicsReplayMainDisplay}">
+      </div>
+    </div>
+  </div>
+{/template}

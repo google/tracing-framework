@@ -70,7 +70,7 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
 
   /**
    * A mapping of handles to contexts.
-   * @type {!Object.<number, !WebGLRenderingContext>}
+   * @type {!Object.<WebGLRenderingContext>}
    * @private
    */
   this.contexts_ = {};
@@ -99,7 +99,7 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
 
   /**
    * A mapping of handles to WebGL objects.
-   * @type {!Object.<number, !Object>}
+   * @type {!Object.<!Object>}
    * @private
    */
   this.objects_ = {};
@@ -110,6 +110,14 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
    * @private
    */
   this.playing_ = false;
+
+  /**
+   * The ID of the event (relative to the step iterator) within a step. This is
+   * the event that has just executed. null if no event in a step has executed.
+   * @type {?number}
+   * @private
+   */
+  this.subStepId_ = null;
 
   /**
    * Handler for animation request.
@@ -182,6 +190,11 @@ wtf.replay.graphics.Playback.EventType = {
   PLAY_BEGAN: goog.events.getUniqueId('play_began'),
 
   /**
+   * The current step changed.
+   */
+  STEP_CHANGED: goog.events.getUniqueId('step_changed'),
+
+  /**
    * A context was created. Has the context.
    */
   CONTEXT_CREATED: goog.events.getUniqueId('context_created'),
@@ -235,7 +248,7 @@ wtf.replay.graphics.Playback.prototype.getSupportedExtensions_ = function() {
 /**
  * Constructs a list of steps.
  * @param {!wtf.db.EventList} eventList A list of events.
- * @param {!Wtf.db.FrameList} frameList A list of frames.
+ * @param {!wtf.db.FrameList} frameList A list of frames.
  * @return {!Array.<!wtf.replay.graphics.Step>} A list of steps.
  * @private
  */
@@ -273,7 +286,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       steps.push(new wtf.replay.graphics.Step(
           eventList, currentStartId, it.getId(), currentFrame));
       noEventsForPreviousStep = true;
-      currentFrame = frameList.getNextFrame(currentFrame);
+      if (currentFrame) {
+        currentFrame = frameList.getNextFrame(currentFrame);
+      }
       it.next();
       if (!it.done()) {
         currentStartId = it.getId();
@@ -372,9 +387,19 @@ wtf.replay.graphics.Playback.prototype.checkExtensions_ = function() {
  * the beginning of the animation. First pauses playing if currently playing.
  */
 wtf.replay.graphics.Playback.prototype.reset = function() {
+  this.setToInitialState_();
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.RESET);
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_CHANGED);
+};
+
+
+/**
+ * Sets playing to an initial state.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
   this.clearWebGLObjects_();
   this.currentStepIndex_ = 0;
-  this.emitEvent(wtf.replay.graphics.Playback.EventType.RESET);
 };
 
 
@@ -395,7 +420,9 @@ wtf.replay.graphics.Playback.prototype.clearWebGLObjects_ = function() {
 
   // Release all the contexts.
   for (var contextKey in this.contexts_) {
-    this.contextPool_.releaseContext(this.contexts_[contextKey]);
+    var ctx = this.contexts_[contextKey];
+    goog.asserts.assert(ctx);
+    this.contextPool_.releaseContext(ctx);
   }
   this.contexts_ = {};
 };
@@ -558,21 +585,20 @@ wtf.replay.graphics.Playback.prototype.clearTimeouts_ = function() {
  * resources have loaded. Can only be called if not currently playing.
  */
 wtf.replay.graphics.Playback.prototype.play = function() {
+
   // Throw an exception if play was called while already playing.
   if (this.isPlaying()) {
     throw new Error('Play attempted while already playing.');
-    return;
   }
   // Throw an exception if play was called before resources finished loading.
   if (!this.resourcesDoneLoading_) {
     throw new Error('Play attempted before resources finished loading.');
-    return;
   }
 
   // Each play sequence gets a unique ID.
   this.playing_ = true;
   this.emitEvent(wtf.replay.graphics.Playback.EventType.PLAY_BEGAN);
-  this.issueStep_(this.currentStepIndex_);
+  this.issueStep_();
 };
 
 
@@ -587,31 +613,44 @@ wtf.replay.graphics.Playback.prototype.isPlaying = function() {
 
 /**
  * Plays all the calls in a step and then subsequent steps.
- * @param {number} stepIndex The internal {@see #steps_} index of the initial
- * step.
- * two plays that interfere with each other.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.issueStep_ =
-    function(stepIndex) {
+wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
   // Stop if we finished playing, paused, or a new play has occurred.
-  if (stepIndex >= this.steps_.length || !this.playing_) {
+  if (this.currentStepIndex_ >= this.steps_.length || !this.playing_) {
     // Done playing.
     this.playing_ = false;
     this.emitEvent(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED);
     return;
   }
-  var stepToPlayFrom = this.steps_[stepIndex];
+
+  // If currently within a step, finish the step first.
+  if (this.subStepId_ !== null) {
+    var it = this.getCurrentStep().getEventIterator();
+    for (var i = 0; i <= this.subStepId_; ++i) {
+      it.next();
+    }
+    while (!it.done()) {
+      this.realizeEvent_(it);
+      it.next();
+    }
+    ++this.currentStepIndex_;
+  }
+
+  var stepToPlayFrom = this.steps_[this.currentStepIndex_];
   var self = this;
-  var handler = goog.bind(function() {
+  var handler = function() {
+    self.subStepId_ = null;
     for (var it = stepToPlayFrom.getEventIterator(); !it.done(); it.next()) {
       self.realizeEvent_(it);
     }
-    self.currentStepIndex_ = ++stepIndex;
-    self.issueStep_(stepIndex);
-  }, this);
+    ++self.currentStepIndex_;
+    self.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_CHANGED);
+    self.issueStep_();
+  };
   if (stepToPlayFrom.getFrame()) {
-    this.animationRequest_ = this.requestAnimationFrame_(handler);
+    this.animationRequest_ = /** @type {number} */
+        (this.requestAnimationFrame_(handler));
   } else {
     this.prepareFrameTimeout_ = goog.global.setTimeout(handler, 0);
   }
@@ -627,6 +666,7 @@ wtf.replay.graphics.Playback.prototype.pause = function() {
   }
   this.playing_ = false;
   this.clearTimeouts_();
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED);
 };
 
 
@@ -642,8 +682,8 @@ wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventId) {
     this.pause();
   }
   var currentStep = this.getCurrentStep();
-  if (!currentStep || currentStep.getStartEventId() > targetEventId) {
-    this.reset(); // Backwards seek, so reset.
+  if (!currentStep || currentStep.getStartEventId() >= targetEventId) {
+    this.setToInitialState_(); // Backwards seek, so reset.
     currentStep = this.getCurrentStep();
   }
   var currentEvent = this.eventList_.beginEventRange(
@@ -661,16 +701,79 @@ wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventId) {
  * Pauses before seek if not paused already. Can only be called after
  * resources have finished loading.
  * @param {number} index The index of the step from the beginning of the
- * animation. The first step has index 0. A step consists of either the events
- * within a frame or a continuous sequence of events outside of a frame.
+ *     animation. The first step has index 0. A step consists of either the
+ *     events within a frame or a continuous sequence of events outside of a
+ *     frame.
  */
 wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
   if (!this.resourcesDoneLoading_) {
     throw new Error('Seek attempted before resources finished loading.');
-    return;
   }
   this.seekEvent_(this.steps_[index].getStartEventId());
-  this.currentStepIndex_ = index;
+  this.subStepId_ = null;
+  if (index != this.currentStepIndex_) {
+    this.currentStepIndex_ = index;
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_CHANGED);
+  }
+};
+
+
+/**
+ * Seeks to an event within a step. Does nothing if no current step.
+ * @param {number} index The 0-based index of the event within the step.
+ */
+wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
+  var currentStep = this.getCurrentStep();
+  if (!currentStep) {
+    return;
+  }
+
+  // If seeking backwards, go to the beginning of the step first.
+  var it = currentStep.getEventIterator();
+  var startEventId;
+  if (index < this.subStepId_) {
+    this.seekStep(this.getCurrentStepIndex());
+    startEventId = 0;
+  } else {
+    startEventId = this.subStepId_ + 1;
+
+    // Do not rely on the event ID, so manually plow forward a few events.
+    for (var i = 0; i < startEventId; ++i) {
+      it.next();
+    }
+  }
+
+  for (var i = startEventId; i <= index; ++i) {
+    this.realizeEvent_(it);
+    it.next();
+  }
+  this.subStepId_ = index;
+};
+
+
+/**
+ * Gets the 0-based index of the substep event ID.
+ * @return {?number} The index of the substep event ID or null if it does not
+ *     exist (It does not exist if we are no playing within a step.).
+ */
+wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
+  return this.subStepId_;
+};
+
+
+/**
+ * Seeks to an event within the current step. The event ID is relative to the
+ * event iterator returned by {@see getEventIterator} of the step. Can only
+ * be called if the current step exists (We are not at the very end.).
+ * @param {number} index [description].
+ */
+wtf.replay.graphics.Playback.prototype.seekToEventInStep = function(index) {
+  var eventIterator = this.getCurrentStep().getEventIterator();
+  this.seekStep(this.currentStepIndex_);
+  while (eventIterator.getId() != index) {
+    this.realizeEvent_(eventIterator);
+    eventIterator.next();
+  }
 };
 
 
@@ -681,6 +784,16 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
 wtf.replay.graphics.Playback.prototype.getCurrentStep = function() {
   return (this.currentStepIndex_ >= this.steps_.length) ?
       null : this.steps_[this.currentStepIndex_];
+};
+
+
+/**
+ * Gets the index of the current step. Playing has stopped after the animation
+ * is done if the index >= the total number of steps.
+ * @return {number} The index of the current step.
+ */
+wtf.replay.graphics.Playback.prototype.getCurrentStepIndex = function() {
+  return this.currentStepIndex_;
 };
 
 
@@ -702,33 +815,37 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
   switch (it.getName()) {
     case 'WebGLRenderingContext#attachShader':
       currentContext.attachShader(
-          objs[args['program']], objs[args['shader']]);
+          /** @type {WebGLProgram} */ (objs[args['program']]),
+          /** @type {WebGLShader} */ (objs[args['shader']]));
       break;
     case 'WebGLRenderingContext#activeTexture':
       currentContext.activeTexture(args['texture']);
       break;
     case 'WebGLRenderingContext#bindAttribLocation':
       currentContext.bindAttribLocation(
-          objs[args['program']], args['index'], args['name']);
+          /** @type {WebGLProgram} */ (objs[args['program']]),
+          args['index'], args['name']);
       // TODO(chizeng): Figure out if we want to build a mapping.
       // addAttribToProgram(
       //     args['program'], args['index'], args['index']);
       break;
     case 'WebGLRenderingContext#bindBuffer':
       currentContext.bindBuffer(
-          args['target'], objs[args['buffer']]);
+          args['target'], /** @type {WebGLBuffer} */ (objs[args['buffer']]));
       break;
     case 'WebGLRenderingContext#bindFramebuffer':
       currentContext.bindFramebuffer(
-          args['target'], objs[args['framebuffer']]);
+          args['target'],
+          /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
       break;
     case 'WebGLRenderingContext#bindRenderbuffer':
       currentContext.bindRenderbuffer(
-          args['target'], objs[args['renderbuffer']]);
+          args['target'],
+          /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
       break;
     case 'WebGLRenderingContext#bindTexture':
       currentContext.bindTexture(
-          args['target'], objs[args['texture']]);
+          args['target'], /** @type {WebGLTexture} */ (objs[args['texture']]));
       break;
     case 'WebGLRenderingContext#blendColor':
       currentContext.blendColor(
@@ -786,7 +903,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
           args['alpha']);
       break;
     case 'WebGLRenderingContext#compileShader':
-      currentContext.compileShader(objs[args['shader']]);
+      currentContext.compileShader(
+          /** @type {WebGLShader} */ (objs[args['shader']]));
       break;
     case 'WebGLRenderingContext#compressedTexImage2D':
       currentContext.compressedTexImage2D(
@@ -832,7 +950,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       objs[args['value']] = currentContext.createProgram();
       objs[args['value']]['__num_attribs__'] =
           currentContext.getProgramParameter(
-              objs[args['value']], goog.webgl.ACTIVE_ATTRIBUTES);
+              /** @type {WebGLProgram} */ (objs[args['value']]),
+              goog.webgl.ACTIVE_ATTRIBUTES);
       this.setOwningContext_(objs[args['value']], currentContext);
       break;
     case 'WebGLRenderingContext#createShader':
@@ -845,22 +964,28 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     // And now, we have a slew of fxns that delete resources.
     case 'WebGLRenderingContext#deleteBuffer':
-      currentContext.deleteBuffer(objs[args['value']]);
+      currentContext.deleteBuffer(
+          /** @type {WebGLBuffer} */ (objs[args['value']]));
       break;
     case 'WebGLRenderingContext#deleteFramebuffer':
-      currentContext.deleteFramebuffer(objs[args['value']]);
+      currentContext.deleteFramebuffer(
+          /** @type {WebGLFramebuffer} */ (objs[args['value']]));
       break;
     case 'WebGLRenderingContext#deleteProgram':
-      currentContext.deleteProgram(objs[args['value']]);
+      currentContext.deleteProgram(
+          /** @type {WebGLProgram} */ (objs[args['value']]));
       break;
     case 'WebGLRenderingContext#deleteRenderbuffer':
-      currentContext.deleteRenderbuffer(objs[args['value']]);
+      currentContext.deleteRenderbuffer(
+          /** @type {WebGLRenderbuffer} */ (objs[args['value']]));
       break;
     case 'WebGLRenderingContext#deleteShader':
-      currentContext.deleteShader(objs[args['value']]);
+      currentContext.deleteShader(
+          /** @type {WebGLShader} */ (objs[args['value']]));
       break;
     case 'WebGLRenderingContext#deleteTexture':
-      currentContext.deleteTexture(objs[args['value']]);
+      currentContext.deleteTexture(
+          /** @type {WebGLTexture} */ (objs[args['value']]));
       break;
     case 'WebGLRenderingContext#depthFunc':
       currentContext.depthFunc(args['func']);
@@ -905,12 +1030,12 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
     case 'WebGLRenderingContext#framebufferRenderbuffer':
       currentContext.framebufferRenderbuffer(args['target'],
           args['attachment'], args['renderbuffertarget'],
-          objs[args['renderbuffer']]);
+          /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
       break;
     case 'WebGLRenderingContext#framebufferTexture2D':
       currentContext.framebufferTexture2D(args['target'],
           args['attachment'], args['textarget'],
-          objs[args['texture']], args['level']);
+          /** @type {WebGLTexture} */ (objs[args['texture']]), args['level']);
       break;
     case 'WebGLRenderingContext#frontFace':
       currentContext.frontFace(args['mode']);
@@ -921,19 +1046,20 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
     case 'WebGLRenderingContext#getActiveAttrib':
       // TODO(chizeng): modify this to make it work with varying locations.
       currentContext.getActiveAttrib(
-          objs[args['program']], args['index']);
+          /** @type {WebGLProgram} */ (objs[args['program']]), args['index']);
       break;
     case 'WebGLRenderingContext#getActiveUniform':
       // maybe we must modify this to obtain the new active uniform.
       currentContext.getActiveUniform(
-          objs[args['program']], args['index']);
+          /** @type {WebGLProgram} */ (objs[args['program']]), args['index']);
       break;
     case 'WebGLRenderingContext#getAttachedShaders':
-      currentContext.getAttachedShaders(objs[args['program']]);
+      currentContext.getAttachedShaders(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
       break;
     case 'WebGLRenderingContext#getAttribLocation':
       currentContext.getAttribLocation(
-          objs[args['program']], args['name']);
+          /** @type {WebGLProgram} */ (objs[args['program']]), args['name']);
       break;
     case 'WebGLRenderingContext#getBufferParameter':
       currentContext.getBufferParameter(
@@ -959,10 +1085,11 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#getProgramParameter':
       currentContext.getProgramParameter(
-          objs[args['program']], args['pname']);
+          /** @type {WebGLProgram} */ (objs[args['program']]), args['pname']);
       break;
     case 'WebGLRenderingContext#getProgramInfoLog':
-      currentContext.getProgramInfoLog(objs[args['program']]);
+      currentContext.getProgramInfoLog(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
       break;
     case 'WebGLRenderingContext#getRenderbufferParameter':
       currentContext.getRenderbufferParameter(
@@ -970,17 +1097,19 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#getShaderParameter':
       currentContext.getShaderParameter(
-          objs[args['shader']], args['pname']);
+          /** @type {WebGLShader} */ (objs[args['shader']]), args['pname']);
       break;
     case 'WebGLRenderingContext#getShaderPrecisionFormat':
       currentContext.getShaderPrecisionFormat(
           args['shadertype'], args['precisiontype']);
       break;
     case 'WebGLRenderingContext#getShaderInfoLog':
-      currentContext.getShaderInfoLog(objs[args['shader']]);
+      currentContext.getShaderInfoLog(
+          /** @type {WebGLShader} */ (objs[args['shader']]));
       break;
     case 'WebGLRenderingContext#getShaderSource':
-      currentContext.getShaderSource(objs[args['shader']]);
+      currentContext.getShaderSource(
+          /** @type {WebGLShader} */ (objs[args['shader']]));
       break;
     case 'WebGLRenderingContext#getTexParameter':
       currentContext.getTexParameter(
@@ -988,12 +1117,14 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#getUniform':
       currentContext.getUniform(
-          objs[args['program']], objs[args['location']]);
+          /** @type {WebGLProgram} */ (objs[args['program']]),
+          /** @type {WebGLUniformLocation} */ (objs[args['location']]));
       break;
     case 'WebGLRenderingContext#getUniformLocation':
       // TODO(chizeng): Maybe this must change because we need a mapping.
-      objs[args['value']] = currentContext.getUniformLocation(
-          objs[args['program']], args['name']);
+      objs[args['value']] = /** @type {!Object} */ (
+          currentContext.getUniformLocation(/** @type {WebGLProgram} */ (
+              objs[args['program']]), args['name']));
       if (objs[args['value']]) {
         this.setOwningContext_(objs[args['value']], currentContext);
       }
@@ -1010,25 +1141,31 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       currentContext.hint(args['target'], args['mode']);
       break;
     case 'WebGLRenderingContext#isBuffer':
-      currentContext.isBuffer(objs[args['buffer']]);
+      currentContext.isBuffer(
+          /** @type {WebGLBuffer} */ (objs[args['buffer']]));
       break;
     case 'WebGLRenderingContext#isEnabled':
       currentContext.isEnabled(args['cap']);
       break;
     case 'WebGLRenderingContext#isFramebuffer':
-      currentContext.isFramebuffer(objs[args['framebuffer']]);
+      currentContext.isFramebuffer(
+          /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
       break;
     case 'WebGLRenderingContext#isProgram':
-      currentContext.isProgram(objs[args['program']]);
+      currentContext.isProgram(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
       break;
     case 'WebGLRenderingContext#isRenderbuffer':
-      currentContext.isRenderbuffer(objs[args['renderbuffer']]);
+      currentContext.isRenderbuffer(
+          /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
       break;
     case 'WebGLRenderingContext#isShader':
-      currentContext.isShader(objs[args['shader']]);
+      currentContext.isShader(
+          /** @type {WebGLShader} */ (objs[args['shader']]));
       break;
     case 'WebGLRenderingContext#isTexture':
-      currentContext.isTexture(objs[args['texture']]);
+      currentContext.isTexture(
+          /** @type {WebGLTexture} */ (objs[args['texture']]));
       break;
     case 'WebGLRenderingContext#lineWidth':
       currentContext.lineWidth(args['width']);
@@ -1038,9 +1175,11 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       var attribMap = args['attribs'];
       for (var attribName in attribMap) {
         currentContext.bindAttribLocation(
-            objs[args['program']], attribMap[attribName], attribName);
+            /** @type {WebGLProgram} */ (objs[args['program']]),
+            attribMap[attribName], attribName);
       }
-      currentContext.linkProgram(objs[args['program']]);
+      currentContext.linkProgram(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
       break;
     case 'WebGLRenderingContext#pixelStorei':
       currentContext.pixelStorei(args['pname'], args['param']);
@@ -1068,7 +1207,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#shaderSource':
       currentContext.shaderSource(
-          objs[args['shader']], args['source']);
+          /** @type {WebGLShader} */ (objs[args['shader']]), args['source']);
       break;
     case 'WebGLRenderingContext#stencilFunc':
       currentContext.stencilFunc(
@@ -1130,7 +1269,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
             args['internalformat'],
             args['format'],
             args['type'],
-            this.resources_[it.getId()]
+            /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
+            (this.resources_[it.getId()])
         );
       }
       break;
@@ -1168,7 +1308,8 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
             args['yoffset'],
             args['format'],
             args['type'],
-            this.resources_[it.getId()]
+            /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
+            (this.resources_[it.getId()])
         );
       }
       break;
@@ -1182,89 +1323,109 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#uniform1f':
       currentContext.uniform1f(
-          objs[args['location']], args['x']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x']);
       break;
     case 'WebGLRenderingContext#uniform1fv':
       currentContext.uniform1fv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform1i':
       currentContext.uniform1i(
-          objs[args['location']], args['x']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x']);
       break;
     case 'WebGLRenderingContext#uniform1iv':
       currentContext.uniform1iv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform2f':
       currentContext.uniform2f(
-          objs[args['location']], args['x'], args['y']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x'], args['y']);
       break;
     case 'WebGLRenderingContext#uniform2fv':
       currentContext.uniform2fv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform2i':
       currentContext.uniform2i(
-          objs[args['location']], args['x'], args['y']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x'], args['y']);
       break;
     case 'WebGLRenderingContext#uniform2iv':
       currentContext.uniform2iv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform3f':
       currentContext.uniform3f(
-          objs[args['location']], args['x'], args['y'],
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x'], args['y'],
           args['z']);
       break;
     case 'WebGLRenderingContext#uniform3fv':
       currentContext.uniform3fv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform3i':
       currentContext.uniform3i(
-          objs[args['location']], args['x'], args['y'],
-          args['z']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x'], args['y'], args['z']);
       break;
     case 'WebGLRenderingContext#uniform3iv':
       currentContext.uniform3iv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform4f':
       currentContext.uniform4f(
-          objs[args['location']], args['x'], args['y'],
-          args['z'], args['w']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x'], args['y'], args['z'],
+          args['w']);
       break;
     case 'WebGLRenderingContext#uniform4fv':
       currentContext.uniform4fv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniform4i':
       currentContext.uniform4i(
-          objs[args['location']], args['x'], args['y'],
-          args['z'], args['w']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['x'], args['y'], args['z'],
+          args['w']);
       break;
     case 'WebGLRenderingContext#uniform4iv':
       currentContext.uniform4iv(
-          objs[args['location']], args['v']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['v']);
       break;
     case 'WebGLRenderingContext#uniformMatrix2fv':
       currentContext.uniformMatrix2fv(
-          objs[args['location']], args['transpose'], args['value']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['transpose'], args['value']);
       break;
     case 'WebGLRenderingContext#uniformMatrix3fv':
       currentContext.uniformMatrix3fv(
-          objs[args['location']], args['transpose'], args['value']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['transpose'], args['value']);
       break;
     case 'WebGLRenderingContext#uniformMatrix4fv':
       currentContext.uniformMatrix4fv(
-          objs[args['location']], args['transpose'], args['value']);
+          /** @type {WebGLUniformLocation} */ (
+              objs[args['location']]), args['transpose'], args['value']);
       break;
     case 'WebGLRenderingContext#useProgram':
-      currentContext.useProgram(objs[args['program']]);
+      currentContext.useProgram(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
       break;
     case 'WebGLRenderingContext#validateProgram':
-      currentContext.validateProgram(objs[args['program']]);
+      currentContext.validateProgram(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
       break;
     case 'WebGLRenderingContext#vertexAttrib1fv':
       currentContext.vertexAttrib1fv(args['indx'], args['values']);
@@ -1307,9 +1468,16 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       var attributes = args['attributes'];
       // Assume that the context is webgl for now.
       currentContext =
-          contextPool.getContext('webgl', attributes) ||
-          contextPool.getContext('experimental-webgl', attributes);
-      this.contexts_[args['handle']] = currentContext;
+          this.contextPool_.getContext('webgl', attributes) ||
+          this.contextPool_.getContext('experimental-webgl', attributes);
+
+      // We don't support WebGL.
+      if (!currentContext) {
+        throw new Error('This machine does not support WebGL.');
+      }
+
+      this.contexts_[args['handle']] =
+          /** @type {WebGLRenderingContext} */ (currentContext);
       this.currentContext_ = currentContext;
       this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
           currentContext);
@@ -1342,4 +1510,13 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
 wtf.replay.graphics.Playback.prototype.setOwningContext_ = function(
     obj, ctx) {
   obj[wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME_] = ctx;
+};
+
+
+/**
+ * Gets the number of steps.
+ * @return {number} The number of steps.
+ */
+wtf.replay.graphics.Playback.prototype.getStepCount = function() {
+  return this.steps_.length;
 };

@@ -177,11 +177,11 @@ wtf.replay.graphics.Playback_test =
        function() {
          assert.isFalse(playback.isPlaying());
          assert.isNull(playback.getCurrentStep());
+         goog.dispose(playback);
        }]
     ];
     assert.expectEventSequence(playback, sequenceOfEvents);
     playback.load();
-    goog.dispose(playback);
   });
 
   test('#pause', function() {
@@ -218,11 +218,11 @@ wtf.replay.graphics.Playback_test =
          } finally {
            assert.isTrue(exceptionThrown);
          }
+         goog.dispose(playback);
        }]
     ];
     assert.expectEventSequence(playback, sequenceOfEvents);
     playback.load();
-    goog.dispose(playback);
   });
 
   test('#restart', function() {

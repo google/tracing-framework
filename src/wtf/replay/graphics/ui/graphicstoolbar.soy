@@ -1,0 +1,36 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * A container for toolbars for graphics replay.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+{namespace wtf.replay.graphics.ui.graphicsToolbar}
+
+/**
+ * Container of control buttons (play, forward, backward, etc).
+ */
+{template .controller}
+  <div class="{css graphicsReplayToolbar}">
+    <div class="{css kButtonBar} {css buttons}">
+      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayResetButton}" title="Reset">
+        Reset
+      </a>
+      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayBackButton}" title="Back 1 Step">
+        Back 1 Step
+      </a>
+      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayPlayButton}" title="Play">
+        Play
+      </a>
+      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayForwardButton}" title="Forward 1 Step">
+        Forward 1 Step
+      </a>
+    </div>
+  </div>
+{/template}
