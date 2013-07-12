@@ -195,7 +195,12 @@ wtf.replay.graphics.Playback.EventType = {
   STEP_CHANGED: goog.events.getUniqueId('step_changed'),
 
   /**
-   * A context was created. Has the context.
+   * A backwards seek was performed.
+   */
+  BACKWARDS_SEEK: goog.events.getUniqueId('backwards_seek'),
+
+  /**
+   * A context was created. Has the context and its handle as its arguments.
    */
   CONTEXT_CREATED: goog.events.getUniqueId('context_created'),
 
@@ -264,6 +269,8 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       this.getEventTypeId_(eventList, 'wtf.timing#frameStart');
   var frameEndEventId =
       this.getEventTypeId_(eventList, 'wtf.timing#frameEnd');
+  var contextCreatedEventId =
+      this.getEventTypeId_(eventList, 'wtf.webgl#createContext');
 
   var it = eventList.begin();
   var currentStartId = it.getId();
@@ -271,20 +278,28 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   var currentFrame = (frameList.getCount()) ?
       frameList.getAllFrames()[0] : null;
   var noEventsForPreviousStep = true; // Ensure no empty steps are made.
+
+  // Keep track of the handles of contexts that are made.
+  var contextsMade = {};
+  var contextsMadeSoFar = {};
   while (!it.done()) {
     var currentEventTypeId = it.getTypeId();
     if (currentEventTypeId == frameStartEventId) {
       // Only store previous step if it has at least 1 event.
       if (!noEventsForPreviousStep) {
+        var contexts = goog.object.clone(contextsMade);
         steps.push(new wtf.replay.graphics.Step(
-            eventList, currentStartId, currentEndId, null));
+            eventList, currentStartId, currentEndId, null, contexts));
+        contextsMade = goog.object.clone(contextsMadeSoFar);
       }
       currentStartId = it.getId();
       it.next();
     } else if (currentEventTypeId == frameEndEventId) {
       // Include the end frame event in the step for drawing the frame.
+      var contexts = goog.object.clone(contextsMade);
       steps.push(new wtf.replay.graphics.Step(
-          eventList, currentStartId, it.getId(), currentFrame));
+          eventList, currentStartId, it.getId(), currentFrame, contexts));
+      contextsMade = goog.object.clone(contextsMadeSoFar);
       noEventsForPreviousStep = true;
       if (currentFrame) {
         currentFrame = frameList.getNextFrame(currentFrame);
@@ -293,6 +308,10 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       if (!it.done()) {
         currentStartId = it.getId();
       }
+    } else if (currentEventTypeId == contextCreatedEventId) {
+      // A new context was made. Include it in the current step.
+      contextsMadeSoFar[it.getArgument('handle')] = true;
+      it.next();
     } else {
       currentEndId = it.getId();
       noEventsForPreviousStep = false; // This step has at least 1 event.
@@ -709,11 +728,15 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
   if (!this.resourcesDoneLoading_) {
     throw new Error('Seek attempted before resources finished loading.');
   }
+  var previousStepIndex = this.currentStepIndex_;
   this.seekEvent_(this.steps_[index].getStartEventId());
   this.subStepId_ = null;
-  if (index != this.currentStepIndex_) {
-    this.currentStepIndex_ = index;
+  this.currentStepIndex_ = index;
+  if (index != previousStepIndex) {
     this.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_CHANGED);
+    if (index < previousStepIndex) {
+      this.emitEvent(wtf.replay.graphics.Playback.EventType.BACKWARDS_SEEK);
+    }
   }
 };
 
@@ -734,6 +757,7 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
   if (index < this.subStepId_) {
     this.seekStep(this.getCurrentStepIndex());
     startEventId = 0;
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.BACKWARDS_SEEK);
   } else {
     startEventId = this.subStepId_ + 1;
 
@@ -1476,11 +1500,12 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
         throw new Error('This machine does not support WebGL.');
       }
 
-      this.contexts_[args['handle']] =
+      var contextHandle = args['handle'];
+      this.contexts_[contextHandle] =
           /** @type {WebGLRenderingContext} */ (currentContext);
       this.currentContext_ = currentContext;
       this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
-          currentContext);
+          currentContext, contextHandle);
       break;
     case 'wtf.webgl#setContext':
       var contextHandle = args['handle'];

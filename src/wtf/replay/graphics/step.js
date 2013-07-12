@@ -24,10 +24,12 @@ goog.provide('wtf.replay.graphics.Step');
  * @param {number} endEventId End event ID.
  * @param {wtf.db.Frame=} opt_frame Frame this step draws if and only if the
  *     step draws one.
+ * @param {Object.<boolean>=} opt_contexts The set of contexts that exist at
+ *     the start of this step.
  * @constructor
  */
 wtf.replay.graphics.Step = function(
-    eventList, startEventId, endEventId, opt_frame) {
+    eventList, startEventId, endEventId, opt_frame, opt_contexts) {
 
   /**
    * List of events for entire animation.
@@ -57,6 +59,13 @@ wtf.replay.graphics.Step = function(
    * @private
    */
   this.frame_ = opt_frame || null;
+
+  /**
+   * The set of contexts that exist at the start of this step.
+   * @type {!Object.<boolean>}
+   * @private
+   */
+  this.initialContexts_ = opt_contexts || {};
 };
 
 
@@ -94,4 +103,13 @@ wtf.replay.graphics.Step.prototype.getStartEventId = function() {
  */
 wtf.replay.graphics.Step.prototype.getEndEventId = function() {
   return this.endEventId_;
+};
+
+
+/**
+ * Returns the set of handles of contexts that exist at the start of the step.
+ * @return {!Object.<boolean>} The set of handles of initial contexts.
+ */
+wtf.replay.graphics.Step.prototype.getInitialContexts = function() {
+  return this.initialContexts_;
 };
