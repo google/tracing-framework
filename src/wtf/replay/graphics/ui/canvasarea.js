@@ -36,32 +36,40 @@ wtf.replay.graphics.ui.CanvasesArea = function(
   goog.base(this, parentElement, opt_domHelper);
 
   /**
-   * A set of hashes for pre-existing contexts. Used to prevent duplicate
-   * contexts.
-   * @type {!Object.<boolean>}
+   * The set of contexts that are displayed. A mapping from contexts' handles
+   * to their content boxes.
+   * @type {!Object.<!wtf.replay.graphics.ui.ContextBox>}
    * @private
    */
-  this.includedContexts_ = {};
+  this.displayedContexts_ = {};
 
-  /**
-   * A list of boxes representing current contexts.
-   * @type {!Array.<!wtf.replay.graphics.ui.ContextBox>}
-   * @private
-   */
-  this.contextBoxes_ = [];
-  this.trackContextCreation_(playback); // Add contexts as they are made.
+  // Add contexts as they are made. Delete them as they are destroyed.
+  this.trackDisplayingOfContexts_(playback);
 };
 goog.inherits(wtf.replay.graphics.ui.CanvasesArea, wtf.ui.Control);
 
 
 /**
- * Adds a new context to the area.
+ * @override
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.disposeInternal = function() {
+  var contextBoxes = this.displayedContexts_;
+  for (var contextHandle in contextBoxes) {
+    goog.dispose(contextBoxes[contextHandle]);
+  }
+};
+
+
+/**
+ * Adds a new context and displays its canvas in the area.
+ * @param {string} contextHandle The handle of the context.
  * @param {!WebGLRenderingContext} context Context of the canvas to add.
  */
 wtf.replay.graphics.ui.CanvasesArea.prototype.addContext = function(
-    context) {
-  this.contextBoxes_.push(new wtf.replay.graphics.ui.ContextBox(
-      context, this.getRootElement(), this.getDom()));
+    contextHandle, context) {
+  this.displayedContexts_[contextHandle] =
+      new wtf.replay.graphics.ui.ContextBox(
+          context, this.getRootElement(), this.getDom());
 };
 
 
@@ -80,23 +88,52 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.createDom = function(dom) {
  * @param {!wtf.replay.graphics.Playback} playback The playback.
  * @private
  */
-wtf.replay.graphics.ui.CanvasesArea.prototype.trackContextCreation_ =
+wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
     function(playback) {
+  // Add contexts as they are made.
   playback.addListener(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
-      function(context) {
-        var contextHash = goog.getUid(context);
-        if (!this.includedContexts_[contextHash]) {
-          this.addContext(context);
-          this.includedContexts_[contextHash] = true;
+      function(context, contextHandle) {
+        if (!this.displayedContexts_[contextHandle]) {
+          this.addContext(contextHandle, context);
         }
       }, this);
+
+  // Upon a reset, remove all contexts.
   playback.addListener(wtf.replay.graphics.Playback.EventType.RESET,
       function() {
-        var rootElement = this.getRootElement();
-        for (var i = 0; i < this.contextBoxes_.length; ++i) {
-          rootElement.removeChild(this.contextBoxes_[i].getRootElement());
+        for (var contextHandle in this.displayedContexts_) {
+          this.removeContext_(contextHandle);
         }
-        this.contextBoxes_.length = 0;
-        this.includedContexts_ = {};
       }, this);
+
+  // When seeking backwards, contexts may be removed.
+  playback.addListener(wtf.replay.graphics.Playback.EventType.BACKWARDS_SEEK,
+      function() {
+        var currentStep = playback.getCurrentStep();
+        if (!currentStep) {
+          return;
+        }
+
+        // Remove any canvases that should no longer be displayed.
+        var initialContexts = currentStep.getInitialContexts();
+        for (var contextHandle in this.displayedContexts_) {
+          if (!(contextHandle in initialContexts)) {
+            this.removeContext_(contextHandle);
+          }
+        }
+      }, this);
+};
+
+
+/**
+ * Removes a context and its canvas from the area.
+ * @param {string} handle The handle of the context.
+ * @private
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.removeContext_ = function(
+    handle) {
+  var contextBox = this.displayedContexts_[handle];
+  this.getRootElement().removeChild(contextBox.getRootElement());
+  goog.dispose(contextBox);
+  delete this.displayedContexts_[handle];
 };
