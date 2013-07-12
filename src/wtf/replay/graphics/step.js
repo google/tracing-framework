@@ -14,6 +14,8 @@
 
 goog.provide('wtf.replay.graphics.Step');
 
+goog.require('wtf.db.EventIterator');
+
 
 
 /**
@@ -53,6 +55,14 @@ wtf.replay.graphics.Step = function(
   this.endEventId_ = endEventId;
 
   /**
+   * A list of indices of visible events. Used for listing events that are
+   * hidden, but should be displayed since they relate to WebGL.
+   * @type {!Array.<number>}
+   * @private
+   */
+  this.visibleEvents_ = this.createVisibleEventsList_();
+
+  /**
    * Either the frame this step draws or null if this step is not responsible
    *     for drawing a frame.
    * @type {wtf.db.Frame}
@@ -71,9 +81,16 @@ wtf.replay.graphics.Step = function(
 
 /**
  * Creates an event iterator that spans the events for the step.
+ * @param {boolean=} opt_visible True if only visible events should be included
+ *     in the iteration. False by default.
  * @return {!wtf.db.EventIterator} The created event iterator.
  */
-wtf.replay.graphics.Step.prototype.getEventIterator = function() {
+wtf.replay.graphics.Step.prototype.getEventIterator = function(opt_visible) {
+  if (opt_visible) {
+    var indirectionTable = this.visibleEvents_;
+    return new wtf.db.EventIterator(
+        this.eventList_, 0, indirectionTable.length - 1, 0, indirectionTable);
+  }
   return this.eventList_.beginEventRange(
       this.startEventId_, this.endEventId_);
 };
@@ -103,6 +120,32 @@ wtf.replay.graphics.Step.prototype.getStartEventId = function() {
  */
 wtf.replay.graphics.Step.prototype.getEndEventId = function() {
   return this.endEventId_;
+};
+
+
+/**
+ * Gets a list of indices of visible events.
+ * @return {!Array.<number>} A list of indices of visible events.
+ * @private
+ */
+wtf.replay.graphics.Step.prototype.createVisibleEventsList_ = function() {
+  // Make hidden events that either create or set contexts visible.
+  var createContextId = this.eventList_.getEventTypeId(
+      'wtf.webgl#createContext');
+  var setContextId = this.eventList_.getEventTypeId('wtf.webgl#setContext');
+  var visibleTypeIds = {};
+  visibleTypeIds[createContextId] = true;
+  visibleTypeIds[setContextId] = true;
+
+  // Filter for only non-hidden events.
+  var visibleEvents = [];
+  for (var it = this.getEventIterator(); !it.done(); it.next()) {
+    if (!it.isHidden() || visibleTypeIds[it.getTypeId()]) {
+      visibleEvents.push(it.getIndex());
+    }
+  }
+
+  return visibleEvents;
 };
 
 

@@ -865,6 +865,18 @@ wtf.db.EventList.prototype.getEvent = function(id) {
 };
 
 
+/**
+ * Returns the ID of an event type or -1 if the event type never appears in
+ * the event list.
+ * @param {string} eventName The name of the event type.
+ * @return {number} The ID of the event type or -1 if the event never appears.
+ */
+wtf.db.EventList.prototype.getEventTypeId = function(eventName) {
+  var eventType = this.eventTypeTable.getByName(eventName);
+  return eventType ? eventType.id : -1;
+};
+
+
 goog.exportSymbol(
     'wtf.db.EventList',
     wtf.db.EventList);
