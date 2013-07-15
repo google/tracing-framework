@@ -362,7 +362,7 @@ wtf.trace.EventTypeBuilder.WRITE_INT32ARRAY_ = ({
     return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
   },
   computeSize: function(a) {
-    return a + 'Length << 2';
+    return '4 + ' + a + 'Length << 2';
   },
   write: function(a, offset) {
     return [
@@ -408,7 +408,7 @@ wtf.trace.EventTypeBuilder.WRITE_FLOAT32ARRAY_ = ({
     return ['var ' + a + 'Length = ' + a + ' ? ' + a + '.length : 0;'];
   },
   computeSize: function(a) {
-    return a + 'Length << 2';
+    return '4 + ' + a + 'Length << 2';
   },
   write: function(a, offset) {
     return [

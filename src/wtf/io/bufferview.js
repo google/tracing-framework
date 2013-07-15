@@ -147,6 +147,7 @@ wtf.io.BufferView.getOffset = function(bufferView) {
  * @param {number} value New buffer view offset.
  */
 wtf.io.BufferView.setOffset = function(bufferView, value) {
+  goog.asserts.assert(value <= bufferView['capacity']);
   bufferView['offset'] = value;
 };
 

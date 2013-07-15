@@ -61,6 +61,18 @@ wtf.tests.EventBuffers_test = suite('wtf.tests.EventBuffers', function() {
     assert.deepEqual(ev.read(bufferView), {});
   });
 
+  test('capacity', function() {
+    var bufferView = wtf.io.BufferView.createEmpty(16);
+    var ev = setupTestEvent(
+        'capacity(uint8[] ui)');
+    ev.write(
+        new Uint8Array([1, 2, 3, 4]),
+        1234567, bufferView);
+    assert.arraysEqual(wtf.io.BufferView.getUsedBytes(bufferView),
+        [1, 0, 0, 0, 88, 255, 149, 73, 4, 0, 0, 0, 1, 2, 3, 4]);
+    assert.equal(wtf.io.BufferView.getOffset(bufferView), 16);
+  });
+
   test('mixed', function() {
     var bufferView = wtf.io.BufferView.createEmpty(1024);
     var ev = setupTestEvent(
