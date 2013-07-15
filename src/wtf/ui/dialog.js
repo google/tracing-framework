@@ -77,6 +77,12 @@ wtf.ui.Dialog = function(options, parentElement, opt_dom) {
     var shield = new wtf.ui.Dialog.Shield_(this, clickToClose);
     this.registerDisposable(shield);
   }
+
+  // Recenter as the window is resized.
+  this.getHandler().listen(
+      this.viewportSizeMonitor_,
+      goog.events.EventType.RESIZE,
+      this.center, false);
 };
 goog.inherits(wtf.ui.Dialog, wtf.ui.Control);
 
@@ -119,12 +125,6 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
 
   // Add dialog DOM to parent element instead of root user element.
   dom.appendChild(parentElement, el);
-
-  // Recenter as the window is resized.
-  this.getHandler().listen(
-      this.viewportSizeMonitor_,
-      goog.events.EventType.RESIZE,
-      this.center, false);
   this.center();
 
   // Add after layout to prevent sliding.
