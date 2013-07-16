@@ -58,6 +58,10 @@ wtf.replay.graphics.ui.EventNavigator = function(
 
   // Listen to changes in step.
   this.listenToStepUpdates_(playback);
+
+  // Stop listening to changes in step after playing begins. Start listening
+  // again when playing stops.
+  this.listenToPlayUpdates_(playback);
 };
 goog.inherits(wtf.replay.graphics.ui.EventNavigator, wtf.ui.Control);
 
@@ -81,6 +85,32 @@ wtf.replay.graphics.ui.EventNavigator.prototype.layout = function() {
 
 
 /**
+ * Listens to play updates to determine if the event navigator should update
+ * if the step changes.
+ * @param {!wtf.replay.graphics.Playback} playback The playback.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigator.prototype.listenToPlayUpdates_ =
+    function(playback) {
+  // After playing begins, do not update the table events upon step change.
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
+      function() {
+        this.unListenToStepUpdates_(playback);
+        this.table_.setSource(null);
+      }, this);
+
+  // After playing stops, update the table events upon step change.
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
+      function() {
+        this.listenToStepUpdates_(playback);
+        this.table_.setSource(this.tableSource_);
+      }, this);
+};
+
+
+/**
  * Ensures that the event table updates when the step changes.
  * @param {!wtf.replay.graphics.Playback} playback The playback.
  * @private
@@ -89,7 +119,18 @@ wtf.replay.graphics.ui.EventNavigator.prototype.listenToStepUpdates_ =
     function(playback) {
   playback.addListener(
       wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
-      function() {
-        this.tableSource_.invalidate();
-      }, this);
+      this.tableSource_.invalidate, this.tableSource_);
+};
+
+
+/**
+ * Stops updating the event table based on changes in step.
+ * @param {!wtf.replay.graphics.Playback} playback The playback.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigator.prototype.unListenToStepUpdates_ =
+    function(playback) {
+  playback.removeListener(
+      wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
+      this.tableSource_.invalidate, this.tableSource_);
 };
