@@ -39,6 +39,14 @@ goog.inherits(wtf.io.WriteTransport, wtf.events.EventEmitter);
 
 
 /**
+ * @override
+ */
+wtf.io.WriteTransport.prototype.disposeInternal = function() {
+  goog.base(this, 'disposeInternal');
+};
+
+
+/**
  * Writes data to the transport.
  * @param {!wtf.io.BlobData} data Data to write.
  */

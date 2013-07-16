@@ -25,10 +25,12 @@ goog.require('wtf.io.WriteTransport');
  *
  * @param {string} url Target URL.
  * @param {string=} opt_mimeType MIME type override.
+ * @param {string=} opt_filename File name to pass to the server.
  * @constructor
  * @extends {wtf.io.WriteTransport}
  */
-wtf.io.transports.XhrWriteTransport = function(url, opt_mimeType) {
+wtf.io.transports.XhrWriteTransport = function(url, opt_mimeType,
+    opt_filename) {
   goog.base(this);
 
   // TODO(benvanik): use the Blob create/append loop to allow very large sizes?
@@ -46,6 +48,13 @@ wtf.io.transports.XhrWriteTransport = function(url, opt_mimeType) {
    * @private
    */
   this.mimeType_ = opt_mimeType || null;
+
+  /**
+   * File name to pass to the server.
+   * @type {?string}
+   * @private
+   */
+  this.filename_ = opt_filename || null;
 
   /**
    * XHR object, if active.
@@ -78,6 +87,7 @@ wtf.io.transports.XhrWriteTransport.TIMEOUT_MS_ = 120 * 1000;
  * @override
  */
 wtf.io.transports.XhrWriteTransport.prototype.disposeInternal = function() {
+  this.flush();
   if (this.xhr_) {
     this.xhr_.onprogress = null;
     this.xhr_.onload = null;
@@ -108,9 +118,9 @@ wtf.io.transports.XhrWriteTransport.prototype.flush = function() {
   var mimeType = this.mimeType_ || 'application/octet-stream';
 
   // Setup XHR.
-  this.xhr_ = new XMLHttpRequest();
+  var xhrObject = XMLHttpRequest['raw'] || XMLHttpRequest;
+  this.xhr_ = new xhrObject();
   this.xhr_.timeout = wtf.io.transports.XhrWriteTransport.TIMEOUT_MS_;
-  this.xhr_.setRequestHeader('Content-Type', mimeType);
 
   this.xhr_.onload = function(e) {
     // Done sending, have response.
@@ -127,5 +137,9 @@ wtf.io.transports.XhrWriteTransport.prototype.flush = function() {
     'type': mimeType
   });
   this.xhr_.open('POST', this.url_, true);
+  this.xhr_.setRequestHeader('Content-Type', mimeType);
+  if (this.filename_) {
+    this.xhr_.setRequestHeader('X-Filename', this.filename_);
+  }
   this.xhr_.send(blob);
 };

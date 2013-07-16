@@ -14,6 +14,7 @@
 
 goog.provide('wtf.io.BufferView');
 
+goog.require('goog.asserts');
 goog.require('wtf.io');
 goog.require('wtf.io.StringTable');
 

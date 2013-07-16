@@ -192,7 +192,8 @@ wtf.trace.createTransport_ = function(options, streaming, opt_targetValue) {
       throw 'Streaming XHR transport not yet supported.';
       // return new wtf.io.transports.StreamingXhrWriteTransport(targetUrl);
     } else {
-      var transport = new wtf.io.transports.XhrWriteTransport(targetUrl);
+      var transport = new wtf.io.transports.XhrWriteTransport(
+          targetUrl, undefined, wtf.trace.getTraceFilename());
       transport.needsLibraryDispose = true;
       return transport;
     }
