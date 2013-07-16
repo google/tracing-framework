@@ -271,6 +271,15 @@ wtf.db.EventIterator.prototype.getId = function() {
 
 
 /**
+ * Gets the index of the current event.
+ * @return {number} Index of event.
+ */
+wtf.db.EventIterator.prototype.getIndex = function() {
+  return this.index_;
+};
+
+
+/**
  * Gets the type ID of the current event.
  * @return {number} Type ID.
  */

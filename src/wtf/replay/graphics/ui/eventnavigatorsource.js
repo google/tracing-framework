@@ -35,7 +35,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(playback) {
   this.playback_ = playback;
 
   var currentStep = playback.getCurrentStep();
-  var eventIterator = currentStep ? currentStep.getEventIterator() : null;
+  var eventIterator = currentStep ? currentStep.getEventIterator(true) : null;
   var numEventsInStep = currentStep ? eventIterator.getCount() : 0;
 
   // Include a an additional dummy row denoting the beginning of the step.
@@ -52,11 +52,12 @@ goog.inherits(
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     function(ctx, bounds, scrollBounds, rowOffset, rowHeight, first, last) {
   var currentStep = this.playback_.getCurrentStep();
-  var it = currentStep ? currentStep.getEventIterator() : null;
+  var it = currentStep ? currentStep.getEventIterator(true) : null;
   if (!it) {
     return;
   }
 
+  this.setRowCount(currentStep ? it.getCount() + 1 : 0);
   ctx.font = '11px monospace';
   var charWidth = ctx.measureText('0').width;
   var rowCenter = rowHeight / 2 + 10 / 2;
@@ -93,16 +94,11 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
   }
 
   var columnTitle = '';
-  for (var n = first; n <= last; n++, y += rowHeight) {
+  for (var n = first; n <= last && !it.done(); n++, y += rowHeight) {
     var hideCall = false;
     if (n) {
       if (it.isScope() || it.isInstance()) {
-        if (it.isHidden()) {
-          // hideCall = true;
-          columnTitle = '';
-        } else {
-          columnTitle = it.getLongString(true);
-        }
+        columnTitle = it.getLongString(true);
         it.next();
       }
     } else {
@@ -130,19 +126,20 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
     function(row, x, modifiers, bounds) {
   var playback = this.playback_;
+  var currentStep = playback.getCurrentStep();
+  if (!currentStep) {
+    return;
+  }
 
   // If this row reflects an event, go to it.
   if (row) {
-    var eventId = row - 1;
-    playback.seekSubStepEvent(eventId);
-  } else if (playback.getCurrentStep()) { // Go the beginning of the step.
-    var currentStepId = playback.getCurrentStepIndex();
-    playback.seekStep(currentStepId);
+    playback.seekSubStepEvent(row - 1);
   } else {
-    return; // No changes to be made if no current step.
+    // Go the beginning of the step.
+    playback.seekStep(playback.getCurrentStepIndex());
   }
 
-  // Updated the currently highlighted row and redraw.
+  // Redraw.
   this.invalidate();
   return true;
 };
