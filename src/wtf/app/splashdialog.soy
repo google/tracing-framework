@@ -1,0 +1,43 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Splash dialog DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.splashdialog}
+
+
+/**
+ * Root control UI.
+ * @param version Version string ('2012.12.12-1').
+ * @param version_commit Version git commit SHA.
+ * @param system_key System command key string (like 'ctrl').
+ * @param show_drive Whether to show the open from drive button.
+ */
+{template .control}
+  <div class="{css appUiSplashDialog}">
+    <div class="{css header}">
+        <h1><a href="https://github.com/google/tracing-framework" target="_blank">Web Tracing Framework</a></h1>
+    </div>
+    <div class="{css contents}">
+        <span class="{css kGreyText}">Drag-drop a .wtf-trace file into this window to load.</span><br/>
+        <br/>
+        <div class="{css kButtonBar}">
+            <a class="{css kButton} {css openButton}" title="Open a wtf-trace file from your local computer ({$system_key|noAutoescape}-o)">Open</a>
+            {if $show_drive}
+                <a class="{css kButton} {css openDriveButton}" title="Open a wtf-trace file from Google Drive">Open (Drive)</a>
+            {/if}
+        </div>
+    </div>
+    <div class="{css footer}">
+        Version: <span class="{css allowSelect}">{$version}</span> / <a href="https://github.com/google/tracing-framework/tree/{$version_commit}" target="_blank">browse code</a> / <a href="https://github.com/google/tracing-framework/compare/{$version_commit}...master" target="_blank">view latest changes</a><br/>
+    </div>
+  </div>
+{/template}

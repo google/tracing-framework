@@ -1,0 +1,71 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Toolbar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.toolbar}
+
+
+/**
+ * Root control UI.
+ * @param system_key System command key string (like 'ctrl').
+ */
+{template .control}
+  <div class="{css appUiToolbar}">
+    <table class="{css leftPane}">
+      <tr>
+        <td>
+          <img class="{css infoIcon}" src="">
+        </td>
+        <td class="{css infoTitle}">Loading...</td>
+        <td>
+          <a class="{css infoUrl}" target="_blank" href=""></a>
+        </td>
+        <td class="{css infoContext}">
+          <!--[context]-->
+        </td>
+      </tr>
+    </table>
+    <div class="{css healthPane}">
+      <span class="{css warning} {css kRedLink}">WARNING</span>: <a class="{css viewHealthLink}" title="View a report.">results may be skewed</a>
+    </div>
+    <div class="{css rightPane}">
+      <div class="{css viewers}">
+        <!--[viewer info]-->
+      </div>
+      <div class="{css kButtonBar} {css kRight} {css buttons}">
+        <div class="{css kComboButton}">
+          <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonOpen}" title="Open a trace file ({$system_key|noAutoescape}-o)">
+            Open
+          </a>
+          <a class="{css kButton} {css kMenuButton} {css kMenuTrigger} {css buttonOpenDisclosure}">
+            <span class="{css kButtonDisclosure}"></span>
+          </a>
+        </div>
+        <div class="{css kComboButton}">
+          <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonSave}" title="Save the current trace file ({$system_key|noAutoescape}-s)">
+            Save
+          </a>
+          <a class="{css kButton} {css kMenuButton} {css kMenuTrigger} {css buttonSaveDisclosure}">
+            <span class="{css kButtonDisclosure}"></span>
+          </a>
+        </div>
+        <a class="{css kButton} {css kMenuButton} {css buttonSettings}"
+          title="Show Settings">
+          <img alt="Settings" src="icons/settings.svg">
+        </a>
+        <a class="{css kButton} {css kMenuButton} {css kDisabled} {css buttonHelp}" title="Show the help screen (?)">
+          Help
+        </a>
+      </div>
+    </div>
+  </div>
+{/template}

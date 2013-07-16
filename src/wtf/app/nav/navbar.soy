@@ -1,0 +1,33 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Navbar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.nav.navbar}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css appUiNavbar}">
+    <div class="{css outer}">
+      <canvas class="{css canvas}" width="1" height="1"></canvas>
+      <div class="{css canvasOverlay}"></div>
+      <div class="{css kScrollShadowBottom}"></div>
+    </div>
+    <div class="{css boxesOuter}">
+      <div class="{css kScrollBarInner} {css boxes}">
+      </div>
+    </div>
+    <div class="{css navbarSplitter}"></div>
+  </div>
+{/template}

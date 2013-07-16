@@ -100,21 +100,3 @@ wtf.pal.NodePlatform.prototype.writeBinaryFile = function(
   }
   this.fs_.writeFileSync(path, nodeData);
 };
-
-
-/**
- * @override
- */
-wtf.pal.NodePlatform.prototype.getNetworkInterfaces = function(
-    callback, opt_scope) {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.pal.NodePlatform.prototype.createListenSocket =
-    function(port, opt_hostname) {
-  throw new Error();
-};

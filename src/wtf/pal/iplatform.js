@@ -62,21 +62,3 @@ wtf.pal.IPlatform.prototype.writeTextFile = goog.nullFunction;
  * @param {string=} opt_mimeType File mime type.
  */
 wtf.pal.IPlatform.prototype.writeBinaryFile = goog.nullFunction;
-
-
-/**
- * Gets a list of network interfaces as name/address values.
- * @param {!function(!Array.<{name: string, address: string}>)} callback
- *     Callback function.
- * @param {Object=} opt_scope Callback scope.
- */
-wtf.pal.IPlatform.prototype.getNetworkInterfaces = goog.nullFunction;
-
-
-/**
- * Creates a TCP listen socket.
- * @param {number} port TCP port to listen on.
- * @param {string=} opt_hostname Hostname; omit to use 'localhost'.
- * @return {!wtf.net.ListenSocket} A new listen socket.
- */
-wtf.pal.IPlatform.prototype.createListenSocket = goog.nullFunction;

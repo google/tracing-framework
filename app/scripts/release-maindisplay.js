@@ -31,5 +31,5 @@ if (window.location.hostname != 'localhost') {
 
 
 // Launch UI.
-wtf.app.ui.show({
+wtf.app.show({
 });

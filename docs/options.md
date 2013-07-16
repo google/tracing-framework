@@ -167,4 +167,4 @@ Example: `ws://localhost:8084`
 ## App
 
 App options are only used by the app UI. They can be specified to the
-`wtf.app.ui.show` call or by the global override object `wtf_app_ui_options`.
+`wtf.app.show` call or by the global override object `wtf_app_options`.

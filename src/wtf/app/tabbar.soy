@@ -1,0 +1,30 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Tabbar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.tabbar}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css kTabControl} {css appUiTabbar}">
+    <div class="{css kButtonBar} {css kTabHeader} {css appUiTabbarHeader}">
+      <div class="{css kTabHeaderTabs}"></div>
+      <div class="{css kTabHeaderButtons} {css kRight}">
+        <!-- info/etc? -->
+      </div>
+    </div>
+    <div class="{css kTabContents} {css appUiTabbarContents}"></div>
+  </div>
+{/template}

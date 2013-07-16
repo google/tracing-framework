@@ -21,10 +21,6 @@ goog.require('goog.events.EventHandler');
 /** @suppress {extraRequire} */
 goog.require('goog.events.EventTarget');
 /** @suppress {extraRequire} */
-goog.require('wtf.net.ListenSocket');
-/** @suppress {extraRequire} */
-goog.require('wtf.net.Socket');
-/** @suppress {extraRequire} */
 goog.require('wtf.pal');
 
 
