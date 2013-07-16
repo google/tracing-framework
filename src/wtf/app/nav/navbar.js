@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.nav.Navbar');
+goog.provide('wtf.app.nav.Navbar');
 
 goog.require('goog.array');
 goog.require('goog.dom.TagName');
@@ -19,14 +19,14 @@ goog.require('goog.dom.classes');
 goog.require('goog.math');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.app.ui.FramePainter');
-goog.require('wtf.app.ui.Granularity');
-goog.require('wtf.app.ui.MarkPainter');
-goog.require('wtf.app.ui.nav.FpsStatsBox');
-goog.require('wtf.app.ui.nav.GcStatsBox');
-goog.require('wtf.app.ui.nav.HeatmapPainter');
-goog.require('wtf.app.ui.nav.TimelinePainter');
-goog.require('wtf.app.ui.nav.navbar');
+goog.require('wtf.app.FramePainter');
+goog.require('wtf.app.Granularity');
+goog.require('wtf.app.MarkPainter');
+goog.require('wtf.app.nav.FpsStatsBox');
+goog.require('wtf.app.nav.GcStatsBox');
+goog.require('wtf.app.nav.HeatmapPainter');
+goog.require('wtf.app.nav.TimelinePainter');
+goog.require('wtf.app.nav.navbar');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.PresentationHint');
 goog.require('wtf.events.EventType');
@@ -44,25 +44,25 @@ goog.require('wtf.ui.Tooltip');
 /**
  * Navigation bar control.
  *
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {!Element} parentElement Element to display in.
  * @constructor
  * @extends {wtf.ui.ResizableControl}
  */
-wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
+wtf.app.nav.Navbar = function(documentView, parentElement) {
   var dom = documentView.getDom();
   goog.base(this,
       wtf.ui.ResizableControl.Orientation.HORIZONTAL,
       goog.getCssName('navbarSplitter'),
       parentElement, dom);
-  this.setSplitterLimits(wtf.app.ui.nav.Navbar.MIN_HEIGHT, undefined);
+  this.setSplitterLimits(wtf.app.nav.Navbar.MIN_HEIGHT, undefined);
 
   var doc = documentView.getDocument();
   var db = doc.getDatabase();
 
   /**
    * Parent document view.
-   * @type {!wtf.app.ui.DocumentView}
+   * @type {!wtf.app.DocumentView}
    * @private
    */
   this.documentView_ = documentView;
@@ -108,13 +108,13 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
 
   /**
    * Statistics boxes.
-   * @type {!Array.<!wtf.app.ui.nav.StatsBox>}
+   * @type {!Array.<!wtf.app.nav.StatsBox>}
    * @private
    */
   this.statsBoxes_ = [];
   var boxes = this.getChildElement(goog.getCssName('boxes'));
-  this.statsBoxes_.push(new wtf.app.ui.nav.FpsStatsBox(db, boxes, dom));
-  this.statsBoxes_.push(new wtf.app.ui.nav.GcStatsBox(db, boxes, dom));
+  this.statsBoxes_.push(new wtf.app.nav.FpsStatsBox(db, boxes, dom));
+  this.statsBoxes_.push(new wtf.app.nav.GcStatsBox(db, boxes, dom));
   goog.array.forEach(this.statsBoxes_, this.registerDisposable, this);
 
   var paintContext = new wtf.ui.Painter(this.navbarCanvas_);
@@ -149,8 +149,8 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   var gridPainter = new wtf.ui.GridPainter(this.navbarCanvas_);
   paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
-      wtf.app.ui.nav.Navbar.MIN_GRANULARITY_,
-      wtf.app.ui.nav.Navbar.MAX_GRANULARITY_);
+      wtf.app.nav.Navbar.MIN_GRANULARITY_,
+      wtf.app.nav.Navbar.MAX_GRANULARITY_);
   this.timePainters_.push(gridPainter);
 
   /**
@@ -170,8 +170,8 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   this.rulerPainter_ = new wtf.ui.RulerPainter(this.navbarCanvas_);
   this.painterStack_.addChildPainter(this.rulerPainter_);
   this.rulerPainter_.setGranularities(
-      wtf.app.ui.nav.Navbar.MIN_GRANULARITY_,
-      wtf.app.ui.nav.Navbar.MAX_GRANULARITY_);
+      wtf.app.nav.Navbar.MIN_GRANULARITY_,
+      wtf.app.nav.Navbar.MAX_GRANULARITY_);
   this.timePainters_.push(this.rulerPainter_);
 
   /**
@@ -190,7 +190,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
   var zones = db.getZones();
   goog.array.forEach(zones, this.addZoneTrack_, this);
 
-  var heatmapPainter = new wtf.app.ui.nav.HeatmapPainter(
+  var heatmapPainter = new wtf.app.nav.HeatmapPainter(
       this.navbarCanvas_, db);
   this.painterStack_.addChildPainter(heatmapPainter);
   this.timePainters_.push(heatmapPainter);
@@ -217,7 +217,7 @@ wtf.app.ui.nav.Navbar = function(documentView, parentElement) {
 
   this.requestRepaint();
 };
-goog.inherits(wtf.app.ui.nav.Navbar, wtf.ui.ResizableControl);
+goog.inherits(wtf.app.nav.Navbar, wtf.ui.ResizableControl);
 
 
 /**
@@ -225,7 +225,7 @@ goog.inherits(wtf.app.ui.nav.Navbar, wtf.ui.ResizableControl);
  * @type {number}
  * @const
  */
-wtf.app.ui.nav.Navbar.MIN_HEIGHT = 80;
+wtf.app.nav.Navbar.MIN_HEIGHT = 80;
 
 
 /**
@@ -233,7 +233,7 @@ wtf.app.ui.nav.Navbar.MIN_HEIGHT = 80;
  * @type {number}
  * @const
  */
-wtf.app.ui.nav.Navbar.MAX_HEIGHT = 400;
+wtf.app.nav.Navbar.MAX_HEIGHT = 400;
 
 
 /**
@@ -242,8 +242,8 @@ wtf.app.ui.nav.Navbar.MAX_HEIGHT = 400;
  * @type {number}
  * @private
  */
-wtf.app.ui.nav.Navbar.MIN_GRANULARITY_ =
-    100 * wtf.app.ui.Granularity.SECOND;
+wtf.app.nav.Navbar.MIN_GRANULARITY_ =
+    100 * wtf.app.Granularity.SECOND;
 
 
 /**
@@ -252,16 +252,16 @@ wtf.app.ui.nav.Navbar.MIN_GRANULARITY_ =
  * @type {number}
  * @private
  */
-wtf.app.ui.nav.Navbar.MAX_GRANULARITY_ =
+wtf.app.nav.Navbar.MAX_GRANULARITY_ =
     0.001;
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.Navbar.prototype.createDom = function(dom) {
+wtf.app.nav.Navbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.nav.navbar.control, undefined, undefined, dom));
+      wtf.app.nav.navbar.control, undefined, undefined, dom));
 };
 
 
@@ -269,7 +269,7 @@ wtf.app.ui.nav.Navbar.prototype.createDom = function(dom) {
  * Handles database invalidations.
  * @private
  */
-wtf.app.ui.nav.Navbar.prototype.databaseInvalidated_ = function() {
+wtf.app.nav.Navbar.prototype.databaseInvalidated_ = function() {
   var db = this.db_;
   var firstEventTime = db.getFirstEventTime();
   var lastEventTime = db.getLastEventTime();
@@ -287,22 +287,22 @@ wtf.app.ui.nav.Navbar.prototype.databaseInvalidated_ = function() {
  * @param {!wtf.db.Zone} zone Zone to add the track for.
  * @private
  */
-wtf.app.ui.nav.Navbar.prototype.addZoneTrack_ = function(zone) {
+wtf.app.nav.Navbar.prototype.addZoneTrack_ = function(zone) {
   var zonePainterStack = new wtf.ui.Painter(this.navbarCanvas_);
   this.zonePainterStack_.addChildPainter(zonePainterStack);
   zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
 
-  var markPainter = new wtf.app.ui.MarkPainter(
+  var markPainter = new wtf.app.MarkPainter(
       this.navbarCanvas_, zone.getMarkList());
   zonePainterStack.addChildPainter(markPainter);
   this.timePainters_.push(markPainter);
 
-  var timelinePainter = new wtf.app.ui.nav.TimelinePainter(
+  var timelinePainter = new wtf.app.nav.TimelinePainter(
       this.navbarCanvas_, this.db_, zone);
   zonePainterStack.addChildPainter(timelinePainter);
   this.timePainters_.push(timelinePainter);
 
-  var framePainter = new wtf.app.ui.FramePainter(
+  var framePainter = new wtf.app.FramePainter(
       this.navbarCanvas_, this.db_, zone.getFrameList());
   zonePainterStack.addChildPainter(framePainter);
   this.timePainters_.push(framePainter);
@@ -314,7 +314,7 @@ wtf.app.ui.nav.Navbar.prototype.addZoneTrack_ = function(zone) {
  * @param {!wtf.doc.View} view View.
  * @private
  */
-wtf.app.ui.nav.Navbar.prototype.setupView_ = function(view) {
+wtf.app.nav.Navbar.prototype.setupView_ = function(view) {
   var dom = this.getDom();
   var overlayEl = this.getChildElement(goog.getCssName('canvasOverlay'));
 
@@ -346,7 +346,7 @@ wtf.app.ui.nav.Navbar.prototype.setupView_ = function(view) {
 /**
  * @override
  */
-wtf.app.ui.nav.Navbar.prototype.layoutInternal = function() {
+wtf.app.nav.Navbar.prototype.layoutInternal = function() {
   goog.base(this, 'layoutInternal');
 
   if (!this.enabled_) {

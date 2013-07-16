@@ -11,16 +11,16 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.query.QueryPanel');
+goog.provide('wtf.app.query.QueryPanel');
 
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.app.ui.TabPanel');
-goog.require('wtf.app.ui.query.QueryTableSource');
-goog.require('wtf.app.ui.query.querypanel');
+goog.require('wtf.app.TabPanel');
+goog.require('wtf.app.query.QueryTableSource');
+goog.require('wtf.app.query.querypanel');
 goog.require('wtf.db.Database');
 goog.require('wtf.db.EventIterator');
 goog.require('wtf.db.QueryDumpFormat');
@@ -36,11 +36,11 @@ goog.require('wtf.util');
 
 /**
  * Query panel, allowing for database query.
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @constructor
- * @extends {wtf.app.ui.TabPanel}
+ * @extends {wtf.app.TabPanel}
  */
-wtf.app.ui.query.QueryPanel = function(documentView) {
+wtf.app.query.QueryPanel = function(documentView) {
   goog.base(this, documentView, 'query', 'Query');
   var dom = this.getDom();
 
@@ -167,13 +167,13 @@ wtf.app.ui.query.QueryPanel = function(documentView) {
 
   this.clear();
 };
-goog.inherits(wtf.app.ui.query.QueryPanel, wtf.app.ui.TabPanel);
+goog.inherits(wtf.app.query.QueryPanel, wtf.app.TabPanel);
 
 
 /**
  * @override
  */
-wtf.app.ui.query.QueryPanel.prototype.disposeInternal = function() {
+wtf.app.query.QueryPanel.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
   commandManager.unregisterCommand('query');
   goog.base(this, 'disposeInternal');
@@ -183,16 +183,16 @@ wtf.app.ui.query.QueryPanel.prototype.disposeInternal = function() {
 /**
  * @override
  */
-wtf.app.ui.query.QueryPanel.prototype.createDom = function(dom) {
+wtf.app.query.QueryPanel.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.query.querypanel.control, undefined, undefined, dom));
+      wtf.app.query.querypanel.control, undefined, undefined, dom));
 };
 
 
 /**
  * @override
  */
-wtf.app.ui.query.QueryPanel.prototype.layoutInternal = function() {
+wtf.app.query.QueryPanel.prototype.layoutInternal = function() {
   this.table_.layout();
 };
 
@@ -201,7 +201,7 @@ wtf.app.ui.query.QueryPanel.prototype.layoutInternal = function() {
  * Sets up some simple keyboard shortcuts.
  * @private
  */
-wtf.app.ui.query.QueryPanel.prototype.setupKeyboardShortcuts_ = function() {
+wtf.app.query.QueryPanel.prototype.setupKeyboardShortcuts_ = function() {
   var commandManager = wtf.events.getCommandManager();
   var keyboardScope = this.keyboardScope_;
 
@@ -217,7 +217,7 @@ wtf.app.ui.query.QueryPanel.prototype.setupKeyboardShortcuts_ = function() {
 /**
  * @override
  */
-wtf.app.ui.query.QueryPanel.prototype.setVisible = function(value) {
+wtf.app.query.QueryPanel.prototype.setVisible = function(value) {
   goog.base(this, 'setVisible', value);
   this.keyboardScope_.setEnabled(value);
   if (value) {
@@ -229,7 +229,7 @@ wtf.app.ui.query.QueryPanel.prototype.setVisible = function(value) {
 /**
  * @override
  */
-wtf.app.ui.query.QueryPanel.prototype.navigate = function(pathParts) {
+wtf.app.query.QueryPanel.prototype.navigate = function(pathParts) {
   // TODO(benvanik): support navigation
 };
 
@@ -238,7 +238,7 @@ wtf.app.ui.query.QueryPanel.prototype.navigate = function(pathParts) {
  * Updates the zone drop down.
  * @private
  */
-wtf.app.ui.query.QueryPanel.prototype.updateZoneList_ = function() {
+wtf.app.query.QueryPanel.prototype.updateZoneList_ = function() {
   var dom = this.getDom();
 
   var selectedIndex = this.zoneSelect_.selectedIndex;
@@ -265,7 +265,7 @@ wtf.app.ui.query.QueryPanel.prototype.updateZoneList_ = function() {
 /**
  * Clears the results.
  */
-wtf.app.ui.query.QueryPanel.prototype.clear = function() {
+wtf.app.query.QueryPanel.prototype.clear = function() {
   var dom = this.getDom();
 
   // Clear results.
@@ -291,7 +291,7 @@ wtf.app.ui.query.QueryPanel.prototype.clear = function() {
  * Reissues the current query.
  * @private
  */
-wtf.app.ui.query.QueryPanel.prototype.reissueQuery_ = function() {
+wtf.app.query.QueryPanel.prototype.reissueQuery_ = function() {
   this.issueQuery_(this.searchControl_.getValue());
 };
 
@@ -301,7 +301,7 @@ wtf.app.ui.query.QueryPanel.prototype.reissueQuery_ = function() {
  * @param {string} expression Query string.
  * @private
  */
-wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
+wtf.app.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   var dom = this.getDom();
 
   // Clear results.
@@ -363,7 +363,7 @@ wtf.app.ui.query.QueryPanel.prototype.issueQuery_ = function(expression) {
   // Update the table.
   if (result instanceof wtf.db.EventIterator) {
     // Show using table.
-    var tableSource = new wtf.app.ui.query.QueryTableSource(result);
+    var tableSource = new wtf.app.query.QueryTableSource(result);
     tableSource.setUnits(this.db_.getUnits());
     this.table_.setSource(tableSource);
   } else {

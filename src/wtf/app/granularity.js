@@ -11,14 +11,14 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.Granularity');
+goog.provide('wtf.app.Granularity');
 
 
 /**
  * Useful time granularities, in ms.
  * @enum {number}
  */
-wtf.app.ui.Granularity = {
+wtf.app.Granularity = {
   /** s */
   SECOND: 1000,
   /** ds */

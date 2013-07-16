@@ -11,14 +11,14 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.nav.FpsStatsBox');
-goog.provide('wtf.app.ui.nav.GcStatsBox');
-goog.provide('wtf.app.ui.nav.StatsBox');
+goog.provide('wtf.app.nav.FpsStatsBox');
+goog.provide('wtf.app.nav.GcStatsBox');
+goog.provide('wtf.app.nav.StatsBox');
 
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.soy');
-goog.require('wtf.app.ui.nav.statsbox');
+goog.require('wtf.app.nav.statsbox');
 goog.require('wtf.data.ZoneType');
 goog.require('wtf.events.EventType');
 goog.require('wtf.ui.Control');
@@ -37,7 +37,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.nav.StatsBox = function(title, db, parentElement, dom) {
+wtf.app.nav.StatsBox = function(title, db, parentElement, dom) {
   goog.base(this, parentElement, dom);
 
   /**
@@ -65,22 +65,22 @@ wtf.app.ui.nav.StatsBox = function(title, db, parentElement, dom) {
       wtf.events.EventType.INVALIDATED, this.databaseInvalidated_, this);
   this.databaseInvalidated_();
 };
-goog.inherits(wtf.app.ui.nav.StatsBox, wtf.ui.Control);
+goog.inherits(wtf.app.nav.StatsBox, wtf.ui.Control);
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.StatsBox.prototype.createDom = function(dom) {
+wtf.app.nav.StatsBox.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.nav.statsbox.control, undefined, undefined, dom));
+      wtf.app.nav.statsbox.control, undefined, undefined, dom));
 };
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.StatsBox.prototype.layoutInternal = function() {
+wtf.app.nav.StatsBox.prototype.layoutInternal = function() {
   goog.base(this, 'layoutInternal');
 };
 
@@ -89,7 +89,7 @@ wtf.app.ui.nav.StatsBox.prototype.layoutInternal = function() {
  * Handles database invalidations.
  * @private
  */
-wtf.app.ui.nav.StatsBox.prototype.databaseInvalidated_ = function() {
+wtf.app.nav.StatsBox.prototype.databaseInvalidated_ = function() {
   this.update();
 };
 
@@ -100,7 +100,7 @@ wtf.app.ui.nav.StatsBox.prototype.databaseInvalidated_ = function() {
  * row data. This is called whenever the database is invalidated.
  * @protected
  */
-wtf.app.ui.nav.StatsBox.prototype.update = goog.abstractMethod;
+wtf.app.nav.StatsBox.prototype.update = goog.abstractMethod;
 
 
 /**
@@ -111,15 +111,15 @@ wtf.app.ui.nav.StatsBox.prototype.update = goog.abstractMethod;
  * }}
  * @protected
  */
-wtf.app.ui.nav.StatsBox.RowType;
+wtf.app.nav.StatsBox.RowType;
 
 
 /**
  * Updates the contents of the numbers table.
- * @param {!Array.<wtf.app.ui.nav.StatsBox.RowType>} rows Row data.
+ * @param {!Array.<wtf.app.nav.StatsBox.RowType>} rows Row data.
  * @protected
  */
-wtf.app.ui.nav.StatsBox.prototype.updateNumbers = function(rows) {
+wtf.app.nav.StatsBox.prototype.updateNumbers = function(rows) {
   var dom = this.getDom();
 
   // TODO(benvanik): faster clear?
@@ -156,18 +156,18 @@ wtf.app.ui.nav.StatsBox.prototype.updateNumbers = function(rows) {
  * @param {!Element} parentElement Element to display in.
  * @param {!goog.dom.DomHelper} dom DOM helper.
  * @constructor
- * @extends {wtf.app.ui.nav.StatsBox}
+ * @extends {wtf.app.nav.StatsBox}
  */
-wtf.app.ui.nav.FpsStatsBox = function(db, parentElement, dom) {
+wtf.app.nav.FpsStatsBox = function(db, parentElement, dom) {
   goog.base(this, 'FPS', db, parentElement, dom);
 };
-goog.inherits(wtf.app.ui.nav.FpsStatsBox, wtf.app.ui.nav.StatsBox);
+goog.inherits(wtf.app.nav.FpsStatsBox, wtf.app.nav.StatsBox);
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.FpsStatsBox.prototype.update = function() {
+wtf.app.nav.FpsStatsBox.prototype.update = function() {
   var totalCount = 0;
   var averageTime = 0;
   var averageSpan = 0;
@@ -233,18 +233,18 @@ wtf.app.ui.nav.FpsStatsBox.prototype.update = function() {
  * @param {!Element} parentElement Element to display in.
  * @param {!goog.dom.DomHelper} dom DOM helper.
  * @constructor
- * @extends {wtf.app.ui.nav.StatsBox}
+ * @extends {wtf.app.nav.StatsBox}
  */
-wtf.app.ui.nav.GcStatsBox = function(db, parentElement, dom) {
+wtf.app.nav.GcStatsBox = function(db, parentElement, dom) {
   goog.base(this, 'GC', db, parentElement, dom);
 };
-goog.inherits(wtf.app.ui.nav.GcStatsBox, wtf.app.ui.nav.StatsBox);
+goog.inherits(wtf.app.nav.GcStatsBox, wtf.app.nav.StatsBox);
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.GcStatsBox.prototype.update = function() {
+wtf.app.nav.GcStatsBox.prototype.update = function() {
   var totalCount = 0;
   var totalDuration = 0;
   var skipCount = 0;

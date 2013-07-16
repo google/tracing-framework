@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.query.QueryTableSource');
+goog.provide('wtf.app.query.QueryTableSource');
 
 goog.require('wtf.db.Unit');
 goog.require('wtf.events');
@@ -26,7 +26,7 @@ goog.require('wtf.ui.VirtualTableSource');
  * @constructor
  * @extends {wtf.ui.VirtualTableSource}
  */
-wtf.app.ui.query.QueryTableSource = function(result) {
+wtf.app.query.QueryTableSource = function(result) {
   goog.base(this);
 
   /**
@@ -44,14 +44,14 @@ wtf.app.ui.query.QueryTableSource = function(result) {
   this.result_ = result;
   this.setRowCount(result.getCount());
 };
-goog.inherits(wtf.app.ui.query.QueryTableSource, wtf.ui.VirtualTableSource);
+goog.inherits(wtf.app.query.QueryTableSource, wtf.ui.VirtualTableSource);
 
 
 /**
  * Sets the display units.
  * @param {wtf.db.Unit} value Display units.
  */
-wtf.app.ui.query.QueryTableSource.prototype.setUnits = function(value) {
+wtf.app.query.QueryTableSource.prototype.setUnits = function(value) {
   this.units_ = value;
 };
 
@@ -59,7 +59,7 @@ wtf.app.ui.query.QueryTableSource.prototype.setUnits = function(value) {
 /**
  * @override
  */
-wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
+wtf.app.query.QueryTableSource.prototype.paintRowRange = function(
     ctx, bounds, scrollBounds, rowOffset, rowHeight, first, last) {
   ctx.font = '11px monospace';
   var charWidth = ctx.measureText('0').width;
@@ -134,7 +134,7 @@ wtf.app.ui.query.QueryTableSource.prototype.paintRowRange = function(
 /**
  * @override
  */
-wtf.app.ui.query.QueryTableSource.prototype.onClick = function(
+wtf.app.query.QueryTableSource.prototype.onClick = function(
     row, x, modifiers, bounds) {
   var it = this.result_;
   it.seek(row);
@@ -165,7 +165,7 @@ wtf.app.ui.query.QueryTableSource.prototype.onClick = function(
 /**
  * @override
  */
-wtf.app.ui.query.QueryTableSource.prototype.getInfoString = function(
+wtf.app.query.QueryTableSource.prototype.getInfoString = function(
     row, x, bounds) {
   var it = this.result_;
   it.seek(row);

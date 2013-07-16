@@ -11,10 +11,10 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.HealthDialog');
+goog.provide('wtf.app.HealthDialog');
 
 goog.require('goog.soy');
-goog.require('wtf.app.ui.healthdialog');
+goog.require('wtf.app.healthdialog');
 goog.require('wtf.ui.Dialog');
 goog.require('wtf.util');
 
@@ -30,7 +30,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.Dialog}
  */
-wtf.app.ui.HealthDialog = function(db, healthInfo, parentElement, opt_dom) {
+wtf.app.HealthDialog = function(db, healthInfo, parentElement, opt_dom) {
   goog.base(this, {
     modal: true
   }, parentElement, opt_dom);
@@ -54,7 +54,7 @@ wtf.app.ui.HealthDialog = function(db, healthInfo, parentElement, opt_dom) {
     var warning = warnings[n];
 
     var div = goog.soy.renderAsFragment(
-        wtf.app.ui.healthdialog.warning, {
+        wtf.app.healthdialog.warning, {
           title: warning.getTitle(),
           suggestion: warning.getSuggestion(),
           details: warning.getDetails(),
@@ -63,14 +63,14 @@ wtf.app.ui.HealthDialog = function(db, healthInfo, parentElement, opt_dom) {
     dom.appendChild(warningsDiv, div);
   }
 };
-goog.inherits(wtf.app.ui.HealthDialog, wtf.ui.Dialog);
+goog.inherits(wtf.app.HealthDialog, wtf.ui.Dialog);
 
 
 /**
  * @override
  */
-wtf.app.ui.HealthDialog.prototype.createDom = function(dom) {
+wtf.app.HealthDialog.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.healthdialog.control, {
+      wtf.app.healthdialog.control, {
       }, undefined, dom));
 };

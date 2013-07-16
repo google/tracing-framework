@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.MainDisplay');
+goog.provide('wtf.app.MainDisplay');
 
 goog.require('goog.Uri');
 goog.require('goog.array');
@@ -20,11 +20,11 @@ goog.require('goog.dom');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.addon');
-goog.require('wtf.app.ui.DocumentView');
-goog.require('wtf.app.ui.HelpDialog');
-goog.require('wtf.app.ui.Loader');
-goog.require('wtf.app.ui.SplashDialog');
-goog.require('wtf.app.ui.maindisplay');
+goog.require('wtf.app.DocumentView');
+goog.require('wtf.app.HelpDialog');
+goog.require('wtf.app.Loader');
+goog.require('wtf.app.SplashDialog');
+goog.require('wtf.app.maindisplay');
 goog.require('wtf.doc.Document');
 goog.require('wtf.events.CommandManager');
 goog.require('wtf.ipc');
@@ -46,7 +46,7 @@ goog.require('wtf.ui.SettingsDialog');
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.MainDisplay = function(
+wtf.app.MainDisplay = function(
     platform, options, opt_parentElement, opt_dom) {
   var dom = opt_dom || goog.dom.getDomHelper(opt_parentElement);
   var parentElement = /** @type {!Element} */ (
@@ -84,17 +84,17 @@ wtf.app.ui.MainDisplay = function(
 
   /**
    * The current document view, if any.
-   * @type {wtf.app.ui.DocumentView}
+   * @type {wtf.app.DocumentView}
    * @private
    */
   this.documentView_ = null;
 
   /**
    * Tracing loading utility.
-   * @type {!wtf.app.ui.Loader}
+   * @type {!wtf.app.Loader}
    * @private
    */
-  this.loader_ = new wtf.app.ui.Loader(this);
+  this.loader_ = new wtf.app.Loader(this);
   this.registerDisposable(this.loader_);
 
   /**
@@ -157,13 +157,13 @@ wtf.app.ui.MainDisplay = function(
     this.showSplashDialog_(true);
   }
 };
-goog.inherits(wtf.app.ui.MainDisplay, wtf.ui.Control);
+goog.inherits(wtf.app.MainDisplay, wtf.ui.Control);
 
 
 /**
  * @override
  */
-wtf.app.ui.MainDisplay.prototype.disposeInternal = function() {
+wtf.app.MainDisplay.prototype.disposeInternal = function() {
   goog.dispose(this.activeDialog_);
   this.activeDialog_ = null;
 
@@ -179,9 +179,9 @@ wtf.app.ui.MainDisplay.prototype.disposeInternal = function() {
 /**
  * @override
  */
-wtf.app.ui.MainDisplay.prototype.createDom = function(dom) {
+wtf.app.MainDisplay.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.maindisplay.control, {
+      wtf.app.maindisplay.control, {
       }, undefined, dom));
 };
 
@@ -190,7 +190,7 @@ wtf.app.ui.MainDisplay.prototype.createDom = function(dom) {
  * Sets up drag-drop file loading for wtf-trace files.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.setupDragDropLoading_ = function() {
+wtf.app.MainDisplay.prototype.setupDragDropLoading_ = function() {
   var doc = this.getDom().getDocument();
   var eh = this.getHandler();
   eh.listen(doc.body, goog.events.EventType.DRAGENTER, function(e) {
@@ -222,7 +222,7 @@ wtf.app.ui.MainDisplay.prototype.setupDragDropLoading_ = function() {
  * This portion is used as the suffix after the application name.
  * @param {string?} value New value, or null to clear.
  */
-wtf.app.ui.MainDisplay.prototype.setTitle = function(value) {
+wtf.app.MainDisplay.prototype.setTitle = function(value) {
   var title = 'Web Tracing Framework';
   if (!COMPILED) {
     title += ' (DEBUG)';
@@ -237,20 +237,20 @@ wtf.app.ui.MainDisplay.prototype.setTitle = function(value) {
 
 /**
  * Gets the active document view.
- * @return {wtf.app.ui.DocumentView} Document view, if any.
+ * @return {wtf.app.DocumentView} Document view, if any.
  */
-wtf.app.ui.MainDisplay.prototype.getDocumentView = function() {
+wtf.app.MainDisplay.prototype.getDocumentView = function() {
   return this.documentView_;
 };
 
 
 /**
  * Sets the active document view, disposing any previous one.
- * @param {wtf.app.ui.DocumentView} documentView New document view.
+ * @param {wtf.app.DocumentView} documentView New document view.
  * @param {boolean=} opt_preventSplash True to prevent the splash screen from
  *     being shown.
  */
-wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView,
+wtf.app.MainDisplay.prototype.setDocumentView = function(documentView,
     opt_preventSplash) {
   if (this.documentView_ == documentView) {
     return;
@@ -276,12 +276,12 @@ wtf.app.ui.MainDisplay.prototype.setDocumentView = function(documentView,
 /**
  * Sets up a new document view for the given document and switches to it.
  * @param {!wtf.doc.Document} doc Document.
- * @return {!wtf.app.ui.DocumentView} The new document view.
+ * @return {!wtf.app.DocumentView} The new document view.
  */
-wtf.app.ui.MainDisplay.prototype.openDocument = function(doc) {
+wtf.app.MainDisplay.prototype.openDocument = function(doc) {
   _gaq.push(['_trackEvent', 'app', 'open_document']);
 
-  var documentView = new wtf.app.ui.DocumentView(
+  var documentView = new wtf.app.DocumentView(
       this.getChildElement(goog.getCssName('appUiMainDocumentView')),
       this.getDom(),
       doc);
@@ -295,7 +295,7 @@ wtf.app.ui.MainDisplay.prototype.openDocument = function(doc) {
  * @param {!Object} data Incoming data.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.channelMessage_ = function(data) {
+wtf.app.MainDisplay.prototype.channelMessage_ = function(data) {
   switch (data['command']) {
     case 'snapshot':
       this.handleSnapshotCommand_(data);
@@ -315,7 +315,7 @@ wtf.app.ui.MainDisplay.prototype.channelMessage_ = function(data) {
  * @param {!Object} data Command data.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
+wtf.app.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
   this.loader_.loadSnapshot(data);
 };
 
@@ -325,7 +325,7 @@ wtf.app.ui.MainDisplay.prototype.handleSnapshotCommand_ = function(data) {
  * @param {!Object} data Command data.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
+wtf.app.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
   // var sessionId = data['session_id'];
   var streamId = data['stream_id'] || '0';
   var contentType = data['content_type'];
@@ -347,7 +347,7 @@ wtf.app.ui.MainDisplay.prototype.handleStreamCreatedCommand_ = function(data) {
  * @param {!Object} data Command data.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.handleStreamAppendedCommand_ = function(data) {
+wtf.app.MainDisplay.prototype.handleStreamAppendedCommand_ = function(data) {
   // var sessionId = data['session_id'];
   var streamId = data['stream_id'] || '0';
   var datas = data['contents'];
@@ -365,7 +365,7 @@ wtf.app.ui.MainDisplay.prototype.handleStreamAppendedCommand_ = function(data) {
 /**
  * Requests a load of a trace file.
  */
-wtf.app.ui.MainDisplay.prototype.requestLocalTraceLoad = function() {
+wtf.app.MainDisplay.prototype.requestLocalTraceLoad = function() {
   this.loader_.requestLocalOpenDialog(function selected() {
     // Hide the splash dialog if it's up.
     this.showSplashDialog_(false);
@@ -376,7 +376,7 @@ wtf.app.ui.MainDisplay.prototype.requestLocalTraceLoad = function() {
 /**
  * Requests a file load from Google Drive.
  */
-wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
+wtf.app.MainDisplay.prototype.requestDriveTraceLoad = function() {
   // Hide the splash dialog if it's up.
   this.showSplashDialog_(false);
 
@@ -394,7 +394,7 @@ wtf.app.ui.MainDisplay.prototype.requestDriveTraceLoad = function() {
  * Shows the settings dialog.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
+wtf.app.MainDisplay.prototype.showSettings_ = function() {
   // Show settings dialog.
   var dom = this.getDom();
   var body = dom.getDocument().body;
@@ -461,10 +461,10 @@ wtf.app.ui.MainDisplay.prototype.showSettings_ = function() {
  * Toggles the display of the help overlay.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.toggleHelpDialog_ = function() {
+wtf.app.MainDisplay.prototype.toggleHelpDialog_ = function() {
   // Close existing help dialog (only).
   if (this.activeDialog_) {
-    if (this.activeDialog_ instanceof wtf.app.ui.HelpDialog) {
+    if (this.activeDialog_ instanceof wtf.app.HelpDialog) {
       goog.dispose(this.activeDialog_);
       this.activeDialog_ = null;
     }
@@ -474,7 +474,7 @@ wtf.app.ui.MainDisplay.prototype.toggleHelpDialog_ = function() {
   // Show help dialog.
   var body = this.getDom().getDocument().body;
   goog.asserts.assert(body);
-  this.activeDialog_ = new wtf.app.ui.HelpDialog(
+  this.activeDialog_ = new wtf.app.HelpDialog(
       body,
       this.getDom());
   this.activeDialog_.addListener(wtf.ui.Dialog.EventType.CLOSED, function() {
@@ -490,9 +490,9 @@ wtf.app.ui.MainDisplay.prototype.toggleHelpDialog_ = function() {
  * @param {boolean} visible True to show.
  * @private
  */
-wtf.app.ui.MainDisplay.prototype.showSplashDialog_ = function(visible) {
+wtf.app.MainDisplay.prototype.showSplashDialog_ = function(visible) {
   if (this.activeDialog_) {
-    if (this.activeDialog_ instanceof wtf.app.ui.SplashDialog) {
+    if (this.activeDialog_ instanceof wtf.app.SplashDialog) {
       if (visible) {
         // No-op - already visible.
         return;
@@ -515,7 +515,7 @@ wtf.app.ui.MainDisplay.prototype.showSplashDialog_ = function(visible) {
   // Show splash dialog.
   var body = this.getDom().getDocument().body;
   goog.asserts.assert(body);
-  this.activeDialog_ = new wtf.app.ui.SplashDialog(
+  this.activeDialog_ = new wtf.app.SplashDialog(
       body,
       this.getDom());
   this.activeDialog_.addListener(wtf.ui.Dialog.EventType.CLOSED, function() {

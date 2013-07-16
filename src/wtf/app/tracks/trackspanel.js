@@ -11,22 +11,22 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.TracksPanel');
+goog.provide('wtf.app.tracks.TracksPanel');
 
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.math.Rect');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.app.ui.FramePainter');
-goog.require('wtf.app.ui.Granularity');
-goog.require('wtf.app.ui.MarkPainter');
-goog.require('wtf.app.ui.SelectionPainter');
-goog.require('wtf.app.ui.TabPanel');
-goog.require('wtf.app.ui.tracks.TimeRangePainter');
-goog.require('wtf.app.ui.tracks.TrackInfoBar');
-goog.require('wtf.app.ui.tracks.ZonePainter');
-goog.require('wtf.app.ui.tracks.trackspanel');
+goog.require('wtf.app.FramePainter');
+goog.require('wtf.app.Granularity');
+goog.require('wtf.app.MarkPainter');
+goog.require('wtf.app.SelectionPainter');
+goog.require('wtf.app.TabPanel');
+goog.require('wtf.app.tracks.TimeRangePainter');
+goog.require('wtf.app.tracks.TrackInfoBar');
+goog.require('wtf.app.tracks.ZonePainter');
+goog.require('wtf.app.tracks.trackspanel');
 goog.require('wtf.db.Database');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -45,11 +45,11 @@ goog.require('wtf.ui.zoom.Viewport');
 
 /**
  * Tracks panel, showing a list of tracks on a time graph.
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @constructor
- * @extends {wtf.app.ui.TabPanel}
+ * @extends {wtf.app.TabPanel}
  */
-wtf.app.ui.tracks.TracksPanel = function(documentView) {
+wtf.app.tracks.TracksPanel = function(documentView) {
   goog.base(this, documentView, 'tracks', 'Tracks');
   var dom = this.getDom();
 
@@ -65,10 +65,10 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
 
   /**
    * Infobar control.
-   * @type {!wtf.app.ui.tracks.TrackInfoBar}
+   * @type {!wtf.app.tracks.TrackInfoBar}
    * @private
    */
-  this.infobar_ = new wtf.app.ui.tracks.TrackInfoBar(this,
+  this.infobar_ = new wtf.app.tracks.TrackInfoBar(this,
       this.getChildElement(goog.getCssName('infoControl')));
   this.registerDisposable(this.infobar_);
   this.infobar_.addListener(
@@ -83,8 +83,8 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.viewport_ = new wtf.ui.zoom.Viewport();
   this.registerDisposable(this.viewport_);
   this.viewport_.setAllowedScales(
-      1000 / wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
-      1000 / wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
+      1000 / wtf.app.tracks.TracksPanel.MIN_GRANULARITY_,
+      1000 / wtf.app.tracks.TracksPanel.MAX_GRANULARITY_);
   var reentry = 0;
   this.viewport_.addListener(wtf.events.EventType.INVALIDATED, function() {
     if (reentry) {
@@ -157,16 +157,16 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   var gridPainter = new wtf.ui.GridPainter(this.trackCanvas_);
   paintContext.addChildPainter(gridPainter);
   gridPainter.setGranularities(
-      wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
-      wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
+      wtf.app.tracks.TracksPanel.MIN_GRANULARITY_,
+      wtf.app.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timePainters_.push(gridPainter);
 
   /**
    * Selection painter.
-   * @type {!wtf.app.ui.SelectionPainter}
+   * @type {!wtf.app.SelectionPainter}
    * @private
    */
-  this.selectionPainter_ = new wtf.app.ui.SelectionPainter(
+  this.selectionPainter_ = new wtf.app.SelectionPainter(
       this.trackCanvas_, documentView.getSelection(), this.viewport_);
   paintContext.addChildPainter(this.selectionPainter_);
   this.timePainters_.push(this.selectionPainter_);
@@ -188,8 +188,8 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   this.rulerPainter_ = new wtf.ui.RulerPainter(this.trackCanvas_);
   this.painterStack_.addChildPainter(this.rulerPainter_);
   this.rulerPainter_.setGranularities(
-      wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_,
-      wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_);
+      wtf.app.tracks.TracksPanel.MIN_GRANULARITY_,
+      wtf.app.tracks.TracksPanel.MAX_GRANULARITY_);
   this.timePainters_.push(this.rulerPainter_);
 
   // Watch for zones and add as needed.
@@ -205,15 +205,15 @@ wtf.app.ui.tracks.TracksPanel = function(documentView) {
   wtf.timing.setImmediate(this.layout, this);
   this.requestRepaint();
 };
-goog.inherits(wtf.app.ui.tracks.TracksPanel, wtf.app.ui.TabPanel);
+goog.inherits(wtf.app.tracks.TracksPanel, wtf.app.TabPanel);
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.TracksPanel.prototype.createDom = function(dom) {
+wtf.app.tracks.TracksPanel.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.tracks.trackspanel.control, undefined, undefined, dom));
+      wtf.app.tracks.trackspanel.control, undefined, undefined, dom));
 };
 
 
@@ -221,7 +221,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.createDom = function(dom) {
  * Sets up some simple keyboard shortcuts.
  * @private
  */
-wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
+wtf.app.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
   var db = this.db_;
   var viewport = this.viewport_;
 
@@ -332,8 +332,8 @@ wtf.app.ui.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
  * @type {number}
  * @private
  */
-wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_ =
-    100 * wtf.app.ui.Granularity.SECOND;
+wtf.app.tracks.TracksPanel.MIN_GRANULARITY_ =
+    100 * wtf.app.Granularity.SECOND;
 
 
 /**
@@ -342,14 +342,14 @@ wtf.app.ui.tracks.TracksPanel.MIN_GRANULARITY_ =
  * @type {number}
  * @private
  */
-wtf.app.ui.tracks.TracksPanel.MAX_GRANULARITY_ =
+wtf.app.tracks.TracksPanel.MAX_GRANULARITY_ =
     0.001;
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.TracksPanel.prototype.setVisible = function(value) {
+wtf.app.tracks.TracksPanel.prototype.setVisible = function(value) {
   goog.base(this, 'setVisible', value);
   this.keyboardScope_.setEnabled(value);
 };
@@ -358,7 +358,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.setVisible = function(value) {
 /**
  * @override
  */
-wtf.app.ui.tracks.TracksPanel.prototype.navigate = function(pathParts) {
+wtf.app.tracks.TracksPanel.prototype.navigate = function(pathParts) {
   // TODO(benvanik): support navigation
 };
 
@@ -366,7 +366,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.navigate = function(pathParts) {
 /**
  * @override
  */
-wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
+wtf.app.tracks.TracksPanel.prototype.layoutInternal = function() {
   var canvas = this.trackCanvas_;
   var canvasOuter = goog.dom.getParentElement(canvas);
 
@@ -384,7 +384,7 @@ wtf.app.ui.tracks.TracksPanel.prototype.layoutInternal = function() {
  * Handles viewport invalidations.
  * @private
  */
-wtf.app.ui.tracks.TracksPanel.prototype.viewportChanged_ = function() {
+wtf.app.tracks.TracksPanel.prototype.viewportChanged_ = function() {
   var documentView = this.getDocumentView();
   var db = this.db_;
 
@@ -424,31 +424,31 @@ wtf.app.ui.tracks.TracksPanel.prototype.viewportChanged_ = function() {
  * @param {!wtf.db.Zone} zone Zone to add the tracks for.
  * @private
  */
-wtf.app.ui.tracks.TracksPanel.prototype.addZoneTrack_ = function(zone) {
+wtf.app.tracks.TracksPanel.prototype.addZoneTrack_ = function(zone) {
   var zonePainterStack = new wtf.ui.Painter(this.trackCanvas_);
   this.painterStack_.addChildPainter(zonePainterStack);
   zonePainterStack.setLayoutMode(wtf.ui.LayoutMode.VERTICAL);
   zonePainterStack.setPadding(new goog.math.Rect(0, 0, 0, 5));
 
-  var markPainter = new wtf.app.ui.MarkPainter(
+  var markPainter = new wtf.app.MarkPainter(
       this.trackCanvas_, zone.getMarkList());
   zonePainterStack.addChildPainter(markPainter);
   this.timePainters_.push(markPainter);
 
-  var framePainter = new wtf.app.ui.FramePainter(
+  var framePainter = new wtf.app.FramePainter(
       this.trackCanvas_, this.db_, zone.getFrameList());
   zonePainterStack.addChildPainter(framePainter);
   this.timePainters_.push(framePainter);
   framePainter.setPadding(new goog.math.Rect(0, 5, 0, 0));
 
-  var timeRangePainter = new wtf.app.ui.tracks.TimeRangePainter(
+  var timeRangePainter = new wtf.app.tracks.TimeRangePainter(
       this.trackCanvas_, zone.getTimeRangeList());
   zonePainterStack.addChildPainter(timeRangePainter);
   this.timePainters_.push(timeRangePainter);
   timeRangePainter.setPadding(new goog.math.Rect(0, 5, 0, 0));
 
   var docView = this.getDocumentView();
-  var zonePainter = new wtf.app.ui.tracks.ZonePainter(
+  var zonePainter = new wtf.app.tracks.ZonePainter(
       this.trackCanvas_, zone, docView.getSelection());
   zonePainterStack.addChildPainter(zonePainter);
   this.timePainters_.push(zonePainter);

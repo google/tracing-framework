@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.Selection');
+goog.provide('wtf.app.Selection');
 
 goog.require('wtf.db.EventStatistics');
 goog.require('wtf.db.Filter');
@@ -27,7 +27,7 @@ goog.require('wtf.events.EventType');
  * @constructor
  * @extends {wtf.events.EventEmitter}
  */
-wtf.app.ui.Selection = function(db) {
+wtf.app.Selection = function(db) {
   goog.base(this);
 
   /**
@@ -74,14 +74,14 @@ wtf.app.ui.Selection = function(db) {
       wtf.events.EventType.INVALIDATED, this.invalidate_, this);
   this.invalidate_();
 };
-goog.inherits(wtf.app.ui.Selection, wtf.events.EventEmitter);
+goog.inherits(wtf.app.Selection, wtf.events.EventEmitter);
 
 
 /**
  * Whether the current selection is entirely empty (no time/filter specified).
  * @return {boolean} True if no time range or filter is active.
  */
-wtf.app.ui.Selection.prototype.isEmpty = function() {
+wtf.app.Selection.prototype.isEmpty = function() {
   return !this.hasTimeRangeSpecified() && !this.hasFilterSpecified();
 };
 
@@ -89,7 +89,7 @@ wtf.app.ui.Selection.prototype.isEmpty = function() {
 /**
  * Clears the entire selection.
  */
-wtf.app.ui.Selection.prototype.clear = function() {
+wtf.app.Selection.prototype.clear = function() {
   var changed = false;
   if (this.hasTimeRangeSpecified()) {
     this.clearTimeRange();
@@ -110,7 +110,7 @@ wtf.app.ui.Selection.prototype.clear = function() {
  * selection.
  * @return {boolean} True if a time range is specified.
  */
-wtf.app.ui.Selection.prototype.hasTimeRangeSpecified = function() {
+wtf.app.Selection.prototype.hasTimeRangeSpecified = function() {
   return this.timeStart_ != Number.MIN_VALUE &&
       this.timeEnd_ != Number.MAX_VALUE;
 };
@@ -121,7 +121,7 @@ wtf.app.ui.Selection.prototype.hasTimeRangeSpecified = function() {
  * If there is none specified the value will be {@code Number.MIN_VALUE}.
  * @return {number} Selection start or {@code Number.MIN_VALUE}.
  */
-wtf.app.ui.Selection.prototype.getTimeStart = function() {
+wtf.app.Selection.prototype.getTimeStart = function() {
   return this.timeStart_;
 };
 
@@ -131,7 +131,7 @@ wtf.app.ui.Selection.prototype.getTimeStart = function() {
  * If there is none specified the value will be {@code Number.MAX_VALUE}.
  * @return {number} Selection end or {@code Number.MAX_VALUE}.
  */
-wtf.app.ui.Selection.prototype.getTimeEnd = function() {
+wtf.app.Selection.prototype.getTimeEnd = function() {
   return this.timeEnd_;
 };
 
@@ -141,7 +141,7 @@ wtf.app.ui.Selection.prototype.getTimeEnd = function() {
  * @param {number} timeStart Start time.
  * @param {number} timeEnd End time.
  */
-wtf.app.ui.Selection.prototype.setTimeRange = function(timeStart, timeEnd) {
+wtf.app.Selection.prototype.setTimeRange = function(timeStart, timeEnd) {
   if (this.timeStart_ == timeStart && this.timeEnd_ == timeEnd) {
     return;
   }
@@ -154,7 +154,7 @@ wtf.app.ui.Selection.prototype.setTimeRange = function(timeStart, timeEnd) {
 /**
  * Clears the active selection time range.
  */
-wtf.app.ui.Selection.prototype.clearTimeRange = function() {
+wtf.app.Selection.prototype.clearTimeRange = function() {
   this.setTimeRange(Number.MIN_VALUE, Number.MAX_VALUE);
 };
 
@@ -163,7 +163,7 @@ wtf.app.ui.Selection.prototype.clearTimeRange = function() {
  * Gets the underlying filter object.
  * @return {!wtf.db.Filter} Filter.
  */
-wtf.app.ui.Selection.prototype.getFilter = function() {
+wtf.app.Selection.prototype.getFilter = function() {
   return this.filter_;
 };
 
@@ -172,7 +172,7 @@ wtf.app.ui.Selection.prototype.getFilter = function() {
  * Gets a value indicating whether a filter expression is specified.
  * @return {boolean} True if a filter expression is specified.
  */
-wtf.app.ui.Selection.prototype.hasFilterSpecified = function() {
+wtf.app.Selection.prototype.hasFilterSpecified = function() {
   return !!this.filter_.getEvaluator();
 };
 
@@ -181,7 +181,7 @@ wtf.app.ui.Selection.prototype.hasFilterSpecified = function() {
  * Gets the expression used by the filter.
  * @return {string} Filter expression. May be the empty string.
  */
-wtf.app.ui.Selection.prototype.getFilterExpression = function() {
+wtf.app.Selection.prototype.getFilterExpression = function() {
   return this.filter_.toString();
 };
 
@@ -193,7 +193,7 @@ wtf.app.ui.Selection.prototype.getFilterExpression = function() {
  * @param {string} value Expression.
  * @return {boolean} True if the filter parsed and was set.
  */
-wtf.app.ui.Selection.prototype.setFilterExpression = function(value) {
+wtf.app.Selection.prototype.setFilterExpression = function(value) {
   var result = this.filter_.setFromString(value);
   switch (result) {
     case wtf.db.FilterResult.UPDATED:
@@ -211,7 +211,7 @@ wtf.app.ui.Selection.prototype.setFilterExpression = function(value) {
 /**
  * Clears the current filter expression.
  */
-wtf.app.ui.Selection.prototype.clearFilterExpression = function() {
+wtf.app.Selection.prototype.clearFilterExpression = function() {
   if (this.filter_.clear() == wtf.db.FilterResult.UPDATED) {
     this.invalidate_();
   }
@@ -222,7 +222,7 @@ wtf.app.ui.Selection.prototype.clearFilterExpression = function() {
  * Gets a function that can be used to test if events pass the active filter.
  * @return {!wtf.db.FilterFunction} A filter function.
  */
-wtf.app.ui.Selection.prototype.getFilterEvaluator = function() {
+wtf.app.Selection.prototype.getFilterEvaluator = function() {
   return this.filter_.getEvaluator() || Boolean;
 };
 
@@ -233,7 +233,7 @@ wtf.app.ui.Selection.prototype.getFilterEvaluator = function() {
  * not changed. Do not retain the returned value beyond the calling scope.
  * @return {!wtf.db.EventStatistics.Table} Event data table.
  */
-wtf.app.ui.Selection.prototype.getFullStatistics = function() {
+wtf.app.Selection.prototype.getFullStatistics = function() {
   return this.eventStatistics_.getTable();
 };
 
@@ -244,7 +244,7 @@ wtf.app.ui.Selection.prototype.getFullStatistics = function() {
  * not changed. Do not retain the returned value beyond the calling scope.
  * @return {!wtf.db.EventStatistics.Table} Event data table.
  */
-wtf.app.ui.Selection.prototype.getSelectionStatistics = function() {
+wtf.app.Selection.prototype.getSelectionStatistics = function() {
   if (!this.filteredTable_) {
     var table = this.eventStatistics_.getTable(this.timeStart_, this.timeEnd_);
     if (this.hasFilterSpecified()) {
@@ -261,7 +261,7 @@ wtf.app.ui.Selection.prototype.getSelectionStatistics = function() {
  * Emits an invalidation event.
  * @private
  */
-wtf.app.ui.Selection.prototype.invalidate_ = function() {
+wtf.app.Selection.prototype.invalidate_ = function() {
   this.filteredTable_ = null;
   this.emitEvent(wtf.events.EventType.INVALIDATED);
 };

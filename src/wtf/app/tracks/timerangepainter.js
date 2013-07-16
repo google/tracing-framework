@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.TimeRangePainter');
+goog.provide('wtf.app.tracks.TimeRangePainter');
 
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -30,7 +30,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
+wtf.app.tracks.TimeRangePainter = function TimeRangePainter(
     canvas, timeRangeList) {
   goog.base(this, canvas);
 
@@ -52,7 +52,7 @@ wtf.app.ui.tracks.TimeRangePainter = function TimeRangePainter(
   this.timeRangeList_.addListener(wtf.events.EventType.INVALIDATED,
       this.requestRepaint, this);
 };
-goog.inherits(wtf.app.ui.tracks.TimeRangePainter, wtf.ui.RangePainter);
+goog.inherits(wtf.app.tracks.TimeRangePainter, wtf.ui.RangePainter);
 
 
 /**
@@ -61,7 +61,7 @@ goog.inherits(wtf.app.ui.tracks.TimeRangePainter, wtf.ui.RangePainter);
  * @const
  * @private
  */
-wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_ = 16;
+wtf.app.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_ = 16;
 
 
 /**
@@ -71,19 +71,19 @@ wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_ = 16;
  * @const
  * @private
  */
-wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_ = 5;
+wtf.app.tracks.TimeRangePainter.MAX_LEVELS_ = 5;
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.TimeRangePainter.prototype.layoutInternal = function(
+wtf.app.tracks.TimeRangePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   var maxLevel = Math.min(
       this.timeRangeList_.getMaximumLevel(),
-      wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
-  var levelHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+      wtf.app.tracks.TimeRangePainter.MAX_LEVELS_);
+  var levelHeight = wtf.app.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
   newBounds.height = maxLevel * levelHeight;
   return newBounds;
 };
@@ -92,15 +92,15 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.layoutInternal = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
+wtf.app.tracks.TimeRangePainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
 
-  var timeRangeHeight = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+  var timeRangeHeight = wtf.app.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
 
   var maxLevel = Math.min(
       this.timeRangeList_.getMaximumLevel(),
-      wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_);
+      wtf.app.tracks.TimeRangePainter.MAX_LEVELS_);
   this.beginRenderingRanges(bounds, maxLevel,
       wtf.ui.RangePainter.DrawStyle.TIME_SPAN);
 
@@ -110,7 +110,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
       function(timeRange) {
         // Skip if excluded.
         var level = timeRange.getLevel();
-        if (level >= wtf.app.ui.tracks.TimeRangePainter.MAX_LEVELS_) {
+        if (level >= wtf.app.tracks.TimeRangePainter.MAX_LEVELS_) {
           return;
         }
 
@@ -166,7 +166,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.repaintInternal = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.TimeRangePainter.prototype.onClickInternal =
+wtf.app.tracks.TimeRangePainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
   var timeRange = this.hitTest_(x, y, bounds);
   if (!timeRange) {
@@ -189,7 +189,7 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.onClickInternal =
 /**
  * @override
  */
-wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
+wtf.app.tracks.TimeRangePainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
   var timeRange = this.hitTest_(x, y, bounds);
   if (!timeRange) {
@@ -218,9 +218,9 @@ wtf.app.ui.tracks.TimeRangePainter.prototype.getInfoStringInternal =
  * @return {wtf.db.TimeRange} Time range or nothing.
  * @private
  */
-wtf.app.ui.tracks.TimeRangePainter.prototype.hitTest_ = function(
+wtf.app.tracks.TimeRangePainter.prototype.hitTest_ = function(
     x, y, bounds) {
-  var h = wtf.app.ui.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
+  var h = wtf.app.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;
   var level = ((y - bounds.top) / h) | 0;
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,

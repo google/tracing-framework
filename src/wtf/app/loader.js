@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.Loader');
+goog.provide('wtf.app.Loader');
 
 goog.require('goog.Disposable');
 goog.require('goog.array');
@@ -48,11 +48,11 @@ goog.require('wtf.ui.ProgressDialog');
 
 /**
  * Handles all trace loading behavior.
- * @param {!wtf.app.ui.MainDisplay} mainDisplay Main display.
+ * @param {!wtf.app.MainDisplay} mainDisplay Main display.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.app.ui.Loader = function(mainDisplay) {
+wtf.app.Loader = function(mainDisplay) {
   goog.base(this);
 
   /**
@@ -64,7 +64,7 @@ wtf.app.ui.Loader = function(mainDisplay) {
 
   /**
    * Owning main display.
-   * @type {!wtf.app.ui.MainDisplay}
+   * @type {!wtf.app.MainDisplay}
    * @private
    */
   this.mainDisplay_ = mainDisplay;
@@ -80,13 +80,13 @@ wtf.app.ui.Loader = function(mainDisplay) {
     wtf.io.drive.prepare();
   }
 };
-goog.inherits(wtf.app.ui.Loader, goog.Disposable);
+goog.inherits(wtf.app.Loader, goog.Disposable);
 
 
 /**
  * @override
  */
-wtf.app.ui.Loader.prototype.disposeInternal = function() {
+wtf.app.Loader.prototype.disposeInternal = function() {
   // TODO(benvanik): abort any in-progress loads.
   goog.dispose(this.progressDialog_);
   goog.base(this, 'disposeInternal');
@@ -99,7 +99,7 @@ wtf.app.ui.Loader.prototype.disposeInternal = function() {
  * @return {string} Content type.
  * @private
  */
-wtf.app.ui.Loader.prototype.inferContentType_ = function(filename) {
+wtf.app.Loader.prototype.inferContentType_ = function(filename) {
   if (goog.string.endsWith(filename, '.wtf-trace') ||
       goog.string.endsWith(filename, '.bin.part')) {
     return 'application/x-extension-wtf-trace';
@@ -118,7 +118,7 @@ wtf.app.ui.Loader.prototype.inferContentType_ = function(filename) {
  * See the extension.js file in the injector for details about the command.
  * @param {!Object} data Command data.
  */
-wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
+wtf.app.Loader.prototype.loadSnapshot = function(data) {
   var contentLength = data['content_length'];
   _gaq.push(['_trackEvent', 'app', 'open_snapshot', null, contentLength]);
 
@@ -169,7 +169,7 @@ wtf.app.ui.Loader.prototype.loadSnapshot = function(data) {
  * @param {T=} opt_scope Callback scope.
  * @template T
  */
-wtf.app.ui.Loader.prototype.requestLocalOpenDialog = function(
+wtf.app.Loader.prototype.requestLocalOpenDialog = function(
     opt_selectCallback, opt_scope) {
   var inputElement = this.dom_.createElement(goog.dom.TagName.INPUT);
   inputElement['type'] = 'file';
@@ -200,7 +200,7 @@ wtf.app.ui.Loader.prototype.requestLocalOpenDialog = function(
  * @param {T=} opt_scope Callback scope.
  * @template T
  */
-wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
+wtf.app.Loader.prototype.requestDriveOpenDialog = function(
     opt_cancelCallback, opt_scope) {
   if (!wtf.io.drive.isSupported()) {
     wtf.ui.ErrorDialog.show(
@@ -253,7 +253,7 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
     }, this);
 
     /**
-     * @this {wtf.app.ui.Loader}
+     * @this {wtf.app.Loader}
      */
     function finished() {
       if (errors.length) {
@@ -276,7 +276,7 @@ wtf.app.ui.Loader.prototype.requestDriveOpenDialog = function(
  * These can be from the filesystem, dragged in, etc.
  * @param {!Array.<!File>} files File objects.
  */
-wtf.app.ui.Loader.prototype.loadFiles = function(files) {
+wtf.app.Loader.prototype.loadFiles = function(files) {
   var sourceInfos = [];
   for (var n = 0; n < files.length; n++) {
     var filename = files[n].name;
@@ -292,7 +292,7 @@ wtf.app.ui.Loader.prototype.loadFiles = function(files) {
  * Begins loading a set of files from URLs.
  * @param {!Array.<string>} urls URLs.
  */
-wtf.app.ui.Loader.prototype.loadUrls = function(urls) {
+wtf.app.Loader.prototype.loadUrls = function(urls) {
   var sourceInfos = [];
   for (var n = 0; n < urls.length; n++) {
     var url = urls[n];
@@ -311,7 +311,7 @@ wtf.app.ui.Loader.prototype.loadUrls = function(urls) {
  *     the title will be inferred from the entries.
  * @private
  */
-wtf.app.ui.Loader.prototype.loadDataSources_ = function(
+wtf.app.Loader.prototype.loadDataSources_ = function(
     sourceInfos, opt_title) {
   // If we are already loading, ignore.
   // This prevents multiple drops.
@@ -349,7 +349,7 @@ wtf.app.ui.Loader.prototype.loadDataSources_ = function(
   var entries = [];
   for (var n = 0; n < sourceInfos.length; n++) {
     // Create the entry.
-    var entry = new wtf.app.ui.Loader.Entry_(sourceInfos[n]);
+    var entry = new wtf.app.Loader.Entry_(sourceInfos[n]);
     entries.push(entry);
     this.progressDialog_.addTask(entry.task);
   }
@@ -376,11 +376,11 @@ wtf.app.ui.Loader.prototype.loadDataSources_ = function(
 
 /**
  * Calculates a title name from the given entries.
- * @param {!Array.<!wtf.app.ui.Loader.Entry_>} entries Entries.
+ * @param {!Array.<!wtf.app.Loader.Entry_>} entries Entries.
  * @return {string} New title string.
  * @private
  */
-wtf.app.ui.Loader.prototype.generateTitleFromEntries_ = function(entries) {
+wtf.app.Loader.prototype.generateTitleFromEntries_ = function(entries) {
   var title = '';
   for (var n = 0; n < entries.length; n++) {
     var sourceInfo = entries[n].sourceInfo;
@@ -398,12 +398,12 @@ wtf.app.ui.Loader.prototype.generateTitleFromEntries_ = function(entries) {
 /**
  * Handles successful loads.
  * @param {!wtf.doc.Document} doc Document.
- * @param {!Array.<!wtf.app.ui.Loader.Entry_>} entries Loader entries.
+ * @param {!Array.<!wtf.app.Loader.Entry_>} entries Loader entries.
  * @param {string=} opt_title Optional override for the app title. If omitted
  *     the title will be inferred from the entries.
  * @private
  */
-wtf.app.ui.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
+wtf.app.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
   _gaq.push(['_trackEvent', 'app', 'open_files', null]);
 
   // Close the progress dialog.
@@ -441,7 +441,7 @@ wtf.app.ui.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
  * @param {boolean} showDialog Whether to show the error dialog.
  * @private
  */
-wtf.app.ui.Loader.prototype.loadFailed_ = function(title, message, showDialog) {
+wtf.app.Loader.prototype.loadFailed_ = function(title, message, showDialog) {
   _gaq.push(['_trackEvent', 'app', 'load_failed', title]);
 
   // Close the progress dialog.
@@ -463,7 +463,7 @@ wtf.app.ui.Loader.prototype.loadFailed_ = function(title, message, showDialog) {
  * @constructor
  * @private
  */
-wtf.app.ui.Loader.Entry_ = function(sourceInfo) {
+wtf.app.Loader.Entry_ = function(sourceInfo) {
   /**
    * Data source info.
    * @type {!wtf.db.DataSourceInfo}
@@ -524,7 +524,7 @@ wtf.app.ui.Loader.Entry_ = function(sourceInfo) {
  * @param {!wtf.db.Database} db Target database.
  * @return {!goog.async.Deferred} A deferred fulfilled when the load completes.
  */
-wtf.app.ui.Loader.Entry_.prototype.start = function(db) {
+wtf.app.Loader.Entry_.prototype.start = function(db) {
   var deferred = new goog.async.Deferred();
   this.transportDeferred_.addCallback(function(transport) {
     goog.asserts.assert(!this.source);

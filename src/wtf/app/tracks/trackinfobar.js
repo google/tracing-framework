@@ -11,15 +11,15 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.TrackInfoBar');
+goog.provide('wtf.app.tracks.TrackInfoBar');
 
 goog.require('goog.positioning.Corner');
 goog.require('goog.soy');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.MenuItem');
 goog.require('goog.ui.PopupMenu');
-goog.require('wtf.app.ui.tracks.StatisticsTableSource');
-goog.require('wtf.app.ui.tracks.trackinfobar');
+goog.require('wtf.app.tracks.StatisticsTableSource');
+goog.require('wtf.app.tracks.trackinfobar');
 goog.require('wtf.db.SortMode');
 goog.require('wtf.db.Unit');
 goog.require('wtf.events');
@@ -34,12 +34,12 @@ goog.require('wtf.ui.VirtualTable');
 /**
  * TracksPanel infobar control.
  *
- * @param {!wtf.app.ui.tracks.TracksPanel} tracksPanel Parent tracks panel.
+ * @param {!wtf.app.tracks.TracksPanel} tracksPanel Parent tracks panel.
  * @param {!Element} parentElement Element to display in.
  * @constructor
  * @extends {wtf.ui.ResizableControl}
  */
-wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
+wtf.app.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   var documentView = tracksPanel.getDocumentView();
   var dom = documentView.getDom();
   goog.base(
@@ -52,7 +52,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
 
   /**
    * Parent tracks panel.
-   * @type {!wtf.app.ui.tracks.TracksPanel}
+   * @type {!wtf.app.tracks.TracksPanel}
    * @private
    */
   this.tracksPanel_ = tracksPanel;
@@ -60,7 +60,7 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   var docView = this.tracksPanel_.getDocumentView();
   /**
    * Selection state.
-   * @type {!wtf.app.ui.Selection}
+   * @type {!wtf.app.Selection}
    * @private
    */
   this.selection_ = docView.getSelection();
@@ -88,10 +88,10 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
 
   /**
    * Results table source.
-   * @type {!wtf.app.ui.tracks.StatisticsTableSource}
+   * @type {!wtf.app.tracks.StatisticsTableSource}
    * @private
    */
-  this.tableSource_ = new wtf.app.ui.tracks.StatisticsTableSource();
+  this.tableSource_ = new wtf.app.tracks.StatisticsTableSource();
   this.registerDisposable(this.tableSource_);
   this.table_.setSource(this.tableSource_);
 
@@ -187,13 +187,13 @@ wtf.app.ui.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
   }, this);
   this.updateInfo_();
 };
-goog.inherits(wtf.app.ui.tracks.TrackInfoBar, wtf.ui.ResizableControl);
+goog.inherits(wtf.app.tracks.TrackInfoBar, wtf.ui.ResizableControl);
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.TrackInfoBar.prototype.disposeInternal = function() {
+wtf.app.tracks.TrackInfoBar.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
   commandManager.unregisterCommand('filter_events');
   goog.base(this, 'disposeInternal');
@@ -203,16 +203,16 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.disposeInternal = function() {
 /**
  * @override
  */
-wtf.app.ui.tracks.TrackInfoBar.prototype.createDom = function(dom) {
+wtf.app.tracks.TrackInfoBar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.tracks.trackinfobar.control, undefined, undefined, dom));
+      wtf.app.tracks.trackinfobar.control, undefined, undefined, dom));
 };
 
 
 /**
  * @override
  */
-wtf.app.ui.tracks.TrackInfoBar.prototype.layoutInternal = function() {
+wtf.app.tracks.TrackInfoBar.prototype.layoutInternal = function() {
   goog.base(this, 'layoutInternal');
   this.table_.layout();
 };
@@ -223,7 +223,7 @@ wtf.app.ui.tracks.TrackInfoBar.prototype.layoutInternal = function() {
  * This is called each time the filter changes.
  * @private
  */
-wtf.app.ui.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
+wtf.app.tracks.TrackInfoBar.prototype.updateInfo_ = function() {
   // This will generate the stats on demand and may take some time.
   var table = this.selection_.getSelectionStatistics();
 

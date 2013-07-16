@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.nav.TimelinePainter');
+goog.provide('wtf.app.nav.TimelinePainter');
 
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
@@ -27,7 +27,7 @@ goog.require('wtf.ui.TimePainter');
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.app.ui.nav.TimelinePainter = function TimelinePainter(canvas, db, zone) {
+wtf.app.nav.TimelinePainter = function TimelinePainter(canvas, db, zone) {
   goog.base(this, canvas);
 
   /**
@@ -39,13 +39,13 @@ wtf.app.ui.nav.TimelinePainter = function TimelinePainter(canvas, db, zone) {
   this.frameList_.addListener(wtf.events.EventType.INVALIDATED,
       this.requestRepaint, this);
 };
-goog.inherits(wtf.app.ui.nav.TimelinePainter, wtf.ui.TimePainter);
+goog.inherits(wtf.app.nav.TimelinePainter, wtf.ui.TimePainter);
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.TimelinePainter.prototype.layoutInternal = function(
+wtf.app.nav.TimelinePainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   if (this.frameList_.getCount()) {
@@ -60,7 +60,7 @@ wtf.app.ui.nav.TimelinePainter.prototype.layoutInternal = function(
 /**
  * @override
  */
-wtf.app.ui.nav.TimelinePainter.prototype.repaintInternal = function(
+wtf.app.nav.TimelinePainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;

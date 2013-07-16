@@ -11,14 +11,14 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.Tabbar');
+goog.provide('wtf.app.Tabbar');
 
 goog.require('goog.array');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
-goog.require('wtf.app.ui.tabbar');
+goog.require('wtf.app.tabbar');
 goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.ui.Control');
@@ -28,39 +28,39 @@ goog.require('wtf.ui.Control');
 /**
  * Tab bar control.
  *
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {!Element} parentElement Element to display in.
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.Tabbar = function(documentView, parentElement) {
+wtf.app.Tabbar = function(documentView, parentElement) {
   var dom = documentView.getDom();
   goog.base(this, parentElement, dom);
 
   /**
    * All panels, in their display order.
-   * @type {!Array.<!wtf.app.ui.TabPanel>}
+   * @type {!Array.<!wtf.app.TabPanel>}
    * @private
    */
   this.panels_ = [];
 
   /**
    * A map of panels by panel path.
-   * @type {!Object.<!wtf.app.ui.TabPanel>}
+   * @type {!Object.<!wtf.app.TabPanel>}
    * @private
    */
   this.panelsByPath_ = {};
 
   /**
    * A list of all tabs, in their display order.
-   * @type {!Array.<!wtf.app.ui.Tabbar.Tab_>}
+   * @type {!Array.<!wtf.app.Tabbar.Tab_>}
    * @private
    */
   this.tabs_ = [];
 
   /**
    * Currently selected tab.
-   * @type {wtf.app.ui.Tabbar.Tab_?}
+   * @type {wtf.app.Tabbar.Tab_?}
    * @private
    */
   this.selectedTab_ = null;
@@ -80,30 +80,30 @@ wtf.app.ui.Tabbar = function(documentView, parentElement) {
   this.keyboardScope_.addShortcut(
       'ctrl+close-square-bracket', this.nextTab_, this);
 };
-goog.inherits(wtf.app.ui.Tabbar, wtf.ui.Control);
+goog.inherits(wtf.app.Tabbar, wtf.ui.Control);
 
 
 /**
- * @typedef {{name: string, tabElement: !Element, panel: !wtf.app.ui.TabPanel}}
+ * @typedef {{name: string, tabElement: !Element, panel: !wtf.app.TabPanel}}
  * @private
  */
-wtf.app.ui.Tabbar.Tab_;
+wtf.app.Tabbar.Tab_;
 
 
 /**
  * @override
  */
-wtf.app.ui.Tabbar.prototype.createDom = function(dom) {
+wtf.app.Tabbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.tabbar.control, undefined, undefined, dom));
+      wtf.app.tabbar.control, undefined, undefined, dom));
 };
 
 
 /**
  * Adds a new panel.
- * @param {!wtf.app.ui.TabPanel} panel New panel.
+ * @param {!wtf.app.TabPanel} panel New panel.
  */
-wtf.app.ui.Tabbar.prototype.addPanel = function(panel) {
+wtf.app.Tabbar.prototype.addPanel = function(panel) {
   var dom = this.getDom();
 
   // Create tab button.
@@ -156,27 +156,27 @@ wtf.app.ui.Tabbar.prototype.addPanel = function(panel) {
 
 /**
  * Gets a list of all panels.
- * @return {!Array.<!wtf.app.ui.TabPanel>} A list of panels. Do not modify.
+ * @return {!Array.<!wtf.app.TabPanel>} A list of panels. Do not modify.
  */
-wtf.app.ui.Tabbar.prototype.getPanels = function() {
+wtf.app.Tabbar.prototype.getPanels = function() {
   return this.panels_;
 };
 
 
 /**
  * Gets the currently selected panel, if any.
- * @return {wtf.app.ui.TabPanel} Selected panel, if any is selected.
+ * @return {wtf.app.TabPanel} Selected panel, if any is selected.
  */
-wtf.app.ui.Tabbar.prototype.getSelectedPanel = function() {
+wtf.app.Tabbar.prototype.getSelectedPanel = function() {
   return this.selectedTab_ ? this.selectedTab_.panel : null;
 };
 
 
 /**
  * Sets the selected panel, or clears the selection.
- * @param {wtf.app.ui.TabPanel} value New panel to select.
+ * @param {wtf.app.TabPanel} value New panel to select.
  */
-wtf.app.ui.Tabbar.prototype.setSelectedPanel = function(value) {
+wtf.app.Tabbar.prototype.setSelectedPanel = function(value) {
   var newTab = value ? this.getTabForPanel_(value) : null;
   if (this.selectedTab_ == newTab) {
     return;
@@ -206,7 +206,7 @@ wtf.app.ui.Tabbar.prototype.setSelectedPanel = function(value) {
  * Switches to the previous tab from the currently selected one.
  * @private
  */
-wtf.app.ui.Tabbar.prototype.previousTab_ = function() {
+wtf.app.Tabbar.prototype.previousTab_ = function() {
   if (!this.selectedTab_ || !this.tabs_.length) {
     return;
   }
@@ -223,7 +223,7 @@ wtf.app.ui.Tabbar.prototype.previousTab_ = function() {
  * Switches to the next tab from the currently selected one.
  * @private
  */
-wtf.app.ui.Tabbar.prototype.nextTab_ = function() {
+wtf.app.Tabbar.prototype.nextTab_ = function() {
   if (!this.selectedTab_ || !this.tabs_.length) {
     return;
   }
@@ -240,7 +240,7 @@ wtf.app.ui.Tabbar.prototype.nextTab_ = function() {
  * Navigates to the given panel path.
  * @param {string} path Panel path.
  */
-wtf.app.ui.Tabbar.prototype.navigate = function(path) {
+wtf.app.Tabbar.prototype.navigate = function(path) {
   var parts = path.split('/');
   if (parts.length) {
     var panel = this.panelsByPath_[parts[0]];
@@ -256,11 +256,11 @@ wtf.app.ui.Tabbar.prototype.navigate = function(path) {
 
 /**
  * Gets the tab entry for the given panel.
- * @param {!wtf.app.ui.TabPanel} panel Panel.
- * @return {wtf.app.ui.Tabbar.Tab_?} Tab for the given panel, if found.
+ * @param {!wtf.app.TabPanel} panel Panel.
+ * @return {wtf.app.Tabbar.Tab_?} Tab for the given panel, if found.
  * @private
  */
-wtf.app.ui.Tabbar.prototype.getTabForPanel_ = function(panel) {
+wtf.app.Tabbar.prototype.getTabForPanel_ = function(panel) {
   for (var n = 0; n < this.tabs_.length; n++) {
     if (this.tabs_[n].panel == panel) {
       return this.tabs_[n];
@@ -274,7 +274,7 @@ wtf.app.ui.Tabbar.prototype.getTabForPanel_ = function(panel) {
  * Handles sizing/layout.
  * This is called by the document view when the control size changes.
  */
-wtf.app.ui.Tabbar.prototype.layout = function() {
+wtf.app.Tabbar.prototype.layout = function() {
   if (this.selectedTab_) {
     this.selectedTab_.panel.layout();
   }

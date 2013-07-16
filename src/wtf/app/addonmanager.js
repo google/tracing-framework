@@ -11,8 +11,8 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.AddonManager');
-goog.provide('wtf.app.ui.AddonTabPanel');
+goog.provide('wtf.app.AddonManager');
+goog.provide('wtf.app.AddonTabPanel');
 
 goog.require('goog.Disposable');
 goog.require('goog.Uri');
@@ -22,28 +22,28 @@ goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.style');
 goog.require('wtf.addon');
-goog.require('wtf.app.ui.TabPanel');
+goog.require('wtf.app.TabPanel');
 goog.require('wtf.timing');
 
 
 
 /**
  * Handles the creation and management of app addons.
- * Since addons are {@see wtf.app.ui.DocumentView}-specific, this ties
+ * Since addons are {@see wtf.app.DocumentView}-specific, this ties
  * addon lifetime to the parent document view.
  *
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @constructor
  * @extends {goog.Disposable}
  */
-wtf.app.ui.AddonManager = function(documentView) {
+wtf.app.AddonManager = function(documentView) {
   goog.base(this);
 
   var dom = documentView.getDom();
 
   /**
    * Parent document view.
-   * @type {!wtf.app.ui.DocumentView}
+   * @type {!wtf.app.DocumentView}
    * @private
    */
   this.documentView_ = documentView;
@@ -94,13 +94,13 @@ wtf.app.ui.AddonManager = function(documentView) {
       null, addons.length]);
   }, this);
 };
-goog.inherits(wtf.app.ui.AddonManager, goog.Disposable);
+goog.inherits(wtf.app.AddonManager, goog.Disposable);
 
 
 /**
  * @override
  */
-wtf.app.ui.AddonManager.prototype.disposeInternal = function() {
+wtf.app.AddonManager.prototype.disposeInternal = function() {
   goog.dom.removeNode(this.addonsEl_);
   goog.base(this, 'disposeInternal');
 };
@@ -110,7 +110,7 @@ wtf.app.ui.AddonManager.prototype.disposeInternal = function() {
  * Loads the given addon, if it has not already been loaded.
  * @param {!wtf.addon.AppAddon} addon Addon.
  */
-wtf.app.ui.AddonManager.prototype.loadAddon = function(addon) {
+wtf.app.AddonManager.prototype.loadAddon = function(addon) {
   var dom = this.dom_;
 
   var manifest = addon.getManifest();
@@ -159,7 +159,7 @@ wtf.app.ui.AddonManager.prototype.loadAddon = function(addon) {
  * @param {!Window} addonGlobal Addon global scope.
  * @private
  */
-wtf.app.ui.AddonManager.prototype.setupAddonApi_ = function(
+wtf.app.AddonManager.prototype.setupAddonApi_ = function(
     addon, addonGlobal) {
   var documentView = this.documentView_;
 
@@ -177,11 +177,11 @@ wtf.app.ui.AddonManager.prototype.setupAddonApi_ = function(
    * @param {string} path Path used for navigation.
    * @param {string} name Panel name.
    * @param {Object} options Options.
-   * @param {wtf.app.ui.AddonTabPanel.Callback} callback
+   * @param {wtf.app.AddonTabPanel.Callback} callback
    *     A callback that creates an external panel.
    */
   function createTabPanel(path, name, options, callback) {
-    tabbar.addPanel(new wtf.app.ui.AddonTabPanel(
+    tabbar.addPanel(new wtf.app.AddonTabPanel(
         addon, documentView, path, name, options, callback));
   };
 };
@@ -191,16 +191,16 @@ wtf.app.ui.AddonManager.prototype.setupAddonApi_ = function(
 /**
  * A tab panel that defers logic to an external addon.
  * @param {!wtf.addon.AppAddon} addon Owning addon.
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {string} path Path used for navigation.
  * @param {string} name Panel name.
  * @param {Object} options Options.
- * @param {wtf.app.ui.AddonTabPanel.Callback} callback
+ * @param {wtf.app.AddonTabPanel.Callback} callback
  *     A callback that creates an external panel.
  * @constructor
- * @extends {wtf.app.ui.TabPanel}
+ * @extends {wtf.app.TabPanel}
  */
-wtf.app.ui.AddonTabPanel = function(addon, documentView, path, name,
+wtf.app.AddonTabPanel = function(addon, documentView, path, name,
     options, callback) {
   goog.base(this, documentView, path, name);
 
@@ -229,7 +229,7 @@ wtf.app.ui.AddonTabPanel = function(addon, documentView, path, name,
 
   /**
    * Addon panel handlers.
-   * @type {wtf.app.ui.AddonTabPanel.Handlers?}
+   * @type {wtf.app.AddonTabPanel.Handlers?}
    * @private
    */
   this.handlers_ = null;
@@ -245,7 +245,7 @@ wtf.app.ui.AddonTabPanel = function(addon, documentView, path, name,
     this.handlers_ = callback(idoc);
   }, this);
 };
-goog.inherits(wtf.app.ui.AddonTabPanel, wtf.app.ui.TabPanel);
+goog.inherits(wtf.app.AddonTabPanel, wtf.app.TabPanel);
 
 
 /**
@@ -254,19 +254,19 @@ goog.inherits(wtf.app.ui.AddonTabPanel, wtf.app.ui.TabPanel);
  *   onVisibilityChange: (function(boolean))?
  * }}
  */
-wtf.app.ui.AddonTabPanel.Handlers;
+wtf.app.AddonTabPanel.Handlers;
 
 
 /**
- * @typedef {function(!Document):wtf.app.ui.AddonTabPanel.Handlers}
+ * @typedef {function(!Document):wtf.app.AddonTabPanel.Handlers}
  */
-wtf.app.ui.AddonTabPanel.Callback;
+wtf.app.AddonTabPanel.Callback;
 
 
 /**
  * @override
  */
-wtf.app.ui.AddonTabPanel.prototype.createDom = function(dom) {
+wtf.app.AddonTabPanel.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('appUiTabPanel'));
   return el;
@@ -277,7 +277,7 @@ wtf.app.ui.AddonTabPanel.prototype.createDom = function(dom) {
  * Sets up the panel iframe.
  * @private
  */
-wtf.app.ui.AddonTabPanel.prototype.setupIframe_ = function() {
+wtf.app.AddonTabPanel.prototype.setupIframe_ = function() {
   goog.asserts.assert(!this.iframe_);
 
   var manifest = this.addon_.getManifest();
@@ -328,7 +328,7 @@ wtf.app.ui.AddonTabPanel.prototype.setupIframe_ = function() {
 /**
  * @override
  */
-wtf.app.ui.AddonTabPanel.prototype.layoutInternal = function() {
+wtf.app.AddonTabPanel.prototype.layoutInternal = function() {
   if (this.handlers_ && this.handlers_['onLayout']) {
     var currentSize = goog.style.getSize(this.getRootElement());
     this.handlers_['onLayout'](currentSize.width, currentSize.height);
@@ -339,7 +339,7 @@ wtf.app.ui.AddonTabPanel.prototype.layoutInternal = function() {
 /**
  * @override
  */
-wtf.app.ui.AddonTabPanel.prototype.setVisible = function(value) {
+wtf.app.AddonTabPanel.prototype.setVisible = function(value) {
   goog.base(this, 'setVisible', value);
   if (this.handlers_ && this.handlers_['onVisibilityChange']) {
     this.handlers_['onVisibilityChange'](value);

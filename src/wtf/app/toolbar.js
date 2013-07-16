@@ -11,13 +11,13 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.Toolbar');
+goog.provide('wtf.app.Toolbar');
 
 goog.require('goog.Uri');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.app.ui.toolbar');
+goog.require('wtf.app.toolbar');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -30,19 +30,19 @@ goog.require('wtf.ui.Control');
 /**
  * Toolbar control.
  *
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {!Element} parentElement Element to display in.
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.Toolbar = function(documentView, parentElement) {
+wtf.app.Toolbar = function(documentView, parentElement) {
   goog.base(this, parentElement, documentView.getDom());
   var dom = this.getDom();
   var eh = this.getHandler();
 
   /**
    * Parent document view.
-   * @type {!wtf.app.ui.DocumentView}
+   * @type {!wtf.app.DocumentView}
    * @private
    */
   this.documentView_ = documentView;
@@ -109,15 +109,15 @@ wtf.app.ui.Toolbar = function(documentView, parentElement) {
       wtf.events.EventType.INVALIDATED, this.updateDisplay_, this);
   this.updateDisplay_();
 };
-goog.inherits(wtf.app.ui.Toolbar, wtf.ui.Control);
+goog.inherits(wtf.app.Toolbar, wtf.ui.Control);
 
 
 /**
  * @override
  */
-wtf.app.ui.Toolbar.prototype.createDom = function(dom) {
+wtf.app.Toolbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.toolbar.control, {
+      wtf.app.toolbar.control, {
         system_key: wtf.events.Keyboard.SYSTEM_KEY
       }, undefined, dom));
 };
@@ -127,7 +127,7 @@ wtf.app.ui.Toolbar.prototype.createDom = function(dom) {
  * Updates the toolbar display with the latest source/context information.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
+wtf.app.Toolbar.prototype.updateDisplay_ = function() {
   var dom = this.getDom();
 
   var db = this.documentView_.getDatabase();
@@ -174,7 +174,7 @@ wtf.app.ui.Toolbar.prototype.updateDisplay_ = function() {
  * @param {string} uri Icon URI.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.refreshIcon_ = function(uri) {
+wtf.app.Toolbar.prototype.refreshIcon_ = function(uri) {
   var dom = this.getDom();
   var iconEl = this.getChildElement(
       goog.getCssName('infoIcon'));
@@ -197,7 +197,7 @@ wtf.app.ui.Toolbar.prototype.refreshIcon_ = function(uri) {
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.viewHealthClicked_ = function(e) {
+wtf.app.Toolbar.prototype.viewHealthClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('view_trace_health', this, null);
@@ -209,7 +209,7 @@ wtf.app.ui.Toolbar.prototype.viewHealthClicked_ = function(e) {
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
+wtf.app.Toolbar.prototype.openClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('open_local_trace', this, null);
@@ -221,7 +221,7 @@ wtf.app.ui.Toolbar.prototype.openClicked_ = function(e) {
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
+wtf.app.Toolbar.prototype.saveClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('save_local_trace', this, null);
@@ -233,7 +233,7 @@ wtf.app.ui.Toolbar.prototype.saveClicked_ = function(e) {
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.settingsClicked_ = function(e) {
+wtf.app.Toolbar.prototype.settingsClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('show_settings', this, null);
@@ -245,7 +245,7 @@ wtf.app.ui.Toolbar.prototype.settingsClicked_ = function(e) {
  * @param {!goog.events.BrowserEvent} e Event.
  * @private
  */
-wtf.app.ui.Toolbar.prototype.helpClicked_ = function(e) {
+wtf.app.Toolbar.prototype.helpClicked_ = function(e) {
   e.preventDefault();
   var commandManager = wtf.events.getCommandManager();
   commandManager.execute('toggle_help', this, null);

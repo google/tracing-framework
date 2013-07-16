@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.MarkPainter');
+goog.provide('wtf.app.MarkPainter');
 
 goog.require('wtf.events');
 goog.require('wtf.math');
@@ -29,7 +29,7 @@ goog.require('wtf.util');
  * @constructor
  * @extends {wtf.ui.RangePainter}
  */
-wtf.app.ui.MarkPainter = function MarkPainter(canvas, markList) {
+wtf.app.MarkPainter = function MarkPainter(canvas, markList) {
   goog.base(this, canvas);
 
   // TODO(benvanik): a better palette.
@@ -39,7 +39,7 @@ wtf.app.ui.MarkPainter = function MarkPainter(canvas, markList) {
    * @private
    */
   this.palette_ = new wtf.ui.color.Palette(
-      wtf.app.ui.MarkPainter.MARK_COLORS_);
+      wtf.app.MarkPainter.MARK_COLORS_);
 
   /**
    * Mark list.
@@ -48,7 +48,7 @@ wtf.app.ui.MarkPainter = function MarkPainter(canvas, markList) {
    */
   this.markList_ = markList;
 };
-goog.inherits(wtf.app.ui.MarkPainter, wtf.ui.RangePainter);
+goog.inherits(wtf.app.MarkPainter, wtf.ui.RangePainter);
 
 
 /**
@@ -57,7 +57,7 @@ goog.inherits(wtf.app.ui.MarkPainter, wtf.ui.RangePainter);
  * @private
  * @const
  */
-wtf.app.ui.MarkPainter.MARK_COLORS_ = [
+wtf.app.MarkPainter.MARK_COLORS_ = [
   'rgb(200,200,200)',
   'rgb(189,189,189)',
   'rgb(150,150,150)',
@@ -73,17 +73,17 @@ wtf.app.ui.MarkPainter.MARK_COLORS_ = [
  * @type {number}
  * @const
  */
-wtf.app.ui.MarkPainter.HEIGHT = 16;
+wtf.app.MarkPainter.HEIGHT = 16;
 
 
 /**
  * @override
  */
-wtf.app.ui.MarkPainter.prototype.layoutInternal = function(
+wtf.app.MarkPainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   if (this.markList_.getCount()) {
-    newBounds.height = wtf.app.ui.MarkPainter.HEIGHT;
+    newBounds.height = wtf.app.MarkPainter.HEIGHT;
   } else {
     newBounds.height = 0;
   }
@@ -94,7 +94,7 @@ wtf.app.ui.MarkPainter.prototype.layoutInternal = function(
 /**
  * @override
  */
-wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
+wtf.app.MarkPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var palette = this.palette_;
 
@@ -166,7 +166,7 @@ wtf.app.ui.MarkPainter.prototype.repaintInternal = function(
 /**
  * @override
  */
-wtf.app.ui.MarkPainter.prototype.onClickInternal =
+wtf.app.MarkPainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
   var mark = this.hitTest_(x, y, bounds);
   if (mark) {
@@ -184,7 +184,7 @@ wtf.app.ui.MarkPainter.prototype.onClickInternal =
 /**
  * @override
  */
-wtf.app.ui.MarkPainter.prototype.getInfoStringInternal =
+wtf.app.MarkPainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
   var mark = this.hitTest_(x, y, bounds);
   if (mark) {
@@ -211,7 +211,7 @@ wtf.app.ui.MarkPainter.prototype.getInfoStringInternal =
  * @return {wtf.db.Mark} Mark or nothing.
  * @private
  */
-wtf.app.ui.MarkPainter.prototype.hitTest_ = function(
+wtf.app.MarkPainter.prototype.hitTest_ = function(
     x, y, bounds) {
   var time = wtf.math.remap(x,
       bounds.left, bounds.left + bounds.width,

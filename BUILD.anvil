@@ -113,7 +113,7 @@ closure_js_library(
     out='wtf_js',
     mode='DEPS',
     entry_points=[
-        'wtf.app.ui.exports',
+        'wtf.app.exports',
         'wtf.db.exports',
         'wtf.hud.exports',
         'wtf.remote.exports',
@@ -343,7 +343,7 @@ file_set(
         ] + WTF_UI_SRCS)
 
 WTF_UI_ENTRY_POINTS=[
-    'wtf.app.ui.exports',
+    'wtf.app.exports',
     'wtf.db.exports',
     'wtf.replay.graphics.exports',
     'wtf.replay.timeTravel.exports',
@@ -371,7 +371,7 @@ closure_js_library(
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
-        '--define=wtf.app.ui.exports.ENABLE_EXPORTS=true',
+        '--define=wtf.app.exports.ENABLE_EXPORTS=true',
         '--define=wtf.db.exports.ENABLE_EXPORTS=true',
         '--define=wtf.replay.graphics.exports.ENABLE_EXPORTS=true',
         '--define=wtf.replay.timeTravel.exports.ENABLE_EXPORTS=true',

@@ -11,11 +11,11 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.SplashDialog');
+goog.provide('wtf.app.SplashDialog');
 
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
-goog.require('wtf.app.ui.splashdialog');
+goog.require('wtf.app.splashdialog');
 goog.require('wtf.events');
 goog.require('wtf.events.Keyboard');
 goog.require('wtf.events.KeyboardScope');
@@ -33,7 +33,7 @@ goog.require('wtf.version');
  * @constructor
  * @extends {wtf.ui.Dialog}
  */
-wtf.app.ui.SplashDialog = function(parentElement, opt_dom) {
+wtf.app.SplashDialog = function(parentElement, opt_dom) {
   goog.base(this, {
     modal: true,
     clickToClose: false
@@ -62,15 +62,15 @@ wtf.app.ui.SplashDialog = function(parentElement, opt_dom) {
         }, false);
   }
 };
-goog.inherits(wtf.app.ui.SplashDialog, wtf.ui.Dialog);
+goog.inherits(wtf.app.SplashDialog, wtf.ui.Dialog);
 
 
 /**
  * @override
  */
-wtf.app.ui.SplashDialog.prototype.createDom = function(dom) {
+wtf.app.SplashDialog.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.splashdialog.control, {
+      wtf.app.splashdialog.control, {
         version: wtf.version.toString(),
         version_commit: wtf.version.getCommit(),
         system_key: wtf.events.Keyboard.SYSTEM_KEY,

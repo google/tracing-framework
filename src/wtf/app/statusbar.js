@@ -11,12 +11,12 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.Statusbar');
+goog.provide('wtf.app.Statusbar');
 
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
-goog.require('wtf.app.ui.statusbar');
+goog.require('wtf.app.statusbar');
 goog.require('wtf.db.Unit');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
@@ -29,17 +29,17 @@ goog.require('wtf.util');
 /**
  * Statusbar control.
  *
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {!Element} parentElement Element to display in.
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.Statusbar = function(documentView, parentElement) {
+wtf.app.Statusbar = function(documentView, parentElement) {
   goog.base(this, parentElement, documentView.getDom());
 
   /**
    * Parent document view.
-   * @type {!wtf.app.ui.DocumentView}
+   * @type {!wtf.app.DocumentView}
    * @private
    */
   this.documentView_ = documentView;
@@ -85,15 +85,15 @@ wtf.app.ui.Statusbar = function(documentView, parentElement) {
 
   this.update_();
 };
-goog.inherits(wtf.app.ui.Statusbar, wtf.ui.Control);
+goog.inherits(wtf.app.Statusbar, wtf.ui.Control);
 
 
 /**
  * @override
  */
-wtf.app.ui.Statusbar.prototype.createDom = function(dom) {
+wtf.app.Statusbar.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.statusbar.control, {
+      wtf.app.statusbar.control, {
         system_key: wtf.events.Keyboard.SYSTEM_KEY
       }, undefined, dom));
 };
@@ -103,7 +103,7 @@ wtf.app.ui.Statusbar.prototype.createDom = function(dom) {
  * Updates the statusbar when the database/selection/etc change.
  * @private
  */
-wtf.app.ui.Statusbar.prototype.update_ = function() {
+wtf.app.Statusbar.prototype.update_ = function() {
   var dom = this.getDom();
   var db = this.documentView_.getDatabase();
   var selection = this.documentView_.getSelection();

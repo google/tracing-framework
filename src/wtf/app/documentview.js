@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.DocumentView');
+goog.provide('wtf.app.DocumentView');
 
 goog.require('goog.asserts');
 goog.require('goog.events.EventType');
@@ -19,17 +19,17 @@ goog.require('goog.result');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
-goog.require('wtf.app.ui.AddonManager');
-goog.require('wtf.app.ui.EmptyTabPanel');
-goog.require('wtf.app.ui.HealthDialog');
-goog.require('wtf.app.ui.Selection');
-goog.require('wtf.app.ui.Statusbar');
-goog.require('wtf.app.ui.Tabbar');
-goog.require('wtf.app.ui.Toolbar');
-goog.require('wtf.app.ui.documentview');
-goog.require('wtf.app.ui.nav.Navbar');
-goog.require('wtf.app.ui.query.QueryPanel');
-goog.require('wtf.app.ui.tracks.TracksPanel');
+goog.require('wtf.app.AddonManager');
+goog.require('wtf.app.EmptyTabPanel');
+goog.require('wtf.app.HealthDialog');
+goog.require('wtf.app.Selection');
+goog.require('wtf.app.Statusbar');
+goog.require('wtf.app.Tabbar');
+goog.require('wtf.app.Toolbar');
+goog.require('wtf.app.documentview');
+goog.require('wtf.app.nav.Navbar');
+goog.require('wtf.app.query.QueryPanel');
+goog.require('wtf.app.tracks.TracksPanel');
 goog.require('wtf.db.BlobDataSourceInfo');
 goog.require('wtf.db.DriveDataSourceInfo');
 goog.require('wtf.db.HealthInfo');
@@ -58,7 +58,7 @@ goog.require('wtf.ui.Tooltip');
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
+wtf.app.DocumentView = function(parentElement, dom, doc) {
   goog.base(this, parentElement, dom);
 
   var db = doc.getDatabase();
@@ -87,10 +87,10 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   /**
    * Selection state tracker.
-   * @type {!wtf.app.ui.Selection}
+   * @type {!wtf.app.Selection}
    * @private
    */
-  this.selection_ = new wtf.app.ui.Selection(doc.getDatabase());
+  this.selection_ = new wtf.app.Selection(doc.getDatabase());
   this.registerDisposable(this.selection_);
 
   /**
@@ -109,46 +109,46 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
 
   /**
    * Toolbar.
-   * @type {!wtf.app.ui.Toolbar}
+   * @type {!wtf.app.Toolbar}
    * @private
    */
-  this.toolbar_ = new wtf.app.ui.Toolbar(this, this.getChildElement(
+  this.toolbar_ = new wtf.app.Toolbar(this, this.getChildElement(
       goog.getCssName('appUiDocumentViewToolbar')));
   this.registerDisposable(this.toolbar_);
 
   /**
    * Navigation bar.
-   * @type {!wtf.app.ui.nav.Navbar}
+   * @type {!wtf.app.nav.Navbar}
    * @private
    */
-  this.navbar_ = new wtf.app.ui.nav.Navbar(this, this.getChildElement(
+  this.navbar_ = new wtf.app.nav.Navbar(this, this.getChildElement(
       goog.getCssName('appUiDocumentViewInner')));
   this.registerDisposable(this.navbar_);
 
   /**
    * Tab bar.
-   * @type {!wtf.app.ui.Tabbar}
+   * @type {!wtf.app.Tabbar}
    * @private
    */
-  this.tabbar_ = new wtf.app.ui.Tabbar(this, this.getChildElement(
+  this.tabbar_ = new wtf.app.Tabbar(this, this.getChildElement(
       goog.getCssName('appUiDocumentViewInner')));
   this.registerDisposable(this.tabbar_);
 
   /**
    * Statusbar.
-   * @type {!wtf.app.ui.Statusbar}
+   * @type {!wtf.app.Statusbar}
    * @private
    */
-  this.statusbar_ = new wtf.app.ui.Statusbar(this, this.getChildElement(
+  this.statusbar_ = new wtf.app.Statusbar(this, this.getChildElement(
       goog.getCssName('appUiDocumentViewStatusbar')));
   this.registerDisposable(this.statusbar_);
 
   /**
    * Extension manager.
-   * @type {!wtf.app.ui.AddonManager}
+   * @type {!wtf.app.AddonManager}
    * @private
    */
-  this.extensionManager_ = new wtf.app.ui.AddonManager(this);
+  this.extensionManager_ = new wtf.app.AddonManager(this);
   this.registerDisposable(this.extensionManager_);
 
   // Relayout as required.
@@ -160,9 +160,9 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
       this.layout, this);
 
-  this.tabbar_.addPanel(new wtf.app.ui.tracks.TracksPanel(this));
-  this.tabbar_.addPanel(new wtf.app.ui.query.QueryPanel(this));
-  this.tabbar_.addPanel(new wtf.app.ui.EmptyTabPanel(
+  this.tabbar_.addPanel(new wtf.app.tracks.TracksPanel(this));
+  this.tabbar_.addPanel(new wtf.app.query.QueryPanel(this));
+  this.tabbar_.addPanel(new wtf.app.EmptyTabPanel(
       this, 'console', 'Console'));
 
   this.setupCommands_();
@@ -174,13 +174,13 @@ wtf.app.ui.DocumentView = function(parentElement, dom, doc) {
       wtf.events.EventType.INVALIDATED, this.databaseInvalidated_, this);
   this.databaseInvalidated_();
 };
-goog.inherits(wtf.app.ui.DocumentView, wtf.ui.Control);
+goog.inherits(wtf.app.DocumentView, wtf.ui.Control);
 
 
 /**
  * @override
  */
-wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
+wtf.app.DocumentView.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
   commandManager.unregisterCommand('save_local_trace');
   commandManager.unregisterCommand('save_drive_trace');
@@ -202,9 +202,9 @@ wtf.app.ui.DocumentView.prototype.disposeInternal = function() {
 /**
  * @override
  */
-wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
+wtf.app.DocumentView.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.ui.documentview.control, undefined, undefined, dom));
+      wtf.app.documentview.control, undefined, undefined, dom));
 };
 
 
@@ -212,7 +212,7 @@ wtf.app.ui.DocumentView.prototype.createDom = function(dom) {
  * Sets up global commands.
  * @private
  */
-wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
+wtf.app.DocumentView.prototype.setupCommands_ = function() {
   var db = this.getDatabase();
   var view = this.localView_;
   var selection = this.selection_;
@@ -228,7 +228,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
       'view_trace_health', function() {
         var body = this.getDom().getDocument().body;
         goog.asserts.assert(body);
-        new wtf.app.ui.HealthDialog(
+        new wtf.app.HealthDialog(
             db,
             this.healthInfo_,
             body,
@@ -308,7 +308,7 @@ wtf.app.ui.DocumentView.prototype.setupCommands_ = function() {
  * Sets up some simple keyboard shortcuts.
  * @private
  */
-wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
+wtf.app.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
   var db = this.getDatabase();
 
   var dom = this.getDom();
@@ -358,7 +358,7 @@ wtf.app.ui.DocumentView.prototype.setupKeyboardShortcuts_ = function() {
  * Gets the document this is a view of.
  * @return {!wtf.doc.Document} Document.
  */
-wtf.app.ui.DocumentView.prototype.getDocument = function() {
+wtf.app.DocumentView.prototype.getDocument = function() {
   return this.document_;
 };
 
@@ -367,7 +367,7 @@ wtf.app.ui.DocumentView.prototype.getDocument = function() {
  * Gets the database of the active document.
  * @return {!wtf.db.Database} Event database.
  */
-wtf.app.ui.DocumentView.prototype.getDatabase = function() {
+wtf.app.DocumentView.prototype.getDatabase = function() {
   return this.document_.getDatabase();
 };
 
@@ -376,16 +376,16 @@ wtf.app.ui.DocumentView.prototype.getDatabase = function() {
  * Gets the local view.
  * @return {!wtf.doc.View} Local view.
  */
-wtf.app.ui.DocumentView.prototype.getLocalView = function() {
+wtf.app.DocumentView.prototype.getLocalView = function() {
   return this.localView_;
 };
 
 
 /**
  * Gets the selection state object for the view.
- * @return {!wtf.app.ui.Selection} Selection state.
+ * @return {!wtf.app.Selection} Selection state.
  */
-wtf.app.ui.DocumentView.prototype.getSelection = function() {
+wtf.app.DocumentView.prototype.getSelection = function() {
   return this.selection_;
 };
 
@@ -394,16 +394,16 @@ wtf.app.ui.DocumentView.prototype.getSelection = function() {
  * Gets the database health information.
  * @return {!wtf.db.HealthInfo} Health information.
  */
-wtf.app.ui.DocumentView.prototype.getHealthInfo = function() {
+wtf.app.DocumentView.prototype.getHealthInfo = function() {
   return this.healthInfo_;
 };
 
 
 /**
  * Gets the tab bar.
- * @return {!wtf.app.ui.Tabbar} Tab bar.
+ * @return {!wtf.app.Tabbar} Tab bar.
  */
-wtf.app.ui.DocumentView.prototype.getTabbar = function() {
+wtf.app.DocumentView.prototype.getTabbar = function() {
   return this.tabbar_;
 };
 
@@ -412,7 +412,7 @@ wtf.app.ui.DocumentView.prototype.getTabbar = function() {
  * Updates health information on database change.
  * @private
  */
-wtf.app.ui.DocumentView.prototype.updateHealth_ = function() {
+wtf.app.DocumentView.prototype.updateHealth_ = function() {
   var db = this.getDatabase();
 
   // Get the stats table used for health info, but only if the database has
@@ -430,7 +430,7 @@ wtf.app.ui.DocumentView.prototype.updateHealth_ = function() {
  * Handles database invalidation.
  * @private
  */
-wtf.app.ui.DocumentView.prototype.databaseInvalidated_ = function() {
+wtf.app.DocumentView.prototype.databaseInvalidated_ = function() {
   var db = this.getDatabase();
   var firstEventTime = db.getFirstEventTime();
   var lastEventTime = db.getLastEventTime();
@@ -441,7 +441,7 @@ wtf.app.ui.DocumentView.prototype.databaseInvalidated_ = function() {
 /**
  * @override
  */
-wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
+wtf.app.DocumentView.prototype.layoutInternal = function() {
   // Update the tabbar with the latest size.
   var currentSize = goog.style.getSize(
       this.getChildElement(goog.getCssName('appUiDocumentViewInner')));
@@ -450,7 +450,7 @@ wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
 
   // Reset limits and keep the splitter above the fold when resizing the window.
   var navbarMinHeight = this.navbar_.getMinimumSize();
-  var navbarMaxHeight = wtf.app.ui.nav.Navbar.MAX_HEIGHT;
+  var navbarMaxHeight = wtf.app.nav.Navbar.MAX_HEIGHT;
   this.navbar_.setSplitterLimits(
       navbarMinHeight, Math.min(navbarMaxHeight, currentSize.height));
   if (this.navbar_.getSplitterSize() > currentSize.height - navbarMinHeight) {
@@ -467,7 +467,7 @@ wtf.app.ui.DocumentView.prototype.layoutInternal = function() {
  * Navigates to the given panel path.
  * @param {string} path Panel path.
  */
-wtf.app.ui.DocumentView.prototype.navigate = function(path) {
+wtf.app.DocumentView.prototype.navigate = function(path) {
   this.tabbar_.navigate(path);
 };
 
@@ -475,7 +475,7 @@ wtf.app.ui.DocumentView.prototype.navigate = function(path) {
 /**
  * Zooms the local view to fit the data.
  */
-wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
+wtf.app.DocumentView.prototype.zoomToFit = function() {
   var db = this.getDatabase();
   var firstEventTime = db.getFirstEventTime();
   var lastEventTime = db.getLastEventTime();
@@ -493,7 +493,7 @@ wtf.app.ui.DocumentView.prototype.zoomToFit = function() {
  * Saves the current trace document, if any.
  * @private
  */
-wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
+wtf.app.DocumentView.prototype.saveLocalTrace_ = function() {
   var doc = this.getDocument();
   var sources = doc.getDatabase().getSources();
   if (!sources.length) {
@@ -575,7 +575,7 @@ wtf.app.ui.DocumentView.prototype.saveLocalTrace_ = function() {
  * Saves the current trace document to Drive, if any.
  * @private
  */
-wtf.app.ui.DocumentView.prototype.saveDriveTrace_ = function() {
+wtf.app.DocumentView.prototype.saveDriveTrace_ = function() {
   if (!wtf.io.drive.isSupported()) {
     wtf.ui.ErrorDialog.show(
         'Drive support not enabled',

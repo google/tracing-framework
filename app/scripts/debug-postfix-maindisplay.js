@@ -14,8 +14,8 @@
 
 
 debugImportAndExecute([
-  'wtf.app.ui'
+  'wtf.app'
 ], function() {
-  wtf.app.ui.show({
+  wtf.app.show({
   });
 });

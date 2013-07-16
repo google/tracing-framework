@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.SelectionPainter');
+goog.provide('wtf.app.SelectionPainter');
 
 goog.require('goog.events');
 goog.require('goog.events.EventHandler');
@@ -26,17 +26,17 @@ goog.require('wtf.ui.TimePainter');
 /**
  * Paints a selection region and handles selection events.
  * @param {!HTMLCanvasElement} canvas Canvas element.
- * @param {!wtf.app.ui.Selection} selection Selection.
+ * @param {!wtf.app.Selection} selection Selection.
  * @param {!wtf.ui.zoom.Viewport} viewport Zooming viewport.
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.app.ui.SelectionPainter = function(canvas, selection, viewport) {
+wtf.app.SelectionPainter = function(canvas, selection, viewport) {
   goog.base(this, canvas);
 
   /**
    * Selection.
-   * @type {!wtf.app.ui.Selection}
+   * @type {!wtf.app.Selection}
    * @private
    */
   this.selection_ = selection;
@@ -89,13 +89,13 @@ wtf.app.ui.SelectionPainter = function(canvas, selection, viewport) {
     }
   });
 };
-goog.inherits(wtf.app.ui.SelectionPainter, wtf.ui.TimePainter);
+goog.inherits(wtf.app.SelectionPainter, wtf.ui.TimePainter);
 
 
 /**
  * @override
  */
-wtf.app.ui.SelectionPainter.prototype.repaintInternal = function(
+wtf.app.SelectionPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var width = bounds.width;
   var height = bounds.height;

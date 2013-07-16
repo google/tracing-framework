@@ -11,8 +11,8 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.EmptyTabPanel');
-goog.provide('wtf.app.ui.TabPanel');
+goog.provide('wtf.app.EmptyTabPanel');
+goog.provide('wtf.app.TabPanel');
 
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
@@ -24,13 +24,13 @@ goog.require('wtf.ui.Control');
 /**
  * Abstract view panel control.
  *
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {string} path Path used for navigation.
  * @param {string} name Panel name.
  * @constructor
  * @extends {wtf.ui.Control}
  */
-wtf.app.ui.TabPanel = function(documentView, path, name) {
+wtf.app.TabPanel = function(documentView, path, name) {
   var dom = documentView.getDom();
   var fragment = dom.getDocument().createDocumentFragment();
   var fragmentDiv = dom.createElement(goog.dom.TagName.DIV);
@@ -39,7 +39,7 @@ wtf.app.ui.TabPanel = function(documentView, path, name) {
 
   /**
    * Parent document view.
-   * @type {!wtf.app.ui.DocumentView}
+   * @type {!wtf.app.DocumentView}
    * @private
    */
   this.documentView_ = documentView;
@@ -67,14 +67,14 @@ wtf.app.ui.TabPanel = function(documentView, path, name) {
   this.visible_ = false;
   goog.style.setElementShown(this.getRootElement(), false);
 };
-goog.inherits(wtf.app.ui.TabPanel, wtf.ui.Control);
+goog.inherits(wtf.app.TabPanel, wtf.ui.Control);
 
 
 /**
  * Gets the parent document view.
- * @return {!wtf.app.ui.DocumentView} Parent document view.
+ * @return {!wtf.app.DocumentView} Parent document view.
  */
-wtf.app.ui.TabPanel.prototype.getDocumentView = function() {
+wtf.app.TabPanel.prototype.getDocumentView = function() {
   return this.documentView_;
 };
 
@@ -83,7 +83,7 @@ wtf.app.ui.TabPanel.prototype.getDocumentView = function() {
  * Gets the path of the panel used for navigation.
  * @return {string} Panel path.
  */
-wtf.app.ui.TabPanel.prototype.getPath = function() {
+wtf.app.TabPanel.prototype.getPath = function() {
   return this.path_;
 };
 
@@ -92,7 +92,7 @@ wtf.app.ui.TabPanel.prototype.getPath = function() {
  * Gets the name of the panel to display in the tab.
  * @return {string} Panel name.
  */
-wtf.app.ui.TabPanel.prototype.getName = function() {
+wtf.app.TabPanel.prototype.getName = function() {
   return this.name_;
 };
 
@@ -101,7 +101,7 @@ wtf.app.ui.TabPanel.prototype.getName = function() {
  * Gets a value indicating whether the panel is visible.
  * @return {boolean} True if the panel is visible.
  */
-wtf.app.ui.TabPanel.prototype.isVisible = function() {
+wtf.app.TabPanel.prototype.isVisible = function() {
   return this.visible_;
 };
 
@@ -110,7 +110,7 @@ wtf.app.ui.TabPanel.prototype.isVisible = function() {
  * Sets whether the panel is visible.
  * @param {boolean} value New visibility flag.
  */
-wtf.app.ui.TabPanel.prototype.setVisible = function(value) {
+wtf.app.TabPanel.prototype.setVisible = function(value) {
   this.visible_ = value;
 
   goog.style.setElementShown(this.getRootElement(), value);
@@ -122,28 +122,28 @@ wtf.app.ui.TabPanel.prototype.setVisible = function(value) {
  * @param {!Array.<string>} pathParts Panel path parts split by /, excluding
  *     the panel path identifier.
  */
-wtf.app.ui.TabPanel.prototype.navigate = goog.nullFunction;
+wtf.app.TabPanel.prototype.navigate = goog.nullFunction;
 
 
 
 /**
  * A dummy empty panel.
- * @param {!wtf.app.ui.DocumentView} documentView Parent document view.
+ * @param {!wtf.app.DocumentView} documentView Parent document view.
  * @param {string} path Path used for navigation.
  * @param {string} name Panel name.
  * @constructor
- * @extends {wtf.app.ui.TabPanel}
+ * @extends {wtf.app.TabPanel}
  */
-wtf.app.ui.EmptyTabPanel = function(documentView, path, name) {
+wtf.app.EmptyTabPanel = function(documentView, path, name) {
   goog.base(this, documentView, path, name);
 };
-goog.inherits(wtf.app.ui.EmptyTabPanel, wtf.app.ui.TabPanel);
+goog.inherits(wtf.app.EmptyTabPanel, wtf.app.TabPanel);
 
 
 /**
  * @override
  */
-wtf.app.ui.EmptyTabPanel.prototype.createDom = function(dom) {
+wtf.app.EmptyTabPanel.prototype.createDom = function(dom) {
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('appUiTabPanel'));
   dom.setTextContent(el, 'TODO');

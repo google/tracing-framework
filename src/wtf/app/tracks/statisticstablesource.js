@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.tracks.StatisticsTableSource');
+goog.provide('wtf.app.tracks.StatisticsTableSource');
 
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.InstanceEventDataEntry');
@@ -30,7 +30,7 @@ goog.require('wtf.ui.VirtualTableSource');
  * @constructor
  * @extends {wtf.ui.VirtualTableSource}
  */
-wtf.app.ui.tracks.StatisticsTableSource = function() {
+wtf.app.tracks.StatisticsTableSource = function() {
   goog.base(this);
 
   /**
@@ -58,14 +58,14 @@ wtf.app.ui.tracks.StatisticsTableSource = function() {
   this.units_ = wtf.db.Unit.TIME_MILLISECONDS;
 };
 goog.inherits(
-    wtf.app.ui.tracks.StatisticsTableSource, wtf.ui.VirtualTableSource);
+    wtf.app.tracks.StatisticsTableSource, wtf.ui.VirtualTableSource);
 
 
 /**
  * Sets the display units.
  * @param {wtf.db.Unit} value Display units.
  */
-wtf.app.ui.tracks.StatisticsTableSource.prototype.setUnits = function(value) {
+wtf.app.tracks.StatisticsTableSource.prototype.setUnits = function(value) {
   this.units_ = value;
 };
 
@@ -75,7 +75,7 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.setUnits = function(value) {
  * @param {!wtf.db.EventStatistics.Table} table Event statistics table.
  * @param {wtf.db.SortMode} sortMode Table sort mode.
  */
-wtf.app.ui.tracks.StatisticsTableSource.prototype.update = function(
+wtf.app.tracks.StatisticsTableSource.prototype.update = function(
     table, sortMode) {
   this.sortMode_ = sortMode;
 
@@ -99,7 +99,7 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.update = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.StatisticsTableSource.prototype.paintRowRange = function(
+wtf.app.tracks.StatisticsTableSource.prototype.paintRowRange = function(
     ctx, bounds, scrollBounds, rowOffset, rowHeight, first, last) {
   ctx.font = '11px monospace';
   var charWidth = ctx.measureText('0').width;
@@ -191,7 +191,7 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.paintRowRange = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.StatisticsTableSource.prototype.onClick = function(
+wtf.app.tracks.StatisticsTableSource.prototype.onClick = function(
     row, x, modifiers, bounds) {
   var entry = this.rows_[row];
   if (!entry) {
@@ -210,7 +210,7 @@ wtf.app.ui.tracks.StatisticsTableSource.prototype.onClick = function(
 /**
  * @override
  */
-wtf.app.ui.tracks.StatisticsTableSource.prototype.getInfoString = function(
+wtf.app.tracks.StatisticsTableSource.prototype.getInfoString = function(
     row, x, bounds) {
   var entry = this.rows_[row];
   if (!entry) {

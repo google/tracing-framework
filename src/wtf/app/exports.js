@@ -12,13 +12,13 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.exports');
+goog.provide('wtf.app.exports');
 
 /** @suppress {extraRequire} */
 goog.require('goog.events.EventWrapper');
 /** @suppress {extraRequire} */
 goog.require('goog.vec.Vec3');
-goog.require('wtf.app.ui');
+goog.require('wtf.app');
 
 
 /**
@@ -29,12 +29,12 @@ goog.require('wtf.app.ui');
  * including this code with it enabled in Closurized javascript then you'll
  * prevent renaming.
  */
-wtf.app.ui.exports.ENABLE_EXPORTS = false;
+wtf.app.exports.ENABLE_EXPORTS = false;
 
 
-if (wtf.app.ui.exports.ENABLE_EXPORTS) {
-  // wtf.app.ui controls
+if (wtf.app.exports.ENABLE_EXPORTS) {
+  // wtf.app controls
   goog.exportSymbol(
-      'wtf.app.ui.show',
-      wtf.app.ui.show);
+      'wtf.app.show',
+      wtf.app.show);
 }

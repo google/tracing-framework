@@ -11,7 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.ui.nav.HeatmapPainter');
+goog.provide('wtf.app.nav.HeatmapPainter');
 
 goog.require('goog.array');
 goog.require('wtf.db.Database');
@@ -27,7 +27,7 @@ goog.require('wtf.ui.TimePainter');
  * @constructor
  * @extends {wtf.ui.TimePainter}
  */
-wtf.app.ui.nav.HeatmapPainter = function HeatmapPainter(canvas, db) {
+wtf.app.nav.HeatmapPainter = function HeatmapPainter(canvas, db) {
   goog.base(this, canvas);
 
   /**
@@ -41,30 +41,30 @@ wtf.app.ui.nav.HeatmapPainter = function HeatmapPainter(canvas, db) {
    * Frame event index.
    * Each event should indicate the start of a new frame.
    * Only valid once it has been created and the control readied.
-   * @type {!Array.<!wtf.app.ui.nav.HeatmapPainter.Bar_>}
+   * @type {!Array.<!wtf.app.nav.HeatmapPainter.Bar_>}
    * @private
    */
   this.bars_ = [];
 
   // TODO(benvanik): pull from profile
   var n = 0;
-  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'flows', [
+  this.bars_.push(new wtf.app.nav.HeatmapPainter.Bar_(this, db, 'flows', [
     'wtf.flow#branch'
-  ], wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n++]));
-  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'GCs', [
+  ], wtf.app.nav.HeatmapPainter.BAR_COLORS_[n++]));
+  this.bars_.push(new wtf.app.nav.HeatmapPainter.Bar_(this, db, 'GCs', [
     'javascript#gc'
-  ], wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n++]));
-  this.bars_.push(new wtf.app.ui.nav.HeatmapPainter.Bar_(this, db, 'compiles', [
+  ], wtf.app.nav.HeatmapPainter.BAR_COLORS_[n++]));
+  this.bars_.push(new wtf.app.nav.HeatmapPainter.Bar_(this, db, 'compiles', [
     'javascript#evalscript'
-  ], wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_[n++]));
+  ], wtf.app.nav.HeatmapPainter.BAR_COLORS_[n++]));
 };
-goog.inherits(wtf.app.ui.nav.HeatmapPainter, wtf.ui.TimePainter);
+goog.inherits(wtf.app.nav.HeatmapPainter, wtf.ui.TimePainter);
 
 
 /**
  * @override
  */
-wtf.app.ui.nav.HeatmapPainter.prototype.layoutInternal = function(
+wtf.app.nav.HeatmapPainter.prototype.layoutInternal = function(
     availableBounds) {
   var newBounds = availableBounds.clone();
   return newBounds;
@@ -74,7 +74,7 @@ wtf.app.ui.nav.HeatmapPainter.prototype.layoutInternal = function(
 /**
  * @override
  */
-wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
+wtf.app.nav.HeatmapPainter.prototype.repaintInternal = function(
     ctx, bounds) {
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
@@ -117,7 +117,7 @@ wtf.app.ui.nav.HeatmapPainter.prototype.repaintInternal = function(
  * @const
  * @private
  */
-wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_ = [
+wtf.app.nav.HeatmapPainter.BAR_COLORS_ = [
   // TODO(benvanik): prettier colors - these are from chrome://tracing
   'rgb(49,130,189)',
   'rgb(117,107,177)',
@@ -139,7 +139,7 @@ wtf.app.ui.nav.HeatmapPainter.BAR_COLORS_ = [
  * @constructor
  * @private
  */
-wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes,
+wtf.app.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes,
     color) {
   /**
    * Parent painter.
@@ -204,7 +204,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_ = function(painter, db, name, eventTypes,
  * @param {!wtf.db.Zone} zone Zone.
  * @private
  */
-wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.addZoneIndex_ = function(zone) {
+wtf.app.nav.HeatmapPainter.Bar_.prototype.addZoneIndex_ = function(zone) {
   this.indices_.push(zone.getSharedIndex(this.eventTypes_));
 };
 
@@ -218,7 +218,7 @@ wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.addZoneIndex_ = function(zone) {
  * @param {number} timeLeft Left-most time.
  * @param {number} timeRight Right-most time.
  */
-wtf.app.ui.nav.HeatmapPainter.Bar_.prototype.draw = function(
+wtf.app.nav.HeatmapPainter.Bar_.prototype.draw = function(
     ctx, bounds, y, h, timeLeft, timeRight) {
   // We use a bucket size that is an integral power of 2 in ms. So .5ms, 1ms,
   // 8ms, etc. We choose the power of 2 such that the screen size width of a
