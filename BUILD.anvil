@@ -42,7 +42,7 @@ closure_soy_library(
     compiler_jar=SOY_COMPILER_JAR)
 closure_soy_library(
     name='wtf_app_soy_js',
-    srcs=glob('src/wtf/app/ui/**/*.soy'),
+    srcs=glob('src/wtf/app/**/*.soy'),
     deps=':wtf_ui_soy_js',
     compiler_jar=SOY_COMPILER_JAR)
 closure_soy_library(
@@ -380,12 +380,12 @@ closure_js_library(
 
 less_css_library(
     name='wtf_ui_styles_debug',
-    srcs=['src/wtf/app/ui/ui.less', ':all_less'],
+    srcs=['src/wtf/app/app.less', ':all_less'],
     include_paths=['src',],
     compiler_flags=[])
 less_css_library(
     name='wtf_ui_styles_release',
-    srcs=['src/wtf/app/ui/ui.less', ':all_less'],
+    srcs=['src/wtf/app/app.less', ':all_less'],
     include_paths=['src',],
     compiler_flags=['--compress'])
 
