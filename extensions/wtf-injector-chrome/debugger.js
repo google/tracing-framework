@@ -188,10 +188,17 @@ var Debugger = function(tabId, pageOptions) {
   Debugger.dispatchTable_.register(this.tabId_, this);
 
   // Attach to the target tab.
-  chrome.debugger.attach(this.debugee_, '1.0', (function() {
-    this.attached_ = true;
-    this.beginListening_();
-  }).bind(this));
+  try {
+    chrome.debugger.attach(this.debugee_, '1.0', (function() {
+      this.attached_ = true;
+      this.beginListening_();
+    }).bind(this));
+  } catch (e) {
+    // This is likely an exception saying the debugger is already attached,
+    // as Chrome has started throwing this in some versions. There's seriously
+    // like 10 different ways they report errors like this and it's different
+    // in every version. Sigh.
+  }
 };
 
 
