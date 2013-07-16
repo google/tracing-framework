@@ -113,7 +113,6 @@ closure_js_library(
     out='wtf_js',
     mode='DEPS',
     entry_points=[
-        'wtf.app.background.exports',
         'wtf.app.ui.exports',
         'wtf.db.exports',
         'wtf.hud.exports',
@@ -344,7 +343,6 @@ file_set(
         ] + WTF_UI_SRCS)
 
 WTF_UI_ENTRY_POINTS=[
-    'wtf.app.background.exports',
     'wtf.app.ui.exports',
     'wtf.db.exports',
     'wtf.replay.graphics.exports',
@@ -373,7 +371,6 @@ closure_js_library(
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
-        '--define=wtf.app.background.exports.ENABLE_EXPORTS=true',
         '--define=wtf.app.ui.exports.ENABLE_EXPORTS=true',
         '--define=wtf.db.exports.ENABLE_EXPORTS=true',
         '--define=wtf.replay.graphics.exports.ENABLE_EXPORTS=true',
@@ -503,19 +500,12 @@ file_set(
         ])
 
 file_set(
-    name='app',
-    srcs=[
-        'app:wtf-chrome-app',
-        ])
-
-file_set(
     name='release',
     srcs=[
         ':deps',
         ':wtf_trace_web_release',
         ':wtf_node_release',
         'app:release',
-        'app:wtf-chrome-app',
         ':wtf-trace-web-api',
         ':injector',
         ],

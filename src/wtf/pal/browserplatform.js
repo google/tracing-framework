@@ -105,21 +105,3 @@ wtf.pal.BrowserPlatform.prototype.downloadBlob_ = function(filename, blob) {
       false, false, false, false, 0, null);
   a.dispatchEvent(e);
 };
-
-
-/**
- * @override
- */
-wtf.pal.BrowserPlatform.prototype.getNetworkInterfaces = function(
-    callback, opt_scope) {
-  throw new Error();
-};
-
-
-/**
- * @override
- */
-wtf.pal.BrowserPlatform.prototype.createListenSocket =
-    function(port, opt_hostname) {
-  throw new Error();
-};
