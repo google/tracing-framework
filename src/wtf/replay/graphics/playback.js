@@ -55,6 +55,13 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.steps_ = this.constructStepsList_(eventList, frameList);
 
   /**
+   * Set of event type IDs of draw calls.
+   * @type {!Object.<number, boolean>}
+   * @private
+   */
+  this.drawCallIds_ = this.getDrawCallIds_();
+
+  /**
    * The index of the step that is about to be executed.
    * @type {number}
    * @private
@@ -195,6 +202,11 @@ wtf.replay.graphics.Playback.EventType = {
   STEP_CHANGED: goog.events.getUniqueId('step_changed'),
 
   /**
+   * The event within the current step changed.
+   */
+  SUB_STEP_EVENT_CHANGED: goog.events.getUniqueId('sub_step_event_changed'),
+
+  /**
    * A backwards seek was performed.
    */
   BACKWARDS_SEEK: goog.events.getUniqueId('backwards_seek'),
@@ -231,6 +243,31 @@ wtf.replay.graphics.Playback.prototype.disposeInternal = function() {
   }
   this.clearWebGLObjects_();
   goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * Gets the set of draw call event IDs.
+ * @return {!Object.<number, boolean>} A set of draw call event IDs.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.getDrawCallIds_ = function() {
+  var namesOfDrawEvents = [
+    'WebGLRenderingContext#clear',
+    'WebGLRenderingContext#drawArrays',
+    'WebGLRenderingContext#drawElements',
+    'WebGLRenderingContext#finish',
+    'WebGLRenderingContext#flush'
+  ];
+  var drawCallIds = {};
+  var eventList = this.eventList_;
+  for (var i = 0; i < namesOfDrawEvents.length; ++i) {
+    var eventId = eventList.getEventTypeId(namesOfDrawEvents[i]);
+    if (eventId >= 0) {
+      drawCallIds[eventId] = true;
+    }
+  }
+  return drawCallIds;
 };
 
 
@@ -620,13 +657,6 @@ wtf.replay.graphics.Playback.prototype.isPlaying = function() {
  * @private
  */
 wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
-  // Stop if we finished playing, paused, or a new play has occurred.
-  if (this.currentStepIndex_ >= this.steps_.length || !this.playing_) {
-    // Done playing.
-    this.playing_ = false;
-    this.emitEvent(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED);
-    return;
-  }
 
   // If currently within a step, finish the step first.
   if (this.subStepId_ !== null) {
@@ -640,6 +670,14 @@ wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
       it.next();
     }
     ++this.currentStepIndex_;
+  }
+
+  // Stop if we finished playing, paused, or a new play has occurred.
+  if (this.currentStepIndex_ >= this.steps_.length || !this.playing_) {
+    // Done playing.
+    this.playing_ = false;
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED);
+    return;
   }
 
   var stepToPlayFrom = this.steps_[this.currentStepIndex_];
@@ -696,14 +734,27 @@ wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventIndex) {
 
   // Compare event indices to determine which event came first.
   var currentIndex = currentStep.getStartEventId();
+  var startIndex;
   if (currentIndex >= targetEventIndex) {
     // We are seeking to a previous step, so reset first.
     this.setToInitialState_();
-    currentStep = this.getCurrentStep();
+    startIndex = this.getCurrentStep().getEventIterator().getIndex();
+  } else {
+    // We are seeking to a later step, so finish this one first.
+    var subStepId = this.subStepId_;
+    if (subStepId !== null) {
+      var it = currentStep.getEventIterator(true);
+      for (it.seek(subStepId + 1); !it.done(); it.next()) {
+        this.realizeEvent_(it);
+      }
+      startIndex = currentStep.getEndEventId() + 1;
+    } else {
+      startIndex = currentStep.getEventIterator().getIndex();
+    }
   }
 
   var currentEvent = this.eventList_.beginEventRange(
-      currentStep.getEventIterator().getIndex(), targetEventIndex);
+      startIndex, targetEventIndex);
 
   // The target event must come after the current event.
   while (!currentEvent.done()) {
@@ -778,6 +829,8 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
   }
 
   this.subStepId_ = index;
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
 };
 
 
@@ -788,6 +841,42 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
  */
 wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
   return this.subStepId_;
+};
+
+
+/**
+ * Seeks to the next draw call within the current step. If no draw call left,
+ * finishes running the step.
+ */
+wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
+  var currentStep = this.getCurrentStep();
+  if (!currentStep) {
+    throw new Error('Seek to next draw call attempted with no current step.');
+  }
+
+  var it = currentStep.getEventIterator(true);
+  var eventJustFinished = this.subStepId_;
+  if (eventJustFinished === null) {
+    eventJustFinished = -1;
+  }
+
+  // Keep calling events in the step until either the step is done or we
+  // encounter a draw call.
+  it.seek(eventJustFinished + 1);
+  while (!it.done()) {
+    this.realizeEvent_(it);
+    if (this.drawCallIds_[it.getTypeId()]) {
+      this.subStepId_ = it.getIndex();
+      this.emitEvent(
+          wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
+      return;
+    }
+    it.next();
+  }
+
+  this.subStepId_ = it.getIndex() - 1;
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
 };
 
 
