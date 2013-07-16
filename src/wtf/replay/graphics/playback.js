@@ -266,11 +266,11 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
 
   // Get the IDs for start/end frame events if those IDs exist.
   var frameStartEventId =
-      this.getEventTypeId_(eventList, 'wtf.timing#frameStart');
+      eventList.getEventTypeId('wtf.timing#frameStart');
   var frameEndEventId =
-      this.getEventTypeId_(eventList, 'wtf.timing#frameEnd');
+      eventList.getEventTypeId('wtf.timing#frameEnd');
   var contextCreatedEventId =
-      this.getEventTypeId_(eventList, 'wtf.webgl#createContext');
+      eventList.getEventTypeId('wtf.webgl#createContext');
 
   var it = eventList.begin();
   var currentStartId = it.getId();
@@ -314,7 +314,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       it.next();
     } else {
       currentEndId = it.getId();
-      noEventsForPreviousStep = false; // This step has at least 1 event.
+
+      // This step has at least 1 event.
+      noEventsForPreviousStep = false;
       it.next();
     }
   }
@@ -325,21 +327,6 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
         eventList, currentStartId, currentEndId, null));
   }
   return steps;
-};
-
-
-/**
- * Gets the ID of an event type or -1 if the event type never surfaces in the
- * desired event list.
- * @param {!wtf.db.EventList} eventList Event list.
- * @param {string} eventName The name of the event type.
- * @return {number} The ID of the event type or -1 if the event never appears.
- * @private
- */
-wtf.replay.graphics.Playback.prototype.getEventTypeId_ = function(
-    eventList, eventName) {
-  var eventType = eventList.eventTypeTable.getByName(eventName);
-  return (eventType) ? eventType.id : -1;
 };
 
 
@@ -372,8 +359,7 @@ wtf.replay.graphics.Playback.prototype.checkExtensions_ = function() {
   var numUnsupportedExtensions = 0;
   var unsupportedExtensions = {};
   var getExtensionEventId =
-      this.getEventTypeId_(
-          this.eventList_, 'WebGLRenderingContext#getExtension');
+      this.eventList_.getEventTypeId('WebGLRenderingContext#getExtension');
 
   for (var it = this.eventList_.begin(); !it.done(); it.next()) {
     if (it.getTypeId() == getExtensionEventId) {
@@ -419,6 +405,7 @@ wtf.replay.graphics.Playback.prototype.reset = function() {
 wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
   this.clearWebGLObjects_();
   this.currentStepIndex_ = 0;
+  this.subStepId_ = null;
 };
 
 
@@ -497,11 +484,9 @@ wtf.replay.graphics.Playback.prototype.fetchResources_ = function() {
 
   // Get the type IDs of resource-loading events if they exist.
   var texImage2DEventId =
-      this.getEventTypeId_(
-          this.eventList_, 'WebGLRenderingContext#texImage2D');
+      this.eventList_.getEventTypeId('WebGLRenderingContext#texImage2D');
   var texSubImage2DEventId =
-      this.getEventTypeId_(
-          this.eventList_, 'WebGLRenderingContext#texSubImage2D');
+      this.eventList_.getEventTypeId('WebGLRenderingContext#texSubImage2D');
 
   // Add deferreds for loading each resource.
   var blobUrls = [];
@@ -645,10 +630,11 @@ wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
 
   // If currently within a step, finish the step first.
   if (this.subStepId_ !== null) {
-    var it = this.getCurrentStep().getEventIterator();
-    for (var i = 0; i <= this.subStepId_; ++i) {
-      it.next();
-    }
+    var it = this.getCurrentStep().getEventIterator(true);
+    it.seek(this.subStepId_);
+
+    // This event has already been realized, so skip it.
+    it.next();
     while (!it.done()) {
       this.realizeEvent_(it);
       it.next();
@@ -693,22 +679,34 @@ wtf.replay.graphics.Playback.prototype.pause = function() {
  * Seeks to an event. Does not realize the event yet. A backwards seek will
  * trigger a release of contexts and other WebGL objects. Does not update the
  * current Step. Pauses before seek if not paused already.
- * @param {number} targetEventId ID of the event to seek.
+ * @param {number} targetEventIndex Index of the event to seek.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventId) {
+wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventIndex) {
   if (this.isPlaying()) {
     this.pause();
   }
+
   var currentStep = this.getCurrentStep();
-  if (!currentStep || currentStep.getStartEventId() >= targetEventId) {
-    this.setToInitialState_(); // Backwards seek, so reset.
+  if (!currentStep) {
+    // We are at the end, so reset.
+    this.setToInitialState_();
     currentStep = this.getCurrentStep();
   }
+
+  // Compare event indices to determine which event came first.
+  var currentIndex = currentStep.getStartEventId();
+  if (currentIndex >= targetEventIndex) {
+    // We are seeking to a previous step, so reset first.
+    this.setToInitialState_();
+    currentStep = this.getCurrentStep();
+  }
+
   var currentEvent = this.eventList_.beginEventRange(
-      currentStep.getStartEventId(), this.eventList_.getCount() - 1);
-  // TODO(chizeng): Fix this comparison of event Ids.
-  while (currentEvent.getId() != targetEventId) {
+      currentStep.getEventIterator().getIndex(), targetEventIndex);
+
+  // The target event must come after the current event.
+  while (!currentEvent.done()) {
     this.realizeEvent_(currentEvent);
     currentEvent.next();
   }
@@ -728,15 +726,21 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
   if (!this.resourcesDoneLoading_) {
     throw new Error('Seek attempted before resources finished loading.');
   }
-  var previousStepIndex = this.currentStepIndex_;
+
+  var currentStepIndex = this.currentStepIndex_;
+  var currentStepChanges = index != currentStepIndex;
+  var isBackwardsSeek = index <= currentStepIndex;
+
   this.seekEvent_(this.steps_[index].getStartEventId());
   this.subStepId_ = null;
   this.currentStepIndex_ = index;
-  if (index != previousStepIndex) {
+
+  if (currentStepChanges) {
     this.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_CHANGED);
-    if (index < previousStepIndex) {
-      this.emitEvent(wtf.replay.graphics.Playback.EventType.BACKWARDS_SEEK);
-    }
+  }
+
+  if (isBackwardsSeek) {
+    this.emitEvent(wtf.replay.graphics.Playback.EventType.BACKWARDS_SEEK);
   }
 };
 
@@ -747,30 +751,32 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
  */
 wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
   var currentStep = this.getCurrentStep();
-  if (!currentStep) {
+  if (!currentStep || this.subStepId_ == index) {
     return;
   }
 
-  // If seeking backwards, go to the beginning of the step first.
-  var it = currentStep.getEventIterator();
-  var startEventId;
-  if (index < this.subStepId_) {
-    this.seekStep(this.getCurrentStepIndex());
-    startEventId = 0;
-    this.emitEvent(wtf.replay.graphics.Playback.EventType.BACKWARDS_SEEK);
-  } else {
-    startEventId = this.subStepId_ + 1;
+  var prevSubstepId = this.subStepId_;
+  var isBackwardsSeek = prevSubstepId !== null && index < prevSubstepId;
 
-    // Do not rely on the event ID, so manually plow forward a few events.
-    for (var i = 0; i < startEventId; ++i) {
-      it.next();
+  // If backwards seek, go to beginning of frame.
+  var it = currentStep.getEventIterator(true);
+  if (isBackwardsSeek) {
+    this.seekStep(this.currentStepIndex_);
+  } else {
+    // If not backwards seek, go to the point in a step at which we left off.
+    if (prevSubstepId !== null) {
+      ++prevSubstepId;
+    } else {
+      prevSubstepId = 0;
     }
+    it.seek(prevSubstepId);
   }
 
-  for (var i = startEventId; i <= index; ++i) {
+  while (it.getIndex() <= index) {
     this.realizeEvent_(it);
     it.next();
   }
+
   this.subStepId_ = index;
 };
 
@@ -782,22 +788,6 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
  */
 wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
   return this.subStepId_;
-};
-
-
-/**
- * Seeks to an event within the current step. The event ID is relative to the
- * event iterator returned by {@see getEventIterator} of the step. Can only
- * be called if the current step exists (We are not at the very end.).
- * @param {number} index [description].
- */
-wtf.replay.graphics.Playback.prototype.seekToEventInStep = function(index) {
-  var eventIterator = this.getCurrentStep().getEventIterator();
-  this.seekStep(this.currentStepIndex_);
-  while (eventIterator.getId() != index) {
-    this.realizeEvent_(eventIterator);
-    eventIterator.next();
-  }
 };
 
 
