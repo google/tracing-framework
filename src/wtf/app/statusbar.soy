@@ -1,0 +1,48 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Statusbar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.statusbar}
+
+
+/**
+ * Root control UI.
+ * @param system_key System command key string (like 'ctrl').
+ */
+{template .control}
+  <div class="{css appUiStatusbar}">
+    <div class="{css left}">
+      <div class="{css selectionCounts}"
+          title="selected events / total event count">
+      </div>
+      <div class="{css selectionTimes}"
+          title="selected time duration / total time duration">
+      </div>
+      <div class="{css selectionControls}">
+        <a class="{css selectAll}" title="Select all of time ({$system_key|noAutoescape}-a)">Select All</a>
+        &nbsp;/&nbsp;
+        <a class="{css selectVisible}" title="Select visible time ({$system_key|noAutoescape}-shift-a)">Visible</a>
+      </div>
+    </div>
+    <div class="{css right}">
+      <div class="{css health}">
+        <a class="{css viewHealthLink}">View Warnings</a>
+      </div>
+      <div class="{css timeTotals}"
+          title="user time / total time">
+      </div>
+      <div class="{css timeRange}"
+          title="trace time">
+      </div>
+    </div>
+  </div>
+{/template}

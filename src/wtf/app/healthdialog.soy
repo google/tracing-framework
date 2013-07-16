@@ -1,0 +1,58 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Health dialog DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.healthdialog}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css appUiHealthDialog}">
+    Tracing has overhead. <a href="https://github.com/google/tracing-framework/blob/master/docs/overhead.md" target="_blank">Learn more here</a>.<br/>
+    <br/>
+    Estimated overhead/scope: <span class="{css overheadPerScope}">(unavailable)</span><br/>
+    Total estimated overhead: <span class="{css totalOverhead}">(unavailable)</span><br/>
+    <br/>
+    <div class="{css listHeader}"><h2>Warnings:</h2></div>
+    <div class="{css scrollArea}">
+      <div class="{css list} {css warningsList}"></div>
+    </div>
+  </div>
+{/template}
+
+
+/**
+ * An individual warning.
+ * @param title Warning title.
+ * @param suggestion Suggested action.
+ * @param details Details like count/etc.
+ * @param link Link to more information.
+ */
+{template .warning}
+  <div class="{css warning}">
+    <div>
+      <strong>
+      {if $link}
+        <a href="{$link}" target="_blank" title="More information.">
+      {/if}
+      {$title}
+      {if $link}
+        </a>
+      {/if}
+      </strong>
+    </div>
+    <div>{$suggestion}</div>
+    <div class="{css kSecondaryText}">{$details}</div>
+  </div>
+{/template}

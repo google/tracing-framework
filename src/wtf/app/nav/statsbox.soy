@@ -1,0 +1,32 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Stats box DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.nav.statsbox}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css appUiNavbarStatsBox}">
+    <div class="{css title}" title="Histogram and statistics information."></div>
+    <div class="{css graphOuter}">
+      <canvas class="{css graphCanvas}" width="1" height="1"></canvas>
+      <div class="{css todo}">TODO</div>
+    </div>
+    <div class="{css numbersOuter}">
+      <table class="{css numbersTable}" cellspacing=0 cellpadding=0>
+      </table>
+    </div>
+  </div>
+{/template}

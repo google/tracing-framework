@@ -6,16 +6,8 @@
  */
 
 /**
- * @fileoverview Postfix for the main display page in debug mode.
- * This should be included last, after Closure base.js and deps.js.
- *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-
-debugImportAndExecute([
-  'wtf.app'
-], function() {
-  wtf.app.show({
-  });
-});
+@import "wtf/app/nav/navbar.less";
+@import "wtf/app/nav/statsbox.less";

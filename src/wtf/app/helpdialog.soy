@@ -1,0 +1,175 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Help dialog DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.helpdialog}
+
+
+/**
+ * Root control UI.
+ * @param version Version string ('2012.12.12-1').
+ * @param version_commit Version git commit SHA.
+ * @param system_key System command key string (like 'ctrl').
+ * @param is_chrome_extension Whether this is running in the Chrome extension.
+ */
+{template .control}
+  <div class="{css appUiHelpDialog}">
+    <div class="{css header}">
+      <div class="{css buttons}">
+        Version: <span class="{css allowSelect}">{$version}</span> / <a href="https://github.com/google/tracing-framework/tree/{$version_commit}" target="_blank">browse code</a> / <a href="https://github.com/google/tracing-framework/compare/{$version_commit}...master" target="_blank">view latest changes</a>
+      </div>
+      <h1 class="{css title}">
+        <a href="https://github.com/google/tracing-framework" target="_blank">Web Tracing Framework</a>
+      </h1>
+    </div>
+    <div class="{css content}">
+      <div class="{css info}">
+        For more information on how to use this tool (and interpret the data), check out the <a href="https://github.com/google/tracing-framework/blob/master/docs/quickstarts.md" target="_blank">Quickstart Guides</a>.
+      </div>
+      <div class="{css extension}">
+        {if $is_chrome_extension}
+        In the Chrome omnibox:<br/>
+        &nbsp;&nbsp;Type '<code>wtf[tab][space]</code>' to open the UI.<br/>
+        &nbsp;&nbsp;Type '<code>wtf[tab]http://....wtf-trace</code>' to open a trace.<br/>
+        {/if}
+      </div>
+      <div class="{css columnOuter}">
+        <div class="{css column}">
+          <div class="{css keyGroup}">
+            <div class="{css title}">Files</div>
+            <div class="{css rows}">
+              <div class="{css row}">
+                <div class="{css keys}">
+                  {$system_key|noAutoescape}-o
+                </div>
+                <div class="{css description}">
+                  open a new trace
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  {$system_key|noAutoescape}-s
+                </div>
+                <div class="{css description}">
+                  save current trace
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  ?
+                </div>
+                <div class="{css description}">
+                  show shortcuts
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="{css keyGroup}">
+            <div class="{css title}">Filtering</div>
+            <div class="{css rows}">
+              <div class="{css row}">
+                <div class="{css keys}">
+                  esc
+                </div>
+                <div class="{css description}">
+                  clear filter contents
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  {$system_key|noAutoescape}-f
+                </div>
+                <div class="{css description}">
+                  focus filter box
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  {$system_key|noAutoescape}-g
+                </div>
+                <div class="{css description}">
+                  zoom to frame #
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="{css columnOuter}">
+        <div class="{css column}">
+          <div class="{css keyGroup}">
+            <div class="{css title}">Navigation</div>
+            <div class="{css rows}">
+              <div class="{css row}">
+                <div class="{css keys}">
+                  arrow keys
+                </div>
+                <div class="{css description}">
+                  pan/zoom the viewport
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  (shift+)space
+                </div>
+                <div class="{css description}">
+                  pan one viewport
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  (shift+)z/x
+                </div>
+                <div class="{css description}">
+                  next/previous frame (with gaps)
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  home
+                </div>
+                <div class="{css description}">
+                  show all
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="{css keyGroup}">
+            <div class="{css title}">Selection</div>
+            <div class="{css rows}">
+              <div class="{css row}">
+                <div class="{css keys}">
+                  shift+drag
+                </div>
+                <div class="{css description}">
+                  select a region of the tracks
+                </div>
+              </div>
+              <div class="{css row}">
+                <div class="{css keys}">
+                  shift+click/<br/>
+                  {$system_key|noAutoescape}-a
+                </div>
+                <div class="{css description}">
+                  clear selection
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="{css footer}">
+      &copy;2013 Google, Inc. and the <a href="https://github.com/google/tracing-framework/blob/master/CONTRIBUTORS.md" target="_blank">contributors</a>. All Rights Reserved.
+    </div>
+  </div>
+{/template}

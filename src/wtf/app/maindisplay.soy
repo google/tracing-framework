@@ -6,16 +6,20 @@
  */
 
 /**
- * @fileoverview Postfix for the main display page in debug mode.
- * This should be included last, after Closure base.js and deps.js.
+ * Main display DOM.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
+{namespace wtf.app.maindisplay}
 
-debugImportAndExecute([
-  'wtf.app'
-], function() {
-  wtf.app.show({
-  });
-});
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css appUiMainDisplay}">
+    <div class="{css appUiMainDocumentView}">
+    </div>
+  </div>
+{/template}

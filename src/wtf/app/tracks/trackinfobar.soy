@@ -1,0 +1,47 @@
+/**
+ * Copyright 2012 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * TracksPanel info bar DOM.
+ *
+ * @author benvanik@google.com (Ben Vanik)
+ */
+
+{namespace wtf.app.tracks.trackinfobar}
+
+
+/**
+ * Root control UI.
+ */
+{template .control}
+  <div class="{css appUiTracksPanelInfo}">
+    <div class="{css header}">
+      <table cellspacing=0>
+        <tr>
+          <td class="{css searchBox}">
+            <!-- setup by code -->
+          </td>
+          <td>
+            <div class="{css kButtonBar} {css kButtonBarSmall} {css kRight}">
+              <a class="{css kButton} {css kMenuButton} {css sortButton}" title="Change sorting and filter options.">
+                <img alt="Sorting" src="icons/autofilter_filled.svg">
+                <span class="{css kButtonDisclosure}"></span>
+              </a>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="{css content}">
+      <div class="{css resultsOuter}">
+        <div class="{css results}">
+        </div>
+      </div>
+    </div>
+    <div class="{css splitter}"></div>
+  </div>
+{/template}
