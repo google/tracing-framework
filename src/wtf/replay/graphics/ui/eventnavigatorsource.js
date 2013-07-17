@@ -137,10 +137,10 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
   } else {
     // Go the beginning of the step.
     playback.seekStep(playback.getCurrentStepIndex());
+    this.invalidate();
   }
 
   // Redraw.
-  this.invalidate();
   return true;
 };
 
