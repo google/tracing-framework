@@ -111,6 +111,9 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
       this.playback_, this.getChildElement(
           goog.getCssName('graphicsReplayMainDisplay')), this.getDom());
   this.registerDisposable(this.canvasesArea_);
+
+  // Listens to updates from the toolbar.
+  this.listenToToolbarUpdates_();
 };
 goog.inherits(wtf.replay.graphics.ui.GraphicsPanel, wtf.ui.Control);
 
@@ -131,6 +134,20 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.replay.graphics.ui.graphicsPanel.controller,
       undefined, undefined, dom));
+};
+
+
+/**
+ * Listens to updates from the toolbar.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsPanel.prototype.listenToToolbarUpdates_ =
+    function() {
+  this.buttons_.addListener(
+      wtf.replay.graphics.ui.GraphicsToolbar.EventType.MANUAL_SUB_STEP_SEEK,
+      function() {
+        this.eventNavigator_.updateScrolling(this.playback_);
+      }, this);
 };
 
 

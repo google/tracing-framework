@@ -161,6 +161,17 @@ wtf.ui.VirtualTable.SCROLL_REPEAT_DELAY_ = 200;
 
 
 /**
+ * Constants denoting how the target row should be aligned after scrolling.
+ * @enum {number}
+ */
+wtf.ui.VirtualTable.Alignment = {
+  BOTTOM: 1,
+  MIDDLE: 2,
+  TOP: 3
+};
+
+
+/**
  * @override
  */
 wtf.ui.VirtualTable.prototype.createDom = function(dom) {
@@ -357,6 +368,33 @@ wtf.ui.VirtualTable.prototype.updateScrollBounds_ = function() {
 
 
 /**
+ * Scrolls the virtual table to a certain row.
+ * @param {number} rowTarget The 0-based index of the row to scroll to.
+ * @param {!wtf.ui.VirtualTable.Alignment} alignment How the target row is
+ *     aligned after scrolling.
+ */
+wtf.ui.VirtualTable.prototype.scrollToRow = function(rowTarget, alignment) {
+  var rowHeight = this.source_.getRowHeight();
+  var scrollAmount = this.scrollTop_;
+  var totalHeightOfRows = rowHeight * rowTarget;
+
+  switch (alignment) {
+    case wtf.ui.VirtualTable.Alignment.TOP:
+      scrollAmount = totalHeightOfRows;
+      break;
+    case wtf.ui.VirtualTable.Alignment.MIDDLE:
+      scrollAmount = totalHeightOfRows - this.canvasHeight_ / 2 + rowHeight;
+      break;
+    case wtf.ui.VirtualTable.Alignment.BOTTOM:
+      scrollAmount = totalHeightOfRows - this.canvasHeight_ + rowHeight;
+      break;
+  }
+
+  this.updateScrollThumb_(scrollAmount);
+};
+
+
+/**
  * Updates the scrollbar thumb position.
  * @param {number} scrollTop New scroll top.
  * @private
@@ -485,7 +523,6 @@ wtf.ui.VirtualTable.Painter_.prototype.onClickInternal = function(
   }
 
   // TODO(benvanik): handle selection logic based on modifiers?
-
   return source.onClick(row, x, modifiers, bounds);
 };
 

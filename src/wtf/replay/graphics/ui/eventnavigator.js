@@ -120,6 +120,9 @@ wtf.replay.graphics.ui.EventNavigator.prototype.listenToStepUpdates_ =
   playback.addListener(
       wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
       this.tableSource_.invalidate, this.tableSource_);
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED,
+      this.tableSource_.invalidate, this.tableSource_);
 };
 
 
@@ -133,4 +136,17 @@ wtf.replay.graphics.ui.EventNavigator.prototype.unListenToStepUpdates_ =
   playback.removeListener(
       wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
       this.tableSource_.invalidate, this.tableSource_);
+};
+
+
+/**
+ * Updates the scrolling of the virtual table.
+ * @param {!wtf.replay.graphics.Playback} playback The playback.
+ */
+wtf.replay.graphics.ui.EventNavigator.prototype.updateScrolling = function(
+    playback) {
+  var rowToScrollTo = playback.getSubStepEventId();
+  rowToScrollTo = (rowToScrollTo === null) ? 0 : rowToScrollTo + 1;
+  this.table_.scrollToRow(
+      rowToScrollTo, wtf.ui.VirtualTable.Alignment.MIDDLE);
 };
