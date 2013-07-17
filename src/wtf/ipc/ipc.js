@@ -16,7 +16,6 @@ goog.provide('wtf.ipc');
 
 goog.require('goog.asserts');
 goog.require('goog.events.EventType');
-goog.require('wtf.ipc.DomChannel');
 goog.require('wtf.ipc.MessageChannel');
 goog.require('wtf.timing');
 goog.require('wtf.trace.util');
@@ -106,16 +105,4 @@ wtf.ipc.listenForChildWindows = function(callback, opt_scope) {
   });
   window.addEventListener(
       goog.events.EventType.MESSAGE, boundHandler, true);
-};
-
-
-/**
- * Opens a new DOM channel on the given element.
- * @param {!(Document|Element)} el DOM element.
- * @param {string} eventType Event type name.
- * @return {wtf.ipc.DomChannel} DOM channel.
- */
-wtf.ipc.openDomChannel = function(el, eventType) {
-  // TODO(benvanik): feature detect CustomEvent/etc (no pre-IE9)
-  return new wtf.ipc.DomChannel(el, eventType);
 };

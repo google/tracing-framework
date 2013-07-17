@@ -22,6 +22,15 @@ goog.require('wtf');
 
 
 /**
+ * A raw equivalent of Date.now(), without tracing.
+ * @return {number} Value of Date.now.
+ */
+wtf.trace.util.dateNow = (function() {
+  return Date.now['raw'] || Date.now;
+})();
+
+
+/**
  * Attempts to get the WTF trace script URL.
  * @return {?string} Script URL, if found.
  */

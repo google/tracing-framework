@@ -23,6 +23,14 @@ goog.require('wtf.trace.util');
  * MessagePort-based IPC channel.
  * Enables efficient communication with another window.
  *
+ * If any other messages may be coming across the port this should be registered
+ * first to ensure that the messages are received and none of the other
+ * listeners are called.
+ *
+ * Note that avoid using the goog.messaging types built into Closure so that we
+ * can ensure we function correctly when instrumented and can work well with
+ * others who are sending messages across the port.
+ *
  * @param {!Window} recvPort Port that onmessage is fired on.
  * @param {!Window} sendPort Port that messages should be posted on.
  * @constructor
@@ -30,6 +38,8 @@ goog.require('wtf.trace.util');
  */
 wtf.ipc.MessageChannel = function(recvPort, sendPort) {
   goog.base(this);
+
+  var self = this;
 
   /**
    * Port that onmessage is fired on.
@@ -59,15 +69,15 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
 
   /**
    * Bound/ignored version of {@see handleMessage_}.
-   * @type {Function}
+   * @type {function ((Event|null)): (boolean|undefined)}
    * @private
    */
-  this.boundHandleMessage_ = wtf.trace.util.ignoreListener(
-      goog.bind(this.handleMessage_, this));
+  this.boundHandleMessage_ = wtf.trace.util.ignoreListener(function(e) {
+    self.handleMessage_(e);
+  });
 
-  this.recvPort_.addEventListener(goog.events.EventType.MESSAGE,
-      /** @type {function ((Event|null)): (boolean|undefined)} */ (
-          this.boundHandleMessage_), true);
+  this.recvPort_.addEventListener(
+      goog.events.EventType.MESSAGE, this.boundHandleMessage_, true);
 };
 goog.inherits(wtf.ipc.MessageChannel, wtf.ipc.Channel);
 
@@ -101,6 +111,25 @@ wtf.ipc.MessageChannel.PACKET_TOKEN = 'wtf_ipc_connect_token';
 
 
 /**
+ * Token value indicating who sent a message.
+ * @const
+ * @type {string}
+ * @private
+ */
+wtf.ipc.MessageChannel.SENDER_TOKEN_ = 'wtf_ipc_sender_token';
+
+
+/**
+ * A unique-enough ID used to differentiate this channel from others.
+ * @const
+ * @type {string}
+ * @private
+ */
+wtf.ipc.MessageChannel.LOCAL_ID_ =
+    String(Number(wtf.trace.util.dateNow() + 10000));
+
+
+/**
  * @override
  */
 wtf.ipc.MessageChannel.prototype.isConnected = function() {
@@ -125,7 +154,9 @@ wtf.ipc.MessageChannel.prototype.focus = function() {
  */
 wtf.ipc.MessageChannel.prototype.handleMessage_ = function(e) {
   var packet = /** @type {wtf.ipc.MessageChannel.Packet} */ (e.data);
-  if (!packet || !packet[wtf.ipc.MessageChannel.PACKET_TOKEN]) {
+  if (!packet || !packet[wtf.ipc.MessageChannel.PACKET_TOKEN] ||
+      packet[wtf.ipc.MessageChannel.SENDER_TOKEN_] ==
+          wtf.ipc.MessageChannel.LOCAL_ID_) {
     return;
   }
   e.stopPropagation();
@@ -149,21 +180,29 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(
     'data': data
   });
   packet[wtf.ipc.MessageChannel.PACKET_TOKEN] = true;
+  packet[wtf.ipc.MessageChannel.SENDER_TOKEN_] =
+      wtf.ipc.MessageChannel.LOCAL_ID_;
+
+  // Always call the uninstrumented version.
+  var postMessage =
+      this.sendPort_.postMessage['raw'] || this.sendPort_.postMessage;
 
   // Actual post.
-  if (this.hasTransferablePostMessage_ === undefined) {
+  if (this.hasTransferablePostMessage_ === undefined && opt_transferrables) {
+    // Attempt to send with transferrables, otherwise fallback and disable it
+    // for future attempts.
     try {
-      this.sendPort_.postMessage(packet, '*', opt_transferrables);
+      postMessage.call(this.sendPort_, packet, '*', opt_transferrables);
       // Data has been sent!
       this.hasTransferablePostMessage_ = true;
     } catch (e) {
       // Send failed - try without transferrables.
       this.hasTransferablePostMessage_ = false;
-      this.sendPort_.postMessage(packet, '*');
+      postMessage.call(this.sendPort_, packet, '*');
     }
   } else if (this.hasTransferablePostMessage_) {
-    this.sendPort_.postMessage(packet, '*', opt_transferrables);
+    postMessage.call(this.sendPort_, packet, '*', opt_transferrables);
   } else {
-    this.sendPort_.postMessage(packet, '*');
+    postMessage.call(this.sendPort_, packet, '*');
   }
 };
