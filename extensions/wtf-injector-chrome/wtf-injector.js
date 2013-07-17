@@ -218,17 +218,20 @@ function setupCommunications() {
   });
 
   // Setup a communication channel with the page via events.
-  var channelElement = document;
   var localId = String(Number(Date.now()));
-  channelElement.addEventListener('WtfContentScriptEvent', function(e) {
-    // The message here is from the wtf.ipc.DomChannel, and has some header
+  window.addEventListener('message', function(e) {
+    // The message here is from the wtf.ipc.MessageChannel, and has some header
     // data in it.
-    var packet = e.detail;
+    // Note that because we are also sending messages it's possible to get
+    // our own messages back, so filter that by localId.
+    var packet = e.data;
     if (!packet ||
         !packet['wtf_ipc_connect_token'] ||
         packet['wtf_ipc_sender_token'] == localId) {
       return;
     }
+
+    e.stopPropagation();
 
     // NOTE: Chrome ports do not support transferrables! Need to convert!
 
@@ -244,9 +247,7 @@ function setupCommunications() {
       'wtf_ipc_sender_token': localId,
       'data': data
     };
-    var e = channelElement.createEvent('CustomEvent');
-    e.initCustomEvent('WtfContentScriptEvent', false, false, packet);
-    channelElement.dispatchEvent(e);
+    window.postMessage(packet, '*');
   };
 };
 
