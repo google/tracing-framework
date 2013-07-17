@@ -33,6 +33,7 @@ goog.require('wtf.io');
 goog.require('wtf.io.Blob');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.ipc.MessageChannel');
 goog.require('wtf.trace');
 goog.require('wtf.trace.util');
 goog.require('wtf.ui.ResizableControl');
@@ -73,12 +74,10 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
    * DOM channel, if supported.
    * This can be used to listen to notifications from the extension or send
    * messages to the content script.
-   * @type {wtf.ipc.DomChannel}
+   * @type {!wtf.ipc.Channel}
    * @private
    */
-  this.extensionChannel_ = wtf.ipc.openDomChannel(
-      dom.getDocument(),
-      'WtfContentScriptEvent');
+  this.extensionChannel_ = new wtf.ipc.MessageChannel(window, window);
   this.registerDisposable(this.extensionChannel_);
 
   /**

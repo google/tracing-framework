@@ -191,6 +191,10 @@ wtf.trace.providers.ReplayProvider.prototype.injectDate_ = function() {
     // }
     return time;
   };
+
+  newDate['now']['raw'] = function() {
+    return originalDate['now']();
+  };
 };
 
 

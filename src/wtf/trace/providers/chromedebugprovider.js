@@ -20,8 +20,8 @@ goog.require('goog.style');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ZoneType');
-goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
+goog.require('wtf.ipc.MessageChannel');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.events');
@@ -122,18 +122,14 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
    * DOM channel, if supported.
    * This can be used to listen to notifications from the extension or send
    * messages to the content script.
-   * @type {wtf.ipc.DomChannel}
+   * @type {wtf.ipc.Channel}
    * @private
    */
-  this.extensionChannel_ = null;
-  if (goog.global.document) {
-    this.extensionChannel_ = wtf.ipc.openDomChannel(
-        goog.global.document,
-        'WtfContentScriptEvent');
-  }
+  this.extensionChannel_ = new wtf.ipc.MessageChannel(window, window);
   this.registerDisposable(this.extensionChannel_);
 
-  // Listen for messages from the extension.
+  // TODO(benvanik): check to see if the content script is active - if not, die.
+
   if (this.extensionChannel_) {
     this.extensionChannel_.addListener(
         wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this);
