@@ -17,5 +17,5 @@ debugImportAndExecute([
 ], function() {
   var parentElement = document.getElementById('graphicsReplayStagingArea');
   wtf.replay.graphics.setupStandalone(
-      '../private/traces/vectortown-fun.wtf-trace', parentElement);
+      '../private/traces/zoomInToGasworks.wtf-trace', parentElement);
 });

@@ -1275,7 +1275,7 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#linkProgram':
       // Do all the attribute bindings, then link.
-      var attribMap = args['attribs'];
+      var attribMap = args['attributes'];
       for (var attribName in attribMap) {
         currentContext.bindAttribLocation(
             /** @type {WebGLProgram} */ (objs[args['program']]),
