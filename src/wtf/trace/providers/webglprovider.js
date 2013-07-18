@@ -802,7 +802,35 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         return function linkProgram(program) {
           setCurrentContext(this);
           var scope = eventType(getHandle(program));
-          return wtf.trace.leaveScope(scope, fn.apply(this, arguments));
+          var linkProgramResults = fn.apply(this, arguments);
+
+          // Collect the attributes upon linking the program if applicable.
+          if (includeResources) {
+            var traceScope = wtf.trace.enterTracingScope();
+
+            // A mapping from attribute names to locations.
+            var currentAttributes = {};
+
+            var activeAttributesCount = this.getProgramParameter['raw'].call(
+                this, program, goog.webgl.ACTIVE_ATTRIBUTES);
+
+            for (var i = 0, j = 0; j < activeAttributesCount; ++i) {
+              var attributeInfo = this.getActiveAttrib['raw'].call(
+                  this, program, i);
+              if (attributeInfo) {
+                var attributeName = attributeInfo.name;
+                var attributeLocation = this.getAttribLocation['raw'].call(
+                    this, program, attributeName);
+                currentAttributes[attributeName] = attributeLocation;
+                ++j;
+              }
+            }
+
+            wtf.trace.leaveScope(traceScope);
+            wtf.trace.appendScopeData('attributes', currentAttributes);
+          }
+
+          return wtf.trace.leaveScope(scope, linkProgramResults);
         };
       });
   !onlyDraws && wrapMethod(ctxproto,
