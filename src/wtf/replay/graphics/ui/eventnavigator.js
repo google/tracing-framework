@@ -56,6 +56,13 @@ wtf.replay.graphics.ui.EventNavigator = function(
   this.registerDisposable(this.table_);
   this.table_.setSource(this.tableSource_);
 
+  /**
+   * The playback.
+   * @type {!wtf.replay.graphics.Playback}
+   * @private
+   */
+  this.playback_ = playback;
+
   // Listen to changes in step.
   this.listenToStepUpdates_(playback);
 
@@ -81,6 +88,7 @@ wtf.replay.graphics.ui.EventNavigator.prototype.createDom = function(dom) {
  */
 wtf.replay.graphics.ui.EventNavigator.prototype.layout = function() {
   this.table_.layout();
+  this.updateScrolling(this.playback_);
 };
 
 
