@@ -857,8 +857,9 @@ wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
 
   var it = currentStep.getEventIterator(true);
   var eventJustFinishedIndex = this.subStepId_;
-  if (eventJustFinishedIndex === null || eventJustFinishedIndex == 0) {
-    // No draw call can be before the start of the step or the first step.
+
+  if (eventJustFinishedIndex === null) {
+    // No draw call can be before the start of the step.
     return;
   }
 
