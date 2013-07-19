@@ -77,6 +77,14 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
       this.getChildElement(goog.getCssName('graphicsReplayForwardButton'));
 
   /**
+   * The previous draw call button.
+   * @type {!Element}
+   * @private
+   */
+  this.previousDrawCallButton_ = this.getChildElement(
+      goog.getCssName('graphicsReplayPreviousDrawCallButton'));
+
+  /**
    * The next draw call button.
    * @type {!Element}
    * @private
@@ -130,6 +138,8 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setInitialButtonStates_ =
   this.toggleButton(goog.getCssName('graphicsReplayResetButton'), true);
   this.toggleButton(goog.getCssName('graphicsReplayPlayButton'), true);
   this.toggleButton(goog.getCssName('graphicsReplayForwardButton'), true);
+  this.toggleButton(
+      goog.getCssName('graphicsReplayPreviousDrawCallButton'), true);
   this.toggleButton(goog.getCssName('graphicsReplayNextDrawCallButton'), true);
 };
 
@@ -157,6 +167,10 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToClickEvents_ =
       this.forwardButton_,
       goog.events.EventType.CLICK,
       this.forwardClickHandler_, false, this);
+  eh.listen(
+      this.previousDrawCallButton_,
+      goog.events.EventType.CLICK,
+      this.previousDrawCallClickHandler_, false, this);
   eh.listen(
       this.nextDrawCallButton_,
       goog.events.EventType.CLICK,
@@ -278,6 +292,18 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.forwardClickHandler_ =
         'Can\'t seek beyond last step index of ' + lastStepIndex + '.');
   }
   playback.seekStep(currentStepIndex + 1);
+};
+
+
+/**
+ * Handles clicks of the previous draw call button.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.previousDrawCallClickHandler_ =
+    function() {
+  this.playback_.seekToPreviousDrawCall();
+  this.emitEvent(
+      wtf.replay.graphics.ui.GraphicsToolbar.EventType.MANUAL_SUB_STEP_SEEK);
 };
 
 
