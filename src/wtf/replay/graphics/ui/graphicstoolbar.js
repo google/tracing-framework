@@ -191,14 +191,18 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
       function() {
         // There are still steps left.
         if (this.playback_.getCurrentStep()) {
+          var isPlaying = playback.isPlaying();
           this.toggleButton(
               goog.getCssName('graphicsReplayPlayButton'), true);
           this.toggleButton(
               goog.getCssName('graphicsReplayForwardButton'),
               playback.getCurrentStepIndex() < playback.getStepCount() - 1);
           this.toggleButton(
+              goog.getCssName('graphicsReplayPreviousDrawCallButton'),
+              !isPlaying);
+          this.toggleButton(
               goog.getCssName('graphicsReplayNextDrawCallButton'),
-              !playback.isPlaying());
+              !isPlaying);
 
           // If we are at the beginning, disable back button.
           this.toggleButton(goog.getCssName('graphicsReplayBackButton'),
@@ -210,6 +214,8 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
           this.toggleButton(
               goog.getCssName('graphicsReplayForwardButton'), false);
           this.toggleButton(
+              goog.getCssName('graphicsReplayPreviousDrawCallButton'), false);
+          this.toggleButton(
               goog.getCssName('graphicsReplayNextDrawCallButton'), false);
         }
       }, this);
@@ -218,6 +224,8 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
       function() {
         // No seeking to the next draw call while playing.
         this.toggleButton(
+            goog.getCssName('graphicsReplayPreviousDrawCallButton'), false);
+        this.toggleButton(
             goog.getCssName('graphicsReplayNextDrawCallButton'), false);
       }, this);
 
@@ -225,6 +233,8 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
       function() {
         dom.setTextContent(this.playButton_, 'Play');
         if (playback.getCurrentStep()) {
+          this.toggleButton(
+              goog.getCssName('graphicsReplayPreviousDrawCallButton'), true);
           this.toggleButton(
               goog.getCssName('graphicsReplayNextDrawCallButton'), true);
         } else {
