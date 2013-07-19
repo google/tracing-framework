@@ -845,6 +845,42 @@ wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
 
 
 /**
+ * Seeks to the previous draw call within the current step. If no draw call is
+ * before the current call within the step, seeks to the start of the step.
+ */
+wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
+  var currentStep = this.getCurrentStep();
+  if (!currentStep) {
+    throw new Error(
+        'Seek to previous draw call attempted with no current step.');
+  }
+
+  var it = currentStep.getEventIterator(true);
+  var eventJustFinishedIndex = this.subStepId_;
+  if (eventJustFinishedIndex === null || eventJustFinishedIndex == 0) {
+    // No draw call can be before the start of the step or the first step.
+    return;
+  }
+
+  --eventJustFinishedIndex;
+  while (eventJustFinishedIndex >= 0) {
+    it.seek(eventJustFinishedIndex);
+    if (this.drawCallIds_[it.getTypeId()]) {
+      // Found a previous draw call. Seek to it.
+      this.seekSubStepEvent(eventJustFinishedIndex);
+      return;
+    }
+    --eventJustFinishedIndex;
+  }
+
+  // No previous draw call found. Seek to the start of the step.
+  this.seekStep(this.getCurrentStepIndex());
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
+};
+
+
+/**
  * Seeks to the next draw call within the current step. If no draw call left,
  * finishes running the step.
  */
