@@ -107,7 +107,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
     // TODO(benvanik): icons to differentiate event types?
     if (!hideCall) {
-      if (((currentRow === null) && (!n)) || currentRow === n - 1) {
+      if (((currentRow == -1) && (!n)) || currentRow == n - 1) {
         ctx.fillStyle = highlightedColor;
       } else {
         ctx.fillStyle = n % 2 ? color1 : color2;
