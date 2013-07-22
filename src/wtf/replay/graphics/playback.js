@@ -301,6 +301,11 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
     return steps;
   }
 
+  // Get the set of IDs of events that should be displayed.
+  var visibleEventsRegex = /^((WebGLRenderingContext#)|(wtf.webgl#))/;
+  var displayedEventsIds =
+      this.eventList_.eventTypeTable.getSetMatching(visibleEventsRegex);
+
   // Get the IDs for start/end frame events if those IDs exist.
   var frameStartEventId =
       eventList.getEventTypeId('wtf.timing#frameStart');
@@ -308,13 +313,21 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       eventList.getEventTypeId('wtf.timing#frameEnd');
   var contextCreatedEventId =
       eventList.getEventTypeId('wtf.webgl#createContext');
+  var contextSetEventId =
+      eventList.getEventTypeId('wtf.webgl#setContext');
 
   var it = eventList.begin();
   var currentStartId = it.getId();
   var currentEndId = currentStartId;
   var currentFrame = (frameList.getCount()) ?
       frameList.getAllFrames()[0] : null;
-  var noEventsForPreviousStep = true; // Ensure no empty steps are made.
+
+  // Ensure no empty steps are made.
+  var noEventsForPreviousStep = true;
+
+  // Keep track of the context that is current at the beginning of each step.
+  var currentContext = -1;
+  var stepBeginContext = -1;
 
   // Keep track of the handles of contexts that are made.
   var contextsMade = {};
@@ -326,7 +339,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       if (!noEventsForPreviousStep) {
         var contexts = goog.object.clone(contextsMade);
         steps.push(new wtf.replay.graphics.Step(
-            eventList, currentStartId, currentEndId, null, contexts));
+            eventList, currentStartId, currentEndId, null, contexts,
+            displayedEventsIds, stepBeginContext));
+        stepBeginContext = currentContext;
         contextsMade = goog.object.clone(contextsMadeSoFar);
       }
       currentStartId = it.getId();
@@ -335,7 +350,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       // Include the end frame event in the step for drawing the frame.
       var contexts = goog.object.clone(contextsMade);
       steps.push(new wtf.replay.graphics.Step(
-          eventList, currentStartId, it.getId(), currentFrame, contexts));
+          eventList, currentStartId, it.getId(), currentFrame, contexts,
+          displayedEventsIds, stepBeginContext));
+      stepBeginContext = currentContext;
       contextsMade = goog.object.clone(contextsMadeSoFar);
       noEventsForPreviousStep = true;
       if (currentFrame) {
@@ -348,6 +365,10 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
     } else if (currentEventTypeId == contextCreatedEventId) {
       // A new context was made. Include it in the current step.
       contextsMadeSoFar[it.getArgument('handle')] = true;
+      currentContext = it.getArgument('handle');
+      it.next();
+    } else if (currentEventTypeId == contextSetEventId) {
+      currentContext = it.getArgument('handle');
       it.next();
     } else {
       currentEndId = it.getId();
@@ -361,7 +382,8 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   // Store any events still left if there are any.
   if (!noEventsForPreviousStep) {
     steps.push(new wtf.replay.graphics.Step(
-        eventList, currentStartId, currentEndId, null));
+        eventList, currentStartId, currentEndId, null, null,
+        displayedEventsIds, stepBeginContext));
   }
   return steps;
 };
