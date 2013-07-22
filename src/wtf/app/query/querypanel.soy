@@ -43,7 +43,7 @@
         Start typing to get a case-insensitive substring search.<br/>
         <table class="{css examples}">
           <tr>
-            <td class="{css code}">#gc</td>
+            <td width="400" class="{css code}">#gc</td>
             <td>find all GCs</td>
           </tr>
           <tr>
@@ -55,31 +55,38 @@
         Or, enter a regex:<br/>
         <table class="{css examples}">
           <tr>
-            <td class="{css code}">/^webgl/i</td>
+            <td width="400" class="{css code}">/^webgl/i</td>
             <td>all WebGL* events</td>
           </tr>
         </table>
         <br/>
-        NOTE: XPath support is disabled in this build but will be coming back shortly!
-        <!--If you're feeling adventurous, use XPath:<br/>
+        To filter things down even more, use argument queries:<br/>
         <table class="{css examples}">
           <tr>
-            <td class="{css code}">//javascript#gc[@totalTime>5]</td>
+            <td width="400" class="{css code}">#gc(@duration>5ms)</td>
             <td>all GCs that took longer than 5ms</td>
           </tr>
           <tr>
-            <td class="{css code}">sum(//javascript#gc/@totalTime)</td>
-            <td>total time spent in GC</td>
+            <td class="{css code}">/my*[sS]tuff/g(handle==2003, @ownduration>1ms)</td>
+            <td>slow events of certain types with their handle arg equal to 2003</td>
+          </tr>
+        </table>
+        <br/>
+        Built-in event query variables:
+        <table class="{css examples}">
+          <tr>
+            <td class="{css code}">@duration</td>
+            <td>total time spent in the scope (in milliseconds)</td>
           </tr>
           <tr>
-            <td class="{css code}">//XMLHttpRequest#send/@url</td>
-            <td>the URLs of all XHRs</td>
+            <td class="{css code}">@userduration</td>
+            <td>user time spent in the scope (in milliseconds)</td>
           </tr>
           <tr>
-            <td class="{css code}">//XMLHttpRequest#send/..</td>
-            <td>all scopes that called XHR send</td>
+            <td class="{css code}">@ownduration</td>
+            <td>time spent in the scope, excluding descendants (in milliseconds)</td>
           </tr>
-        </table>-->
+        </table>
         <br/>
         <br/>
         TODO: more help (link to docs, etc)<br/>
