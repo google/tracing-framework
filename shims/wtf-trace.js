@@ -414,9 +414,14 @@ WTF.trace.leaveScope = WTF.PRESENT ?
  * Appends a named argument of any type to the current scope.
  * The data added is keyed by name, and existing data with the same name will
  * be overwritten.
- * This is slow and should only be used for very infrequent appends.
- * Prefer instead to use a custom instance event with the
- * {@see WTF.data.EventFlag#APPEND_SCOPE_DATA} flag set.
+ *
+ * Repeated calls with the same name and value type will be optimized at
+ * runtime. To ensure predictable performance it's better to use a custom
+ * instance event with the {@see wtf.data.EventFlag#APPEND_SCOPE_DATA} flag set.
+ *
+ * But, in general, you should avoid using this if you can. Appending data
+ * involves additional overhead at runtime and in the file compared to just
+ * passing the arguments to the function.
  *
  * No, really, this JSON stringifies whatever is passed to it and will skew
  * your results. Don't use it.
@@ -435,7 +440,8 @@ WTF.trace.leaveScope = WTF.PRESENT ?
  * </code>
  *
  * @param {string} name Argument name. Must be ASCII.
- * @param {*} value Value. Will be JSON stringified.
+ * @param {*} value Value. Will be JSON stringified. If this is a number it
+ *      will be converted to an int32.
  * @param {number=} opt_time Time for the enter; omit to use the current time.
  */
 WTF.trace.appendScopeData = WTF.PRESENT ?
