@@ -19,6 +19,7 @@ goog.provide('wtf.trace.TimeRange');
 goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('wtf');
+goog.require('wtf.data.EventFlag');
 goog.require('wtf.io');
 goog.require('wtf.io.WriteTransport');
 goog.require('wtf.io.cff.BinaryStreamTarget');
@@ -32,6 +33,7 @@ goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Flow');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.TraceManager');
+goog.require('wtf.trace.events');
 goog.require('wtf.trace.eventtarget');
 goog.require('wtf.trace.sessions.NullSession');
 goog.require('wtf.trace.sessions.SnapshottingSession');
@@ -475,9 +477,14 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
  * Appends a named argument of any type to the current scope.
  * The data added is keyed by name, and existing data with the same name will
  * be overwritten.
- * This is slow and should only be used for very infrequent appends.
- * Prefer instead to use a custom instance event with the
- * {@see wtf.data.EventFlag#APPEND_SCOPE_DATA} flag set.
+ *
+ * Repeated calls with the same name and value type will be optimized at
+ * runtime. To ensure predictable performance it's better to use a custom
+ * instance event with the {@see wtf.data.EventFlag#APPEND_SCOPE_DATA} flag set.
+ *
+ * But, in general, you should avoid using this if you can. Appending data
+ * involves additional overhead at runtime and in the file compared to just
+ * passing the arguments to the function.
  *
  * No, really, this JSON stringifies whatever is passed to it and will skew
  * your results. Don't use it.
@@ -496,10 +503,67 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
  * </code>
  *
  * @param {string} name Argument name. Must be ASCII.
- * @param {*} value Value. Will be JSON stringified.
+ * @param {*} value Value. Will be JSON stringified. If this is a number it
+ *      will be converted to an int32.
  * @param {number=} opt_time Time for the event; omit to use the current time.
  */
-wtf.trace.appendScopeData = wtf.trace.BuiltinEvents.appendScopeData;
+wtf.trace.appendScopeData = function(name, value, opt_time) {
+  var typeName = 'any';
+  if (typeof value == 'number') {
+    // Force to a int32, for now. If this becomes a problem we can change it.
+    value |= 0;
+    typeName = 'int32';
+  } else if (typeof value == 'string') {
+    typeName = 'utf8';
+  }
+
+  // Lookup a cache entry for the name/type pair.
+  var key = name + '_' + typeName;
+  var cacheEntry = wtf.trace.appendScopeDataCache_[key];
+  if (!cacheEntry) {
+    cacheEntry = wtf.trace.appendScopeDataCache_[key] = {
+      count: 0,
+      emit: null
+    };
+  }
+
+  // Generate the function, if needed.
+  if (++cacheEntry.count == wtf.trace.APPEND_OPTIMIZATION_THRESHOLD_) {
+    goog.asserts.assert(!cacheEntry.emit);
+    cacheEntry.emit = wtf.trace.events.createInstance(
+        'wtf.scope#appendData_' + key + '(' + typeName + ' ' + name + ')',
+        wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.APPEND_SCOPE_DATA);
+  }
+
+  if (cacheEntry.emit) {
+    // Fast path through the emitted function.
+    cacheEntry.emit(value, opt_time);
+  } else {
+    // Slow path through the generic append scope data method.
+    wtf.trace.BuiltinEvents.appendScopeData(name, value, opt_time);
+  }
+};
+
+
+/**
+ * Required number of appendScopeData calls on a name/type pair before a
+ * custom event is generated for it.
+ * @type {number}
+ * @const
+ * @private
+ */
+wtf.trace.APPEND_OPTIMIZATION_THRESHOLD_ = 100;
+
+
+/**
+ * A cache of {@see wtf.trace.appendScopeData} event methods.
+ * This is managed by the appendScopeData method. It stashes objects that track
+ * the uses of append methods by name/type and once they hit a certain threshold
+ * creates the optimized recording functions.
+ * @type {!Object.<{count: number, emit: Function}>}
+ * @private
+ */
+wtf.trace.appendScopeDataCache_ = {};
 
 
 /**
