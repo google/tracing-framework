@@ -120,11 +120,11 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
 
   /**
    * The ID of the event (relative to the step iterator) within a step. This is
-   * the event that has just executed. null if no event in a step has executed.
-   * @type {?number}
+   * the event that has just executed. -1 if no event in a step has executed.
+   * @type {number}
    * @private
    */
-  this.subStepId_ = null;
+  this.subStepId_ = -1;
 
   /**
    * Handler for animation request.
@@ -442,7 +442,7 @@ wtf.replay.graphics.Playback.prototype.reset = function() {
 wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
   this.clearWebGLObjects_();
   this.currentStepIndex_ = 0;
-  this.subStepId_ = null;
+  this.subStepId_ = -1;
 };
 
 
@@ -659,7 +659,7 @@ wtf.replay.graphics.Playback.prototype.isPlaying = function() {
 wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
 
   // If currently within a step, finish the step first.
-  if (this.subStepId_ !== null) {
+  if (this.subStepId_ != -1) {
     var it = this.getCurrentStep().getEventIterator(true);
     it.seek(this.subStepId_);
 
@@ -683,7 +683,7 @@ wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
   var stepToPlayFrom = this.steps_[this.currentStepIndex_];
   var self = this;
   var handler = function() {
-    self.subStepId_ = null;
+    self.subStepId_ = -1;
     for (var it = stepToPlayFrom.getEventIterator(); !it.done(); it.next()) {
       self.realizeEvent_(it);
     }
@@ -742,7 +742,7 @@ wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventIndex) {
   } else {
     // We are seeking to a later step, so finish this one first.
     var subStepId = this.subStepId_;
-    if (subStepId !== null) {
+    if (subStepId != -1) {
       var it = currentStep.getEventIterator(true);
       for (it.seek(subStepId + 1); !it.done(); it.next()) {
         this.realizeEvent_(it);
@@ -783,7 +783,7 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
   var isBackwardsSeek = index <= currentStepIndex;
 
   this.seekEvent_(this.steps_[index].getStartEventId());
-  this.subStepId_ = null;
+  this.subStepId_ = -1;
   this.currentStepIndex_ = index;
 
   if (currentStepChanges) {
@@ -807,7 +807,7 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
   }
 
   var prevSubstepId = this.subStepId_;
-  var isBackwardsSeek = prevSubstepId !== null && index < prevSubstepId;
+  var isBackwardsSeek = prevSubstepId != -1 && index < prevSubstepId;
 
   // If backwards seek, go to beginning of frame.
   var it = currentStep.getEventIterator(true);
@@ -815,12 +815,7 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
     this.seekStep(this.currentStepIndex_);
   } else {
     // If not backwards seek, go to the point in a step at which we left off.
-    if (prevSubstepId !== null) {
-      ++prevSubstepId;
-    } else {
-      prevSubstepId = 0;
-    }
-    it.seek(prevSubstepId);
+    it.seek(prevSubstepId + 1);
   }
 
   while (it.getIndex() <= index) {
@@ -835,9 +830,10 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
 
 
 /**
- * Gets the 0-based index of the substep event ID.
- * @return {?number} The index of the substep event ID or null if it does not
- *     exist (It does not exist if we are no playing within a step.).
+ * Gets the 0-based index of the substep event ID or -1 if it does not exist.
+ * @return {number} The index of the substep event ID or -1 if it does not
+ *     exist (It does not exist if we are not playing within a step or if we
+ *     are at the very beginning of a step.).
  */
 wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
   return this.subStepId_;
@@ -858,7 +854,7 @@ wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
   var it = currentStep.getEventIterator(true);
   var eventJustFinishedIndex = this.subStepId_;
 
-  if (eventJustFinishedIndex === null) {
+  if (eventJustFinishedIndex == -1) {
     // No draw call can be before the start of the step.
     return;
   }
@@ -893,9 +889,6 @@ wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
 
   var it = currentStep.getEventIterator(true);
   var eventJustFinished = this.subStepId_;
-  if (eventJustFinished === null) {
-    eventJustFinished = -1;
-  }
 
   // Keep calling events in the step until either the step is done or we
   // encounter a draw call.
