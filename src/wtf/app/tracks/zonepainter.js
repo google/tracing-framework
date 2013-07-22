@@ -100,15 +100,6 @@ wtf.app.tracks.ZonePainter.prototype.repaintInternal = function(
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 
-  // Get a table of matching event types (if a filter is set).
-  // This is used by the draw routines to quickly see if an event is filtered.
-  var matchedEventTypes = null;
-  if (this.selection_.hasFilterSpecified()) {
-    var filter = this.selection_.getFilter();
-    matchedEventTypes = filter.getMatchedEventTypes(
-        this.zone_.getDatabase().getEventTypeTable());
-  }
-
   // Root time tracker.
   ctx.fillStyle = 'rgb(200,200,200)';
   ctx.fillRect(bounds.left, bounds.top, bounds.width, 1);
@@ -119,7 +110,7 @@ wtf.app.tracks.ZonePainter.prototype.repaintInternal = function(
 
   // Draw events first.
   var it = eventList.beginTimeRange(timeLeft, timeRight, true);
-  this.drawEvents_(it, bounds, timeLeft, timeRight, matchedEventTypes);
+  this.drawEvents_(it, bounds, timeLeft, timeRight);
 
   // Now blit the nicely rendered ranges onto the screen.
   var y = 1;
@@ -137,12 +128,24 @@ wtf.app.tracks.ZonePainter.prototype.repaintInternal = function(
  * @param {!goog.math.Rect} bounds Draw bounds.
  * @param {number} timeLeft Left-most visible time.
  * @param {number} timeRight Right-most visible time.
- * @param {Object.<number, boolean>} matchedEventTypes Filtered event types.
  * @private
  */
 wtf.app.tracks.ZonePainter.prototype.drawEvents_ = function(
-    it, bounds, timeLeft, timeRight, matchedEventTypes) {
+    it, bounds, timeLeft, timeRight) {
   var palette = this.palette_;
+
+  // Get a table of matching event types (if a filter is set).
+  // This is used by the draw loop to quickly see if an event is filtered.
+  var matchedEventTypes = null;
+  var argumentFilter = null;
+  if (this.selection_.hasFilterSpecified()) {
+    var filter = this.selection_.getFilter();
+    if (filter.getEventTypeFilter()) {
+      matchedEventTypes = filter.getMatchedEventTypes(
+          this.zone_.getDatabase().getEventTypeTable());
+    }
+    argumentFilter = filter.getArgumentFilter();
+  }
 
   var selectionStart = this.selection_.getTimeStart();
   var selectionEnd = this.selection_.getTimeEnd();
@@ -217,9 +220,17 @@ wtf.app.tracks.ZonePainter.prototype.drawEvents_ = function(
     if (enterTime >= selectionEnd || leaveTime <= selectionStart) {
       // Outside of range, deemphasize.
       alpha = 0.3;
-    } else if (matchedEventTypes) {
+    } else if (matchedEventTypes || argumentFilter) {
       // Overlaps range and we have a filter, test the event.
-      var selected = matchedEventTypes[it.getTypeId()];
+      var selected = true;
+      if (matchedEventTypes) {
+        selected = matchedEventTypes[it.getTypeId()];
+      }
+      if (selected && argumentFilter) {
+        // Since argument filtering is more expective than event type matching
+        // we try to avoid doing it unless required.
+        selected = argumentFilter(it);
+      }
       if (!selected) {
         alpha = 0.3;
       } else if (screenRight - screenLeft < 1) {

@@ -11,18 +11,14 @@
   "license": "BSD",
   "homepage": "https://google.github.io/tracing-framework",
   "bugs": "https://github.com/google/tracing-framework/issues",
-  "repository" : {
-    "type" : "git",
-    "url" : "http://github.com/google/tracing-framework.git"
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/google/tracing-framework.git"
   },
-
   "engines": {
     "node": ">=0.8.14"
   },
-
-  "scripts": {
-  },
-
+  "scripts": {},
   "dependencies": {
     "falafel": "0.1.4",
     "mkdirp": "0.3.5",
@@ -30,21 +26,19 @@
     "ws": "0.4.25"
   },
   "devDependencies": {
-    "mocha": "1.4.2",
-    "chai": "1.2.0",
     "benchmark": "1.0.0",
-    "wd": "0.0.32",
-    "less": "1.4.0"
+    "chai": "1.2.0",
+    "less": "1.4.0",
+    "mocha": "1.4.2",
+    "pegjs": "~0.7.0",
+    "wd": "0.0.32"
   },
   "optionalDependencies": {
     "microtime": "0.3.3"
   },
-
   "files": [
     "build-out/wtf_node_js_compiled.js",
-
     "bin/",
-
     "AUTHORS",
     "CONTRIBUTORS.md",
     "LICENSE",
@@ -53,7 +47,6 @@
     "docs/wtf-json.md",
     "docs/wtf-trace.md"
   ],
-
   "main": "./build-out/wtf_node_js_compiled",
   "bin": {
     "wtf-controller": "./bin/controller.js",
