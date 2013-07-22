@@ -530,7 +530,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
     } else if (typeId == appendScopeDataId) {
       // appendScopeData.
       this.appendScopeData_(
-          stack[stackTop], eventData[o + wtf.db.EventStruct.ARGUMENTS],
+          typeStack[stackTop], stack[stackTop],
+          eventData[o + wtf.db.EventStruct.ARGUMENTS],
           true);
       hiddenCount++;
       deleteArgs = true;
@@ -570,7 +571,8 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
       if (type.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA) {
         // An appendScopeData-alike.
         this.appendScopeData_(
-            stack[stackTop], eventData[o + wtf.db.EventStruct.ARGUMENTS],
+            typeStack[stackTop], stack[stackTop],
+            eventData[o + wtf.db.EventStruct.ARGUMENTS],
             false);
         hiddenCount++;
         deleteArgs = true;
@@ -598,13 +600,14 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
 /**
  * Handles an append scope data event by merging the arguments into the given
  * parent scope.
+ * @param {!wtf.db.EventType} scopeType Scope event type.
  * @param {number} scopeId Scope event ID.
  * @param {number} argsId Argument data ID to append.
  * @param {boolean} isBuiltin Whether this is a builtin appendScopeData call.
  * @private
  */
-wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId,
-    isBuiltin) {
+wtf.db.EventList.prototype.appendScopeData_ = function(
+    scopeType, scopeId, argsId, isBuiltin) {
   // TODO(benvanik): optimize this to add data with no mixin.
 
   var eventData = this.eventData;
@@ -634,6 +637,10 @@ wtf.db.EventList.prototype.appendScopeData_ = function(scopeId, argsId,
     // Many possible args, need to enumerate.
     goog.mixin(scopeArgs, srcArgs);
   }
+
+  // Mark the event type as being one that has args appended to it.
+  // Code may use this to optimize for event types that have appended args.
+  scopeType.mayHaveAppendedArgs = true;
 };
 
 

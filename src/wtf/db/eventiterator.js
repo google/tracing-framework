@@ -532,18 +532,41 @@ wtf.db.EventIterator.prototype.getOwnDuration = function() {
  */
 wtf.db.EventIterator.prototype.buildArgumentString_ = function(
     s, type, opt_argumentNames) {
+  // Append all arguments that are defined in the event, in order.
+  // We mark off the ones we see as we go so we can handle appended args.
+  var first = true;
   var argVars = type.getArguments();
   var argData = this.getArguments();
   for (var n = 0; n < argVars.length; n++) {
     var argVar = argVars[n];
-    if (n) {
+    appendArgument(first, argVar.name, argData[argVar.name]);
+    first = false;
+  }
+
+  // Pass over again to see if we have any arguments that were appended.
+  // We only need to do this if it's likely that we have appended args.
+  if (type.mayHaveAppendedArgs) {
+    var seenArgs = {};
+    for (var n = 0; n < argVars.length; n++) {
+      seenArgs[argVars[n].name] = true;
+    }
+
+    for (var argName in argData) {
+      if (!seenArgs[argName]) {
+        appendArgument(first, argName, argData[argName]);
+        first = false;
+      }
+    }
+  }
+
+  function appendArgument(first, name, value) {
+    if (!first) {
       s.push(', ');
     }
     if (opt_argumentNames) {
-      s.push(argVar.name);
+      s.push(name);
       s.push('=');
     }
-    var value = argData[argVar.name];
     if (goog.isString(value)) {
       s.push('\'');
       s.push(value);
@@ -552,7 +575,7 @@ wtf.db.EventIterator.prototype.buildArgumentString_ = function(
       // TODO(benvanik): better handling of objects/other types?
       s.push(value);
     }
-  }
+  };
 };
 
 

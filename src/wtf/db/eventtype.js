@@ -61,6 +61,13 @@ wtf.db.EventType = function(name, eventClass, flags, args) {
   this.flags = flags;
 
   /**
+   * Whether instances of this event type may have appended scope data.
+   * This is set at load time based on whether appends were seen.
+   * @type {boolean}
+   */
+  this.mayHaveAppendedArgs = false;
+
+  /**
    * Additional data encoded with the event.
    * @type {!Array.<!wtf.data.Variable>}
    */
