@@ -399,7 +399,7 @@ CLOSURE_LINTER_PATH='third_party/closure-linter/'
 file_set(
     name='lint_src',
     srcs=[':wtf_src_js'],
-    src_exclude_filter='eventbuffers_test.js|benchmark.js')
+    src_exclude_filter='filterparser.js|eventbuffers_test.js|benchmark.js')
 
 closure_js_fixstyle(
     name='all_js_fixstyle',

@@ -173,16 +173,7 @@ wtf.app.Selection.prototype.getFilter = function() {
  * @return {boolean} True if a filter expression is specified.
  */
 wtf.app.Selection.prototype.hasFilterSpecified = function() {
-  return !!this.filter_.getEvaluator();
-};
-
-
-/**
- * Gets the expression used by the filter.
- * @return {string} Filter expression. May be the empty string.
- */
-wtf.app.Selection.prototype.getFilterExpression = function() {
-  return this.filter_.toString();
+  return this.filter_.isActive();
 };
 
 
@@ -215,15 +206,6 @@ wtf.app.Selection.prototype.clearFilterExpression = function() {
   if (this.filter_.clear() == wtf.db.FilterResult.UPDATED) {
     this.invalidate_();
   }
-};
-
-
-/**
- * Gets a function that can be used to test if events pass the active filter.
- * @return {!wtf.db.FilterFunction} A filter function.
- */
-wtf.app.Selection.prototype.getFilterEvaluator = function() {
-  return this.filter_.getEvaluator() || Boolean;
 };
 
 

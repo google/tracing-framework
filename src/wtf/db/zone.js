@@ -17,7 +17,6 @@ goog.require('goog.Disposable');
 goog.require('goog.array');
 goog.require('wtf');
 goog.require('wtf.db.EventIndex');
-goog.require('wtf.db.EventIterator');
 goog.require('wtf.db.EventList');
 goog.require('wtf.db.Filter');
 goog.require('wtf.db.FilterResult');
@@ -269,81 +268,20 @@ wtf.db.Zone.prototype.getSharedIndex = function(eventNames) {
  * @return {wtf.db.QueryResult} Result.
  */
 wtf.db.Zone.prototype.query = function(expr) {
-  // Try to figure out what type the query is.
-  // First, we see if it's some kind of simple substring (starts without /)
-  // or a regex (starts and ends with /). If that's true, we use the
-  // event filter logic to populate the table.
-  // Otherwise, we assume they are trying to type an xpath expression. Note that
-  // this will cause someone typing a regex to have the intermediate stages
-  // interpreted as an xpath query, but that's ok.
-  var isFilter = false;
-  if (expr.charAt(0) != '/' &&
-      expr.indexOf('(') == -1) {
-    // Definitely a substring.
-    isFilter = true;
-  } else if (/^\/(.+)\/([gim]*)$/.test(expr)) {
-    // Likely a regex, very rare for a query to match this, so trust it.
-    isFilter = true;
-  } else {
-    // Likely an xpath query, do that.
-    isFilter = false;
-  }
-
   var startTime = wtf.now();
 
-  var compiledExpr = null;
-  var result = null;
-  if (isFilter) {
-    // Create filter.
-    var filter = new wtf.db.Filter();
-    var parseResult = filter.setFromString(expr);
-    if (parseResult == wtf.db.FilterResult.FAILED) {
-      throw 'Invalid regex.';
-    }
-    compiledExpr = filter.getEvaluator().toString();
-
-    result = this.queryWithFilter_(filter);
-  } else {
-    // Create the XPath expression.
-    // NOTE: this may throw!
-    // TODO(benvanik): better error handling around this?
-    // var xexpr = new wgxpath.XPathExpression(expr || '.');
-    compiledExpr = expr;
-
-    // Run the XPath query on the database.
-    // var context = this;
-    // var xresult = xexpr.evaluate(context, wgxpath.XPathResultType.ANY_TYPE);
-    // result = xresult.value;
-    //this.queryWithXPath_()
-    result = 'not yet implemented';
+  // Create filter.
+  var filter = new wtf.db.Filter();
+  var parseResult = filter.setFromString(expr);
+  if (parseResult == wtf.db.FilterResult.FAILED) {
+    throw filter.getError();
   }
+
+  var result = filter.applyToEventList(this.eventList_);
 
   var duration = wtf.now() - startTime;
-  return new wtf.db.QueryResult(expr, compiledExpr, duration, result);
-};
-
-
-/**
- * Runs a query with a simple event type filter.
- * @param {!wtf.db.Filter} filter Filter.
- * @return {wtf.db.EventIterator} Result.
- * @private
- */
-wtf.db.Zone.prototype.queryWithFilter_ = function(filter) {
-  var matchedEventTypes = filter.getMatchedEventTypes(
-      this.db_.getEventTypeTable());
-
-  // Build a list of all event IDs that match.
-  var matches = [];
-  var it = this.eventList_.begin();
-  for (; !it.done(); it.next()) {
-    if (matchedEventTypes[it.getTypeId()]) {
-      matches.push(it.getId());
-    }
-  }
-
-  return new wtf.db.EventIterator(
-      this.eventList_, 0, matches.length - 1, 0, matches);
+  return new wtf.db.QueryResult(
+      expr, filter.getDebugString(), duration, result);
 };
 
 
