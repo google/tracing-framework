@@ -134,22 +134,22 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   // Add buttons.
   this.addButton_(
       true,
-      '/assets/icons/clear.svg',
+      '/assets/icons/clear.png',
       'Clear current data', 'shift+esc',
       this.clearSnapshotClicked_, this);
   this.addButton_(
       true,
-      '/assets/icons/popout_white.svg',
+      '/assets/icons/popout_white.png',
       'Send to UI (middle click for new tab)', 'f9',
       this.sendSnapshotClicked_, this);
   this.addButton_(
       true,
-      '/assets/icons/save.svg',
+      '/assets/icons/save.png',
       'Save Snapshot', 'f10',
       this.saveSnapshotClicked_, this);
   this.addButton_(
       true,
-      '/assets/icons/settings.svg',
+      '/assets/icons/settings.png',
       'Settings', null,
       this.settingsClicked_, this);
 

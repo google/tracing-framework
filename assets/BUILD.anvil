@@ -10,7 +10,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 ICON_WRAPPER=''.join([
     "wtf.ui.icons.setIconData(",
     "'/assets/%path%', ",
-    "'data:image/svg+xml;base64,%output%'",
+    "'data:image/png;base64,%output%'",
     ");\n"
     ])
 
@@ -22,7 +22,7 @@ ICON_WRAPPER=''.join([
 embed_files(
     name='hud_icons',
     srcs=[
-        ] + glob('icons/*.svg'),
+        ] + glob('icons/*.png'),
     wrapper=ICON_WRAPPER,
     encoding='base64',
     replace_chars=[['\n', '\\n'], ['\'', '\\\'']])

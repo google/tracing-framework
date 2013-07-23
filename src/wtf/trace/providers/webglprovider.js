@@ -117,7 +117,7 @@ wtf.trace.providers.WebGLProvider = function(traceManager, options) {
   } else {
     this.hudButtons_.push({
       'title': 'Toggle WebGL Capture',
-      'icon': '/assets/icons/gl.svg',
+      'icon': '/assets/icons/gl.png',
       'shortcut': 'f4',
       'callback': function() {
         this.toggleCapture_();

@@ -141,7 +141,7 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
       options.getBoolean('wtf.trace.provider.chromeDebug.tracing', false)) {
     this.hudButtons_.push({
       'title': 'Toggle chrome:tracing Capture',
-      'icon': '/assets/icons/chrometracing.svg',
+      'icon': '/assets/icons/chrometracing.png',
       'shortcut': 'f3',
       'callback': function() {
         this.toggleCapture_();
