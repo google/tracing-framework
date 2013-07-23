@@ -63,7 +63,7 @@ wtf.app.query.QueryPanel = function(documentView) {
       this.getChildElement(goog.getCssName('searchBox')), dom);
   this.registerDisposable(this.searchControl_);
   this.searchControl_.setPlaceholderText(
-      'substring or /regex/ or XPath-like query');
+      'substring or /regex/ with optional (foo==123, bar!="something")');
 
   /**
    * Zone selection dropdown.
