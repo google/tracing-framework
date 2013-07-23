@@ -19,6 +19,7 @@ goog.require('goog.events.EventType');
 goog.require('wtf.ipc.MessageChannel');
 goog.require('wtf.timing');
 goog.require('wtf.trace.util');
+goog.require('wtf.util');
 
 
 /**
@@ -105,4 +106,23 @@ wtf.ipc.listenForChildWindows = function(callback, opt_scope) {
   });
   window.addEventListener(
       goog.events.EventType.MESSAGE, boundHandler, true);
+};
+
+
+/**
+ * Gets a MessageChannel for the given window, creating it if needed.
+ * @param {Window=} opt_window The window to monitor; defaults to the window in
+ *    which this code is executing.
+ * @return {!wtf.ipc.MessageChannel} Message channel.
+ */
+wtf.ipc.getWindowMessageChannel = function(opt_window) {
+  var targetWindow = opt_window || window;
+  var stash = wtf.util.getGlobalCacheObject('ipc', targetWindow);
+  if (stash.messageChannel) {
+    return /** @type {!wtf.ipc.MessageChannel} */ (stash.messageChannel);
+  } else {
+    var channel = new wtf.ipc.MessageChannel(targetWindow, targetWindow);
+    stash.messageChannel = channel;
+    return channel;
+  }
 };

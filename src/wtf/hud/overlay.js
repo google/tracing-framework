@@ -33,7 +33,6 @@ goog.require('wtf.io');
 goog.require('wtf.io.Blob');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
-goog.require('wtf.ipc.MessageChannel');
 goog.require('wtf.trace');
 goog.require('wtf.trace.util');
 goog.require('wtf.ui.ResizableControl');
@@ -77,8 +76,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
    * @type {!wtf.ipc.Channel}
    * @private
    */
-  this.extensionChannel_ = new wtf.ipc.MessageChannel(window, window);
-  this.registerDisposable(this.extensionChannel_);
+  this.extensionChannel_ = wtf.ipc.getWindowMessageChannel(window);
 
   /**
    * The last name used when opening a popup window.
