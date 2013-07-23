@@ -81,3 +81,15 @@ wtf.trace.util.ignoreDomTree = function(el) {
     all[n]['__wtf_ignore__'] = true;
   }
 };
+
+
+/**
+ * Marks an event as being ignored.
+ * This is useful for events that do not support cancellation.
+ * This method only has an effect for types that dispatch through the custom
+ * event target dispatcher in WTF.
+ * @param {!Event} e Event.
+ */
+wtf.trace.util.ignoreEvent = function(e) {
+  e['__wtf_ignore__'] = true;
+};

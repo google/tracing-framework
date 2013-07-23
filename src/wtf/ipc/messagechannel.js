@@ -154,12 +154,20 @@ wtf.ipc.MessageChannel.prototype.focus = function() {
  */
 wtf.ipc.MessageChannel.prototype.handleMessage_ = function(e) {
   var packet = /** @type {wtf.ipc.MessageChannel.Packet} */ (e.data);
-  if (!packet || !packet[wtf.ipc.MessageChannel.PACKET_TOKEN] ||
-      packet[wtf.ipc.MessageChannel.SENDER_TOKEN_] ==
-          wtf.ipc.MessageChannel.LOCAL_ID_) {
+  if (!packet || !packet[wtf.ipc.MessageChannel.PACKET_TOKEN]) {
     return;
   }
+
+  // Don't allow the event to be dispatched again.
+  // Note that MessageEvent is not cancelable, so we try to ignore it too.
   e.stopPropagation();
+  wtf.trace.util.ignoreEvent(e);
+
+  // Ignore any messages from ourselves.
+  if (packet[wtf.ipc.MessageChannel.SENDER_TOKEN_] ==
+      wtf.ipc.MessageChannel.LOCAL_ID_) {
+    return;
+  }
 
   this.emitEvent(wtf.ipc.Channel.EventType.MESSAGE, packet['data']);
 };

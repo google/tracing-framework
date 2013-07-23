@@ -230,6 +230,9 @@ wtf.trace.eventtarget.mixin = function(descriptor, target) {
     }
 
     var wrappedEventListener = function wrappedEventListener(e) {
+      if (e['__wtf_ignore__']) {
+        return;
+      }
       var scope = self['__wtf_ignore__'] ? null : eventType();
       try {
         if (listener['handleEvent']) {
@@ -542,6 +545,10 @@ wtf.trace.eventtarget.BaseEventTarget.prototype['dispatchEvent'] = function(e) {
  */
 wtf.trace.eventtarget.BaseEventTarget.prototype.dispatchToListener = function(
     e, listener, hooks) {
+  if (e['__wtf_ignore__']) {
+    return;
+  }
+
   // Begin tracing scope.
   var eventKey = e.type;
   var eventType = this.descriptor_.eventMap[eventKey];
