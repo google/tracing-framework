@@ -22,6 +22,7 @@ goog.require('goog.fs');
 goog.require('goog.object');
 goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
+goog.require('wtf.replay.graphics.ExtensionManager');
 goog.require('wtf.replay.graphics.Step');
 goog.require('wtf.timing.util');
 
@@ -162,11 +163,13 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.currentContext_ = null;
 
   /**
-   * The set of supported extensions.
-   * @type {!Object.<boolean>}
+   * The extension manager.
+   * @type {!wtf.replay.graphics.ExtensionManager}
    * @private
    */
-  this.supportedExtensions_ = this.getSupportedExtensions_();
+  this.extensionManager_ =
+      new wtf.replay.graphics.ExtensionManager(contextPool);
+  this.registerDisposable(this.extensionManager_);
 };
 goog.inherits(wtf.replay.graphics.Playback, wtf.events.EventEmitter);
 
@@ -268,22 +271,6 @@ wtf.replay.graphics.Playback.prototype.getDrawCallIds_ = function() {
     }
   }
   return drawCallIds;
-};
-
-
-/**
- * Gets a set of supported extensions.
- * @return {!Object.<boolean>} An object whose keys are the supported
- *     extensions.
- * @private
- */
-wtf.replay.graphics.Playback.prototype.getSupportedExtensions_ = function() {
-  var webglContext = this.contextPool_.getContext('webgl') ||
-      this.contextPool_.getContext('experimental-webgl');
-  var supportedExtensions =
-      goog.object.createSet(webglContext.getSupportedExtensions());
-  this.contextPool_.releaseContext(webglContext);
-  return supportedExtensions;
 };
 
 
@@ -400,8 +387,12 @@ wtf.replay.graphics.Playback.prototype.checkExtensions_ = function() {
 
   for (var it = this.eventList_.begin(); !it.done(); it.next()) {
     if (it.getTypeId() == getExtensionEventId) {
-      var extensionName = it.getArgument('name');
-      if (!this.supportedExtensions_[extensionName]) {
+      var extensionName = /** @type {string} */ (it.getArgument('name'));
+      var relatedExtensionName =
+          this.extensionManager_.getRelatedExtension(extensionName);
+
+      if (!relatedExtensionName) {
+        // The extension and variants of it are not supported.
         if (!unsupportedExtensions[extensionName]) {
           unsupportedExtensions[extensionName] = true;
           ++numUnsupportedExtensions;
@@ -1207,7 +1198,10 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
       break;
     case 'WebGLRenderingContext#getExtension':
       // TODO(chizeng): Possibly store the extension?
-      currentContext.getExtension(args['name']);
+      var originalExtension = args['name'];
+      var relatedExtension =
+          this.extensionManager_.getRelatedExtension(originalExtension);
+      currentContext.getExtension(relatedExtension || originalExtension);
       break;
     case 'WebGLRenderingContext#getParameter':
       currentContext.getParameter(args['pname']);

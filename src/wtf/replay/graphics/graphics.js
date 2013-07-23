@@ -34,7 +34,8 @@ wtf.replay.graphics.setupStandalone = function(
   var domHelper = new goog.dom.DomHelper(parentElement.ownerDocument);
 
   var xhr = new XMLHttpRequest();
-  xhr.responseType = 'arraybuffer';
+  xhr.open('GET', traceUrl, true);
+
   xhr.onload = function() {
     if (xhr.status != 200) {
       throw new Error('Failed: ' + xhr.status + ', ' + xhr.statusText);
@@ -54,7 +55,7 @@ wtf.replay.graphics.setupStandalone = function(
     });
   };
 
-  xhr.open('GET', traceUrl, true);
+  xhr.responseType = 'arraybuffer';
   xhr.send();
 };
 
