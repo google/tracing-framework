@@ -28,10 +28,15 @@ goog.require('wtf.db.EventIterator');
  *     step draws one.
  * @param {Object.<boolean>=} opt_contexts The set of contexts that exist at
  *     the start of this step.
+ * @param {Object.<boolean>=} opt_visibleEventTypeIds A set of IDs of event
+ *     types that should be visible.
+ * @param {number=} opt_stepBeginContext The handle of the current context at
+ *     the beginning of the step. If no current context exists, -1.
  * @constructor
  */
 wtf.replay.graphics.Step = function(
-    eventList, startEventId, endEventId, opt_frame, opt_contexts) {
+    eventList, startEventId, endEventId, opt_frame, opt_contexts,
+    opt_visibleEventTypeIds, opt_stepBeginContext) {
 
   /**
    * List of events for entire animation.
@@ -55,12 +60,11 @@ wtf.replay.graphics.Step = function(
   this.endEventId_ = endEventId;
 
   /**
-   * A list of indices of visible events. Used for listing events that are
-   * hidden, but should be displayed since they relate to WebGL.
-   * @type {!Array.<number>}
+   * A set of IDs of event types that should be visible.
+   * @type {!Object.<boolean>}
    * @private
    */
-  this.visibleEvents_ = this.createVisibleEventsList_();
+  this.visibleEventTypeIds_ = opt_visibleEventTypeIds || {};
 
   /**
    * Either the frame this step draws or null if this step is not responsible
@@ -76,6 +80,14 @@ wtf.replay.graphics.Step = function(
    * @private
    */
   this.initialContexts_ = opt_contexts || {};
+
+  /**
+   * The handle of the current context at the beginning of the step. If no
+   * current context exists, -1.
+   * @type {number}
+   * @private
+   */
+  this.stepBeginContextHandle_ = opt_stepBeginContext || -1;
 };
 
 
@@ -87,12 +99,45 @@ wtf.replay.graphics.Step = function(
  */
 wtf.replay.graphics.Step.prototype.getEventIterator = function(opt_visible) {
   if (opt_visible) {
-    var indirectionTable = this.visibleEvents_;
+    var indirectionTable = this.createVisibleEventsList_();
     return new wtf.db.EventIterator(
         this.eventList_, 0, indirectionTable.length - 1, 0, indirectionTable);
   }
   return this.eventList_.beginEventRange(
       this.startEventId_, this.endEventId_);
+};
+
+
+/**
+ * Gets the current context at the beginning of the step.
+ * @return {number} The handle of the current context at the beginning of this
+ *     step.
+ */
+wtf.replay.graphics.Step.prototype.getInitialCurrentContext = function() {
+  return this.stepBeginContextHandle_;
+};
+
+
+/**
+ * Returns a mapping from indices of events that change the current context to
+ * the context that they switch to.
+ * @return {!Array.<!Array.<number>>} A list of 2-tuples. Each 2-tuple
+ *     contains the ID of a context-changing event and the new context handle.
+ */
+wtf.replay.graphics.Step.prototype.getContextChangingEvents = function() {
+  var createContextEventId =
+      this.eventList_.getEventTypeId('wtf.webgl#createContext');
+  var setContextEventId =
+      this.eventList_.getEventTypeId('wtf.webgl#setContext');
+  var contextChangingEvents = [];
+  for (var it = this.getEventIterator(true); !it.done(); it.next()) {
+    var typeId = it.getTypeId();
+    if (typeId == createContextEventId || typeId == setContextEventId) {
+      contextChangingEvents.push([it.getIndex(), it.getArgument('handle')]);
+    }
+  }
+
+  return contextChangingEvents;
 };
 
 
@@ -129,18 +174,10 @@ wtf.replay.graphics.Step.prototype.getEndEventId = function() {
  * @private
  */
 wtf.replay.graphics.Step.prototype.createVisibleEventsList_ = function() {
-  // Make hidden events that either create or set contexts visible.
-  var createContextId = this.eventList_.getEventTypeId(
-      'wtf.webgl#createContext');
-  var setContextId = this.eventList_.getEventTypeId('wtf.webgl#setContext');
-  var visibleTypeIds = {};
-  visibleTypeIds[createContextId] = true;
-  visibleTypeIds[setContextId] = true;
-
-  // Filter for only non-hidden events.
+  // Filter for only visible events.
   var visibleEvents = [];
   for (var it = this.getEventIterator(); !it.done(); it.next()) {
-    if (!it.isHidden() || visibleTypeIds[it.getTypeId()]) {
+    if (this.visibleEventTypeIds_[it.getTypeId()]) {
       visibleEvents.push(it.getIndex());
     }
   }
