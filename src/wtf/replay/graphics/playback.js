@@ -314,7 +314,7 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
 
   // Keep track of the context that is current at the beginning of each step.
   var currentContext = -1;
-  var stepBeginContext = -1;
+  var stepBeginContext = currentContext;
 
   // Keep track of the handles of contexts that are made.
   var contextsMade = {};
@@ -351,11 +351,12 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       }
     } else if (currentEventTypeId == contextCreatedEventId) {
       // A new context was made. Include it in the current step.
-      contextsMadeSoFar[it.getArgument('handle')] = true;
-      currentContext = it.getArgument('handle');
+      var handleValue = /** @type {number} */ (it.getArgument('handle'));
+      contextsMadeSoFar[handleValue] = true;
+      currentContext = handleValue;
       it.next();
     } else if (currentEventTypeId == contextSetEventId) {
-      currentContext = it.getArgument('handle');
+      currentContext = /** @type {number} */ (it.getArgument('handle'));
       it.next();
     } else {
       currentEndId = it.getId();
