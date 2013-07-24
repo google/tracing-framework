@@ -24,6 +24,7 @@ goog.require('wtf.replay.graphics.ui.GraphicsToolbar');
 goog.require('wtf.replay.graphics.ui.RangeSeeker');
 goog.require('wtf.replay.graphics.ui.graphicsPanel');
 goog.require('wtf.ui.Control');
+goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
 
 
@@ -54,6 +55,7 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
    * @private
    */
   this.loadDeferred_ = this.playback_.load();
+  this.loadDeferred_.addErrback(this.handleLoadError_, this);
 
   /**
    * The viewport size monitor.
@@ -102,6 +104,11 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
       this.getDom());
   this.registerDisposable(this.eventNavigator_);
 
+  // Enable the event navigator only after the playback has loaded.
+  this.loadDeferred_.addCallback(function() {
+    this.eventNavigator_.setReady();
+  }, this);
+
   /**
    * A place where canvases can be displayed.
    * @type {!wtf.replay.graphics.ui.CanvasesArea}
@@ -134,6 +141,19 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.replay.graphics.ui.graphicsPanel.controller,
       undefined, undefined, dom));
+};
+
+
+/**
+ * Handles what happens if loading the playback fails.
+ * @param {!Error} error The loading error.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsPanel.prototype.handleLoadError_ = function(
+    error) {
+  var dialogTitle = 'Loading Error';
+  var dialogDetails = error.message;
+  wtf.ui.ErrorDialog.show(dialogTitle, dialogDetails, this.getDom());
 };
 
 

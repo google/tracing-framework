@@ -208,6 +208,7 @@ wtf.ui.VirtualTable.prototype.setSource = function(source) {
   if (this.source_ == source) {
     return;
   }
+
   if (this.source_) {
     // Unlisten events.
     this.source_.removeListener(
@@ -374,6 +375,10 @@ wtf.ui.VirtualTable.prototype.updateScrollBounds_ = function() {
  *     aligned after scrolling.
  */
 wtf.ui.VirtualTable.prototype.scrollToRow = function(rowTarget, alignment) {
+  if (!this.source_) {
+    throw new Error('Attempted to scroll to a row with no table source set.');
+  }
+
   var rowHeight = this.source_.getRowHeight();
   var scrollAmount = this.scrollTop_;
   var totalHeightOfRows = rowHeight * rowTarget;

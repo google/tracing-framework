@@ -38,7 +38,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(playback) {
   var eventIterator = currentStep ? currentStep.getEventIterator(true) : null;
   var numEventsInStep = currentStep ? eventIterator.getCount() : 0;
 
-  // Include a an additional dummy row denoting the beginning of the step.
+  // Include an additional dummy row denoting the beginning of the step.
   this.setRowCount(currentStep ? numEventsInStep + 1 : 0);
 };
 goog.inherits(
