@@ -153,10 +153,10 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getContextChange_ =
   // Find out which context the first displayed event pertains to.
   var lowContextEntry = 0;
   var highContextEntry = contextChangingEvents.length;
+  var midContextEntry = 0;
   while (lowContextEntry < highContextEntry) {
-    var midContextEntry =
-        lowContextEntry +
-            Math.floor((highContextEntry - lowContextEntry) / 2);
+    midContextEntry = lowContextEntry +
+        Math.floor((highContextEntry - lowContextEntry) / 2);
     if (contextChangingEvents[midContextEntry][0] == eventIndex) {
       break;
     } else if (contextChangingEvents[midContextEntry][0] < eventIndex) {
