@@ -109,6 +109,24 @@ wtf.db.EventTypeTable.prototype.getAllMatching = function(regex, opt_class) {
 
 
 /**
+ * Gets a set of event type IDs whose names match the given regex.
+ * @param {!RegExp} regex Regex.
+ * @return {!Object.<boolean>} A set of event type IDs whose names
+ *     match the regex.
+ */
+wtf.db.EventTypeTable.prototype.getSetMatching = function(regex) {
+  var matches = {};
+  for (var n = 0; n < this.list_.length; n++) {
+    var eventType = this.list_[n];
+    if (regex.test(eventType.name)) {
+      matches[eventType.id] = true;
+    }
+  }
+  return matches;
+};
+
+
+/**
  * Gets the event type for the given event ID.
  * @param {number} id Event ID.
  * @return {wtf.db.EventType?} Event type, if found.

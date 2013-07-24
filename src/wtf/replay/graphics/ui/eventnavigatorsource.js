@@ -87,18 +87,34 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
   var x = gutterWidth + charWidth;
   var rectWidth = bounds.width - gutterWidth;
 
-  // Seek to the beginning event.
+  // Iterate ahead to the event represented by the top row displayed.
   var currentRow = this.playback_.getSubStepEventId();
+  var currentContextHandle = currentStep.getInitialCurrentContext();
+  var contextChangingEvents = currentStep.getContextChangingEvents();
   for (var i = 1; i < first; ++i) {
     it.next();
   }
+
+  var currentContextEntry = this.getContextChange_(
+      currentContextHandle, contextChangingEvents, it.getIndex());
 
   var columnTitle = '';
   for (var n = first; n <= last && !it.done(); n++, y += rowHeight) {
     var hideCall = false;
     if (n) {
       if (it.isScope() || it.isInstance()) {
-        columnTitle = it.getLongString(true);
+        // Change to the next current context if necessary.
+        if (currentContextEntry < contextChangingEvents.length &&
+            contextChangingEvents[currentContextEntry][0] <= it.getIndex()) {
+          currentContextHandle =
+              contextChangingEvents[currentContextEntry][1];
+          ++currentContextEntry;
+        }
+
+        var contextHandleText = (currentContextHandle != -1) ?
+            currentContextHandle : 'None';
+        columnTitle = it.getLongString(true) +
+            ' (context handle  ' + contextHandleText + ')';
         it.next();
       }
     } else {
@@ -121,6 +137,40 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
 
 /**
+ * Gets the current entry within the table of events that change the context
+ * within a step based on the index of the current event.
+ * @param {number} initialContextHandle The handle of the current context at
+ *     the beginning of this step.
+ * @param {!Array.<!Array.<number>>} contextChangingEvents A list of 2-tuples.
+ *     Each 2-tuple contains the ID of a context-changing event and the new
+ *     context handle.
+ * @param {number} eventIndex The index of the current event.
+ * @return {number} The index within the table of events.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getContextChange_ =
+    function(initialContextHandle, contextChangingEvents, eventIndex) {
+  // Find out which context the first displayed event pertains to.
+  var lowContextEntry = 0;
+  var highContextEntry = contextChangingEvents.length;
+  while (lowContextEntry < highContextEntry) {
+    var midContextEntry =
+        lowContextEntry +
+            Math.floor((highContextEntry - lowContextEntry) / 2);
+    if (contextChangingEvents[midContextEntry][0] == eventIndex) {
+      break;
+    } else if (contextChangingEvents[midContextEntry][0] < eventIndex) {
+      lowContextEntry = midContextEntry + 1;
+    } else {
+      highContextEntry = midContextEntry - 1;
+    }
+  }
+
+  return midContextEntry;
+};
+
+
+/**
  * @override
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
@@ -135,7 +185,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
   if (row) {
     playback.seekSubStepEvent(row - 1);
   } else {
-    // Go the beginning of the step.
+    // Go to the beginning of the step.
     playback.seekStep(playback.getCurrentStepIndex());
     this.invalidate();
   }
