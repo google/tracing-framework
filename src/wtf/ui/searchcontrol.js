@@ -108,6 +108,20 @@ wtf.ui.SearchControl.prototype.createDom = function(dom) {
 
 
 /**
+ * Sets whether the control is enabled.
+ * @param {boolean} enabled Whether this control is enabled.
+ */
+wtf.ui.SearchControl.prototype.setEnabled = function(enabled) {
+  var textInputElement = this.getRootElement();
+  if (enabled) {
+    textInputElement.disabled = false;
+  } else {
+    textInputElement.disabled = true;
+  }
+};
+
+
+/**
  * Sets the placeholder text.
  * @param {string} value New value.
  */
