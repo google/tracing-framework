@@ -69,7 +69,7 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.addContext = function(
     contextHandle, context) {
   this.displayedContexts_[contextHandle] =
       new wtf.replay.graphics.ui.ContextBox(
-          context, this.getRootElement(), this.getDom());
+          context, contextHandle, this.getRootElement(), this.getDom());
 };
 
 
