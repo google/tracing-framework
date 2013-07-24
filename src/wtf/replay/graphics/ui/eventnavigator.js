@@ -54,7 +54,6 @@ wtf.replay.graphics.ui.EventNavigator = function(
           goog.getCssName('replayGraphicsEventNavigatorTable')),
       this.getDom());
   this.registerDisposable(this.table_);
-  this.table_.setSource(this.tableSource_);
 
   /**
    * The playback.
@@ -84,11 +83,21 @@ wtf.replay.graphics.ui.EventNavigator.prototype.createDom = function(dom) {
 
 
 /**
+ * Specifies that the event navigator is ready for interaction.
+ */
+wtf.replay.graphics.ui.EventNavigator.prototype.setReady = function() {
+  this.table_.setSource(this.tableSource_);
+};
+
+
+/**
  * Changes the layout of elements to fit the container.
  */
 wtf.replay.graphics.ui.EventNavigator.prototype.layout = function() {
   this.table_.layout();
-  this.updateScrolling(this.playback_);
+  if (this.table_.getSource()) {
+    this.updateScrolling(this.playback_);
+  }
 };
 
 
