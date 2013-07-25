@@ -434,6 +434,32 @@ wtf.db.EventIterator.prototype.getArguments = function() {
 
 
 /**
+ * Sets the argument data for the current event, overriding all previous data.
+ * The given arguments values are not cloned.
+ * To restore the arguments to their original values use {@see #resetArguments}.
+ * @param {wtf.db.ArgumentData} values New argument data, if any.
+ */
+wtf.db.EventIterator.prototype.setArguments = function(values) {
+  var argsId = this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS];
+  argsId = this.eventList_.setArgumentData(argsId, values);
+  this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS] = argsId;
+};
+
+
+/**
+ * Resets the argument data for the current event to its original values.
+ * This can be used after a call to {@see #setArguments} to revert the data
+ * to what it was on database load.
+ */
+wtf.db.EventIterator.prototype.resetArguments = function() {
+  var argsId = this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS];
+  if (argsId) {
+    this.eventList_.resetArgumentData(argsId);
+  }
+};
+
+
+/**
  * Gets the argument value from the current event with the given key.
  * @param {string} key Argument key.
  * @return {*} Argument value or undefined if not found.

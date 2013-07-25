@@ -132,6 +132,16 @@ wtf.db.EventList = function(eventTypeTable) {
   this.argumentData_ = [null];
 
   /**
+   * Original argument data hash.
+   * This is populated on demand when argument data is overridden via
+   * {@see #setArgumentData}. It stores the original data from the database
+   * (if it was present) for restoring via {@see #resetArgumentData}.
+   * @type {!Object.<wtf.db.ArgumentData>}
+   * @private
+   */
+  this.originalArgumentData_ = {};
+
+  /**
    * The next ID to assign to inserted argument data.
    * @type {number}
    * @private
@@ -710,6 +720,47 @@ wtf.db.EventList.prototype.rebuildAncillaryLists_ = function(lists) {
  */
 wtf.db.EventList.prototype.getArgumentData = function(argsId) {
   return this.argumentData_[argsId] || null;
+};
+
+
+/**
+ * Sets the argument data for the given arguments ID.
+ * If the arguments ID is 0 then a new arguments ID will be allocated and
+ * returned.
+ * @param {number} argsId Key into the argument data table, or 0.
+ * @param {Object} values New argument values.
+ * @return {number} Arguments ID passed in or a new value if the param was 0.
+ */
+wtf.db.EventList.prototype.setArgumentData = function(argsId, values) {
+  if (!argsId) {
+    // Allocate new argument data.
+    argsId = this.nextArgumentDataId_++;
+  }
+
+  // Stash off the existing data we are overriding.
+  // We want to support many sets, so only stash as original if this is
+  // the first time.
+  if (this.originalArgumentData_[argsId] === undefined) {
+    this.originalArgumentData_[argsId] = this.argumentData_[argsId] || null;
+  }
+
+  // Set.
+  this.argumentData_[argsId] = values;
+  return argsId;
+};
+
+
+/**
+ * Restores argument data to its original value if it had been overridden with
+ * {@see #setArgumentData}.
+ * @param {number} argsId Key into the argument data table.
+ */
+wtf.db.EventList.prototype.resetArgumentData = function(argsId) {
+  var originalArgs = this.originalArgumentData_[argsId];
+  if (originalArgs !== undefined) {
+    this.argumentData_[argsId] = originalArgs;
+    delete this.originalArgumentData_[argsId];
+  }
 };
 
 
