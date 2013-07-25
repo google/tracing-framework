@@ -324,6 +324,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   var currentContext = -1;
   var stepBeginContext = currentContext;
 
+  // Whether there is at least 1 visible event in the step just made.
+  var visibleEventExists = false;
+
   // Keep track of the handles of contexts that are made.
   var contextsMade = {};
   var contextsMadeSoFar = {};
@@ -333,9 +336,16 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       // Only store previous step if it has at least 1 event.
       if (!noEventsForPreviousStep) {
         var contexts = goog.object.clone(contextsMade);
-        steps.push(new wtf.replay.graphics.Step(
-            eventList, currentStartId, currentEndId, null, contexts,
-            displayedEventsIds, stepBeginContext));
+
+        // Only include this step if it has visible events.
+        if (visibleEventExists) {
+          var newStep = new wtf.replay.graphics.Step(
+              eventList, currentStartId, currentEndId, null, contexts,
+              displayedEventsIds, stepBeginContext);
+          steps.push(newStep);
+        }
+
+        visibleEventExists = false;
         stepBeginContext = currentContext;
         contextsMade = goog.object.clone(contextsMadeSoFar);
       }
@@ -344,9 +354,16 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
     } else if (currentEventTypeId == frameEndEventId) {
       // Include the end frame event in the step for drawing the frame.
       var contexts = goog.object.clone(contextsMade);
-      steps.push(new wtf.replay.graphics.Step(
-          eventList, currentStartId, it.getId(), currentFrame, contexts,
-          displayedEventsIds, stepBeginContext));
+
+      // Only include this step if it has visible events.
+      if (visibleEventExists) {
+        var newStep = new wtf.replay.graphics.Step(
+            eventList, currentStartId, it.getId(), currentFrame, contexts,
+            displayedEventsIds, stepBeginContext);
+        steps.push(newStep);
+      }
+
+      visibleEventExists = false;
       stepBeginContext = currentContext;
       contextsMade = goog.object.clone(contextsMadeSoFar);
       noEventsForPreviousStep = true;
@@ -362,24 +379,31 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       var handleValue = /** @type {number} */ (it.getArgument('handle'));
       contextsMadeSoFar[handleValue] = true;
       currentContext = handleValue;
+      visibleEventExists = true;
       it.next();
     } else if (currentEventTypeId == contextSetEventId) {
       currentContext = /** @type {number} */ (it.getArgument('handle'));
+      visibleEventExists = true;
       it.next();
     } else {
       currentEndId = it.getId();
 
       // This step has at least 1 event.
       noEventsForPreviousStep = false;
+      if (displayedEventsIds[currentEventTypeId]) {
+        visibleEventExists = true;
+      }
+
       it.next();
     }
   }
 
   // Store any events still left if there are any.
-  if (!noEventsForPreviousStep) {
-    steps.push(new wtf.replay.graphics.Step(
+  if (!noEventsForPreviousStep && visibleEventExists) {
+    var newStep = new wtf.replay.graphics.Step(
         eventList, currentStartId, currentEndId, null, null,
-        displayedEventsIds, stepBeginContext));
+        displayedEventsIds, stepBeginContext);
+    steps.push(newStep);
   }
   return steps;
 };
