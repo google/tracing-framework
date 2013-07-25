@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.EventNavigatorTableSource');
 
+goog.require('goog.string');
 goog.require('wtf.ui.VirtualTableSource');
 
 
@@ -21,10 +22,12 @@ goog.require('wtf.ui.VirtualTableSource');
  * Virtual table data source wrapping events for graphics playback.
  *
  * @param {!wtf.replay.graphics.Playback} playback The relevant playback.
+ * @param {!wtf.db.EventList} eventList Event list for an entire animation.
  * @constructor
  * @extends {wtf.ui.VirtualTableSource}
  */
-wtf.replay.graphics.ui.EventNavigatorTableSource = function(playback) {
+wtf.replay.graphics.ui.EventNavigatorTableSource = function(
+    playback, eventList) {
   goog.base(this);
 
   /**
@@ -33,6 +36,20 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(playback) {
    * @private
    */
   this.playback_ = playback;
+
+  /**
+   * Event list for an entire animation.
+   * @type {!wtf.db.EventList}
+   * @private
+   */
+  this.eventList_ = eventList;
+
+  /**
+   * A set of IDs matched event types.
+   * @type {!Object.<number, boolean>}
+   * @private
+   */
+  this.matchedEventTypeIds_ = {};
 
   var currentStep = playback.getCurrentStep();
   var eventIterator = currentStep ? currentStep.getEventIterator(true) : null;
@@ -84,6 +101,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
   var color1 = '#fafafa';
   var color2 = '#ffffff';
   var highlightedColor = '#2eccfa';
+  var matchedEventColor = '#ffa500';
   var x = gutterWidth + charWidth;
   var rectWidth = bounds.width - gutterWidth;
 
@@ -95,12 +113,32 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     it.next();
   }
 
+  // Get the current entry in the list of context-changing events in the step.
   var currentContextEntry = this.getContextChange_(
       currentContextHandle, contextChangingEvents, it.getIndex());
 
+  // Get events that change the current context.
+  var createContextTypeId =
+      this.eventList_.getEventTypeId('wtf.webgl#createContext');
+  var setContextTypeId =
+      this.eventList_.getEventTypeId('wtf.webgl#setContext');
+
   var columnTitle = '';
   for (var n = first; n <= last && !it.done(); n++, y += rowHeight) {
-    var hideCall = false;
+    // TODO(benvanik): icons to differentiate event types?
+
+    // Determine the background color.
+    if ((currentRow == -1 && !n) || currentRow == n - 1) {
+      ctx.fillStyle = highlightedColor;
+    } else {
+      if (n && this.matchedEventTypeIds_[it.getTypeId()]) {
+        ctx.fillStyle = matchedEventColor;
+      } else {
+        ctx.fillStyle = n % 2 ? color1 : color2;
+      }
+    }
+
+    // Determine the text content.
     if (n) {
       if (it.isScope() || it.isInstance()) {
         // Change to the next current context if necessary.
@@ -111,27 +149,30 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           ++currentContextEntry;
         }
 
-        var contextHandleText = (currentContextHandle != -1) ?
-            currentContextHandle : 'None';
-        columnTitle = it.getLongString(true) +
-            ' (context handle  ' + contextHandleText + ')';
+        var typeId = it.getTypeId();
+        if (typeId == createContextTypeId) {
+          columnTitle =
+              'Context with handle ' + it.getArgument('handle') + ' created.';
+        } else if (typeId == setContextTypeId) {
+          columnTitle =
+              'Context with handle ' + it.getArgument('handle') +
+                  ' set as current.';
+        } else {
+          var contextHandleText = (currentContextHandle != -1) ?
+              currentContextHandle : 'None';
+          columnTitle = it.getLongString(true) +
+              ' (context handle  ' + contextHandleText + ')';
+        }
+
         it.next();
       }
     } else {
       columnTitle = 'Beginning of step.';
     }
 
-    // TODO(benvanik): icons to differentiate event types?
-    if (!hideCall) {
-      if (((currentRow == -1) && (!n)) || currentRow == n - 1) {
-        ctx.fillStyle = highlightedColor;
-      } else {
-        ctx.fillStyle = n % 2 ? color1 : color2;
-      }
-      ctx.fillRect(gutterWidth, y, rectWidth, rowHeight);
-      ctx.fillStyle = '#000000';
-      ctx.fillText(columnTitle, x, Math.floor(y + rowCenter));
-    }
+    ctx.fillRect(gutterWidth, y, rectWidth, rowHeight);
+    ctx.fillStyle = '#000000';
+    ctx.fillText(columnTitle, x, Math.floor(y + rowCenter));
   }
 };
 
@@ -202,4 +243,15 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
     function(row, x, bounds) {
   // TODO(chizeng): Return a useful info string.
   return '';
+};
+
+
+/**
+ * Updates the token used to search for events.
+ * @param {string} value The new value.
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.setSearchValue =
+    function(value) {
+  this.matchedEventTypeIds_ = goog.string.trim(value) ?
+      this.playback_.getMatchingEventIds(value) : {};
 };

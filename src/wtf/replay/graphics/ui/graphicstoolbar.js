@@ -13,7 +13,6 @@
 
 goog.provide('wtf.replay.graphics.ui.GraphicsToolbar');
 
-goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.replay.graphics.Playback');
@@ -76,21 +75,6 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
   this.forwardButton_ =
       this.getChildElement(goog.getCssName('graphicsReplayForwardButton'));
 
-  /**
-   * The previous draw call button.
-   * @type {!Element}
-   * @private
-   */
-  this.previousDrawCallButton_ = this.getChildElement(
-      goog.getCssName('graphicsReplayPreviousDrawCallButton'));
-
-  /**
-   * The next draw call button.
-   * @type {!Element}
-   * @private
-   */
-  this.nextDrawCallButton_ = this.getChildElement(
-      goog.getCssName('graphicsReplayNextDrawCallButton'));
 
   // Only enable this toolbar after the playback has loaded.
   deferred.addCallback(function() {
@@ -100,19 +84,6 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
   }, this);
 };
 goog.inherits(wtf.replay.graphics.ui.GraphicsToolbar, wtf.ui.Control);
-
-
-/**
- * Events related to manipulating the toolbar.
- * @enum {string}
- */
-wtf.replay.graphics.ui.GraphicsToolbar.EventType = {
-
-  /**
-   * A seek was performed by the user to an event within the current step.
-   */
-  MANUAL_SUB_STEP_SEEK: goog.events.getUniqueId('manual_sub_step_seek')
-};
 
 
 /**
@@ -138,9 +109,6 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setInitialButtonStates_ =
   this.toggleButton(goog.getCssName('graphicsReplayResetButton'), true);
   this.toggleButton(goog.getCssName('graphicsReplayPlayButton'), true);
   this.toggleButton(goog.getCssName('graphicsReplayForwardButton'), true);
-  this.toggleButton(
-      goog.getCssName('graphicsReplayPreviousDrawCallButton'), true);
-  this.toggleButton(goog.getCssName('graphicsReplayNextDrawCallButton'), true);
 };
 
 
@@ -167,14 +135,6 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToClickEvents_ =
       this.forwardButton_,
       goog.events.EventType.CLICK,
       this.forwardClickHandler_, false, this);
-  eh.listen(
-      this.previousDrawCallButton_,
-      goog.events.EventType.CLICK,
-      this.previousDrawCallClickHandler_, false, this);
-  eh.listen(
-      this.nextDrawCallButton_,
-      goog.events.EventType.CLICK,
-      this.nextDrawCallClickHandler_, false, this);
 };
 
 
@@ -191,18 +151,11 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
       function() {
         // There are still steps left.
         if (this.playback_.getCurrentStep()) {
-          var isPlaying = playback.isPlaying();
           this.toggleButton(
               goog.getCssName('graphicsReplayPlayButton'), true);
           this.toggleButton(
               goog.getCssName('graphicsReplayForwardButton'),
               playback.getCurrentStepIndex() < playback.getStepCount() - 1);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayPreviousDrawCallButton'),
-              !isPlaying);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayNextDrawCallButton'),
-              !isPlaying);
 
           // If we are at the beginning, disable back button.
           this.toggleButton(goog.getCssName('graphicsReplayBackButton'),
@@ -213,31 +166,13 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
               goog.getCssName('graphicsReplayPlayButton'), false);
           this.toggleButton(
               goog.getCssName('graphicsReplayForwardButton'), false);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayPreviousDrawCallButton'), false);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayNextDrawCallButton'), false);
         }
-      }, this);
-
-  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
-      function() {
-        // No seeking to the next draw call while playing.
-        this.toggleButton(
-            goog.getCssName('graphicsReplayPreviousDrawCallButton'), false);
-        this.toggleButton(
-            goog.getCssName('graphicsReplayNextDrawCallButton'), false);
       }, this);
 
   playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
       function() {
         dom.setTextContent(this.playButton_, 'Play');
-        if (playback.getCurrentStep()) {
-          this.toggleButton(
-              goog.getCssName('graphicsReplayPreviousDrawCallButton'), true);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayNextDrawCallButton'), true);
-        } else {
+        if (!playback.getCurrentStep()) {
           this.toggleButton(
               goog.getCssName('graphicsReplayPlayButton'), false);
         }
@@ -302,28 +237,4 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.forwardClickHandler_ =
         'Can\'t seek beyond last step index of ' + lastStepIndex + '.');
   }
   playback.seekStep(currentStepIndex + 1);
-};
-
-
-/**
- * Handles clicks of the previous draw call button.
- * @private
- */
-wtf.replay.graphics.ui.GraphicsToolbar.prototype.previousDrawCallClickHandler_ =
-    function() {
-  this.playback_.seekToPreviousDrawCall();
-  this.emitEvent(
-      wtf.replay.graphics.ui.GraphicsToolbar.EventType.MANUAL_SUB_STEP_SEEK);
-};
-
-
-/**
- * Handles clicks of the next draw call button.
- * @private
- */
-wtf.replay.graphics.ui.GraphicsToolbar.prototype.nextDrawCallClickHandler_ =
-    function() {
-  this.playback_.seekToNextDrawCall();
-  this.emitEvent(
-      wtf.replay.graphics.ui.GraphicsToolbar.EventType.MANUAL_SUB_STEP_SEEK);
 };
