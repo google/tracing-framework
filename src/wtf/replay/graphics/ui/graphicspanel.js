@@ -33,13 +33,14 @@ goog.require('wtf.ui.ResizableControl');
  * Graphics control panel.
  *
  * @param {!wtf.replay.graphics.Playback} playback The playback.
+ * @param {!wtf.db.EventList} eventList Event list for an entire animation.
  * @param {!Element} parentElement The parent element.
  * @param {goog.dom.DomHelper=} opt_domHelper The DOM Helper.
  * @constructor
  * @extends {wtf.ui.Control}
  */
 wtf.replay.graphics.ui.GraphicsPanel = function(
-    playback, parentElement, opt_domHelper) {
+    playback, eventList, parentElement, opt_domHelper) {
   goog.base(this, parentElement, opt_domHelper);
 
   /**
@@ -68,14 +69,14 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
       goog.events.EventType.RESIZE, this.layout, false, this);
 
   /**
-   * A place where buttons for controlling playback reside.
+   * The toolbar for the graphics panel. Has widgets such as main buttons.
    * @type {!wtf.replay.graphics.ui.GraphicsToolbar}
    * @private
    */
-  this.buttons_ = new wtf.replay.graphics.ui.GraphicsToolbar(
+  this.toolbar_ = new wtf.replay.graphics.ui.GraphicsToolbar(
       this.getChildElement(goog.getCssName('graphicsReplayToolbarContainer')),
       playback, this.loadDeferred_, this.getDom());
-  this.registerDisposable(this.buttons_);
+  this.registerDisposable(this.toolbar_);
 
   /**
    * A slider for seeking quickly.
@@ -99,7 +100,7 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
    * @private
    */
   this.eventNavigator_ = new wtf.replay.graphics.ui.EventNavigator(
-      this.playback_, this.getChildElement(
+      this.playback_, eventList, this.getChildElement(
           goog.getCssName('graphicsReplayEventNavigatorContainer')),
       this.getDom());
   this.registerDisposable(this.eventNavigator_);
@@ -118,9 +119,6 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
       this.playback_, this.getChildElement(
           goog.getCssName('graphicsReplayMainDisplay')), this.getDom());
   this.registerDisposable(this.canvasesArea_);
-
-  // Listens to updates from the toolbar.
-  this.listenToToolbarUpdates_();
 };
 goog.inherits(wtf.replay.graphics.ui.GraphicsPanel, wtf.ui.Control);
 
@@ -154,20 +152,6 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.handleLoadError_ = function(
   var dialogTitle = 'Loading Error';
   var dialogDetails = error.message;
   wtf.ui.ErrorDialog.show(dialogTitle, dialogDetails, this.getDom());
-};
-
-
-/**
- * Listens to updates from the toolbar.
- * @private
- */
-wtf.replay.graphics.ui.GraphicsPanel.prototype.listenToToolbarUpdates_ =
-    function() {
-  this.buttons_.addListener(
-      wtf.replay.graphics.ui.GraphicsToolbar.EventType.MANUAL_SUB_STEP_SEEK,
-      function() {
-        this.eventNavigator_.updateScrolling(this.playback_);
-      }, this);
 };
 
 

@@ -1,0 +1,31 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * A container for the toolbar for navigating within a step for graphics replay.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+{namespace wtf.replay.graphics.ui.eventNavigatorToolbar}
+
+/**
+ * Container of control buttons for navigating within a step.
+ */
+{template .controller}
+  <div class="{css graphicsReplayEventNavigatorToolbar}">
+    <div class="{css graphicsReplayToolbarButtonRows} {css kButtonBar} {css buttons}">
+      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayPreviousDrawCallButton}" title="Previous Draw Call">
+        Prev. Draw Call
+      </a>
+      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayNextDrawCallButton}" title="Next Draw Call">
+        Next Draw Call
+      </a>
+    </div>
+    <div class="{css graphicsReplayToolbarSearchBox}"></div>
+  </div>
+{/template}

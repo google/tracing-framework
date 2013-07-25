@@ -16,6 +16,7 @@ goog.provide('wtf.replay.graphics.ui.EventNavigator');
 goog.require('goog.soy');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.EventNavigatorTableSource');
+goog.require('wtf.replay.graphics.ui.EventNavigatorToolbar');
 goog.require('wtf.replay.graphics.ui.eventNavigator');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.VirtualTable');
@@ -26,13 +27,14 @@ goog.require('wtf.ui.VirtualTable');
  * Navigation of events control.
  *
  * @param {!wtf.replay.graphics.Playback} playback The playback.
+ * @param {!wtf.db.EventList} eventList Event list for an entire animation.
  * @param {!Element} parentElement Element to display in.
  * @param {goog.dom.DomHelper=} opt_domHelper The DOM helper.
  * @constructor
  * @extends {wtf.ui.Control}
  */
 wtf.replay.graphics.ui.EventNavigator = function(
-    playback, parentElement, opt_domHelper) {
+    playback, eventList, parentElement, opt_domHelper) {
   goog.base(this, parentElement, opt_domHelper);
 
   /**
@@ -41,8 +43,20 @@ wtf.replay.graphics.ui.EventNavigator = function(
    * @private
    */
   this.tableSource_ =
-      new wtf.replay.graphics.ui.EventNavigatorTableSource(playback);
+      new wtf.replay.graphics.ui.EventNavigatorTableSource(
+          playback, eventList);
   this.registerDisposable(this.tableSource_);
+
+  /**
+   * Toolbar for navigating within a step.
+   * @type {!wtf.replay.graphics.ui.EventNavigatorToolbar}
+   * @private
+   */
+  this.toolbar_ = new wtf.replay.graphics.ui.EventNavigatorToolbar(
+      this.getChildElement(
+          goog.getCssName('graphicsReplayEventNavigatorToolbarContainer')),
+      playback, this.getDom());
+  this.registerDisposable(this.toolbar_);
 
   /**
    * Results table.
@@ -68,6 +82,9 @@ wtf.replay.graphics.ui.EventNavigator = function(
   // Stop listening to changes in step after playing begins. Start listening
   // again when playing stops.
   this.listenToPlayUpdates_(playback);
+
+  // Listen to the toolbar to determine when to scroll the table.
+  this.listenToToolbarUpdates_(playback);
 };
 goog.inherits(wtf.replay.graphics.ui.EventNavigator, wtf.ui.Control);
 
@@ -87,6 +104,7 @@ wtf.replay.graphics.ui.EventNavigator.prototype.createDom = function(dom) {
  */
 wtf.replay.graphics.ui.EventNavigator.prototype.setReady = function() {
   this.table_.setSource(this.tableSource_);
+  this.toolbar_.setReady();
 };
 
 
@@ -98,6 +116,29 @@ wtf.replay.graphics.ui.EventNavigator.prototype.layout = function() {
   if (this.table_.getSource()) {
     this.updateScrolling(this.playback_);
   }
+};
+
+
+/**
+ * Listens to updates from the toolbar.
+ * @param {!wtf.replay.graphics.Playback} playback The playback.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigator.prototype.listenToToolbarUpdates_ =
+    function(playback) {
+  // If the user selects an event within a step, go to it.
+  this.toolbar_.addListener(
+      wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
+          .MANUAL_SUB_STEP_SEEK,
+      function() {
+        this.updateScrolling(playback);
+      }, this);
+
+  // If the user changes the search value, update the events displayed.
+  this.toolbar_.addListener(
+      wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
+          .SEARCH_VALUE_CHANGED,
+      this.setSearchValue_, this);
 };
 
 
@@ -153,6 +194,18 @@ wtf.replay.graphics.ui.EventNavigator.prototype.unListenToStepUpdates_ =
   playback.removeListener(
       wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
       this.tableSource_.invalidate, this.tableSource_);
+};
+
+
+/**
+ * Updates the token used to search within the events table.
+ * @param {string} value The new value.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigator.prototype.setSearchValue_ = function(
+    value) {
+  this.tableSource_.setSearchValue(value);
+  this.layout();
 };
 
 
