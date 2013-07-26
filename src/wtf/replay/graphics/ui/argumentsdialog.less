@@ -1,0 +1,40 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Graphics replay argument-editing dialog LESS file.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+.graphicsReplayArgumentsDialog {
+  .form {
+    .header {
+      .buttons {
+        & .kButton {
+          margin: 0 0 0 16px;
+        }
+      }
+    }
+    .saveArgumentsButton {}
+
+    .resetArgumentsButton {}
+
+    .dialogFields {
+      .graphicsReplayArgumentsDialogArgKeyPair {
+        margin: 15px 0 0 0;
+
+        .graphicsReplayArgumentsDialogInputContainer {}
+      }
+    }
+
+    /* Forms need a submit input element for Enter to work. */
+    .hiddenSubmit {
+      visibility: hidden;
+    }
+  }
+}
