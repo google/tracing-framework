@@ -15,6 +15,7 @@ goog.provide('wtf.replay.graphics.ui.EventNavigatorTableSource');
 
 goog.require('goog.asserts');
 goog.require('wtf.db.Filter');
+goog.require('wtf.replay.graphics.ui.ArgumentsDialog');
 goog.require('wtf.ui.VirtualTableSource');
 
 
@@ -24,11 +25,12 @@ goog.require('wtf.ui.VirtualTableSource');
  *
  * @param {!wtf.replay.graphics.Playback} playback The relevant playback.
  * @param {!wtf.db.EventList} eventList Event list for an entire animation.
+ * @param {!goog.dom.DomHelper} domHelper DOM Helper.
  * @constructor
  * @extends {wtf.ui.VirtualTableSource}
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource = function(
-    playback, eventList) {
+    playback, eventList, domHelper) {
   goog.base(this);
 
   /**
@@ -59,6 +61,20 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(
    */
   this.matchedEventTypeIds_ = {};
 
+  /**
+   * A set of IDs of events whose arguments have been altered.
+   * @type {!Object.<boolean>}
+   * @private
+   */
+  this.idsOfEventsWithUpdatedArguments_ = {};
+
+  /**
+   * DOM Helper.
+   * @type {!goog.dom.DomHelper} dom DOM Helper.
+   * @private
+   */
+  this.domHelper_ = domHelper;
+
   var currentStep = playback.getCurrentStep();
   var eventIterator = currentStep ? currentStep.getEventIterator(true) : null;
   var numEventsInStep = currentStep ? eventIterator.getCount() : 0;
@@ -69,6 +85,23 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(
 goog.inherits(
     wtf.replay.graphics.ui.EventNavigatorTableSource,
     wtf.ui.VirtualTableSource);
+
+
+/**
+ * Contains useful constants for drawing rows.
+ * @enum {number}
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.Length = {
+  /**
+   * The width of the edit button.
+   */
+  EDIT_WIDTH: 28,
+
+  /**
+   * The width of the gutter.
+   */
+  GUTTER_WIDTH: 68
+};
 
 
 /**
@@ -89,18 +122,29 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
   // Gutter.
   // TODO(benvanik): move into table as an option?
-  var gutterWidth = 60;
+  var gutterWidth =
+      wtf.replay.graphics.ui.EventNavigatorTableSource.Length.GUTTER_WIDTH;
   ctx.fillStyle = '#eeeeee';
   ctx.fillRect(0, 0, gutterWidth, bounds.height);
   var y = rowOffset;
   for (var n = first; n <= last; n++, y += rowHeight) {
     var line = String(n);
     ctx.fillStyle = 'black';
-    ctx.fillText(
-        line,
-        gutterWidth - ((line.length + 1) * charWidth),
-        Math.floor(y + rowCenter));
+    var lineNumberXPosition = gutterWidth - ((line.length + 1) * charWidth);
+    var yTextPosition = Math.floor(y + rowCenter);
+    ctx.fillText(line, lineNumberXPosition, yTextPosition);
+
+    // Draw the edit button.
+    if (n) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, y,
+          wtf.replay.graphics.ui.EventNavigatorTableSource.Length.EDIT_WIDTH,
+          bounds.height);
+      ctx.fillStyle = '#000000';
+      ctx.fillText('Edit', 0, yTextPosition);
+    }
   }
+
   ctx.fillStyle = '#dddddd';
   ctx.fillRect(gutterWidth - 1, 0, 1, bounds.height);
 
@@ -108,6 +152,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
   y = rowOffset;
   var color1 = '#fafafa';
   var color2 = '#ffffff';
+  var argumentsAlteredColor = '#ffff00';
   var highlightedColor = '#2eccfa';
   var matchedEventColor = '#ffa500';
   var x = gutterWidth + charWidth;
@@ -143,6 +188,8 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
       if (n && this.filter_ && this.matchedEventTypeIds_[it.getTypeId()] &&
           (!argumentFilter || argumentFilter(it))) {
         ctx.fillStyle = matchedEventColor;
+      } else if (this.idsOfEventsWithUpdatedArguments_[it.getId()]) {
+        ctx.fillStyle = argumentsAlteredColor;
       } else {
         ctx.fillStyle = n % 2 ? color1 : color2;
       }
@@ -234,7 +281,15 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
 
   // If this row reflects an event, go to it.
   if (row) {
-    playback.seekSubStepEvent(row - 1);
+    if (x <=
+        wtf.replay.graphics.ui.EventNavigatorTableSource.Length.EDIT_WIDTH) {
+      this.handleEditClick_(row);
+    } else {
+      var soughtIndex = row - 1;
+      if (soughtIndex != playback.getSubStepEventId()) {
+        playback.seekSubStepEvent(soughtIndex);
+      }
+    }
   } else {
     // Go to the beginning of the step.
     playback.seekStep(playback.getCurrentStepIndex());
@@ -243,6 +298,77 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
 
   // Redraw.
   return true;
+};
+
+
+/**
+ * Handles clicks of the button that edits arguments.
+ * @param {number} rowIndex The index of the row clicked.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.handleEditClick_ =
+    function(rowIndex) {
+  var currentStep = this.playback_.getCurrentStep();
+  if (!currentStep) {
+    throw new Error('Attempted to edit arguments with no current step.');
+  }
+
+  var it = currentStep.getEventIterator(true);
+  it.seek(rowIndex - 1);
+  var eventId = it.getId();
+  var alterArgumentsDialog =
+      new wtf.replay.graphics.ui.ArgumentsDialog(it, this.domHelper_);
+
+  // Listen to events pertaining to arguments changing or being reset.
+  alterArgumentsDialog.addListener(
+      wtf.replay.graphics.ui.ArgumentsDialog.EventType.ARGUMENTS_ALTERED,
+      goog.partial(this.markArgsAltered_, eventId), this);
+  alterArgumentsDialog.addListener(
+      wtf.replay.graphics.ui.ArgumentsDialog.EventType.ARGUMENTS_RESET,
+      goog.partial(this.markArgsReset_, eventId), this);
+};
+
+
+/**
+ * Adds an event ID to the set of IDs of events with altered arguments.
+ * @param {number} eventId The ID of an event whose arguments were altered.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.markArgsAltered_ =
+    function(eventId) {
+  this.idsOfEventsWithUpdatedArguments_[eventId] = true;
+  this.playbackToCurrent_();
+  this.invalidate();
+};
+
+
+/**
+ * Removes an event ID from the set of IDs of events with altered arguments.
+ * @param {number} eventId The ID of an event whose arguments were reset.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.markArgsReset_ =
+    function(eventId) {
+  if (!this.idsOfEventsWithUpdatedArguments_[eventId]) {
+    return;
+  }
+
+  delete this.idsOfEventsWithUpdatedArguments_[eventId];
+  this.playbackToCurrent_();
+  this.invalidate();
+};
+
+
+/**
+ * Plays back up to the current event in the step.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.playbackToCurrent_ =
+    function() {
+  var playback = this.playback_;
+  var targetIndex = playback.getSubStepEventId();
+  playback.seekStep(playback.getCurrentStepIndex());
+  playback.seekSubStepEvent(targetIndex);
 };
 
 
