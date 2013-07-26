@@ -78,7 +78,7 @@ wtf.db.EventTypeTable.prototype.defineType = function(eventType) {
 
 /**
  * Gets a list of all event types.
- * @return {!Array.<!wtf.db.EventType>} Event list. Do not modify.
+ * @return {!Array.<!wtf.db.EventType>} List of event types. Do not modify.
  */
 wtf.db.EventTypeTable.prototype.getAll = function() {
   return this.list_;
