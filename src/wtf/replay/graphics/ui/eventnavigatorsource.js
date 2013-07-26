@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.EventNavigatorTableSource');
 
+goog.require('goog.asserts');
 goog.require('wtf.db.Filter');
 goog.require('wtf.ui.VirtualTableSource');
 
@@ -159,19 +160,19 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
         }
 
         var typeId = it.getTypeId();
+        var contextHandleText = currentContextHandle != -1 ?
+            currentContextHandle : 'None';
         if (typeId == createContextTypeId) {
           columnTitle =
-              'Context with handle ' + it.getArgument('handle') + ' created.';
+              'New context created.';
         } else if (typeId == setContextTypeId) {
           columnTitle =
-              'Context with handle ' + it.getArgument('handle') +
-                  ' set as current.';
+              'Context set as current.';
         } else {
-          var contextHandleText = (currentContextHandle != -1) ?
-              currentContextHandle : 'None';
-          columnTitle = it.getLongString(true) +
-              ' (context handle  ' + contextHandleText + ')';
+          // Remove the 'WebGLRenderingContext#' prefix.
+          columnTitle = it.getLongString(true).substring(22);
         }
+        columnTitle = contextHandleText + ' ' + columnTitle;
 
         it.next();
       }
@@ -250,8 +251,16 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
     function(row, x, bounds) {
-  // TODO(chizeng): Return a useful info string.
-  return '';
+  // The first row is a dummy row that does not represent a call.
+  if (!row) {
+    return '';
+  }
+
+  var currentStep = this.playback_.getCurrentStep();
+  goog.asserts.assert(currentStep);
+  var it = currentStep.getEventIterator(true);
+  it.seek(row - 1);
+  return it.getInfoString();
 };
 
 
