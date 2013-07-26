@@ -15,43 +15,69 @@
 
 goog.provide('wtf.replay.graphics');
 
-goog.require('goog.dom.DomHelper');
+goog.require('goog.asserts');
+goog.require('goog.dom');
 goog.require('wtf.db');
+goog.require('wtf.db.Database');
 goog.require('wtf.replay.graphics.Session');
 
 
 /**
- * Sets up a graphics playback in a standalone HTML page.
- * @param {string} traceUrl The URL of the trace.
+ * Sets up a graphics playback UI in the given DOM element.
+ * @param {!wtf.db.Database} db Loaded database.
+ * @param {!Element} parentElement The parent element for the UI to be
+ *     placed into.
+ * @param {goog.dom.DomHelper=} opt_dom DOM helper.
+ * @return {!wtf.replay.graphics.Session} New replay session.
+ */
+wtf.replay.graphics.setup = function(db, parentElement, opt_dom) {
+  var dom = opt_dom || goog.dom.getDomHelper(parentElement);
+  return new wtf.replay.graphics.Session(db, parentElement, dom);
+};
+
+
+/**
+ * Sets up a graphics playback UI in a standalone HTML page.
+ * @param {string} url The URL of the trace.
  * @param {!Element} parentElement The parent element for this standalone
  *     widget.
- * @param {!function(!wtf.replay.graphics.Session)=} opt_callback A function
- * called when the session has loaded. Takes the session as an argument.
+ * @param {goog.dom.DomHelper=} opt_dom DOM helper.
+ * @param {(function(!(wtf.replay.graphics.Session|Error)))=} opt_callback
+ *     A function called when the session has loaded. Takes the session as
+ *     an argument or an Error object if the load failed.
  */
-wtf.replay.graphics.setupStandalone = function(
-    traceUrl, parentElement, opt_callback) {
-  var callback = opt_callback || goog.nullFunction;
-  var domHelper = new goog.dom.DomHelper(parentElement.ownerDocument);
-
+wtf.replay.graphics.setupWithUrl = function(
+    url, parentElement, opt_dom, opt_callback) {
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', traceUrl, true);
+  xhr.open('GET', url, true);
 
   xhr.onload = function() {
     if (xhr.status != 200) {
-      throw new Error('Failed: ' + xhr.status + ', ' + xhr.statusText);
+      var e = new Error('Failed: ' + xhr.status + ', ' + xhr.statusText);
+      if (opt_callback) {
+        opt_callback(e);
+      } else {
+        throw e;
+      }
     }
 
     var traceData = new Uint8Array(
         /** @type {ArrayBuffer} */(xhr.response));
     wtf.db.load(traceData, function(db) {
       if (!db || (db instanceof Error)) {
-        throw new Error('Database failed to load.');
+        var e = new Error('Database failed to load.');
+        if (opt_callback) {
+          opt_callback(e);
+        } else {
+          throw e;
+        }
       }
 
-      var session = new wtf.replay.graphics.Session(
-          /** @type {!wtf.db.Database} */ (db),
-          parentElement, domHelper);
-      callback.apply(null, session);
+      goog.asserts.assert(db instanceof wtf.db.Database);
+      var session = wtf.replay.graphics.setup(db, parentElement, opt_dom);
+      if (opt_callback) {
+        opt_callback(session);
+      }
     });
   };
 
@@ -61,5 +87,8 @@ wtf.replay.graphics.setupStandalone = function(
 
 
 goog.exportSymbol(
-    'wtf.replay.graphics.setupStandalone',
-    wtf.replay.graphics.setupStandalone);
+    'wtf.replay.graphics.setup',
+    wtf.replay.graphics.setup);
+goog.exportSymbol(
+    'wtf.replay.graphics.setupWithUrl',
+    wtf.replay.graphics.setupWithUrl);

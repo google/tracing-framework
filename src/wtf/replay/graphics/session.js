@@ -72,3 +72,11 @@ wtf.replay.graphics.Session = function(db, parentElement, opt_domHelper) {
   this.registerDisposable(this.panel_);
 };
 goog.inherits(wtf.replay.graphics.Session, wtf.events.EventEmitter);
+
+
+/**
+ * Lays out all child UI.
+ */
+wtf.replay.graphics.Session.prototype.layout = function() {
+  this.panel_.layout();
+};
