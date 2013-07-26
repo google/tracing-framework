@@ -1,0 +1,53 @@
+/**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
+ * Arguments dialog (the dialog that lets users alter arguments of events) DOM
+ * for graphics replay.
+ *
+ * @author chizeng@google.com (Chi Zeng)
+ */
+
+{namespace wtf.replay.graphics.ui.argumentsdialog}
+
+
+/**
+ * Root control UI of the arguments dialog.
+ */
+{template .control}
+  <div class="{css uiSettingsDialog} {css graphicsReplayArgumentsDialog}">
+    <form class="{css form}">
+      <div class="{css header}">
+        <div class="{css buttons}">
+          <a class="{css kButton} {css kButtonBlue} {css saveArgumentsButton}">Update</a>
+          <a class="{css kButton} {css resetArgumentsButton}">Reset</a>
+          <a class="{css kButton} {css cancelButton}">Cancel</a>
+        </div>
+        <h1 class="{css title}"></h1>
+      </div>
+      <div class="{css contents}">
+        <div>
+          <div class="{css dialogFields}"></div>
+        </div>
+      </div>
+      <!-- Hidden submit button. Makes pressing Enter submit the form. -->
+      <input class="{css hiddenSubmit}" type="submit">
+    </form>
+  </div>
+{/template}
+
+
+/**
+ * A field / input pair for the form on the arguments dialog.
+ * @param argumentKey The key of the argument.
+ */
+{template .argumentkeyvaluepair}
+  <div class="{css graphicsReplayArgumentsDialogArgKeyPair}">
+    <label for="{$argumentKey}">{$argumentKey}:</label>
+    <div class="{css graphicsReplayArgumentsDialogInputContainer}"></div>
+  </div>
+{/template}

@@ -44,7 +44,7 @@ wtf.replay.graphics.ui.EventNavigator = function(
    */
   this.tableSource_ =
       new wtf.replay.graphics.ui.EventNavigatorTableSource(
-          playback, eventList);
+          playback, eventList, this.getDom());
   this.registerDisposable(this.tableSource_);
 
   /**

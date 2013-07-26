@@ -32,20 +32,24 @@ wtf.replay.graphics.Playback_test =
       instanceEventTypes: [
         'wtf.timing#frameStart(uint32 number)',
         'wtf.timing#frameEnd(uint32 number)',
-        'someInstanceEvent()'
+        'someInstanceEvent()',
+        'wtf.webgl#createContext(uint32 handle, any attributes)'
       ],
       events: [
         [0, 'someInstanceEvent'],
         [10, 'wtf.timing#frameStart', 100],
+        [15, 'wtf.webgl#createContext', 1, {}],
         [20, 'someInstanceEvent'],
         [30, 'wtf.timing#frameEnd', 100],
         [40, 'someInstanceEvent'],
         [50, 'wtf.timing#frameStart', 200],
         [60, 'someInstanceEvent'],
+        [65, 'wtf.webgl#createContext', 2, {}],
         [70, 'wtf.timing#frameEnd', 200],
         [80, 'someInstanceEvent'],
         [90, 'wtf.timing#frameStart', 300],
         [100, 'someInstanceEvent'],
+        [105, 'wtf.webgl#createContext', 3, {}],
         [110, 'wtf.timing#frameEnd', 300]
       ]});
     frameList = new wtf.db.FrameList(eventList);
@@ -118,6 +122,7 @@ wtf.replay.graphics.Playback_test =
          var exceptionThrown = false;
          try {
            playback.play();
+           assert.isTrue(playback.isPlaying());
            playback.play();
          } catch (exception) {
            exceptionThrown = true;
@@ -147,10 +152,12 @@ wtf.replay.graphics.Playback_test =
       instanceEventTypes: [
         'wtf.timing#frameStart(uint32 number)',
         'wtf.timing#frameEnd(uint32 number)',
-        'someInstanceEvent()'
+        'someInstanceEvent()',
+        'wtf.webgl#createContext(uint32 handle, any attributes)'
       ],
       events: [
-        [0, 'someInstanceEvent'],
+        [0, 'wtf.webgl#createContext', 1, {}],
+        [10, 'someInstanceEvent'],
         [20, 'someInstanceEvent'],
         [40, 'someInstanceEvent'],
         [60, 'someInstanceEvent'],
@@ -164,8 +171,8 @@ wtf.replay.graphics.Playback_test =
        function() {
          var currentStep = playback.getCurrentStep();
          assert.equal(currentStep.getStartEventId(), 0);
-         assert.equal(currentStep.getEndEventId(), 4);
-         assert.equal(currentStep.getEventIterator().getCount(), 5);
+         assert.equal(currentStep.getEndEventId(), 5);
+         assert.equal(currentStep.getEventIterator().getCount(), 6);
          assert.isNull(currentStep.getFrame());
          playback.play();
        }],
@@ -267,16 +274,16 @@ wtf.replay.graphics.Playback_test =
          var exceptionThrown = false;
          try {
            // Seek forwards to a step with a frame.
-           playback.seekStep(5);
+           playback.seekStep(2);
            currentStep = playback.getCurrentStep();
-           assert.equal(currentStep.getStartEventId(), 9);
+           assert.equal(currentStep.getStartEventId(), 11);
            assert.isNotNull(currentStep.getFrame());
 
            // Now, seek backwards to a step without a frame.
-           playback.seekStep(2);
+           playback.seekStep(1);
            currentStep = playback.getCurrentStep();
-           assert.equal(currentStep.getStartEventId(), 4);
-           assert.isNull(currentStep.getFrame());
+           assert.equal(currentStep.getStartEventId(), 6);
+           assert.isNotNull(currentStep.getFrame());
          } catch (exception) {
            exceptionThrown = true;
          } finally {
