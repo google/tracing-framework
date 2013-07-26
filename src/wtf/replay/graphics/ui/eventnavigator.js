@@ -53,8 +53,7 @@ wtf.replay.graphics.ui.EventNavigator = function(
    * @private
    */
   this.toolbar_ = new wtf.replay.graphics.ui.EventNavigatorToolbar(
-      this.getChildElement(
-          goog.getCssName('graphicsReplayEventNavigatorToolbarContainer')),
+      this.getChildElement(goog.getCssName('toolbarContainer')),
       playback, this.getDom());
   this.registerDisposable(this.toolbar_);
 
@@ -64,8 +63,7 @@ wtf.replay.graphics.ui.EventNavigator = function(
    * @private
    */
   this.table_ = new wtf.ui.VirtualTable(
-      this.getChildElement(
-          goog.getCssName('replayGraphicsEventNavigatorTable')),
+      this.getChildElement(goog.getCssName('tableOuter')),
       this.getDom());
   this.registerDisposable(this.table_);
 

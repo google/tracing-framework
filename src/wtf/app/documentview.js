@@ -30,6 +30,7 @@ goog.require('wtf.app.documentview');
 goog.require('wtf.app.nav.Navbar');
 goog.require('wtf.app.query.QueryPanel');
 goog.require('wtf.app.tracks.TracksPanel');
+goog.require('wtf.app.webgl.WebGLPanel');
 goog.require('wtf.db.BlobDataSourceInfo');
 goog.require('wtf.db.DriveDataSourceInfo');
 goog.require('wtf.db.HealthInfo');
@@ -435,6 +436,17 @@ wtf.app.DocumentView.prototype.databaseInvalidated_ = function() {
   var firstEventTime = db.getFirstEventTime();
   var lastEventTime = db.getLastEventTime();
   this.localView_.setVisibleRange(firstEventTime, lastEventTime, true);
+
+  // Show the WebGL tab if we have events.
+  // We lazily create this as it can be expensive.
+  // TODO(benvanik): add a new event that indicates the file is replayable.
+  var hasWebGLEvents = !!db.getEventType('wtf.webgl#createContext');
+  if (hasWebGLEvents) {
+    var panel = this.tabbar_.getPanel('webgl');
+    if (!panel) {
+      this.tabbar_.addPanel(new wtf.app.webgl.WebGLPanel(this));
+    }
+  }
 };
 
 

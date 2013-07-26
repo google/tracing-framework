@@ -20,4 +20,4 @@ if (!search || !search.length || search.indexOf('?url=') != 0) {
 var traceUrl = search.substr(5);
 
 var parentElement = document.getElementById('graphicsReplayStagingArea');
-wtf.replay.graphics.setupStandalone(traceUrl, parentElement);
+wtf.replay.graphics.setupWithUrl(traceUrl, parentElement);

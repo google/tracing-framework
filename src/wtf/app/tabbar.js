@@ -164,6 +164,16 @@ wtf.app.Tabbar.prototype.getPanels = function() {
 
 
 /**
+ * Gets a panel by path, if it exists.
+ * @param {string} path Panel path.
+ * @return {wtf.app.TabPanel} Panel, if it exists.
+ */
+wtf.app.Tabbar.prototype.getPanel = function(path) {
+  return this.panelsByPath_[path];
+};
+
+
+/**
  * Gets the currently selected panel, if any.
  * @return {wtf.app.TabPanel} Selected panel, if any is selected.
  */

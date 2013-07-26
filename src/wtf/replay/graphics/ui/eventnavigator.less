@@ -12,12 +12,15 @@
  */
 
 .replayGraphicsEventNavigator {
+  .fitParent();
 
-  .graphicsReplayEventNavigatorToolbarContainer {}
+  & .toolbarContainer {
+    .fitParent();
+  }
 
-  .replayGraphicsEventNavigatorTable {
-    .uiVirtualTable {
-      top: 80px;
-    }
+  & .tableOuter {
+    .fitParent();
+
+    margin-top: 80px;
   }
 }
