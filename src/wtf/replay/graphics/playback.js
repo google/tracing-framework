@@ -21,7 +21,6 @@ goog.require('goog.events');
 goog.require('goog.fs');
 goog.require('goog.object');
 goog.require('goog.webgl');
-goog.require('wtf.db.Filter');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
 goog.require('wtf.replay.graphics.Step');
@@ -48,13 +47,6 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
    * @private
    */
   this.eventList_ = eventList;
-
-  /**
-   * A filter for search queries.
-   * @type {!wtf.db.Filter}
-   * @private
-   */
-  this.filter_ = new wtf.db.Filter();
 
   /**
    * List of steps for an entire animation.
@@ -1702,15 +1694,4 @@ wtf.replay.graphics.Playback.prototype.setOwningContext_ = function(
  */
 wtf.replay.graphics.Playback.prototype.getStepCount = function() {
   return this.steps_.length;
-};
-
-
-/**
- * Gets a set of IDs of event types that match a search query.
- * @param {string} query The search query.
- * @return {!Object.<number, boolean>} The set of matching event type IDs.
- */
-wtf.replay.graphics.Playback.prototype.getMatchingEventIds = function(query) {
-  this.filter_.setFromString(query);
-  return this.filter_.getMatchedEventTypes(this.eventList_.eventTypeTable);
 };

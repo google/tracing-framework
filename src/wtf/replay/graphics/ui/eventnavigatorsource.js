@@ -13,7 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.EventNavigatorTableSource');
 
-goog.require('goog.string');
+goog.require('wtf.db.Filter');
 goog.require('wtf.ui.VirtualTableSource');
 
 
@@ -43,6 +43,13 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(
    * @private
    */
   this.eventList_ = eventList;
+
+  /**
+   * Current search filter, if any.
+   * @type {wtf.db.Filter}
+   * @private
+   */
+  this.filter_ = null;
 
   /**
    * A set of IDs matched event types.
@@ -124,6 +131,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
       this.eventList_.getEventTypeId('wtf.webgl#setContext');
 
   var columnTitle = '';
+  var argumentFilter = this.filter_ ? this.filter_.getArgumentFilter() : null;
   for (var n = first; n <= last && !it.done(); n++, y += rowHeight) {
     // TODO(benvanik): icons to differentiate event types?
 
@@ -131,7 +139,8 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     if ((currentRow == -1 && !n) || currentRow == n - 1) {
       ctx.fillStyle = highlightedColor;
     } else {
-      if (n && this.matchedEventTypeIds_[it.getTypeId()]) {
+      if (n && this.filter_ && this.matchedEventTypeIds_[it.getTypeId()] &&
+          (!argumentFilter || argumentFilter(it))) {
         ctx.fillStyle = matchedEventColor;
       } else {
         ctx.fillStyle = n % 2 ? color1 : color2;
@@ -252,6 +261,14 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.setSearchValue =
     function(value) {
-  this.matchedEventTypeIds_ = goog.string.trim(value) ?
-      this.playback_.getMatchingEventIds(value) : {};
+  if (!value || !value.length) {
+    this.filter_ = null;
+    this.matchedEventTypeIds_ = {};
+  } else {
+    this.filter_ = new wtf.db.Filter(value);
+    this.matchedEventTypeIds_ =
+        this.filter_.getMatchedEventTypes(this.eventList_.eventTypeTable);
+  }
+
+  this.invalidate();
 };

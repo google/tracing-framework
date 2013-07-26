@@ -203,7 +203,6 @@ wtf.replay.graphics.ui.EventNavigator.prototype.unListenToStepUpdates_ =
 wtf.replay.graphics.ui.EventNavigator.prototype.setSearchValue_ = function(
     value) {
   this.tableSource_.setSearchValue(value);
-  this.layout();
 };
 
 
