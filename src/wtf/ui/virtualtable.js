@@ -279,7 +279,8 @@ wtf.ui.VirtualTable.prototype.setupScrolling_ = function() {
 
   // Scrollbar track scrolling by page.
   eh.listen(this.scrollTrackEl_, goog.events.EventType.MOUSEDOWN, function(e) {
-    if (e.target != this.scrollTrackEl_) {
+    if (e.target != this.scrollTrackEl_ ||
+        e.button != 0) {
       return;
     }
     e.stopPropagation();

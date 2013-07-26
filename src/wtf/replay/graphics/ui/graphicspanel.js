@@ -23,6 +23,7 @@ goog.require('wtf.replay.graphics.ui.EventNavigator');
 goog.require('wtf.replay.graphics.ui.GraphicsToolbar');
 goog.require('wtf.replay.graphics.ui.RangeSeeker');
 goog.require('wtf.replay.graphics.ui.graphicsPanel');
+goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
 goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
@@ -91,8 +92,17 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
    * @type {!wtf.ui.ResizableControl}
    * @private
    */
-  this.mainSplitSection_ = this.createMainSplitSection_();
-  this.registerDisposable(this.mainSplitSection_);
+  this.mainSplitter_ = new wtf.ui.ResizableControl(
+      wtf.ui.ResizableControl.Orientation.VERTICAL,
+      goog.getCssName('graphicsReplayMainSplitter'),
+      this.getChildElement(
+          goog.getCssName('graphicsReplayStepEventNavigation')),
+      this.getDom());
+  this.registerDisposable(this.mainSplitter_);
+  this.mainSplitter_.setSplitterLimits(300, undefined);
+  this.mainSplitter_.addListener(
+      wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
+      this.layout, this);
 
   /**
    * For resizing the event navigator.
@@ -119,6 +129,12 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
       this.playback_, this.getChildElement(
           goog.getCssName('graphicsReplayMainDisplay')), this.getDom());
   this.registerDisposable(this.canvasesArea_);
+
+  // Initial layout once the DOM is ready.
+  wtf.timing.setImmediate(function() {
+    this.mainSplitter_.setSplitterSize(300);
+    this.layout();
+  }, this);
 };
 goog.inherits(wtf.replay.graphics.ui.GraphicsPanel, wtf.ui.Control);
 
@@ -156,40 +172,17 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.handleLoadError_ = function(
 
 
 /**
- * Lays out the UI.
+ * @override
  */
-wtf.replay.graphics.ui.GraphicsPanel.prototype.layout = function() {
-  this.eventNavigator_.layout();
-};
-
-
-/**
- * Creates the main split section below the toolbar.
- * @return {!wtf.ui.ResizableControl} The resizable control.
- * @private
- */
-wtf.replay.graphics.ui.GraphicsPanel.prototype.createMainSplitSection_ =
-    function() {
-  var splitter = new wtf.ui.ResizableControl(
-      wtf.ui.ResizableControl.Orientation.VERTICAL,
-      goog.getCssName('graphicsReplayMainSplitter'),
-      this.getChildElement(
-          goog.getCssName('graphicsReplayStepEventNavigation')),
-      this.getDom());
-  splitter.setSplitterLimits(300, undefined);
-  splitter.setSplitterSize(300);
+wtf.replay.graphics.ui.GraphicsPanel.prototype.layoutInternal = function() {
   var rightHandSide =
       this.getChildElement(goog.getCssName('graphicsReplayMainDisplay'));
-  splitter.addListener(
-      wtf.ui.ResizableControl.EventType.SIZE_CHANGED,
-      function() {
-        goog.style.setStyle(
-            rightHandSide,
-            'left',
-            splitter.getSplitterSize() + 'px');
-        this.eventNavigator_.layout();
-      }, this);
-  return splitter;
+  goog.style.setStyle(
+      rightHandSide,
+      'left',
+      this.mainSplitter_.getSplitterSize() + 'px');
+
+  this.eventNavigator_.layout();
 };
 
 
