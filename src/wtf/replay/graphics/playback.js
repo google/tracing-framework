@@ -201,6 +201,11 @@ wtf.replay.graphics.Playback.EventType = {
   RESET: goog.events.getUniqueId('reset'),
 
   /**
+   * Contexts were released.
+   */
+  CONTEXTS_RELEASED: goog.events.getUniqueId('contexts_released'),
+
+  /**
    * Playing began.
    */
   PLAY_BEGAN: goog.events.getUniqueId('play_began'),
@@ -532,6 +537,7 @@ wtf.replay.graphics.Playback.prototype.clearWebGLObjects_ = function() {
     this.contextPool_.releaseContext(ctx);
   }
   this.contexts_ = {};
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXTS_RELEASED);
 };
 
 

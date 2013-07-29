@@ -99,7 +99,8 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
       }, this);
 
   // Upon a reset, remove all contexts.
-  playback.addListener(wtf.replay.graphics.Playback.EventType.RESET,
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.CONTEXTS_RELEASED,
       function() {
         for (var contextHandle in this.displayedContexts_) {
           this.removeContext_(contextHandle);
