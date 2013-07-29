@@ -47,6 +47,11 @@ goog.require('wtf.pal.IPlatform');
  * @template T
  */
 wtf.db.load = function(input, callback, opt_scope) {
+  // Because of the API change this will help people migrating scripts.
+  if (!callback) {
+    throw new Error('wtf.db.load now requires a callback.');
+  }
+
   var platform = wtf.pal.getPlatform();
 
   var db = new wtf.db.Database();
