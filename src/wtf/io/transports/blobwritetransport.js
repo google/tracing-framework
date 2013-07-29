@@ -37,11 +37,11 @@ wtf.io.transports.BlobWriteTransport = function(filename) {
   this.filename_ = filename;
 
   /**
-   * Current blob containing all data that has been written.
-   * @type {!wtf.io.Blob}
+   * A list of all blobs written so far.
+   * @type {!Array.<!wtf.io.Blob>}
    * @private
    */
-  this.blob_ = wtf.io.Blob.create([]);
+  this.blobParts_ = [];
 };
 goog.inherits(wtf.io.transports.BlobWriteTransport, wtf.io.WriteTransport);
 
@@ -50,11 +50,16 @@ goog.inherits(wtf.io.transports.BlobWriteTransport, wtf.io.WriteTransport);
  * @override
  */
 wtf.io.transports.BlobWriteTransport.prototype.disposeInternal = function() {
+  var blob = wtf.io.Blob.create(this.blobParts_);
   var platform = wtf.pal.getPlatform();
   platform.writeBinaryFile(
       this.filename_,
-      /** @type {!Blob} */ (wtf.io.Blob.toNative(this.blob_)));
-  this.blob_.close();
+      /** @type {!Blob} */ (wtf.io.Blob.toNative(blob)));
+
+  // TODO(benvanik): close?
+
+  // Drop all parts.
+  this.blobParts_ = [];
 
   goog.base(this, 'disposeInternal');
 };
@@ -64,9 +69,13 @@ wtf.io.transports.BlobWriteTransport.prototype.disposeInternal = function() {
  * @override
  */
 wtf.io.transports.BlobWriteTransport.prototype.write = function(data) {
-  var oldBlob = this.blob_;
-  this.blob_ = wtf.io.Blob.create([oldBlob, data]);
-  oldBlob.close();
+  if (wtf.io.Blob.isBlob(data)) {
+    // Blobs are immutable, so store off our input.
+    this.blobParts_.push(data);
+  } else {
+    // Wrap in a blob. This allows the browser to page the data out if needed.
+    this.blobParts_.push(wtf.io.Blob.create([data]));
+  }
 };
 
 
@@ -83,5 +92,5 @@ wtf.io.transports.BlobWriteTransport.prototype.flush = function() {
  * @return {!wtf.io.Blob} Data blob.
  */
 wtf.io.transports.BlobWriteTransport.prototype.getBlob = function() {
-  return this.blob_.slice(0, this.blob_.getSize());
+  return wtf.io.Blob.create(this.blobParts_);
 };
