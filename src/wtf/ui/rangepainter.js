@@ -117,7 +117,7 @@ wtf.ui.RangePainter.prototype.beginRenderingRanges = function(
   if (this.rangeRenderers_.length > count) {
     this.rangeRenderers_.length = count;
   }
-  while (this.rangeRenderers_.length <= count) {
+  while (this.rangeRenderers_.length < count) {
     this.rangeRenderers_.push(new wtf.ui.RangeRenderer());
   }
   for (var n = 0; n < this.rangeRenderers_.length; n++) {

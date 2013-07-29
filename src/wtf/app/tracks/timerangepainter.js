@@ -101,7 +101,7 @@ wtf.app.tracks.TimeRangePainter.prototype.repaintInternal = function(
   var maxLevel = Math.min(
       this.timeRangeList_.getMaximumLevel(),
       wtf.app.tracks.TimeRangePainter.MAX_LEVELS_);
-  this.beginRenderingRanges(bounds, maxLevel,
+  this.beginRenderingRanges(bounds, maxLevel + 1,
       wtf.ui.RangePainter.DrawStyle.TIME_SPAN);
 
   var timeLeft = this.timeLeft;

@@ -106,7 +106,7 @@ wtf.app.tracks.ZonePainter.prototype.repaintInternal = function(
 
   var eventList = this.zone_.getEventList();
   var maxDepth = eventList.getMaximumScopeDepth();
-  this.beginRenderingRanges(bounds, maxDepth);
+  this.beginRenderingRanges(bounds, maxDepth + 1);
 
   // Draw events first.
   var it = eventList.beginTimeRange(timeLeft, timeRight, true);
