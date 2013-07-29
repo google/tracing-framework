@@ -158,24 +158,36 @@ wtf.util.callWhenDomReady = function(callback, opt_scope, opt_document) {
   var doc = opt_document || goog.global.document;
 
   // TODO(benvanik): prevent leaking these events.
-  if (doc.readyState == 'complete' ||
-      doc.readyState == 'interactive') {
+  if (doc.readyState == 'complete') {
     callback.call(opt_scope);
   } else {
+    var hasFired = false;
     if (doc.addEventListener) {
       var listener = function() {
+        if (hasFired) {
+          return;
+        }
+        hasFired = true;
         doc.removeEventListener('DOMContentLoaded', listener, false);
+        doc.removeEventListener('load', listener, false);
         callback.call(opt_scope);
       };
       listener['__wtf_ignore__'] = true;
       doc.addEventListener('DOMContentLoaded', listener, false);
+      goog.global.addEventListener('load', listener, false);
     } else if (doc.attachEvent) {
       var listener = function() {
+        if (hasFired) {
+          return;
+        }
+        hasFired = true;
         doc.detachEvent('onload', listener);
+        goog.global.detachEvent('load', listener);
         callback.call(opt_scope);
       };
       listener['__wtf_ignore__'] = true;
       doc.attachEvent('onload', listener);
+      goog.global.attachEvent('load', listener);
     }
   }
 };
