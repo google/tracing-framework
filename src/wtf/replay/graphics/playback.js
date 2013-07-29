@@ -49,6 +49,13 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.eventList_ = eventList;
 
   /**
+   * A mapping from event type IDs to functions.
+   * @type {!Object.<!wtf.replay.graphics.Playback.Call_>}
+   * @private
+   */
+  this.callLookupTable_ = this.constructCallLookupTable_();
+
+  /**
    * List of steps for an entire animation.
    * @type {!Array.<!wtf.replay.graphics.Step>}
    * @private
@@ -188,7 +195,6 @@ wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME_ = '__gl_context__';
  * @enum {string}
  */
 wtf.replay.graphics.Playback.EventType = {
-
   /**
    * Playback was reset.
    */
@@ -246,6 +252,26 @@ wtf.replay.graphics.Playback.prototype.disposeInternal = function() {
   }
   this.clearWebGLObjects_();
   goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * Constructs a mapping from the IDs of event types to functions.
+ * @return {!Object.<!wtf.replay.graphics.Playback.Call_>} An object mapping
+ *     event type IDs to functions to call.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.constructCallLookupTable_ = function() {
+  var eventTypes = this.eventList_.eventTypeTable.getAll();
+  var lookupTable = {};
+  for (var i = 0; i < eventTypes.length; ++i) {
+    var call = wtf.replay.graphics.Playback.CALLS_[eventTypes[i].name];
+    if (call) {
+      lookupTable[eventTypes[i].id] = call;
+    }
+  }
+
+  return lookupTable;
 };
 
 
@@ -975,703 +1001,10 @@ wtf.replay.graphics.Playback.prototype.getCurrentStepIndex = function() {
  * @private
  */
 wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
-  // TODO(chizeng): Realize current event. Update the current event and the
-  // current frame as we do so.
-  // argument data.
-  var args = it.getArguments();
-  var objs = this.objects_;
-  var currentContext = this.currentContext_;
-
-  // parse functions and arguments.
-  switch (it.getName()) {
-    case 'WebGLRenderingContext#attachShader':
-      currentContext.attachShader(
-          /** @type {WebGLProgram} */ (objs[args['program']]),
-          /** @type {WebGLShader} */ (objs[args['shader']]));
-      break;
-    case 'WebGLRenderingContext#activeTexture':
-      currentContext.activeTexture(args['texture']);
-      break;
-    case 'WebGLRenderingContext#bindAttribLocation':
-      currentContext.bindAttribLocation(
-          /** @type {WebGLProgram} */ (objs[args['program']]),
-          args['index'], args['name']);
-      // TODO(chizeng): Figure out if we want to build a mapping.
-      // addAttribToProgram(
-      //     args['program'], args['index'], args['index']);
-      break;
-    case 'WebGLRenderingContext#bindBuffer':
-      currentContext.bindBuffer(
-          args['target'], /** @type {WebGLBuffer} */ (objs[args['buffer']]));
-      break;
-    case 'WebGLRenderingContext#bindFramebuffer':
-      currentContext.bindFramebuffer(
-          args['target'],
-          /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
-      break;
-    case 'WebGLRenderingContext#bindRenderbuffer':
-      currentContext.bindRenderbuffer(
-          args['target'],
-          /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
-      break;
-    case 'WebGLRenderingContext#bindTexture':
-      currentContext.bindTexture(
-          args['target'], /** @type {WebGLTexture} */ (objs[args['texture']]));
-      break;
-    case 'WebGLRenderingContext#blendColor':
-      currentContext.blendColor(
-          args['red'], args['green'], args['blue'],
-          args['alpha']);
-      break;
-    case 'WebGLRenderingContext#blendEquation':
-      currentContext.blendEquation(args['mode']);
-      break;
-    case 'WebGLRenderingContext#blendEquationSeparate':
-      currentContext.blendEquationSeparate(
-          args['modeRGB'], args['modeAlpha']);
-      break;
-    case 'WebGLRenderingContext#blendFunc':
-      currentContext.blendFunc(args['sfactor'], args['dfactor']);
-      break;
-    case 'WebGLRenderingContext#blendFuncSeparate':
-      currentContext.blendFuncSeparate(
-          args['srcRGB'], args['dstRGB'], args['srcAlpha'],
-          args['dstAlpha']);
-      break;
-    case 'WebGLRenderingContext#bufferData':
-      var data = args['data'];
-      // TODO(chizeng): Remove the length check after db is fixed.
-      if (!data || data.byteLength != args['size']) {
-        data = args['size'];
-      }
-      currentContext.bufferData(
-          args['target'], data, args['usage']);
-      break;
-    case 'WebGLRenderingContext#bufferSubData':
-      currentContext.bufferSubData(
-          args['target'], args['offset'], args['data']);
-      break;
-    case 'WebGLRenderingContext#checkFramebufferStatus':
-      currentContext.checkFramebufferStatus(args['target']);
-      break;
-    case 'WebGLRenderingContext#clear':
-      currentContext.clear(args['mask']);
-      break;
-    case 'WebGLRenderingContext#clearColor':
-      currentContext.clearColor(
-          args['red'], args['green'], args['blue'],
-          args['alpha']);
-      break;
-    case 'WebGLRenderingContext#clearDepth':
-      currentContext.clearDepth(args['depth']);
-      break;
-    case 'WebGLRenderingContext#clearStencil':
-      currentContext.clearStencil(args['s']);
-      break;
-    case 'WebGLRenderingContext#colorMask':
-      currentContext.colorMask(
-          args['red'], args['green'], args['blue'],
-          args['alpha']);
-      break;
-    case 'WebGLRenderingContext#compileShader':
-      currentContext.compileShader(
-          /** @type {WebGLShader} */ (objs[args['shader']]));
-      break;
-    case 'WebGLRenderingContext#compressedTexImage2D':
-      currentContext.compressedTexImage2D(
-          args['target'], args['level'], args['internalformat'],
-          args['width'], args['height'], args['border'],
-          args['data']);
-      break;
-    case 'WebGLRenderingContext#compressedTexSubImage2D':
-      currentContext.compressedTexSubImage2D(
-          args['target'], args['level'], args['xoffset'],
-          args['yoffset'], args['width'], args['height'],
-          args['format'], args['data']);
-      break;
-    case 'WebGLRenderingContext#copyTexImage2D':
-      currentContext.copyTexImage2D(
-          args['target'], args['level'], args['internalformat'],
-          args['x'], args['y'], args['width'],
-          args['height'], args['border']);
-      break;
-    case 'WebGLRenderingContext#copyTexSubImage2D':
-      currentContext.copyTexSubImage2D(
-          args['target'], args['level'], args['xoffset'],
-          args['yoffset'], args['x'], args['y'],
-          args['width'], args['height']);
-      break;
-    case 'WebGLRenderingContext#createBuffer':
-      objs[args['value']] = currentContext.createBuffer();
-      this.setOwningContext_(objs[args['value']], currentContext);
-      break;
-    case 'WebGLRenderingContext#createFramebuffer':
-      objs[args['value']] = currentContext.createFramebuffer();
-      this.setOwningContext_(objs[args['value']], currentContext);
-      break;
-    case 'WebGLRenderingContext#createRenderbuffer':
-      objs[args['value']] = currentContext.createRenderbuffer();
-      this.setOwningContext_(objs[args['value']], currentContext);
-      break;
-    case 'WebGLRenderingContext#createTexture':
-      objs[args['value']] = currentContext.createTexture();
-      this.setOwningContext_(objs[args['value']], currentContext);
-      break;
-    case 'WebGLRenderingContext#createProgram':
-      objs[args['value']] = currentContext.createProgram();
-      objs[args['value']]['__num_attribs__'] =
-          currentContext.getProgramParameter(
-              /** @type {WebGLProgram} */ (objs[args['value']]),
-              goog.webgl.ACTIVE_ATTRIBUTES);
-      this.setOwningContext_(objs[args['value']], currentContext);
-      break;
-    case 'WebGLRenderingContext#createShader':
-      objs[args['value']] =
-          currentContext.createShader(args['type']);
-      this.setOwningContext_(objs[args['value']], currentContext);
-      break;
-    case 'WebGLRenderingContext#cullFace':
-      currentContext.cullFace(args['mode']);
-      break;
-    // And now, we have a slew of fxns that delete resources.
-    case 'WebGLRenderingContext#deleteBuffer':
-      currentContext.deleteBuffer(
-          /** @type {WebGLBuffer} */ (objs[args['value']]));
-      break;
-    case 'WebGLRenderingContext#deleteFramebuffer':
-      currentContext.deleteFramebuffer(
-          /** @type {WebGLFramebuffer} */ (objs[args['value']]));
-      break;
-    case 'WebGLRenderingContext#deleteProgram':
-      currentContext.deleteProgram(
-          /** @type {WebGLProgram} */ (objs[args['value']]));
-      break;
-    case 'WebGLRenderingContext#deleteRenderbuffer':
-      currentContext.deleteRenderbuffer(
-          /** @type {WebGLRenderbuffer} */ (objs[args['value']]));
-      break;
-    case 'WebGLRenderingContext#deleteShader':
-      currentContext.deleteShader(
-          /** @type {WebGLShader} */ (objs[args['value']]));
-      break;
-    case 'WebGLRenderingContext#deleteTexture':
-      currentContext.deleteTexture(
-          /** @type {WebGLTexture} */ (objs[args['value']]));
-      break;
-    case 'WebGLRenderingContext#depthFunc':
-      currentContext.depthFunc(args['func']);
-      break;
-    case 'WebGLRenderingContext#depthMask':
-      currentContext.depthMask(args['flag']);
-      break;
-    case 'WebGLRenderingContext#depthRange':
-      currentContext.depthRange(args['zNear'], args['zFar']);
-      break;
-    case 'WebGLRenderingContext#detachShader':
-      currentContext.detachShader(
-          args['program'], args['shader']);
-      break;
-    case 'WebGLRenderingContext#disable':
-      currentContext.disable(args['cap']);
-      break;
-    case 'WebGLRenderingContext#disableVertexAttribArray':
-      currentContext.disableVertexAttribArray(args['index']);
-      break;
-    case 'WebGLRenderingContext#drawArrays':
-      currentContext.drawArrays(
-          args['mode'], args['first'], args['count']);
-      break;
-    case 'WebGLRenderingContext#drawElements':
-      currentContext.drawElements(
-          args['mode'], args['count'], args['type'],
-          args['offset']);
-      break;
-    case 'WebGLRenderingContext#enable':
-      currentContext.enable(args['cap']);
-      break;
-    case 'WebGLRenderingContext#enableVertexAttribArray':
-      currentContext.enableVertexAttribArray(args['index']);
-      break;
-    case 'WebGLRenderingContext#finish':
-      currentContext.finish();
-      break;
-    case 'WebGLRenderingContext#flush':
-      currentContext.flush();
-      break;
-    case 'WebGLRenderingContext#framebufferRenderbuffer':
-      currentContext.framebufferRenderbuffer(args['target'],
-          args['attachment'], args['renderbuffertarget'],
-          /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
-      break;
-    case 'WebGLRenderingContext#framebufferTexture2D':
-      currentContext.framebufferTexture2D(args['target'],
-          args['attachment'], args['textarget'],
-          /** @type {WebGLTexture} */ (objs[args['texture']]), args['level']);
-      break;
-    case 'WebGLRenderingContext#frontFace':
-      currentContext.frontFace(args['mode']);
-      break;
-    case 'WebGLRenderingContext#generateMipmap':
-      currentContext.generateMipmap(args['target']);
-      break;
-    case 'WebGLRenderingContext#getActiveAttrib':
-      // TODO(chizeng): modify this to make it work with varying locations.
-      currentContext.getActiveAttrib(
-          /** @type {WebGLProgram} */ (objs[args['program']]), args['index']);
-      break;
-    case 'WebGLRenderingContext#getActiveUniform':
-      // maybe we must modify this to obtain the new active uniform.
-      currentContext.getActiveUniform(
-          /** @type {WebGLProgram} */ (objs[args['program']]), args['index']);
-      break;
-    case 'WebGLRenderingContext#getAttachedShaders':
-      currentContext.getAttachedShaders(
-          /** @type {WebGLProgram} */ (objs[args['program']]));
-      break;
-    case 'WebGLRenderingContext#getAttribLocation':
-      currentContext.getAttribLocation(
-          /** @type {WebGLProgram} */ (objs[args['program']]), args['name']);
-      break;
-    case 'WebGLRenderingContext#getBufferParameter':
-      currentContext.getBufferParameter(
-          args['target'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#getError':
-      currentContext.getError();
-      break;
-    case 'WebGLRenderingContext#getFramebufferAttachmentParameter':
-      currentContext.getFramebufferAttachmentParameter(
-          args['target'], args['attachment'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#getExtension':
-      // TODO(chizeng): Possibly store the extension?
-      var originalExtension = args['name'];
-      var relatedExtension =
-          this.extensionManager_.getRelatedExtension(originalExtension);
-      currentContext.getExtension(relatedExtension || originalExtension);
-      break;
-    case 'WebGLRenderingContext#getParameter':
-      currentContext.getParameter(args['pname']);
-      break;
-    case 'WebGLRenderingContext#getFramebufferAttachmentParameter':
-      currentContext.getFramebufferAttachmentParameter(
-          args['target'], args['attachment'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#getProgramParameter':
-      currentContext.getProgramParameter(
-          /** @type {WebGLProgram} */ (objs[args['program']]), args['pname']);
-      break;
-    case 'WebGLRenderingContext#getProgramInfoLog':
-      currentContext.getProgramInfoLog(
-          /** @type {WebGLProgram} */ (objs[args['program']]));
-      break;
-    case 'WebGLRenderingContext#getRenderbufferParameter':
-      currentContext.getRenderbufferParameter(
-          args['target'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#getShaderParameter':
-      currentContext.getShaderParameter(
-          /** @type {WebGLShader} */ (objs[args['shader']]), args['pname']);
-      break;
-    case 'WebGLRenderingContext#getShaderPrecisionFormat':
-      currentContext.getShaderPrecisionFormat(
-          args['shadertype'], args['precisiontype']);
-      break;
-    case 'WebGLRenderingContext#getShaderInfoLog':
-      currentContext.getShaderInfoLog(
-          /** @type {WebGLShader} */ (objs[args['shader']]));
-      break;
-    case 'WebGLRenderingContext#getShaderSource':
-      currentContext.getShaderSource(
-          /** @type {WebGLShader} */ (objs[args['shader']]));
-      break;
-    case 'WebGLRenderingContext#getTexParameter':
-      currentContext.getTexParameter(
-          args['target'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#getUniform':
-      currentContext.getUniform(
-          /** @type {WebGLProgram} */ (objs[args['program']]),
-          /** @type {WebGLUniformLocation} */ (objs[args['location']]));
-      break;
-    case 'WebGLRenderingContext#getUniformLocation':
-      // TODO(chizeng): Maybe this must change because we need a mapping.
-      objs[args['value']] = /** @type {!Object} */ (
-          currentContext.getUniformLocation(/** @type {WebGLProgram} */ (
-              objs[args['program']]), args['name']));
-      if (objs[args['value']]) {
-        this.setOwningContext_(objs[args['value']], currentContext);
-      }
-      break;
-    case 'WebGLRenderingContext#getVertexAttrib':
-      currentContext.getVertexAttrib(
-          args['index'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#getVertexAttribOffset':
-      currentContext.getVertexAttribOffset(
-          args['index'], args['pname']);
-      break;
-    case 'WebGLRenderingContext#hint':
-      currentContext.hint(args['target'], args['mode']);
-      break;
-    case 'WebGLRenderingContext#isBuffer':
-      currentContext.isBuffer(
-          /** @type {WebGLBuffer} */ (objs[args['buffer']]));
-      break;
-    case 'WebGLRenderingContext#isEnabled':
-      currentContext.isEnabled(args['cap']);
-      break;
-    case 'WebGLRenderingContext#isFramebuffer':
-      currentContext.isFramebuffer(
-          /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
-      break;
-    case 'WebGLRenderingContext#isProgram':
-      currentContext.isProgram(
-          /** @type {WebGLProgram} */ (objs[args['program']]));
-      break;
-    case 'WebGLRenderingContext#isRenderbuffer':
-      currentContext.isRenderbuffer(
-          /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
-      break;
-    case 'WebGLRenderingContext#isShader':
-      currentContext.isShader(
-          /** @type {WebGLShader} */ (objs[args['shader']]));
-      break;
-    case 'WebGLRenderingContext#isTexture':
-      currentContext.isTexture(
-          /** @type {WebGLTexture} */ (objs[args['texture']]));
-      break;
-    case 'WebGLRenderingContext#lineWidth':
-      currentContext.lineWidth(args['width']);
-      break;
-    case 'WebGLRenderingContext#linkProgram':
-      // Do all the attribute bindings, then link.
-      var attribMap = args['attributes'];
-      for (var attribName in attribMap) {
-        currentContext.bindAttribLocation(
-            /** @type {WebGLProgram} */ (objs[args['program']]),
-            attribMap[attribName], attribName);
-      }
-      currentContext.linkProgram(
-          /** @type {WebGLProgram} */ (objs[args['program']]));
-      break;
-    case 'WebGLRenderingContext#pixelStorei':
-      currentContext.pixelStorei(args['pname'], args['param']);
-      break;
-    case 'WebGLRenderingContext#polygonOffset':
-      currentContext.polygonOffset(
-          args['factor'], args['units']);
-      break;
-    case 'WebGLRenderingContext#readPixels':
-      currentContext.readPixels(args['x'], args['y'],
-          args['width'], args['height'], args['format'],
-          args['type'], args['pixels']);
-      break;
-    case 'WebGLRenderingContext#renderbufferStorage':
-      currentContext.renderbufferStorage(args['target'],
-          args['internalformat'], args['width'], args['height']);
-      break;
-    case 'WebGLRenderingContext#sampleCoverage':
-      currentContext.sampleCoverage(
-          args['value'], args['invert']);
-      break;
-    case 'WebGLRenderingContext#scissor':
-      currentContext.scissor(args['x'], args['y'],
-          args['width'], args['height']);
-      break;
-    case 'WebGLRenderingContext#shaderSource':
-      currentContext.shaderSource(
-          /** @type {WebGLShader} */ (objs[args['shader']]), args['source']);
-      break;
-    case 'WebGLRenderingContext#stencilFunc':
-      currentContext.stencilFunc(
-          args['func'], args['ref'], args['mask']);
-      break;
-    case 'WebGLRenderingContext#stencilFuncSeparate':
-      currentContext.stencilFuncSeparate(
-          args['face'], args['func'], args['ref'],
-          args['mask']);
-      break;
-    case 'WebGLRenderingContext#stencilMask':
-      currentContext.stencilMask(args['mask']);
-      break;
-    case 'WebGLRenderingContext#stencilMaskSeparate':
-      currentContext.stencilMaskSeparate(
-          args['face'], args['mask']);
-      break;
-    case 'WebGLRenderingContext#stencilOp':
-      currentContext.stencilOp(
-          args['fail'], args['zfail'], args['zpass']);
-      break;
-    case 'WebGLRenderingContext#stencilOpSeparate':
-      currentContext.stencilOpSeparate(
-          args['face'], args['fail'], args['zfail'],
-          args['zpass']);
-      break;
-    case 'WebGLRenderingContext#texImage2D':
-      // TODO(chi): double check to ensure we covered all cases.
-      // texImage2D is overloaded.
-      var dataType = args['dataType'];
-      if (dataType == 'pixels') {
-        currentContext.texImage2D(
-            args['target'],
-            args['level'],
-            args['internalformat'],
-            args['width'],
-            args['height'],
-            args['border'],
-            args['format'],
-            args['type'],
-            args['pixels']
-        );
-      } else if (dataType == 'null') {
-        currentContext.texImage2D(
-            args['target'],
-            args['level'],
-            args['internalformat'],
-            args['width'],
-            args['height'],
-            args['border'],
-            args['format'],
-            args['type'],
-            null
-        );
-      } else {
-        currentContext.texImage2D(
-            args['target'],
-            args['level'],
-            args['internalformat'],
-            args['format'],
-            args['type'],
-            /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
-            (this.resources_[it.getId()])
-        );
-      }
-      break;
-    case 'WebGLRenderingContext#texSubImage2D':
-      var dataType = args['dataType'];
-      if (dataType == 'pixels') {
-        currentContext.texSubImage2D(
-            args['target'],
-            args['level'],
-            args['xoffset'],
-            args['yoffset'],
-            args['width'],
-            args['height'],
-            args['format'],
-            args['type'],
-            args['pixels']
-        );
-      } else if (dataType == 'null') {
-        currentContext.texSubImage2D(
-            args['target'],
-            args['level'],
-            args['xoffset'],
-            args['yoffset'],
-            args['width'],
-            args['height'],
-            args['format'],
-            args['type'],
-            null
-        );
-      } else {
-        currentContext.texSubImage2D(
-            args['target'],
-            args['level'],
-            args['xoffset'],
-            args['yoffset'],
-            args['format'],
-            args['type'],
-            /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
-            (this.resources_[it.getId()])
-        );
-      }
-      break;
-    case 'WebGLRenderingContext#texParameterf':
-      currentContext.texParameterf(
-          args['target'], args['pname'], args['param']);
-      break;
-    case 'WebGLRenderingContext#texParameteri':
-      currentContext.texParameteri(
-          args['target'], args['pname'], args['param']);
-      break;
-    case 'WebGLRenderingContext#uniform1f':
-      currentContext.uniform1f(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x']);
-      break;
-    case 'WebGLRenderingContext#uniform1fv':
-      currentContext.uniform1fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform1i':
-      currentContext.uniform1i(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x']);
-      break;
-    case 'WebGLRenderingContext#uniform1iv':
-      currentContext.uniform1iv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform2f':
-      currentContext.uniform2f(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x'], args['y']);
-      break;
-    case 'WebGLRenderingContext#uniform2fv':
-      currentContext.uniform2fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform2i':
-      currentContext.uniform2i(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x'], args['y']);
-      break;
-    case 'WebGLRenderingContext#uniform2iv':
-      currentContext.uniform2iv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform3f':
-      currentContext.uniform3f(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x'], args['y'],
-          args['z']);
-      break;
-    case 'WebGLRenderingContext#uniform3fv':
-      currentContext.uniform3fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform3i':
-      currentContext.uniform3i(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x'], args['y'], args['z']);
-      break;
-    case 'WebGLRenderingContext#uniform3iv':
-      currentContext.uniform3iv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform4f':
-      currentContext.uniform4f(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x'], args['y'], args['z'],
-          args['w']);
-      break;
-    case 'WebGLRenderingContext#uniform4fv':
-      currentContext.uniform4fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniform4i':
-      currentContext.uniform4i(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['x'], args['y'], args['z'],
-          args['w']);
-      break;
-    case 'WebGLRenderingContext#uniform4iv':
-      currentContext.uniform4iv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['v']);
-      break;
-    case 'WebGLRenderingContext#uniformMatrix2fv':
-      currentContext.uniformMatrix2fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['transpose'], args['value']);
-      break;
-    case 'WebGLRenderingContext#uniformMatrix3fv':
-      currentContext.uniformMatrix3fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['transpose'], args['value']);
-      break;
-    case 'WebGLRenderingContext#uniformMatrix4fv':
-      currentContext.uniformMatrix4fv(
-          /** @type {WebGLUniformLocation} */ (
-              objs[args['location']]), args['transpose'], args['value']);
-      break;
-    case 'WebGLRenderingContext#useProgram':
-      currentContext.useProgram(
-          /** @type {WebGLProgram} */ (objs[args['program']]));
-      break;
-    case 'WebGLRenderingContext#validateProgram':
-      currentContext.validateProgram(
-          /** @type {WebGLProgram} */ (objs[args['program']]));
-      break;
-    case 'WebGLRenderingContext#vertexAttrib1fv':
-      currentContext.vertexAttrib1fv(args['indx'], args['values']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib2fv':
-      currentContext.vertexAttrib2fv(args['indx'], args['values']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib3fv':
-      currentContext.vertexAttrib3fv(args['indx'], args['values']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib4fv':
-      currentContext.vertexAttrib4fv(args['indx'], args['values']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib1f':
-      currentContext.vertexAttrib1f(args['indx'], args['x']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib2f':
-      currentContext.vertexAttrib2f(
-          args['indx'], args['x'], args['y']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib3f':
-      currentContext.vertexAttrib3f(
-          args['indx'], args['x'], args['y'], args['z']);
-      break;
-    case 'WebGLRenderingContext#vertexAttrib4f':
-      currentContext.vertexAttrib4f(
-          args['indx'], args['x'], args['y'], args['z'],
-          args['w']);
-      break;
-    case 'WebGLRenderingContext#vertexAttribPointer':
-      currentContext.vertexAttribPointer(args['indx'],
-          args['size'], args['type'], args['normalized'],
-          args['stride'], args['offset']);
-      break;
-    case 'WebGLRenderingContext#viewport':
-      currentContext.viewport(args['x'], args['y'], args['width'],
-          args['height']);
-      break;
-    case 'wtf.webgl#createContext':
-      var attributes = args['attributes'];
-      // Assume that the context is webgl for now.
-      currentContext =
-          this.contextPool_.getContext('webgl', attributes) ||
-          this.contextPool_.getContext('experimental-webgl', attributes);
-
-      // We don't support WebGL.
-      if (!currentContext) {
-        throw new Error('This machine does not support WebGL.');
-      }
-
-      var contextHandle = args['handle'];
-      this.contexts_[contextHandle] =
-          /** @type {WebGLRenderingContext} */ (currentContext);
-      this.currentContext_ = currentContext;
-      this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
-          currentContext, contextHandle);
-      break;
-    case 'wtf.webgl#setContext':
-      var contextHandle = args['handle'];
-      var height = args['height'];
-      var width = args['width'];
-      currentContext = this.contexts_[contextHandle];
-      if (currentContext.canvas.height != height ||
-          currentContext.canvas.width != width) {
-        currentContext.canvas.height = height;
-        currentContext.canvas.width = width;
-        this.emitEvent(wtf.replay.graphics.Playback.EventType.CANVAS_RESIZED,
-            currentContext);
-      }
-      currentContext.viewport(0, 0, width, height);
-      this.currentContext_ = currentContext;
-      break;
+  var associatedFunction = this.callLookupTable_[it.getTypeId()];
+  if (associatedFunction) {
+    associatedFunction.call(null, it.getId(), this, this.currentContext_,
+        it.getArguments(), this.objects_);
   }
 };
 
@@ -1694,4 +1027,835 @@ wtf.replay.graphics.Playback.prototype.setOwningContext_ = function(
  */
 wtf.replay.graphics.Playback.prototype.getStepCount = function() {
   return this.steps_.length;
+};
+
+
+/**
+ * @typedef {function(
+ *     number, !wtf.replay.graphics.Playback, WebGLRenderingContext,
+ *         wtf.db.ArgumentData, !Object.<!Object>)}
+ * @private
+ */
+wtf.replay.graphics.Playback.Call_;
+
+
+/**
+ * A mapping from event names to functions.
+ * @type {!Object.<wtf.replay.graphics.Playback.Call_>}
+ * @private
+ */
+wtf.replay.graphics.Playback.CALLS_ = {
+  'WebGLRenderingContext#attachShader': function(
+      eventId, playback, gl, args, objs) {
+    gl.attachShader(
+        /** @type {WebGLProgram} */ (objs[args['program']]),
+        /** @type {WebGLShader} */ (objs[args['shader']]));
+  },
+  'WebGLRenderingContext#activeTexture': function(
+      eventId, playback, gl, args, objs) {
+    gl.activeTexture(args['texture']);
+  },
+  'WebGLRenderingContext#bindAttribLocation': function(
+      eventId, playback, gl, args, objs) {
+    gl.bindAttribLocation(
+        /** @type {WebGLProgram} */ (objs[args['program']]),
+        args['index'], args['name']);
+    // TODO(chizeng): Figure out if we want to build a mapping.
+    // addAttribToProgram(
+    //     args['program'], args['index'], args['index']);
+  },
+  'WebGLRenderingContext#bindBuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.bindBuffer(
+        args['target'], /** @type {WebGLBuffer} */ (objs[args['buffer']]));
+  },
+  'WebGLRenderingContext#bindFramebuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.bindFramebuffer(
+        args['target'],
+        /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
+  },
+  'WebGLRenderingContext#bindRenderbuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.bindRenderbuffer(
+        args['target'],
+        /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
+  },
+  'WebGLRenderingContext#bindTexture': function(
+      eventId, playback, gl, args, objs) {
+    gl.bindTexture(
+        args['target'], /** @type {WebGLTexture} */ (objs[args['texture']]));
+  },
+  'WebGLRenderingContext#blendColor': function(
+      eventId, playback, gl, args, objs) {
+    gl.blendColor(
+        args['red'], args['green'], args['blue'],
+        args['alpha']);
+  },
+  'WebGLRenderingContext#blendEquation': function(
+      eventId, playback, gl, args, objs) {
+    gl.blendEquation(args['mode']);
+  },
+  'WebGLRenderingContext#blendEquationSeparate': function(
+      eventId, playback, gl, args, objs) {
+    gl.blendEquationSeparate(
+        args['modeRGB'], args['modeAlpha']);
+  },
+  'WebGLRenderingContext#blendFunc': function(
+      eventId, playback, gl, args, objs) {
+    gl.blendFunc(args['sfactor'], args['dfactor']);
+  },
+  'WebGLRenderingContext#blendFuncSeparate': function(
+      eventId, playback, gl, args, objs) {
+    gl.blendFuncSeparate(
+        args['srcRGB'], args['dstRGB'], args['srcAlpha'],
+        args['dstAlpha']);
+  },
+  'WebGLRenderingContext#bufferData': function(
+      eventId, playback, gl, args, objs) {
+    var data = args['data'];
+    // TODO(chizeng): Remove the length check after db is fixed.
+    if (!data || data.byteLength != args['size']) {
+      data = args['size'];
+    }
+    gl.bufferData(
+        args['target'], data, args['usage']);
+  },
+  'WebGLRenderingContext#bufferSubData': function(
+      eventId, playback, gl, args, objs) {
+    gl.bufferSubData(
+        args['target'], args['offset'], args['data']);
+  },
+  'WebGLRenderingContext#checkFramebufferStatus': function(
+      eventId, playback, gl, args, objs) {
+    gl.checkFramebufferStatus(args['target']);
+  },
+  'WebGLRenderingContext#clear': function(
+      eventId, playback, gl, args, objs) {
+    gl.clear(args['mask']);
+  },
+  'WebGLRenderingContext#clearColor': function(
+      eventId, playback, gl, args, objs) {
+    gl.clearColor(
+        args['red'], args['green'], args['blue'],
+        args['alpha']);
+  },
+  'WebGLRenderingContext#clearDepth': function(
+      eventId, playback, gl, args, objs) {
+    gl.clearDepth(args['depth']);
+  },
+  'WebGLRenderingContext#clearStencil': function(
+      eventId, playback, gl, args, objs) {
+    gl.clearStencil(args['s']);
+  },
+  'WebGLRenderingContext#colorMask': function(
+      eventId, playback, gl, args, objs) {
+    gl.colorMask(
+        args['red'], args['green'], args['blue'],
+        args['alpha']);
+  },
+  'WebGLRenderingContext#compileShader': function(
+      eventId, playback, gl, args, objs) {
+    gl.compileShader(
+        /** @type {WebGLShader} */ (objs[args['shader']]));
+  },
+  'WebGLRenderingContext#compressedTexImage2D': function(
+      eventId, playback, gl, args, objs) {
+    gl.compressedTexImage2D(
+        args['target'], args['level'], args['internalformat'],
+        args['width'], args['height'], args['border'],
+        args['data']);
+  },
+  'WebGLRenderingContext#compressedTexSubImage2D': function(
+      eventId, playback, gl, args, objs) {
+    gl.compressedTexSubImage2D(
+        args['target'], args['level'], args['xoffset'],
+        args['yoffset'], args['width'], args['height'],
+        args['format'], args['data']);
+  },
+  'WebGLRenderingContext#copyTexImage2D': function(
+      eventId, playback, gl, args, objs) {
+    gl.copyTexImage2D(
+        args['target'], args['level'], args['internalformat'],
+        args['x'], args['y'], args['width'],
+        args['height'], args['border']);
+  },
+  'WebGLRenderingContext#copyTexSubImage2D': function(
+      eventId, playback, gl, args, objs) {
+    gl.copyTexSubImage2D(
+        args['target'], args['level'], args['xoffset'],
+        args['yoffset'], args['x'], args['y'],
+        args['width'], args['height']);
+  },
+  'WebGLRenderingContext#createBuffer': function(
+      eventId, playback, gl, args, objs) {
+    objs[args['value']] = gl.createBuffer();
+    playback.setOwningContext_(objs[args['value']], gl);
+  },
+  'WebGLRenderingContext#createFramebuffer': function(
+      eventId, playback, gl, args, objs) {
+    objs[args['value']] = gl.createFramebuffer();
+    playback.setOwningContext_(objs[args['value']], gl);
+  },
+  'WebGLRenderingContext#createRenderbuffer': function(
+      eventId, playback, gl, args, objs) {
+    objs[args['value']] = gl.createRenderbuffer();
+    playback.setOwningContext_(objs[args['value']], gl);
+  },
+  'WebGLRenderingContext#createTexture': function(
+      eventId, playback, gl, args, objs) {
+    objs[args['value']] = gl.createTexture();
+    playback.setOwningContext_(objs[args['value']], gl);
+  },
+  'WebGLRenderingContext#createProgram': function(
+      eventId, playback, gl, args, objs) {
+    objs[args['value']] = gl.createProgram();
+    objs[args['value']]['__num_attribs__'] =
+        gl.getProgramParameter(
+        /** @type {WebGLProgram} */ (objs[args['value']]),
+        goog.webgl.ACTIVE_ATTRIBUTES);
+    playback.setOwningContext_(objs[args['value']], gl);
+  },
+  'WebGLRenderingContext#createShader': function(
+      eventId, playback, gl, args, objs) {
+    objs[args['value']] =
+        gl.createShader(args['type']);
+    playback.setOwningContext_(objs[args['value']], gl);
+  },
+  'WebGLRenderingContext#cullFace': function(
+      eventId, playback, gl, args, objs) {
+    gl.cullFace(args['mode']);
+  },
+  // And now, we have a slew of fxns that delete resources.
+  'WebGLRenderingContext#deleteBuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.deleteBuffer(
+        /** @type {WebGLBuffer} */ (objs[args['value']]));
+  },
+  'WebGLRenderingContext#deleteFramebuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.deleteFramebuffer(
+        /** @type {WebGLFramebuffer} */ (objs[args['value']]));
+  },
+  'WebGLRenderingContext#deleteProgram': function(
+      eventId, playback, gl, args, objs) {
+    gl.deleteProgram(
+        /** @type {WebGLProgram} */ (objs[args['value']]));
+  },
+  'WebGLRenderingContext#deleteRenderbuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.deleteRenderbuffer(
+        /** @type {WebGLRenderbuffer} */ (objs[args['value']]));
+  },
+  'WebGLRenderingContext#deleteShader': function(
+      eventId, playback, gl, args, objs) {
+    gl.deleteShader(
+        /** @type {WebGLShader} */ (objs[args['value']]));
+  },
+  'WebGLRenderingContext#deleteTexture': function(
+      eventId, playback, gl, args, objs) {
+    gl.deleteTexture(
+        /** @type {WebGLTexture} */ (objs[args['value']]));
+  },
+  'WebGLRenderingContext#depthFunc': function(
+      eventId, playback, gl, args, objs) {
+    gl.depthFunc(args['func']);
+  },
+  'WebGLRenderingContext#depthMask': function(
+      eventId, playback, gl, args, objs) {
+    gl.depthMask(args['flag']);
+  },
+  'WebGLRenderingContext#depthRange': function(
+      eventId, playback, gl, args, objs) {
+    gl.depthRange(args['zNear'], args['zFar']);
+  },
+  'WebGLRenderingContext#detachShader': function(
+      eventId, playback, gl, args, objs) {
+    gl.detachShader(
+        args['program'], args['shader']);
+  },
+  'WebGLRenderingContext#disable': function(
+      eventId, playback, gl, args, objs) {
+    gl.disable(args['cap']);
+  },
+  'WebGLRenderingContext#disableVertexAttribArray': function(
+      eventId, playback, gl, args, objs) {
+    gl.disableVertexAttribArray(args['index']);
+  },
+  'WebGLRenderingContext#drawArrays': function(
+      eventId, playback, gl, args, objs) {
+    gl.drawArrays(
+        args['mode'], args['first'], args['count']);
+  },
+  'WebGLRenderingContext#drawElements': function(
+      eventId, playback, gl, args, objs) {
+    gl.drawElements(
+        args['mode'], args['count'], args['type'],
+        args['offset']);
+  },
+  'WebGLRenderingContext#enable': function(
+      eventId, playback, gl, args, objs) {
+    gl.enable(args['cap']);
+  },
+  'WebGLRenderingContext#enableVertexAttribArray': function(
+      eventId, playback, gl, args, objs) {
+    gl.enableVertexAttribArray(args['index']);
+  },
+  'WebGLRenderingContext#finish': function(
+      eventId, playback, gl, args, objs) {
+    gl.finish();
+  },
+  'WebGLRenderingContext#flush': function(
+      eventId, playback, gl, args, objs) {
+    gl.flush();
+  },
+  'WebGLRenderingContext#framebufferRenderbuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.framebufferRenderbuffer(args['target'],
+        args['attachment'], args['renderbuffertarget'],
+        /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
+  },
+  'WebGLRenderingContext#framebufferTexture2D': function(
+      eventId, playback, gl, args, objs) {
+    gl.framebufferTexture2D(args['target'],
+        args['attachment'], args['textarget'],
+        /** @type {WebGLTexture} */ (objs[args['texture']]), args['level']);
+  },
+  'WebGLRenderingContext#frontFace': function(
+      eventId, playback, gl, args, objs) {
+    gl.frontFace(args['mode']);
+  },
+  'WebGLRenderingContext#generateMipmap': function(
+      eventId, playback, gl, args, objs) {
+    gl.generateMipmap(args['target']);
+  },
+  'WebGLRenderingContext#getActiveAttrib': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(chizeng): modify playback to make it work with varying locations.
+    gl.getActiveAttrib(
+        /** @type {WebGLProgram} */ (objs[args['program']]), args['index']);
+  },
+  'WebGLRenderingContext#getActiveUniform': function(
+      eventId, playback, gl, args, objs) {
+    // maybe we must modify playback to obtain the new active uniform.
+    gl.getActiveUniform(
+        /** @type {WebGLProgram} */ (objs[args['program']]), args['index']);
+  },
+  'WebGLRenderingContext#getAttachedShaders': function(
+      eventId, playback, gl, args, objs) {
+    gl.getAttachedShaders(
+        /** @type {WebGLProgram} */ (objs[args['program']]));
+  },
+  'WebGLRenderingContext#getAttribLocation': function(
+      eventId, playback, gl, args, objs) {
+    gl.getAttribLocation(
+        /** @type {WebGLProgram} */ (objs[args['program']]), args['name']);
+  },
+  'WebGLRenderingContext#getBufferParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getBufferParameter(
+        args['target'], args['pname']);
+  },
+  'WebGLRenderingContext#getError': function(
+      eventId, playback, gl, args, objs) {
+    gl.getError();
+  },
+  'WebGLRenderingContext#getExtension': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(chizeng): Possibly store the extension?
+    var originalExtension = args['name'];
+    var relatedExtension =
+        playback.extensionManager_.getRelatedExtension(originalExtension);
+    gl.getExtension(relatedExtension || originalExtension);
+  },
+  'WebGLRenderingContext#getParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getParameter(args['pname']);
+  },
+  'WebGLRenderingContext#getFramebufferAttachmentParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getFramebufferAttachmentParameter(
+        args['target'], args['attachment'], args['pname']);
+  },
+  'WebGLRenderingContext#getProgramParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getProgramParameter(
+        /** @type {WebGLProgram} */ (objs[args['program']]), args['pname']);
+  },
+  'WebGLRenderingContext#getProgramInfoLog': function(
+      eventId, playback, gl, args, objs) {
+    gl.getProgramInfoLog(
+        /** @type {WebGLProgram} */ (objs[args['program']]));
+  },
+  'WebGLRenderingContext#getRenderbufferParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getRenderbufferParameter(
+        args['target'], args['pname']);
+  },
+  'WebGLRenderingContext#getShaderParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getShaderParameter(
+        /** @type {WebGLShader} */ (objs[args['shader']]), args['pname']);
+  },
+  'WebGLRenderingContext#getShaderPrecisionFormat': function(
+      eventId, playback, gl, args, objs) {
+    gl.getShaderPrecisionFormat(
+        args['shadertype'], args['precisiontype']);
+  },
+  'WebGLRenderingContext#getShaderInfoLog': function(
+      eventId, playback, gl, args, objs) {
+    gl.getShaderInfoLog(
+        /** @type {WebGLShader} */ (objs[args['shader']]));
+  },
+  'WebGLRenderingContext#getShaderSource': function(
+      eventId, playback, gl, args, objs) {
+    gl.getShaderSource(
+        /** @type {WebGLShader} */ (objs[args['shader']]));
+  },
+  'WebGLRenderingContext#getTexParameter': function(
+      eventId, playback, gl, args, objs) {
+    gl.getTexParameter(
+        args['target'], args['pname']);
+  },
+  'WebGLRenderingContext#getUniform': function(
+      eventId, playback, gl, args, objs) {
+    gl.getUniform(
+        /** @type {WebGLProgram} */ (objs[args['program']]),
+        /** @type {WebGLUniformLocation} */ (objs[args['location']]));
+  },
+  'WebGLRenderingContext#getUniformLocation': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(chizeng): Maybe playback must change because we need a mapping.
+    objs[args['value']] = /** @type {!Object} */ (
+        gl.getUniformLocation(/** @type {WebGLProgram} */ (
+        objs[args['program']]), args['name']));
+    if (objs[args['value']]) {
+      playback.setOwningContext_(objs[args['value']], gl);
+    }
+  },
+  'WebGLRenderingContext#getVertexAttrib': function(
+      eventId, playback, gl, args, objs) {
+    gl.getVertexAttrib(
+        args['index'], args['pname']);
+  },
+  'WebGLRenderingContext#getVertexAttribOffset': function(
+      eventId, playback, gl, args, objs) {
+    gl.getVertexAttribOffset(
+        args['index'], args['pname']);
+  },
+  'WebGLRenderingContext#hint': function(
+      eventId, playback, gl, args, objs) {
+    gl.hint(args['target'], args['mode']);
+  },
+  'WebGLRenderingContext#isBuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.isBuffer(
+        /** @type {WebGLBuffer} */ (objs[args['buffer']]));
+  },
+  'WebGLRenderingContext#isEnabled': function(
+      eventId, playback, gl, args, objs) {
+    gl.isEnabled(args['cap']);
+  },
+  'WebGLRenderingContext#isFramebuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.isFramebuffer(
+        /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
+  },
+  'WebGLRenderingContext#isProgram': function(
+      eventId, playback, gl, args, objs) {
+    gl.isProgram(
+        /** @type {WebGLProgram} */ (objs[args['program']]));
+  },
+  'WebGLRenderingContext#isRenderbuffer': function(
+      eventId, playback, gl, args, objs) {
+    gl.isRenderbuffer(
+        /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
+  },
+  'WebGLRenderingContext#isShader': function(
+      eventId, playback, gl, args, objs) {
+    gl.isShader(
+        /** @type {WebGLShader} */ (objs[args['shader']]));
+  },
+  'WebGLRenderingContext#isTexture': function(
+      eventId, playback, gl, args, objs) {
+    gl.isTexture(
+        /** @type {WebGLTexture} */ (objs[args['texture']]));
+  },
+  'WebGLRenderingContext#lineWidth': function(
+      eventId, playback, gl, args, objs) {
+    gl.lineWidth(args['width']);
+  },
+  'WebGLRenderingContext#linkProgram': function(
+      eventId, playback, gl, args, objs) {
+    // Do all the attribute bindings, then link.
+    var attribMap = args['attributes'];
+    for (var attribName in attribMap) {
+      gl.bindAttribLocation(
+          /** @type {WebGLProgram} */ (objs[args['program']]),
+          attribMap[attribName], attribName);
+    }
+    gl.linkProgram(
+        /** @type {WebGLProgram} */ (objs[args['program']]));
+  },
+  'WebGLRenderingContext#pixelStorei': function(
+      eventId, playback, gl, args, objs) {
+    gl.pixelStorei(args['pname'], args['param']);
+  },
+  'WebGLRenderingContext#polygonOffset': function(
+      eventId, playback, gl, args, objs) {
+    gl.polygonOffset(
+        args['factor'], args['units']);
+  },
+  'WebGLRenderingContext#readPixels': function(
+      eventId, playback, gl, args, objs) {
+    gl.readPixels(args['x'], args['y'],
+        args['width'], args['height'], args['format'],
+        args['type'], args['pixels']);
+  },
+  'WebGLRenderingContext#renderbufferStorage': function(
+      eventId, playback, gl, args, objs) {
+    gl.renderbufferStorage(args['target'],
+        args['internalformat'], args['width'], args['height']);
+  },
+  'WebGLRenderingContext#sampleCoverage': function(
+      eventId, playback, gl, args, objs) {
+    gl.sampleCoverage(
+        args['value'], args['invert']);
+  },
+  'WebGLRenderingContext#scissor': function(
+      eventId, playback, gl, args, objs) {
+    gl.scissor(args['x'], args['y'],
+        args['width'], args['height']);
+  },
+  'WebGLRenderingContext#shaderSource': function(
+      eventId, playback, gl, args, objs) {
+    gl.shaderSource(
+        /** @type {WebGLShader} */ (objs[args['shader']]), args['source']);
+  },
+  'WebGLRenderingContext#stencilFunc': function(
+      eventId, playback, gl, args, objs) {
+    gl.stencilFunc(
+        args['func'], args['ref'], args['mask']);
+  },
+  'WebGLRenderingContext#stencilFuncSeparate': function(
+      eventId, playback, gl, args, objs) {
+    gl.stencilFuncSeparate(
+        args['face'], args['func'], args['ref'],
+        args['mask']);
+  },
+  'WebGLRenderingContext#stencilMask': function(
+      eventId, playback, gl, args, objs) {
+    gl.stencilMask(args['mask']);
+  },
+  'WebGLRenderingContext#stencilMaskSeparate': function(
+      eventId, playback, gl, args, objs) {
+    gl.stencilMaskSeparate(
+        args['face'], args['mask']);
+  },
+  'WebGLRenderingContext#stencilOp': function(
+      eventId, playback, gl, args, objs) {
+    gl.stencilOp(
+        args['fail'], args['zfail'], args['zpass']);
+  },
+  'WebGLRenderingContext#stencilOpSeparate': function(
+      eventId, playback, gl, args, objs) {
+    gl.stencilOpSeparate(
+        args['face'], args['fail'], args['zfail'],
+        args['zpass']);
+  },
+  'WebGLRenderingContext#texImage2D': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(chi): double check to ensure we covered all cases.
+    // texImage2D is overloaded.
+
+    var dataType = args['dataType'];
+    if (dataType == 'pixels') {
+      gl.texImage2D(
+          args['target'],
+          args['level'],
+          args['internalformat'],
+          args['width'],
+          args['height'],
+          args['border'],
+          args['format'],
+          args['type'],
+          args['pixels']
+      );
+    } else if (dataType == 'null') {
+      gl.texImage2D(
+          args['target'],
+          args['level'],
+          args['internalformat'],
+          args['width'],
+          args['height'],
+          args['border'],
+          args['format'],
+          args['type'],
+          null
+      );
+    } else {
+      gl.texImage2D(
+          args['target'],
+          args['level'],
+          args['internalformat'],
+          args['format'],
+          args['type'],
+          /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
+          (playback.resources_[eventId])
+      );
+    }
+  },
+  'WebGLRenderingContext#texSubImage2D': function(
+      eventId, playback, gl, args, objs) {
+    var dataType = args['dataType'];
+    if (dataType == 'pixels') {
+      gl.texSubImage2D(
+          args['target'],
+          args['level'],
+          args['xoffset'],
+          args['yoffset'],
+          args['width'],
+          args['height'],
+          args['format'],
+          args['type'],
+          args['pixels']
+      );
+    } else if (dataType == 'null') {
+      gl.texSubImage2D(
+          args['target'],
+          args['level'],
+          args['xoffset'],
+          args['yoffset'],
+          args['width'],
+          args['height'],
+          args['format'],
+          args['type'],
+          null
+      );
+    } else {
+      gl.texSubImage2D(
+          args['target'],
+          args['level'],
+          args['xoffset'],
+          args['yoffset'],
+          args['format'],
+          args['type'],
+          /** @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} */
+          (playback.resources_[eventId])
+      );
+    }
+  },
+  'WebGLRenderingContext#texParameterf': function(
+      eventId, playback, gl, args, objs) {
+    gl.texParameterf(
+        args['target'], args['pname'], args['param']);
+  },
+  'WebGLRenderingContext#texParameteri': function(
+      eventId, playback, gl, args, objs) {
+    gl.texParameteri(
+        args['target'], args['pname'], args['param']);
+  },
+  'WebGLRenderingContext#uniform1f': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform1f(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x']);
+  },
+  'WebGLRenderingContext#uniform1fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform1fv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform1i': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform1i(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x']);
+  },
+  'WebGLRenderingContext#uniform1iv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform1iv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform2f': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform2f(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x'], args['y']);
+  },
+  'WebGLRenderingContext#uniform2fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform2fv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform2i': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform2i(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x'], args['y']);
+  },
+  'WebGLRenderingContext#uniform2iv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform2iv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform3f': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform3f(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x'], args['y'],
+        args['z']);
+  },
+  'WebGLRenderingContext#uniform3fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform3fv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform3i': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform3i(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x'], args['y'], args['z']);
+  },
+  'WebGLRenderingContext#uniform3iv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform3iv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform4f': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform4f(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x'], args['y'], args['z'],
+        args['w']);
+  },
+  'WebGLRenderingContext#uniform4fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform4fv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniform4i': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform4i(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['x'], args['y'], args['z'],
+        args['w']);
+  },
+  'WebGLRenderingContext#uniform4iv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniform4iv(
+        /** @type {WebGLUniformLocation} */ (
+                  objs[args['location']]), args['v']);
+  },
+  'WebGLRenderingContext#uniformMatrix2fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniformMatrix2fv(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['transpose'], args['value']);
+  },
+  'WebGLRenderingContext#uniformMatrix3fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniformMatrix3fv(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['transpose'], args['value']);
+  },
+  'WebGLRenderingContext#uniformMatrix4fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.uniformMatrix4fv(
+        /** @type {WebGLUniformLocation} */ (
+        objs[args['location']]), args['transpose'], args['value']);
+  },
+  'WebGLRenderingContext#useProgram': function(
+      eventId, playback, gl, args, objs) {
+    gl.useProgram(/** @type {WebGLProgram} */ (objs[args['program']]));
+  },
+  'WebGLRenderingContext#validateProgram': function(
+      eventId, playback, gl, args, objs) {
+    gl.validateProgram(/** @type {WebGLProgram} */ (objs[args['program']]));
+  },
+  'WebGLRenderingContext#vertexAttrib1fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib1fv(args['indx'], args['values']);
+  },
+  'WebGLRenderingContext#vertexAttrib2fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib2fv(args['indx'], args['values']);
+  },
+  'WebGLRenderingContext#vertexAttrib3fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib3fv(args['indx'], args['values']);
+  },
+  'WebGLRenderingContext#vertexAttrib4fv': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib4fv(args['indx'], args['values']);
+  },
+  'WebGLRenderingContext#vertexAttrib1f': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib1f(args['indx'], args['x']);
+  },
+  'WebGLRenderingContext#vertexAttrib2f': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib2f(args['indx'], args['x'], args['y']);
+  },
+  'WebGLRenderingContext#vertexAttrib3f': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib3f(args['indx'], args['x'], args['y'], args['z']);
+  },
+  'WebGLRenderingContext#vertexAttrib4f': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttrib4f(
+        args['indx'], args['x'], args['y'], args['z'],
+        args['w']);
+  },
+  'WebGLRenderingContext#vertexAttribPointer': function(
+      eventId, playback, gl, args, objs) {
+    gl.vertexAttribPointer(args['indx'],
+        args['size'], args['type'], args['normalized'],
+        args['stride'], args['offset']);
+  },
+  'WebGLRenderingContext#viewport': function(
+      eventId, playback, gl, args, objs) {
+    gl.viewport(args['x'], args['y'], args['width'], args['height']);
+  },
+  'wtf.webgl#createContext': function(eventId, playback, gl, args, objs) {
+    var attributes = args['attributes'];
+    // Assume that the context is webgl for now.
+    gl =
+        playback.contextPool_.getContext('webgl', attributes) ||
+        playback.contextPool_.getContext('experimental-webgl', attributes);
+
+    // We don't support WebGL.
+    if (!gl) {
+      throw new Error('playback machine does not support WebGL.');
+    }
+
+    var contextHandle = args['handle'];
+    playback.contexts_[contextHandle] =
+        /** @type {WebGLRenderingContext} */ (gl);
+    playback.currentContext_ = gl;
+    playback.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
+        gl, contextHandle);
+  },
+  'wtf.webgl#setContext': function(eventId, playback, gl, args, objs) {
+    var contextHandle = args['handle'];
+    var height = args['height'];
+    var width = args['width'];
+    gl = playback.contexts_[contextHandle];
+    if (gl.canvas.height != height ||
+        gl.canvas.width != width) {
+      gl.canvas.height = height;
+      gl.canvas.width = width;
+      playback.emitEvent(
+          wtf.replay.graphics.Playback.EventType.CANVAS_RESIZED, gl);
+    }
+    gl.viewport(0, 0, width, height);
+    playback.currentContext_ = gl;
+  }
 };
