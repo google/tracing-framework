@@ -65,7 +65,7 @@ wtf.ipc.MessageChannel = function(recvPort, sendPort) {
    * @type {boolean|undefined}
    * @private
    */
-  this.hasTransferablePostMessage_ = false;
+  this.hasTransferablePostMessage_ = undefined;
 
   /**
    * Bound/ignored version of {@see handleMessage_}.

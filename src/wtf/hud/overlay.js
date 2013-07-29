@@ -631,13 +631,6 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
     var contentSource = wtf.io.getTimedFilename(
         '', contextInfo.getFilename(), 'application/x-extension-wtf-trace');
 
-    var blobUrls = [];
-    var blob = wtf.io.Blob.create(blobs, {
-      'type': 'application/x-extension-wtf-trace'
-    });
-    blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
-    blobUrls.push(goog.fs.createObjectUrl(blob));
-
     var contentTypes = [];
     var contentSources = [];
     for (var n = 0; n < blobs.length; n++) {
@@ -650,6 +643,15 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
     if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
       // Opening in an extension window, need to marshal through the content
       // script to get it open.
+
+      // Chrome extensions can read blobs cross-domain, so just give them
+      // the blob URLs.
+      var blobUrls = [];
+      var blob = wtf.io.Blob.create(blobs, {
+        'type': 'application/x-extension-wtf-trace'
+      });
+      blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
+      blobUrls.push(goog.fs.createObjectUrl(blob));
 
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',
@@ -669,17 +671,29 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
       this.lastWindowName_ = windowName;
       window.open(endpoint + '?expect_data', windowName);
 
-      // Wait for the child to connect.
-      wtf.ipc.waitForChildWindow(function(channel) {
-        channel.postMessage({
-          'command': 'snapshot',
-          'content_types': contentTypes,
-          'content_sources': contentSources,
-          'content_urls': blobUrls,
-          'content_length': contentLength,
-          'revoke_blob_urls': true
-        }, blobs);
-      }, this);
+      // Regular pages don't support cross-domain reading. So we go the slow
+      // path and read back our blobs as typed arrays and hope that the channel
+      // supports transferrable arrays.
+      var contentBuffers = new Array(blobs.length);
+      var remainingReads = blobs.length;
+      goog.array.forEach(blobs, function(blob, n) {
+        blob.readAsArrayBuffer(function(value) {
+          contentBuffers[n] = value;
+          if (!--remainingReads) {
+            // Wait for the child to connect.
+            wtf.ipc.waitForChildWindow(function(channel) {
+              // Post now. Whew.
+              channel.postMessage({
+                'command': 'snapshot',
+                'content_types': contentTypes,
+                'content_sources': contentSources,
+                'content_buffers': contentBuffers,
+                'content_length': contentLength
+              }, contentBuffers);
+            });
+          }
+        });
+      });
     }
   }, this);
 };
