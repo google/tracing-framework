@@ -191,12 +191,19 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiTracksPanelInfo>.content{position:absolute;left:-2px;right:0;top:40px;bottom:0;overflow:hidden;}.appUiTracksPanelInfo>.content .resultsOuter{position:absolute;width:100%;top:0;bottom:0;overflow-x:hidden;overflow-y:auto;}.appUiTracksPanelInfo>.content .resultsOuter .results{position:absolute;left:0;right:0;top:0;bottom:0;cursor:pointer;}
 .appUiTracksPanel .canvasOuter{position:absolute;left:0;right:0;top:0;bottom:0;margin-right:300px;border-right:1px solid #ebebeb;overflow:hidden;}
 .appUiTracksPanel .tracksCanvas{cursor:crosshair;}
+.appUiQueryPanel{position:absolute;left:0;right:0;top:0;bottom:0;}
 .replayTimeTravelController{position:absolute;left:0;right:0;top:0;bottom:0;}
-.replayGraphicsContextBox{border:1px solid #000;margin:5px;padding:5px;}
-.graphicsReplayPanel .graphicsReplayMainContent{position:absolute;left:0;top:100px;right:0;bottom:0;}
-.graphicsReplayPanel .graphicsReplayStepEventNavigation{position:absolute;left:0;top:0;bottom:0;width:300px;overflow:hidden;}
+.graphicsReplayArgumentsDialog .form{}.graphicsReplayArgumentsDialog .form .header .buttons .kButton{margin:0 0 0 16px;}
+.graphicsReplayArgumentsDialog .form .dialogFields .graphicsReplayArgumentsDialogArgKeyPair{margin:15px 0 0 0;}
+.graphicsReplayArgumentsDialog .form .hiddenSubmit{visibility:hidden;}
+.replayGraphicsContextBox{border:1px solid #000;margin:5px;padding:5px;}.replayGraphicsContextBox .replayGraphicsContextBoxHandleLabel{margin:0 0 10px 0;}
+.replayGraphicsEventNavigator{position:absolute;left:0;right:0;top:0;bottom:0;}.replayGraphicsEventNavigator .toolbarContainer{position:absolute;left:0;right:0;top:0;bottom:0;}
+.replayGraphicsEventNavigator .tableOuter{position:absolute;left:0;right:0;top:0;bottom:0;margin-top:80px;}
+.graphicsReplayEventNavigatorToolbar{padding:0 10px;}.graphicsReplayEventNavigatorToolbar .graphicsReplayToolbarSearchBox{margin:10px 0 0 0;}
+.graphicsReplayPanel .graphicsReplayMainContent{position:absolute;left:0;top:80px;right:0;bottom:0;}
+.graphicsReplayPanel .graphicsReplayStepEventNavigation{position:absolute;left:0;top:0;bottom:0;width:300px;overflow:hidden;}.graphicsReplayPanel .graphicsReplayStepEventNavigation .graphicsReplayEventNavigatorContainer{position:absolute;left:0;right:0;top:0;bottom:0;margin-right:8px;}
 .graphicsReplayPanel .graphicsReplayMainDisplay{position:absolute;left:300px;right:0;top:0;bottom:0;overflow-x:hidden;overflow-y:auto;}
 .graphicsReplayToolbar{margin:10px;}
 .graphicsReplayRangeSeekerDisplayer{display:inline-block;margin:0 0 0 10px;width:5%;}.graphicsReplayRangeSeekerDisplayer input{width:100%;}
-.graphicsReplayRangeSeekerSlider{display:inline-block;margin:0 0 0 10px;width:90%;}.graphicsReplayRangeSeekerSlider input{width:100%;}
+.graphicsReplayRangeSeekerSlider{display:inline-block;margin:5px 0 0 10px;width:90%;}.graphicsReplayRangeSeekerSlider input{width:100%;}
 body{overflow:hidden;}

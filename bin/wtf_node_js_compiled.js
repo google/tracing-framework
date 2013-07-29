@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13745664E5
+  return 13750848E5
 };
 wtf.version.getCommit = function() {
-  return"b6cfb8c5ce9e8243004927939b09f969bbf9bedb"
+  return"87d72eb4b30cc672db02f1e6d7ad1a1fb8b1a498"
 };
 wtf.version.toString = function() {
-  return"2013.7.23-1"
+  return"2013.7.29-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -3960,6 +3960,13 @@ wtf.db.EventTypeTable.prototype.getAllMatching = function(a, b) {
     (void 0 === b || e.eventClass === b) && a.test(e.name) && c.push(e)
   }
   return c
+};
+wtf.db.EventTypeTable.prototype.getSetMatching = function(a) {
+  for(var b = {}, c = 0;c < this.list_.length;c++) {
+    var d = this.list_[c];
+    a.test(d.name) && (b[d.id] = !0)
+  }
+  return b
 };
 wtf.db.EventTypeTable.prototype.getById = function(a) {
   return this.eventsById_[a] || null
@@ -5615,21 +5622,21 @@ wtf.util.getCompiledMemberName = function(a, b) {
 };
 wtf.util.callWhenDomReady = function(a, b, c) {
   var d = c || goog.global.document;
-  if("complete" == d.readyState || "interactive" == d.readyState) {
+  if("complete" == d.readyState) {
     a.call(b)
   }else {
+    var e = !1;
     if(d.addEventListener) {
-      var e = function() {
-        d.removeEventListener("DOMContentLoaded", e, !1);
-        a.call(b)
+      var f = function() {
+        e || (e = !0, d.removeEventListener("DOMContentLoaded", f, !1), d.removeEventListener("load", f, !1), a.call(b))
       };
-      e.__wtf_ignore__ = !0;
-      d.addEventListener("DOMContentLoaded", e, !1)
+      f.__wtf_ignore__ = !0;
+      d.addEventListener("DOMContentLoaded", f, !1);
+      goog.global.addEventListener("load", f, !1)
     }else {
-      d.attachEvent && (e = function() {
-        d.detachEvent("onload", e);
-        a.call(b)
-      }, e.__wtf_ignore__ = !0, d.attachEvent("onload", e))
+      d.attachEvent && (f = function() {
+        e || (e = !0, d.detachEvent("onload", f), goog.global.detachEvent("load", f), a.call(b))
+      }, f.__wtf_ignore__ = !0, d.attachEvent("onload", f), goog.global.attachEvent("load", f))
     }
   }
 };
@@ -5837,6 +5844,14 @@ wtf.db.EventIterator.prototype.getTime = function() {
 wtf.db.EventIterator.prototype.getArguments = function() {
   var a = this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS];
   return a ? this.eventList_.getArgumentData(a) : null
+};
+wtf.db.EventIterator.prototype.setArguments = function(a) {
+  var b = this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS], b = this.eventList_.setArgumentData(b, a);
+  this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS] = b
+};
+wtf.db.EventIterator.prototype.resetArguments = function() {
+  var a = this.eventData_[this.offset_ + wtf.db.EventStruct.ARGUMENTS];
+  a && this.eventList_.resetArgumentData(a)
 };
 wtf.db.EventIterator.prototype.getArgument = function(a) {
   var b = this.getArguments();
@@ -6287,6 +6302,7 @@ wtf.db.EventList = function(a) {
   this.capacity_ = this.count = 0;
   this.eventData = new Uint32Array(0);
   this.argumentData_ = [null];
+  this.originalArgumentData_ = {};
   this.nextArgumentDataId_ = 1;
   this.lastInsertTime_ = this.maximumScopeDepth_ = this.hiddenCount_ = this.lastEventTime_ = this.firstEventTime_ = 0;
   this.resortNeeded_ = !1
@@ -6434,6 +6450,16 @@ wtf.db.EventList.prototype.rebuildAncillaryLists_ = function(a) {
 };
 wtf.db.EventList.prototype.getArgumentData = function(a) {
   return this.argumentData_[a] || null
+};
+wtf.db.EventList.prototype.setArgumentData = function(a, b) {
+  a || (a = this.nextArgumentDataId_++);
+  void 0 === this.originalArgumentData_[a] && (this.originalArgumentData_[a] = this.argumentData_[a] || null);
+  this.argumentData_[a] = b;
+  return a
+};
+wtf.db.EventList.prototype.resetArgumentData = function(a) {
+  var b = this.originalArgumentData_[a];
+  void 0 !== b && (this.argumentData_[a] = b, delete this.originalArgumentData_[a])
 };
 wtf.db.EventList.prototype.dump = function() {
   for(var a = new wtf.db.EventIterator(this, 0, this.count - 1, 0);!a.done();a.next()) {
@@ -11019,7 +11045,9 @@ wtf.io.cff.BinaryStreamSource.prototype.parseChunk_ = function(a, b) {
     (t = this.parsePart_(t, v, e)) && g.push(t)
   }
   c = null;
-  e.length && (c = new goog.async.DeferredList(e), c.addCallback(this.pumpPendingChunks_, this));
+  e.length && (c = new goog.async.DeferredList(e, !1, !0), c.addCallback(this.pumpPendingChunks_, this), c.addErrback(function(a) {
+    this.emitErrorEvent(a)
+  }, this));
   this.pendingChunks_.push({chunk:d, parts:g, deferred:c});
   this.pumpPendingChunks_();
   return b + f
@@ -12541,23 +12569,22 @@ wtf.io.cff.JsonStreamTarget.prototype.end = function() {
 wtf.io.transports.BlobWriteTransport = function(a) {
   wtf.io.WriteTransport.call(this);
   this.filename_ = a;
-  this.blob_ = wtf.io.Blob.create([])
+  this.blobParts_ = []
 };
 goog.inherits(wtf.io.transports.BlobWriteTransport, wtf.io.WriteTransport);
 wtf.io.transports.BlobWriteTransport.prototype.disposeInternal = function() {
-  wtf.pal.getPlatform().writeBinaryFile(this.filename_, wtf.io.Blob.toNative(this.blob_));
-  this.blob_.close();
+  var a = wtf.io.Blob.create(this.blobParts_);
+  wtf.pal.getPlatform().writeBinaryFile(this.filename_, wtf.io.Blob.toNative(a));
+  this.blobParts_ = [];
   wtf.io.transports.BlobWriteTransport.superClass_.disposeInternal.call(this)
 };
 wtf.io.transports.BlobWriteTransport.prototype.write = function(a) {
-  var b = this.blob_;
-  this.blob_ = wtf.io.Blob.create([b, a]);
-  b.close()
+  wtf.io.Blob.isBlob(a) ? this.blobParts_.push(a) : this.blobParts_.push(wtf.io.Blob.create([a]))
 };
 wtf.io.transports.BlobWriteTransport.prototype.flush = function() {
 };
 wtf.io.transports.BlobWriteTransport.prototype.getBlob = function() {
-  return this.blob_.slice(0, this.blob_.getSize())
+  return wtf.io.Blob.create(this.blobParts_)
 };
 // Input 144
 wtf.io.transports.FileWriteTransport = function(a) {
@@ -14827,7 +14854,7 @@ wtf.ipc.MessageChannel = function(a, b) {
   var c = this;
   this.recvPort_ = a;
   this.sendPort_ = b;
-  this.hasTransferablePostMessage_ = !1;
+  this.hasTransferablePostMessage_ = void 0;
   this.boundHandleMessage_ = wtf.trace.util.ignoreListener(function(a) {
     c.handleMessage_(a)
   });
