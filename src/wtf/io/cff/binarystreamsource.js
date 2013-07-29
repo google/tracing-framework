@@ -385,8 +385,11 @@ wtf.io.cff.BinaryStreamSource.prototype.parseChunk_ = function(data, o) {
     // We have some waiters, so setup the processing.
     // We need to ensure ordering so that other chunks don't get dispatched
     // before us.
-    deferred = new goog.async.DeferredList(waiters);
+    deferred = new goog.async.DeferredList(waiters, false, true);
     deferred.addCallback(this.pumpPendingChunks_, this);
+    deferred.addErrback(function(e) {
+      this.emitErrorEvent(e);
+    }, this);
   }
 
   this.pendingChunks_.push({
