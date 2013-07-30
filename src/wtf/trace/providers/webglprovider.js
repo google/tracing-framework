@@ -563,12 +563,14 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           'int32 yoffset, int32 x, int32 y, int32 width, int32 height)');
   /**
    * @param {!Object} target Target.
-   * @param {string} name Name.
+   * @param {string} name Method name, like 'createProgram'.
+   * @param {string} typeName Type name, like 'program'.
    * @param {string=} opt_arg Argument.
    */
-  function wrapCreateMethod(target, name, opt_arg) {
+  function wrapCreateMethod(target, name, typeName, opt_arg) {
     var signature =
-        name + '(' + (opt_arg ? opt_arg + ', ' : '') + 'uint32 value)';
+        name + '(' + (opt_arg ? opt_arg + ', ' : '') +
+        'uint32 ' + typeName + ')';
     wrapMethod(target, signature, function(fn, eventType) {
       return function(arg) {
         setCurrentContext(this);
@@ -586,16 +588,22 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  !onlyDraws && wrapCreateMethod(ctxproto, 'createBuffer');
-  !onlyDraws && wrapCreateMethod(ctxproto, 'createFramebuffer');
-  !onlyDraws && wrapCreateMethod(ctxproto, 'createProgram');
-  !onlyDraws && wrapCreateMethod(ctxproto, 'createRenderbuffer');
-  !onlyDraws && wrapCreateMethod(ctxproto, 'createShader', 'uint32 type');
-  !onlyDraws && wrapCreateMethod(ctxproto, 'createTexture');
+  !onlyDraws && wrapCreateMethod(ctxproto,
+      'createBuffer', 'buffer');
+  !onlyDraws && wrapCreateMethod(ctxproto,
+      'createFramebuffer', 'framebuffer');
+  !onlyDraws && wrapCreateMethod(ctxproto,
+      'createProgram', 'program');
+  !onlyDraws && wrapCreateMethod(ctxproto,
+      'createRenderbuffer', 'renderbuffer');
+  !onlyDraws && wrapCreateMethod(ctxproto,
+      'createShader', 'shader', 'uint32 type');
+  !onlyDraws && wrapCreateMethod(ctxproto,
+      'createTexture', 'texture');
   !onlyDraws && wrapMethod(ctxproto,
       'cullFace(uint32 mode)');
-  function wrapDeleteMethod(target, name) {
-    var signature = name + '(uint32 value)';
+  function wrapDeleteMethod(target, name, typeName) {
+    var signature = name + '(uint32 ' + typeName + ')';
     wrapMethod(target, signature, function(fn, eventType) {
       return function(value) {
         setCurrentContext(this);
@@ -604,12 +612,18 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  !onlyDraws && wrapDeleteMethod(ctxproto, 'deleteBuffer');
-  !onlyDraws && wrapDeleteMethod(ctxproto, 'deleteFramebuffer');
-  !onlyDraws && wrapDeleteMethod(ctxproto, 'deleteProgram');
-  !onlyDraws && wrapDeleteMethod(ctxproto, 'deleteRenderbuffer');
-  !onlyDraws && wrapDeleteMethod(ctxproto, 'deleteShader');
-  !onlyDraws && wrapDeleteMethod(ctxproto, 'deleteTexture');
+  !onlyDraws && wrapDeleteMethod(ctxproto,
+      'deleteBuffer', 'buffer');
+  !onlyDraws && wrapDeleteMethod(ctxproto,
+      'deleteFramebuffer', 'framebuffer');
+  !onlyDraws && wrapDeleteMethod(ctxproto,
+      'deleteProgram', 'program');
+  !onlyDraws && wrapDeleteMethod(ctxproto,
+      'deleteRenderbuffer', 'renderbuffer');
+  !onlyDraws && wrapDeleteMethod(ctxproto,
+      'deleteShader', 'shader');
+  !onlyDraws && wrapDeleteMethod(ctxproto,
+      'deleteTexture', 'texture');
   !onlyDraws && wrapMethod(ctxproto,
       'depthFunc(uint32 func)');
   !onlyDraws && wrapMethod(ctxproto,

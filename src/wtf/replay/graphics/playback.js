@@ -20,7 +20,6 @@ goog.require('goog.async.DeferredList');
 goog.require('goog.events');
 goog.require('goog.fs');
 goog.require('goog.object');
-goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
 goog.require('wtf.replay.graphics.Step');
@@ -1209,38 +1208,33 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#createBuffer': function(
       eventId, playback, gl, args, objs) {
-    objs[args['value']] = gl.createBuffer();
-    playback.setOwningContext_(objs[args['value']], gl);
+    objs[args['buffer']] = gl.createBuffer();
+    playback.setOwningContext_(objs[args['buffer']], gl);
   },
   'WebGLRenderingContext#createFramebuffer': function(
       eventId, playback, gl, args, objs) {
-    objs[args['value']] = gl.createFramebuffer();
-    playback.setOwningContext_(objs[args['value']], gl);
+    objs[args['framebuffer']] = gl.createFramebuffer();
+    playback.setOwningContext_(objs[args['framebuffer']], gl);
   },
   'WebGLRenderingContext#createRenderbuffer': function(
       eventId, playback, gl, args, objs) {
-    objs[args['value']] = gl.createRenderbuffer();
-    playback.setOwningContext_(objs[args['value']], gl);
+    objs[args['renderbuffer']] = gl.createRenderbuffer();
+    playback.setOwningContext_(objs[args['renderbuffer']], gl);
   },
   'WebGLRenderingContext#createTexture': function(
       eventId, playback, gl, args, objs) {
-    objs[args['value']] = gl.createTexture();
-    playback.setOwningContext_(objs[args['value']], gl);
+    objs[args['texture']] = gl.createTexture();
+    playback.setOwningContext_(objs[args['texture']], gl);
   },
   'WebGLRenderingContext#createProgram': function(
       eventId, playback, gl, args, objs) {
-    objs[args['value']] = gl.createProgram();
-    objs[args['value']]['__num_attribs__'] =
-        gl.getProgramParameter(
-        /** @type {WebGLProgram} */ (objs[args['value']]),
-        goog.webgl.ACTIVE_ATTRIBUTES);
-    playback.setOwningContext_(objs[args['value']], gl);
+    objs[args['program']] = gl.createProgram();
+    playback.setOwningContext_(objs[args['program']], gl);
   },
   'WebGLRenderingContext#createShader': function(
       eventId, playback, gl, args, objs) {
-    objs[args['value']] =
-        gl.createShader(args['type']);
-    playback.setOwningContext_(objs[args['value']], gl);
+    objs[args['shader']] = gl.createShader(args['type']);
+    playback.setOwningContext_(objs[args['shader']], gl);
   },
   'WebGLRenderingContext#cullFace': function(
       eventId, playback, gl, args, objs) {
@@ -1250,32 +1244,32 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#deleteBuffer': function(
       eventId, playback, gl, args, objs) {
     gl.deleteBuffer(
-        /** @type {WebGLBuffer} */ (objs[args['value']]));
+        /** @type {WebGLBuffer} */ (objs[args['buffer']]));
   },
   'WebGLRenderingContext#deleteFramebuffer': function(
       eventId, playback, gl, args, objs) {
     gl.deleteFramebuffer(
-        /** @type {WebGLFramebuffer} */ (objs[args['value']]));
+        /** @type {WebGLFramebuffer} */ (objs[args['framebuffer']]));
   },
   'WebGLRenderingContext#deleteProgram': function(
       eventId, playback, gl, args, objs) {
     gl.deleteProgram(
-        /** @type {WebGLProgram} */ (objs[args['value']]));
+        /** @type {WebGLProgram} */ (objs[args['program']]));
   },
   'WebGLRenderingContext#deleteRenderbuffer': function(
       eventId, playback, gl, args, objs) {
     gl.deleteRenderbuffer(
-        /** @type {WebGLRenderbuffer} */ (objs[args['value']]));
+        /** @type {WebGLRenderbuffer} */ (objs[args['renderbuffer']]));
   },
   'WebGLRenderingContext#deleteShader': function(
       eventId, playback, gl, args, objs) {
     gl.deleteShader(
-        /** @type {WebGLShader} */ (objs[args['value']]));
+        /** @type {WebGLShader} */ (objs[args['shader']]));
   },
   'WebGLRenderingContext#deleteTexture': function(
       eventId, playback, gl, args, objs) {
     gl.deleteTexture(
-        /** @type {WebGLTexture} */ (objs[args['value']]));
+        /** @type {WebGLTexture} */ (objs[args['texture']]));
   },
   'WebGLRenderingContext#depthFunc': function(
       eventId, playback, gl, args, objs) {
