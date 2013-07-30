@@ -91,7 +91,7 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.createDom = function(dom) {
 wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
     function(playback) {
   // Add contexts as they are made.
-  playback.addListener(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
+  playback.addListener(wtf.replay.graphics.Playback.EventType.CONTEXT_SET,
       function(context, contextHandle) {
         if (!this.displayedContexts_[contextHandle]) {
           this.addContext(contextHandle, context);
@@ -100,7 +100,7 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
 
   // Upon a reset, remove all contexts.
   playback.addListener(
-      wtf.replay.graphics.Playback.EventType.CONTEXTS_RELEASED,
+      wtf.replay.graphics.Playback.EventType.RESET,
       function() {
         for (var contextHandle in this.displayedContexts_) {
           this.removeContext_(contextHandle);

@@ -14,6 +14,7 @@
 goog.provide('wtf.replay.graphics.ContextPool');
 
 goog.require('goog.Disposable');
+goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.json');
 goog.require('goog.webgl');
@@ -62,12 +63,19 @@ wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_ = '__context_pool_hash__';
  * Generates a hash string for a context.
  * @param {string} contextType The type of context.
  * @param {WebGLContextAttributes=} opt_attributes Context attributes.
+ * @param {number=} opt_width The width of the context's canvas.
+ * @param {number=} opt_height The height of the context's canvas.
  * @return {string} A hash string for the context.
  * @private
  */
 wtf.replay.graphics.ContextPool.prototype.getContextHash_ =
-    function(contextType, opt_attributes) {
-  return contextType + goog.json.serialize(opt_attributes || {});
+    function(contextType, opt_attributes, opt_width, opt_height) {
+  var hashString = contextType + goog.json.serialize(opt_attributes || {});
+  if (opt_width && opt_height) {
+    hashString += opt_width + 'x' + opt_height;
+  }
+
+  return hashString;
 };
 
 
@@ -93,12 +101,20 @@ wtf.replay.graphics.ContextPool.prototype.releaseContext = function(context) {
  * if the context type is not supported.
  * @param {string} contextType The type of context.
  * @param {WebGLContextAttributes=} opt_attributes Context attributes.
+ * @param {number=} opt_width The width of the context's canvas. If set,
+ *     {@see opt_height} must also be set.
+ * @param {number=} opt_height The height of the context's canvas. If set,
+ *     {@see opt_width} must also be set.
  * @return {WebGLRenderingContext} A context. Or null if the context type is
  * not supported (ie 'experimental-webgl' may be supported, but not 'webgl').
  */
 wtf.replay.graphics.ContextPool.prototype.getContext =
-    function(contextType, opt_attributes) {
-  var contextHash = this.getContextHash_(contextType, opt_attributes);
+    function(contextType, opt_attributes, opt_width, opt_height) {
+  // Ensure that either both width and height are set or neither are set.
+  goog.asserts.assert(opt_width && opt_height || !opt_width && !opt_height);
+
+  var contextHash = this.getContextHash_(
+      contextType, opt_attributes, opt_width, opt_height);
   var contextList = this.contexts_[contextHash];
 
   // If context with desired type and attributes exists, return it.
@@ -107,7 +123,13 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
     this.resetWebGLContext_(retrievedContext);
     return retrievedContext;
   }
+
+  // Create a new context with a canvas of appropriate size if applicable.
   var newCanvas = this.dom_.createElement('canvas');
+  if (opt_width && opt_height) {
+    newCanvas.width = opt_width;
+    newCanvas.height = opt_height;
+  }
   var newContext = newCanvas.getContext(contextType, opt_attributes);
 
   // If context type is unsupported, return null.
