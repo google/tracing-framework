@@ -12,28 +12,45 @@
  */
 
 .graphicsReplayArgumentsDialog {
-  .form {
-    .header {
-      .buttons {
+  height: auto;
+
+  & .form {
+    & .header {
+      & .buttons {
         & .kButton {
           margin: 0 0 0 16px;
         }
+
+        & .saveArgumentsButton {}
+
+        & .resetArgumentsButton {}
+
+        & .cancelButton {}
       }
     }
-    .saveArgumentsButton {}
 
-    .resetArgumentsButton {}
+    & .contents {
+      margin: 0 0 0 40px;
+      position: static;
+    }
 
     .dialogFields {
-      .graphicsReplayArgumentsDialogArgKeyPair {
+      margin: 10px 0 0 0;
+
+      & .graphicsReplayArgumentsDialogArgKeyPair {
         margin: 15px 0 0 0;
 
-        .graphicsReplayArgumentsDialogInputContainer {}
+        & .graphicsReplayArgumentsDialogInputContainer {
+
+          & .dataDumpText {
+            width: 100%;
+          }
+        }
       }
     }
 
     /* Forms need a submit input element for Enter to work. */
-    .hiddenSubmit {
+    & .hiddenSubmit {
       visibility: hidden;
     }
   }

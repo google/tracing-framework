@@ -132,7 +132,7 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
 
   // Initial layout once the DOM is ready.
   wtf.timing.setImmediate(function() {
-    this.mainSplitter_.setSplitterSize(300);
+    this.mainSplitter_.setSplitterSize(400);
     this.layout();
   }, this);
 };

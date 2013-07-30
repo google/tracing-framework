@@ -14,6 +14,7 @@
 goog.provide('wtf.replay.graphics.ui.RangeSeeker');
 
 goog.require('goog.dom.TagName');
+goog.require('goog.dom.classes');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
@@ -137,6 +138,7 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.createSlider_ = function() {
 wtf.replay.graphics.ui.RangeSeeker.prototype.createValueDisplayer_ =
     function(slider) {
   var valueDisplayer = this.getDom().createElement(goog.dom.TagName.INPUT);
+  goog.dom.classes.add(valueDisplayer, goog.getCssName('kTextField'));
   valueDisplayer.type = 'text';
 
   // Update the slider if displayer changes.
