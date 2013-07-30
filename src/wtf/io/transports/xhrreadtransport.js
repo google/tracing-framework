@@ -85,7 +85,6 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
   if (!reusingXhr) {
     this.xhr_ = new XMLHttpRequest();
   }
-  this.xhr_.timeout = wtf.io.transports.XhrReadTransport.TIMEOUT_MS_;
 
   // Setup events.
   var self = this;
@@ -111,6 +110,8 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
   if (!reusingXhr) {
     this.xhr_.open('GET', this.url_, true);
   }
+
+  this.xhr_.timeout = wtf.io.transports.XhrReadTransport.TIMEOUT_MS_;
 
   // Pick response type based on desired format. This avoids any conversion.
   var responseType = 'text';

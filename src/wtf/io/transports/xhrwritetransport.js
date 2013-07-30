@@ -120,7 +120,6 @@ wtf.io.transports.XhrWriteTransport.prototype.flush = function() {
   // Setup XHR.
   var xhrObject = XMLHttpRequest['raw'] || XMLHttpRequest;
   this.xhr_ = new xhrObject();
-  this.xhr_.timeout = wtf.io.transports.XhrWriteTransport.TIMEOUT_MS_;
 
   this.xhr_.onload = function(e) {
     // Done sending, have response.
@@ -137,6 +136,7 @@ wtf.io.transports.XhrWriteTransport.prototype.flush = function() {
     'type': mimeType
   });
   this.xhr_.open('POST', this.url_, true);
+  this.xhr_.timeout = wtf.io.transports.XhrWriteTransport.TIMEOUT_MS_;
   this.xhr_.setRequestHeader('Content-Type', mimeType);
   if (this.filename_) {
     this.xhr_.setRequestHeader('X-Filename', this.filename_);
