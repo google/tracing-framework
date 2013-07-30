@@ -15,6 +15,7 @@ goog.provide('wtf.replay.graphics.ui.ArgumentsDialog');
 
 goog.require('goog.asserts');
 goog.require('goog.dom.TagName');
+goog.require('goog.dom.classes');
 goog.require('goog.dom.forms');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
@@ -125,13 +126,17 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createForm_ = function() {
   var resetArgumentsElement = domHelper.getElementByClass(
       goog.getCssName('resetArgumentsButton'));
   eventHandler.listen(resetArgumentsElement,
-      goog.events.EventType.CLICK, this.resetArguments_, false, this);
+      goog.events.EventType.CLICK, function() {
+        this.resetArguments_();
+      }, false, this);
 
   // Create the cancel button.
   var cancelButton = domHelper.getElementByClass(
       goog.getCssName('cancelButton'), this.getRootElement());
   eventHandler.listen(cancelButton,
-      goog.events.EventType.CLICK, this.close, false, this);
+      goog.events.EventType.CLICK, function() {
+        this.close();
+      }, false, this);
 };
 
 
@@ -170,7 +175,7 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.updateArguments_ =
         newArguments[key] = goog.string.parseInt(newValue);
         break;
       case 'string':
-        newArguments[key] = newArgumentMap.get(key);
+        newArguments[key] = newArgumentMap.get(key)[0];
         break;
       default:
         break;
@@ -210,6 +215,7 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createLabelInputPair_ =
       inputElement = domHelper.createElement(goog.dom.TagName.INPUT);
       inputElement.name = key;
       inputElement.type = 'text';
+      goog.dom.classes.add(inputElement, goog.getCssName('kTextField'));
       inputElement.value = value;
       break;
     case 'string':
@@ -218,7 +224,8 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createLabelInputPair_ =
       domHelper.setTextContent(inputElement, value);
       break;
     default:
-      inputElement = domHelper.createElement(goog.dom.TagName.PRE);
+      inputElement = domHelper.createElement(goog.dom.TagName.P);
+      goog.dom.classes.add(inputElement, goog.getCssName('dataDumpText'));
 
       // Unsupported argument type. Use JSON to make a pretty string to print.
       domHelper.setTextContent(inputElement, goog.json.serialize(value));

@@ -13,7 +13,6 @@
 
 goog.provide('wtf.replay.graphics.ui.EventNavigatorTableSource');
 
-goog.require('goog.asserts');
 goog.require('wtf.db.Filter');
 goog.require('wtf.replay.graphics.ui.ArgumentsDialog');
 goog.require('wtf.ui.VirtualTableSource');
@@ -88,19 +87,119 @@ goog.inherits(
 
 
 /**
- * Contains useful constants for drawing rows.
- * @enum {number}
+ * Contains colors used to draw the rows.
+ * @type {!Object.<string>}
+ * @const
+ * @private
  */
-wtf.replay.graphics.ui.EventNavigatorTableSource.Length = {
+wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_ = {
+  /**
+   * The default text color.
+   */
+  DEFAULT_TEXT: '#000000',
+
+  /**
+   * The background color of the gutter.
+   */
+  GUTTER_BACKGROUND: '#eeeeee',
+
+  /**
+   * The background color of the column of context handles.
+   */
+  CONTEXT_BACKGROUND: '#ffffff',
+
+  /**
+   * The default background color of odd rows.
+   */
+  ODD_ROW_BACKGROUND: '#ffffff',
+
+  /**
+   * The default background color of even rows.
+   */
+  EVEN_ROW_BACKGROUND: '#fafafa',
+
+  /**
+   * The background color of the currently selected row.
+   */
+  CURRENT_BACKGROUND: '#4d90fe',
+
+  /**
+   * The text color of the currently selected row.
+   */
+  CURRENT_TEXT: '#ffffff',
+
+  /**
+   * The text color of the button for editing arguments.
+   */
+  ALTER_BUTTON_TEXT: '#4d90fe',
+
+  /**
+   * The background color of rows for events with altered arguments.
+   */
+  ARGS_ALTERED_BACKGROUND: '#f9edbe',
+
+  /**
+   * The text color of rows for events with altered arguments.
+   */
+  ARGS_ALTERED_TEXT: '#000000',
+
+  /**
+   * The color of the line to the right of the column of context handles.
+   */
+  CONTEXT_LINE: '#000000',
+
+  /**
+   * The background color of rows that match a query.
+   */
+  MATCHED_BACKGROUND: '#009933',
+
+  /**
+   * The text color of rows that match a query.
+   */
+  MATCHED_TEXT: '#ffffff'
+};
+
+
+/**
+ * Contains useful length constants for drawing rows.
+ * @type {!Object.<number>}
+ * @const
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_ = {
   /**
    * The width of the edit button.
    */
   EDIT_WIDTH: 28,
 
   /**
+   * The width of the column of context handles.
+   */
+  CONTEXT_WIDTH: 21,
+
+  /**
    * The width of the gutter.
    */
-  GUTTER_WIDTH: 68
+  GUTTER_WIDTH: 65
+};
+
+
+/**
+ * Contains useful font information.
+ * @type {!Object.<string>}
+ * @const
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.FONT_ = {
+  /**
+   * The default font.
+   */
+  DEFAULT: '11px monospace',
+
+  /**
+   * The font for the edit button.
+   */
+  EDIT_BUTTON: '25px monospace'
 };
 
 
@@ -115,48 +214,21 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     return;
   }
 
+  // Alias enums.
+  var colors = wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_;
+  var fonts = wtf.replay.graphics.ui.EventNavigatorTableSource.FONT_;
+  var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
+
   this.setRowCount(currentStep ? it.getCount() + 1 : 0);
-  ctx.font = '11px monospace';
+  ctx.font = fonts.DEFAULT;
   var charWidth = ctx.measureText('0').width;
   var rowCenter = rowHeight / 2 + 10 / 2;
 
   // Gutter.
   // TODO(benvanik): move into table as an option?
-  var gutterWidth =
-      wtf.replay.graphics.ui.EventNavigatorTableSource.Length.GUTTER_WIDTH;
-  ctx.fillStyle = '#eeeeee';
+  var gutterWidth = lengths.GUTTER_WIDTH;
+  ctx.fillStyle = colors.GUTTER_BACKGROUND;
   ctx.fillRect(0, 0, gutterWidth, bounds.height);
-  var y = rowOffset;
-  for (var n = first; n <= last; n++, y += rowHeight) {
-    var line = String(n);
-    ctx.fillStyle = 'black';
-    var lineNumberXPosition = gutterWidth - ((line.length + 1) * charWidth);
-    var yTextPosition = Math.floor(y + rowCenter);
-    ctx.fillText(line, lineNumberXPosition, yTextPosition);
-
-    // Draw the edit button.
-    if (n) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, y,
-          wtf.replay.graphics.ui.EventNavigatorTableSource.Length.EDIT_WIDTH,
-          bounds.height);
-      ctx.fillStyle = '#000000';
-      ctx.fillText('Edit', 0, yTextPosition);
-    }
-  }
-
-  ctx.fillStyle = '#dddddd';
-  ctx.fillRect(gutterWidth - 1, 0, 1, bounds.height);
-
-  // Draw row contents.
-  y = rowOffset;
-  var color1 = '#fafafa';
-  var color2 = '#ffffff';
-  var argumentsAlteredColor = '#ffff00';
-  var highlightedColor = '#2eccfa';
-  var matchedEventColor = '#ffa500';
-  var x = gutterWidth + charWidth;
-  var rectWidth = bounds.width - gutterWidth;
 
   // Iterate ahead to the event represented by the top row displayed.
   var currentRow = this.playback_.getSubStepEventId();
@@ -166,9 +238,26 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     it.next();
   }
 
+  var y = rowOffset;
+  for (var n = first; n <= last; n++, y += rowHeight) {
+    var line = String(n);
+    ctx.fillStyle = colors.DEFAULT_TEXT;
+    var lineNumberXPosition = gutterWidth - ((line.length + 1) * charWidth);
+    var yTextPosition = Math.floor(y + rowCenter);
+    ctx.fillText(line, lineNumberXPosition, yTextPosition);
+  }
+
+  // Draw row contents.
+  y = rowOffset;
+  var x = gutterWidth + charWidth;
+  var rectWidth = bounds.width - gutterWidth;
+
   // Get the current entry in the list of context-changing events in the step.
   var currentContextEntry = this.getContextChange_(
       currentContextHandle, contextChangingEvents, it.getIndex());
+  if (contextChangingEvents.length) {
+    currentContextHandle = contextChangingEvents[currentContextEntry][1];
+  }
 
   // Get events that change the current context.
   var createContextTypeId =
@@ -178,26 +267,48 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
   var columnTitle = '';
   var argumentFilter = this.filter_ ? this.filter_.getArgumentFilter() : null;
+  var contextLinePosition = x + 4 * charWidth;
+  var mainTitleXPosition = contextLinePosition + charWidth;
   for (var n = first; n <= last && !it.done(); n++, y += rowHeight) {
     // TODO(benvanik): icons to differentiate event types?
 
     // Determine the background color.
     if ((currentRow == -1 && !n) || currentRow == n - 1) {
-      ctx.fillStyle = highlightedColor;
+      ctx.fillStyle = colors.CURRENT_BACKGROUND;
     } else {
       if (n && this.filter_ && this.matchedEventTypeIds_[it.getTypeId()] &&
           (!argumentFilter || argumentFilter(it))) {
-        ctx.fillStyle = matchedEventColor;
+        ctx.fillStyle = colors.MATCHED_BACKGROUND;
       } else if (this.idsOfEventsWithUpdatedArguments_[it.getId()]) {
-        ctx.fillStyle = argumentsAlteredColor;
+        ctx.fillStyle = colors.ARGS_ALTERED_BACKGROUND;
       } else {
-        ctx.fillStyle = n % 2 ? color1 : color2;
+        ctx.fillStyle = n % 2 ?
+            colors.ODD_ROW_BACKGROUND : colors.EVEN_ROW_BACKGROUND;
       }
+    }
+    ctx.fillRect(gutterWidth, y, rectWidth, rowHeight);
+
+    // Determine the text color.
+    if (currentRow == -1 && !n) {
+      ctx.fillStyle = colors.CURRENT_TEXT;
+    } else {
+      ctx.fillStyle = colors.DEFAULT_TEXT;
     }
 
     // Determine the text content.
     if (n) {
       if (it.isScope() || it.isInstance()) {
+        // Draw the edit button if arguments exist.
+        if (it.getType().getArguments().length) {
+          ctx.fillStyle = colors.DEFAULT_TEXT;
+          ctx.font = fonts.EDIT_BUTTON;
+          var oldColor = ctx.fillStyle;
+          ctx.fillStyle = colors.ALTER_BUTTON_TEXT;
+          ctx.fillText('\u270e', charWidth, y + rowHeight);
+          ctx.fillStyle = oldColor;
+          ctx.font = fonts.DEFAULT;
+        }
+
         // Change to the next current context if necessary.
         if (currentContextEntry < contextChangingEvents.length &&
             contextChangingEvents[currentContextEntry][0] <= it.getIndex()) {
@@ -206,20 +317,35 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           ++currentContextEntry;
         }
 
+        // Add friendly text for context-changing events, and remove prefix.
         var typeId = it.getTypeId();
-        var contextHandleText = currentContextHandle != -1 ?
-            currentContextHandle : 'None';
         if (typeId == createContextTypeId) {
-          columnTitle =
-              'New context created.';
+          columnTitle = 'New context created.';
         } else if (typeId == setContextTypeId) {
-          columnTitle =
-              'Context set as current.';
+          columnTitle = 'Context set as current.';
         } else {
           // Remove the 'WebGLRenderingContext#' prefix.
           columnTitle = it.getLongString(true).substring(22);
         }
-        columnTitle = contextHandleText + ' ' + columnTitle;
+        columnTitle = columnTitle;
+
+        // Change text color under certain conditions.
+        if (currentRow == n - 1) {
+          // The row is the current one.
+          ctx.fillStyle = colors.CURRENT_TEXT;
+        } else if (this.filter_ && this.matchedEventTypeIds_[it.getTypeId()] &&
+            (!argumentFilter || argumentFilter(it))) {
+          // A query exists, and this row matches.
+          ctx.fillStyle = colors.MATCHED_TEXT;
+        } else if (this.idsOfEventsWithUpdatedArguments_[it.getId()]) {
+          // The arguments for this row have been altered.
+          ctx.fillStyle = colors.ARGS_ALTERED_TEXT;
+        }
+
+        // Write the current context.
+        var contextHandleText = currentContextHandle != -1 ?
+            '' + currentContextHandle : '-';
+        ctx.fillText(contextHandleText, x, Math.floor(y + rowCenter));
 
         it.next();
       }
@@ -227,9 +353,11 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
       columnTitle = 'Beginning of step.';
     }
 
-    ctx.fillRect(gutterWidth, y, rectWidth, rowHeight);
-    ctx.fillStyle = '#000000';
-    ctx.fillText(columnTitle, x, Math.floor(y + rowCenter));
+    ctx.fillText(columnTitle, mainTitleXPosition, Math.floor(y + rowCenter));
+
+    // Draw line separating the context handle from the event title.
+    ctx.fillStyle = colors.CONTEXT_LINE;
+    ctx.fillRect(contextLinePosition - 1, 0, 1, bounds.height);
   }
 };
 
@@ -281,9 +409,15 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
 
   // If this row reflects an event, go to it.
   if (row) {
-    if (x <=
-        wtf.replay.graphics.ui.EventNavigatorTableSource.Length.EDIT_WIDTH) {
-      this.handleEditClick_(row);
+    var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
+    if (x <= lengths.EDIT_WIDTH) {
+      var it = currentStep.getEventIterator(true);
+      it.seek(row - 1);
+
+      // Only allow for clicking the edit button if arguments exist.
+      if (it.getType().getArguments().length) {
+        this.handleEditClick_(row);
+      }
     } else {
       var soughtIndex = row - 1;
       if (soughtIndex != playback.getSubStepEventId()) {
@@ -382,10 +516,23 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
     return '';
   }
 
+  // If no current step, do not display a tool tip.
   var currentStep = this.playback_.getCurrentStep();
-  goog.asserts.assert(currentStep);
+  if (!currentStep) {
+    return '';
+  }
+
+  // Find the relevant event.
   var it = currentStep.getEventIterator(true);
   it.seek(row - 1);
+
+  // If the user hovers over the edit button and event arguments exist,
+  // display instructions.
+  var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
+  if (x <= lengths.EDIT_WIDTH && it.getType().getArguments().length) {
+    return 'Edit arguments for ' + it.getName() + '.';
+  }
+
   return it.getInfoString();
 };
 
