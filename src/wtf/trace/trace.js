@@ -509,7 +509,9 @@ wtf.trace.leaveScope = wtf.trace.Scope.leave;
  */
 wtf.trace.appendScopeData = function(name, value, opt_time) {
   var typeName = 'any';
-  if (typeof value == 'number') {
+  if (typeof value == 'boolean') {
+    typeName = 'bool';
+  } else if (typeof value == 'number') {
     // Force to a int32, for now. If this becomes a problem we can change it.
     value |= 0;
     typeName = 'int32';
