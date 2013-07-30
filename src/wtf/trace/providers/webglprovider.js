@@ -393,9 +393,29 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   !onlyDraws && wrapMethod(ctxproto,
       'isContextLost()');
   !onlyDraws && wrapMethod(ctxproto,
-      'getSupportedExtensions()');
+      'getSupportedExtensions()',
+      function(fn, eventType) {
+        return function getSupportedExtensions(name) {
+          setCurrentContext(this);
+          var scope = eventType();
+          var result = fn.apply(this, arguments);
+          wtf.trace.appendScopeData('result', result);
+          return wtf.trace.leaveScope(scope, result);
+        };
+      });
   !onlyDraws && wrapMethod(ctxproto,
-      'getExtension(ascii name)');
+      'getExtension(ascii name, bool result)',
+      function(fn, eventType) {
+        return function getExtension(name) {
+          setCurrentContext(this);
+          var scope = eventType(name, true);
+          var result = fn.apply(this, arguments);
+          if (!result) {
+            wtf.trace.appendScopeData('result', false);
+          }
+          return wtf.trace.leaveScope(scope, result);
+        };
+      });
   !onlyDraws && wrapMethod(ctxproto,
       'activeTexture(uint32 texture)');
   !onlyDraws && wrapMethod(ctxproto,

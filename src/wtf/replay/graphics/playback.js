@@ -460,7 +460,14 @@ wtf.replay.graphics.Playback.prototype.checkExtensions_ = function() {
 
   for (var it = this.eventList_.begin(); !it.done(); it.next()) {
     if (it.getTypeId() == getExtensionEventId) {
-      var extensionName = /** @type {string} */ (it.getArgument('name'));
+      var args = it.getArguments();
+
+      // Ignore getExtension calls that failed.
+      if (!args['result']) {
+        continue;
+      }
+
+      var extensionName = /** @type {string} */ (args['name']);
       var relatedExtensionName =
           this.extensionManager_.getRelatedExtension(extensionName);
 
@@ -1003,8 +1010,15 @@ wtf.replay.graphics.Playback.prototype.getCurrentStepIndex = function() {
 wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
   var associatedFunction = this.callLookupTable_[it.getTypeId()];
   if (associatedFunction) {
-    associatedFunction.call(null, it.getId(), this, this.currentContext_,
-        it.getArguments(), this.objects_);
+    try {
+      associatedFunction.call(null, it.getId(), this, this.currentContext_,
+          it.getArguments(), this.objects_);
+    } catch (e) {
+      // TODO(benvanik): log to status bar? this usually happens with
+      //     cross-origin texture uploads.
+      goog.global.console.log('Error realizing event ' + it.getLongString() +
+          ': ' + e);
+    }
   }
 };
 
