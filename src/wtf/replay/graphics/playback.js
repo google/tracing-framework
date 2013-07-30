@@ -84,8 +84,15 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.contextPool_ = contextPool;
 
   /**
+   * Cache of context attributes. Maps from context handles to attributes.
+   * @type {!Object.<!WebGLContextAttributes>}
+   * @private
+   */
+  this.contextAttributes_ = {};
+
+  /**
    * A mapping of handles to contexts.
-   * @type {!Object.<WebGLRenderingContext>}
+   * @type {!Object.<!WebGLRenderingContext>}
    * @private
    */
   this.contexts_ = {};
@@ -201,11 +208,6 @@ wtf.replay.graphics.Playback.EventType = {
   RESET: goog.events.getUniqueId('reset'),
 
   /**
-   * Contexts were released.
-   */
-  CONTEXTS_RELEASED: goog.events.getUniqueId('contexts_released'),
-
-  /**
    * Playing began.
    */
   PLAY_BEGAN: goog.events.getUniqueId('play_began'),
@@ -226,14 +228,9 @@ wtf.replay.graphics.Playback.EventType = {
   BACKWARDS_SEEK: goog.events.getUniqueId('backwards_seek'),
 
   /**
-   * A context was created. Has the context and its handle as its arguments.
+   * A new context was set. Has the context and its handle as its arguments.
    */
-  CONTEXT_CREATED: goog.events.getUniqueId('context_created'),
-
-  /**
-   * A canvas was resized. Has the context of the canvas.
-   */
-  CANVAS_RESIZED: goog.events.getUniqueId('canvas_resized'),
+  CONTEXT_SET: goog.events.getUniqueId('context_set'),
 
   /**
    * Playing stopped. Could be due to finishing the animation, pausing,
@@ -544,7 +541,6 @@ wtf.replay.graphics.Playback.prototype.clearWebGLObjects_ = function() {
     this.contextPool_.releaseContext(ctx);
   }
   this.contexts_ = {};
-  this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXTS_RELEASED);
 };
 
 
@@ -1846,36 +1842,48 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'wtf.webgl#createContext': function(eventId, playback, gl, args, objs) {
     var attributes = args['attributes'];
-    // Assume that the context is webgl for now.
-    gl =
-        playback.contextPool_.getContext('webgl', attributes) ||
-        playback.contextPool_.getContext('experimental-webgl', attributes);
-
-    // We don't support WebGL.
-    if (!gl) {
-      throw new Error('playback machine does not support WebGL.');
-    }
-
     var contextHandle = args['handle'];
-    playback.contexts_[contextHandle] =
-        /** @type {WebGLRenderingContext} */ (gl);
-    playback.currentContext_ = gl;
-    playback.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_CREATED,
-        gl, contextHandle);
+
+    // Cache the attributes if there are any.
+    if (attributes) {
+      playback.contextAttributes_[contextHandle] = attributes;
+    }
   },
   'wtf.webgl#setContext': function(eventId, playback, gl, args, objs) {
     var contextHandle = args['handle'];
     var height = args['height'];
     var width = args['width'];
+    var attributes = playback.contextAttributes_[contextHandle] || null;
+
     gl = playback.contexts_[contextHandle];
-    if (gl.canvas.height != height ||
-        gl.canvas.width != width) {
-      gl.canvas.height = height;
+    if (gl) {
+      // If the context has already been made, alter its settings.
       gl.canvas.width = width;
-      playback.emitEvent(
-          wtf.replay.graphics.Playback.EventType.CANVAS_RESIZED, gl);
+      gl.canvas.height = height;
+    } else {
+      // Otherwise, make a new context.
+
+      // Assume that the context is a WebGL one for now.
+      gl =
+          playback.contextPool_.getContext(
+              'webgl', attributes, width, height) ||
+          playback.contextPool_.getContext(
+              'experimental-webgl', attributes, width, height);
+
+      if (!gl) {
+        // WebGL is not supported.
+        throw new Error('playback machine does not support WebGL.');
+      }
+
+      // Store the context.
+      playback.contexts_[contextHandle] =
+          /** @type {WebGLRenderingContext} */ (gl);
     }
-    gl.viewport(0, 0, width, height);
+
     playback.currentContext_ = gl;
+    gl.viewport(0, 0, width, height);
+
+    playback.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_SET,
+        gl, contextHandle);
   }
 };
