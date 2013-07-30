@@ -540,7 +540,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           'int32 x, int32 y, int32 width, int32 height, int32 border)');
   wrapMethod(ctxproto,
       'copyTexSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
-          'int32 yoffset, int32 x, int32 y, int32 widht, int32 height)');
+          'int32 yoffset, int32 x, int32 y, int32 width, int32 height)');
   /**
    * @param {!Object} target Target.
    * @param {string} name Name.
