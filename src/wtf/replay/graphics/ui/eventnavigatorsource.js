@@ -265,8 +265,11 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
   var setContextTypeId =
       this.eventList_.getEventTypeId('wtf.webgl#setContext');
 
+  // Grab filter, if it's valid.
+  var filter = this.filter_ && !this.filter_.getError() ? this.filter_ : null;
+  var argumentFilter = filter ? filter.getArgumentFilter() : null;
+
   var columnTitle = '';
-  var argumentFilter = this.filter_ ? this.filter_.getArgumentFilter() : null;
   var contextLinePosition = x + 4 * charWidth;
   var mainTitleXPosition = contextLinePosition + charWidth;
   for (var n = first; n <= last && !it.done(); n++, y += rowHeight) {
@@ -276,7 +279,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     if ((currentRow == -1 && !n) || currentRow == n - 1) {
       ctx.fillStyle = colors.CURRENT_BACKGROUND;
     } else {
-      if (n && this.filter_ && this.matchedEventTypeIds_[it.getTypeId()] &&
+      if (n && filter && this.matchedEventTypeIds_[it.getTypeId()] &&
           (!argumentFilter || argumentFilter(it))) {
         ctx.fillStyle = colors.MATCHED_BACKGROUND;
       } else if (this.idsOfEventsWithUpdatedArguments_[it.getId()]) {
@@ -333,7 +336,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
         if (currentRow == n - 1) {
           // The row is the current one.
           ctx.fillStyle = colors.CURRENT_TEXT;
-        } else if (this.filter_ && this.matchedEventTypeIds_[it.getTypeId()] &&
+        } else if (filter && this.matchedEventTypeIds_[it.getTypeId()] &&
             (!argumentFilter || argumentFilter(it))) {
           // A query exists, and this row matches.
           ctx.fillStyle = colors.MATCHED_TEXT;
