@@ -551,7 +551,8 @@ wtf.trace.EventTypeBuilder.WRITE_ANY_ = ({
   computeSize: null,
   write: function(a, offset) {
     return [
-      'int32Array[' + offset + '] = ' + a + ' !== undefined ? ' +
+      'int32Array[' + offset + '] = ' +
+          a + ' !== undefined && ' + a + ' !== null ? ' +
           'stringTable.addString(stringify(' + a + ')) : -1;'
     ];
   }
