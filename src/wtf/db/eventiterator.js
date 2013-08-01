@@ -13,6 +13,7 @@
 
 goog.provide('wtf.db.EventIterator');
 
+goog.require('goog.asserts');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.EventStruct');
 goog.require('wtf.db.Unit');
@@ -563,6 +564,11 @@ wtf.db.EventIterator.prototype.buildArgumentString_ = function(
   var first = true;
   var argVars = type.getArguments();
   var argData = this.getArguments();
+  // TODO(benvanik): sometimes arguments may not exist. Issue #410.
+  goog.asserts.assert(argData);
+  if (!argData) {
+    return;
+  }
   for (var n = 0; n < argVars.length; n++) {
     var argVar = argVars[n];
     appendArgument(first, argVar.name, argData[argVar.name]);
