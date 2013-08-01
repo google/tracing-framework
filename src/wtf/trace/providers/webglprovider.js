@@ -14,6 +14,8 @@
 goog.provide('wtf.trace.providers.WebGLProvider');
 
 goog.require('goog.asserts');
+goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.string');
 goog.require('goog.webgl');
 goog.require('wtf.data.EventFlag');
@@ -1415,7 +1417,7 @@ wtf.trace.providers.WebGLProvider.extractImageData = function(
     var canvas = canvasCache[key];
     var needsClear = !!canvas;
     if (!canvas) {
-      canvas = document.createElement('canvas');
+      canvas = goog.dom.createElement(goog.dom.TagName.CANVAS);
       canvas.width = width;
       canvas.height = height;
       canvasCache[key] = canvas;

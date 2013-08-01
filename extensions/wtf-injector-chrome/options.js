@@ -295,10 +295,20 @@ Options.prototype.getDefaultPageOptions = function(url) {
     // The presence of this indicates that the options come from the injector.
     'wtf.injector': true,
 
+    // Larger buffers mean less waste when doing recordings with a large amount
+    // of data (like WebGL captures).
+    'wtf.trace.session.bufferSize': 6 * 1024 * 1024,
+
+    // This is pretty excessive, but keeps us from truncating WebGL traces.
+    // After this limit the file likely won't load due to v8 memory limits
+    // anyway.
     'wtf.trace.session.maximumMemoryUsage': 512 * 1024 * 1024,
+
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
+
     'wtf.addons': addons,
+
     'wtf.trace.provider.chromeDebug.present': true,
     'wtf.trace.provider.chromeDebug.tracing': false
   };
