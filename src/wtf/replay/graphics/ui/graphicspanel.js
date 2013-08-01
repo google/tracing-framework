@@ -208,14 +208,48 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.createRangeSeeker_ =
       wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
       function() {
         slider.setValue(playback.getCurrentStepIndex());
-      });
+
+        if (!playback.isPlaying()) {
+          this.dispatchSeekToFrame_();
+        }
+      }, this);
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
+      function() {
+        this.dispatchSeekToFrame_();
+      }, this);
 
   // If the slider is updated, update the playback.
   slider.addListener(
       wtf.replay.graphics.ui.RangeSeeker.EventType.VALUE_CHANGED,
       function() {
         playback.seekStep(slider.getValue());
-      });
+      }, this);
 
   return slider;
+};
+
+
+/**
+ * Seeks to the frame representing the current step.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsPanel.prototype.dispatchSeekToFrame_ =
+    function() {
+  var playback = this.playback_;
+  var step = playback.getCurrentStep();
+  if (!step) {
+    return;
+  }
+
+  var commandManager = wtf.events.getCommandManager();
+  if (step.getFrame()) {
+    commandManager.execute('goto_frame', this, null, step.getFrame());
+  } else {
+    var it = step.getEventIterator();
+    var timeLeft = it.getTime();
+    it.seek(it.getCount() - 1);
+    var timeRight = it.getTime();
+    commandManager.execute('goto_range', this, null, timeLeft, timeRight);
+  }
 };

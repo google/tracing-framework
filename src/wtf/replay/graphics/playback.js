@@ -260,6 +260,15 @@ wtf.replay.graphics.Playback.prototype.disposeInternal = function() {
 
 
 /**
+ * Gets the event list this playback is using.
+ * @return {!wtf.db.EventList} Event list.
+ */
+wtf.replay.graphics.Playback.prototype.getEventList = function() {
+  return this.eventList_;
+};
+
+
+/**
  * Constructs a mapping from the IDs of event types to functions.
  * @return {!Object.<!wtf.replay.graphics.Playback.Call_>} An object mapping
  *     event type IDs to functions to call.
