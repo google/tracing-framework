@@ -21,7 +21,9 @@ goog.require('goog.soy');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.MenuItem');
 goog.require('goog.ui.PopupMenu');
+goog.require('wtf.events');
 goog.require('wtf.events.EventType');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.eventNavigatorToolbar');
 goog.require('wtf.ui.Control');
@@ -48,6 +50,14 @@ wtf.replay.graphics.ui.EventNavigatorToolbar = function(
    * @private
    */
   this.playback_ = playback;
+
+  /**
+   * Whether the UI is currently enabled.
+   * Set by {@see #setReady} and upon state change.
+   * @type {boolean}
+   * @private
+   */
+  this.enabled_ = false;
 
   /**
    * The first call button.
@@ -199,7 +209,7 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
   eh.listen(
       this.previousDrawCallButton_,
       goog.events.EventType.CLICK,
-      this.prevDrawCallHandler_, false, this);
+      this.previousDrawCallHandler_, false, this);
   eh.listen(
       this.nextDrawCallButton_,
       goog.events.EventType.CLICK,
@@ -208,6 +218,23 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
       this.lastCallButton_,
       goog.events.EventType.CLICK,
       this.lastCallHandler_, false, this);
+
+  // Setup keyboard shortcuts.
+  var keyboard = wtf.events.getWindowKeyboard(this.getDom());
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+  keyboardScope.addShortcut('ctrl+shift+up', function() {
+    this.firstCallHandler_();
+  }, this);
+  keyboardScope.addShortcut('ctrl+up', function() {
+    this.previousDrawCallHandler_();
+  }, this);
+  keyboardScope.addShortcut('ctrl+down', function() {
+    this.nextDrawCallHandler_();
+  }, this);
+  keyboardScope.addShortcut('ctrl+shift+down', function() {
+    this.lastCallHandler_();
+  }, this);
 
   this.setEnabled_(true);
 };
@@ -220,6 +247,7 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
  */
 wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setEnabled_ =
     function(enabled) {
+  this.enabled_ = enabled;
   this.toggleButton(goog.getCssName('firstCallButton'), enabled);
   this.toggleButton(goog.getCssName('previousDrawCallButton'), enabled);
   this.toggleButton(goog.getCssName('nextDrawCallButton'), enabled);
@@ -235,6 +263,10 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setEnabled_ =
  */
 wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.firstCallHandler_ =
     function() {
+  if (!this.enabled_) {
+    return;
+  }
+
   this.playback_.seekStep(this.playback_.getCurrentStepIndex());
   this.emitEvent(
       wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
@@ -246,8 +278,12 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.firstCallHandler_ =
  * Handles clicks of the previous draw call button.
  * @private
  */
-wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.prevDrawCallHandler_ =
-    function() {
+wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.
+    previousDrawCallHandler_ = function() {
+  if (!this.enabled_) {
+    return;
+  }
+
   this.playback_.seekToPreviousDrawCall();
   this.emitEvent(
       wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
@@ -261,6 +297,10 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.prevDrawCallHandler_ =
  */
 wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.nextDrawCallHandler_ =
     function() {
+  if (!this.enabled_) {
+    return;
+  }
+
   this.playback_.seekToNextDrawCall();
   this.emitEvent(
       wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
@@ -274,6 +314,10 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.nextDrawCallHandler_ =
  */
 wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.lastCallHandler_ =
     function() {
+  if (!this.enabled_) {
+    return;
+  }
+
   this.playback_.seekToLastCall();
   this.emitEvent(
       wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
