@@ -18,14 +18,36 @@
  */
 {template .controller}
   <div class="{css graphicsReplayEventNavigatorToolbar}">
-    <div class="{css graphicsReplayToolbarButtonRows} {css kButtonBar} {css buttons}">
-      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayPreviousDrawCallButton}" title="Previous Draw Call">
-        Prev. Draw Call
-      </a>
-      <a class="{css kButton} {css kMenuButton} {css kDisabled} {css graphicsReplayNextDrawCallButton}" title="Next Draw Call">
-        Next Draw Call
-      </a>
-    </div>
-    <div class="{css graphicsReplayToolbarSearchBox}"></div>
+    <table cellspacing="0">
+      <tr>
+        <td class="{css leftButtons}">
+          <div class="{css kButtonBar} {css kButtonBarSmall}">
+            <a class="{css kButton} {css kMenuButton} {css kButtonLeft} {css kDisabled} {css firstCallButton}" title="Reset to the first call">
+              |<
+            </a>
+            <a class="{css kButton} {css kMenuButton} {css kButtonMid} {css kDisabled} {css previousDrawCallButton}" title="Previous draw call">
+              <
+            </a>
+            <a class="{css kButton} {css kMenuButton} {css kButtonMid} {css kDisabled} {css nextDrawCallButton}" title="Next draw call">
+              >
+            </a>
+            <a class="{css kButton} {css kMenuButton} {css kButtonRight} {css kDisabled} {css lastCallButton}" title="Run to the last call">
+              >|
+            </a>
+          </div>
+        </td>
+        <td class="{css center}">
+          <div class="{css searchBox}"></div>
+        </td>
+        <td class="{css rightButtons}">
+          <div class="{css kButtonBar} {css kButtonBarSmall}">
+            <a class="{css kButton} {css kMenuButton} {css optionsButton}" title="Change display and filter options.">
+                <img alt="Filter" src="icons/autofilter_filled.svg">
+                <span class="{css kButtonDisclosure}"></span>
+              </a>
+          </div>
+        </td>
+      </tr>
+    </table>
   </div>
 {/template}

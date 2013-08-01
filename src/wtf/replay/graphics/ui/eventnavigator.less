@@ -12,6 +12,8 @@
  */
 
 .replayGraphicsEventNavigator {
+  @toolbarHeight: 40px;
+
   .fitParent();
 
   & .toolbarContainer {
@@ -21,6 +23,6 @@
   & .tableOuter {
     .fitParent();
 
-    margin-top: 80px;
+    top: @toolbarHeight;
   }
 }

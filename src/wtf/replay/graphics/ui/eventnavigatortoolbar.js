@@ -16,7 +16,11 @@ goog.provide('wtf.replay.graphics.ui.EventNavigatorToolbar');
 
 goog.require('goog.events');
 goog.require('goog.events.EventType');
+goog.require('goog.positioning.Corner');
 goog.require('goog.soy');
+goog.require('goog.ui.Component');
+goog.require('goog.ui.MenuItem');
+goog.require('goog.ui.PopupMenu');
 goog.require('wtf.events.EventType');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.eventNavigatorToolbar');
@@ -46,12 +50,20 @@ wtf.replay.graphics.ui.EventNavigatorToolbar = function(
   this.playback_ = playback;
 
   /**
+   * The first call button.
+   * @type {!Element}
+   * @private
+   */
+  this.firstCallButton_ = this.getChildElement(
+      goog.getCssName('firstCallButton'));
+
+  /**
    * The previous draw call button.
    * @type {!Element}
    * @private
    */
   this.previousDrawCallButton_ = this.getChildElement(
-      goog.getCssName('graphicsReplayPreviousDrawCallButton'));
+      goog.getCssName('previousDrawCallButton'));
 
   /**
    * The next draw call button.
@@ -59,7 +71,23 @@ wtf.replay.graphics.ui.EventNavigatorToolbar = function(
    * @private
    */
   this.nextDrawCallButton_ = this.getChildElement(
-      goog.getCssName('graphicsReplayNextDrawCallButton'));
+      goog.getCssName('nextDrawCallButton'));
+
+  /**
+   * The last call button.
+   * @type {!Element}
+   * @private
+   */
+  this.lastCallButton_ = this.getChildElement(
+      goog.getCssName('lastCallButton'));
+
+  /**
+   * The options button.
+   * @type {!Element}
+   * @private
+   */
+  this.optionsButton_ = this.getChildElement(
+      goog.getCssName('optionsButton'));
 
   /**
    * The search box.
@@ -67,13 +95,35 @@ wtf.replay.graphics.ui.EventNavigatorToolbar = function(
    * @private
    */
   this.searchControl_ = new wtf.ui.SearchControl(
-      this.getChildElement(goog.getCssName('graphicsReplayToolbarSearchBox')),
-      this.getDom());
+      this.getChildElement(goog.getCssName('searchBox')), this.getDom());
   this.searchControl_.setEnabled(false);
   this.registerDisposable(this.searchControl_);
-  this.searchControl_.setPlaceholderText(
-      'Partial name or /regex/');
-  this.listenToSearchBox_();
+  this.searchControl_.setPlaceholderText('Partial name or /regex/');
+  this.searchControl_.addListener(
+      wtf.events.EventType.INVALIDATED, this.handleSearchBoxChanges_, this);
+
+  // Setup sort buttons.
+  var dom = this.getDom();
+  var menu = new goog.ui.PopupMenu(dom);
+  this.registerDisposable(menu);
+  menu.attach(this.optionsButton_, goog.positioning.Corner.BOTTOM_LEFT);
+  menu.setToggleMode(true);
+  menu.addChild(new goog.ui.MenuItem(
+      'TODO', 'some_token', dom), true);
+  menu.render();
+  var eh = this.getHandler();
+  menu.forEachChild(function(item) {
+    item.setCheckable(true);
+    eh.listen(item, goog.ui.Component.EventType.ACTION, function(e) {
+      menu.forEachChild(function(otherItem) {
+        otherItem.setChecked(false);
+      });
+      item.setChecked(true);
+      this.searchControl_.focus();
+      // TODO(benvanik): update with option.
+    });
+  });
+  menu.getChildAt(0).setChecked(true);
 };
 goog.inherits(wtf.replay.graphics.ui.EventNavigatorToolbar, wtf.ui.Control);
 
@@ -115,13 +165,37 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
     return;
   }
 
-  this.toggleButton(
-      goog.getCssName('graphicsReplayPreviousDrawCallButton'), true);
-  this.toggleButton(goog.getCssName('graphicsReplayNextDrawCallButton'), true);
-  this.searchControl_.setEnabled(true);
-  this.listenToButtonStates_();
+  // Listen to events that change whether buttons are enabled.
+  var playback = this.playback_;
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
+      function() {
+        // There are still steps left.
+        var isPlaying = playback.isPlaying();
+        if (this.playback_.getCurrentStep()) {
+          this.setEnabled_(!isPlaying);
+        } else {
+          this.setEnabled_(false);
+        }
+      }, this);
+  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
+      function() {
+        // No seeking to the next draw call while playing.
+        this.setEnabled_(false);
+      }, this);
+  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
+      function() {
+        if (playback.getCurrentStep()) {
+          // Enable intra-step navigation if stopped at a step.
+          this.setEnabled_(true);
+        }
+      }, this);
 
   var eh = this.getHandler();
+  eh.listen(
+      this.firstCallButton_,
+      goog.events.EventType.CLICK,
+      this.firstCallHandler_, false, this);
   eh.listen(
       this.previousDrawCallButton_,
       goog.events.EventType.CLICK,
@@ -130,53 +204,41 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
       this.nextDrawCallButton_,
       goog.events.EventType.CLICK,
       this.nextDrawCallHandler_, false, this);
+  eh.listen(
+      this.lastCallButton_,
+      goog.events.EventType.CLICK,
+      this.lastCallHandler_, false, this);
+
+  this.setEnabled_(true);
 };
 
 
 /**
- * Listens to events that change whether buttons are enabled.
+ * Toggle all of the buttons and other UI elements on/off.
+ * @param {boolean} enabled Whether the elements are enabled.
  * @private
  */
-wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.listenToButtonStates_ =
+wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setEnabled_ =
+    function(enabled) {
+  this.toggleButton(goog.getCssName('firstCallButton'), enabled);
+  this.toggleButton(goog.getCssName('previousDrawCallButton'), enabled);
+  this.toggleButton(goog.getCssName('nextDrawCallButton'), enabled);
+  this.toggleButton(goog.getCssName('lastCallButton'), enabled);
+  this.searchControl_.setEnabled(enabled);
+  this.toggleButton(goog.getCssName('optionsButton'), enabled);
+};
+
+
+/**
+ * Handles clicks of the first call button.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.firstCallHandler_ =
     function() {
-  var playback = this.playback_;
-  var previousDrawCallClass =
-      goog.getCssName('graphicsReplayPreviousDrawCallButton');
-  var nextDrawCallClass = goog.getCssName('graphicsReplayNextDrawCallButton');
-
-  playback.addListener(
-      wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
-      function() {
-        // There are still steps left.
-        var isPlaying = playback.isPlaying();
-        if (this.playback_.getCurrentStep()) {
-          this.toggleButton(previousDrawCallClass, !isPlaying);
-          this.toggleButton(nextDrawCallClass, !isPlaying);
-          this.searchControl_.setEnabled(!isPlaying);
-        } else {
-          this.toggleButton(previousDrawCallClass, false);
-          this.toggleButton(nextDrawCallClass, false);
-          this.searchControl_.setEnabled(false);
-        }
-      }, this);
-
-  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
-      function() {
-        // No seeking to the next draw call while playing.
-        this.toggleButton(previousDrawCallClass, false);
-        this.toggleButton(nextDrawCallClass, false);
-        this.searchControl_.setEnabled(false);
-      }, this);
-
-  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
-      function() {
-        if (playback.getCurrentStep()) {
-          // Enable intra-step navigation if stopped at a step.
-          this.toggleButton(previousDrawCallClass, true);
-          this.toggleButton(nextDrawCallClass, true);
-          this.searchControl_.setEnabled(true);
-        }
-      }, this);
+  this.playback_.seekStep(this.playback_.getCurrentStepIndex());
+  this.emitEvent(
+      wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
+          .MANUAL_SUB_STEP_SEEK);
 };
 
 
@@ -207,13 +269,15 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.nextDrawCallHandler_ =
 
 
 /**
- * Begins listening to changes in the search box.
+ * Handles clicks of the last call button.
  * @private
  */
-wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.listenToSearchBox_ =
+wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.lastCallHandler_ =
     function() {
-  this.searchControl_.addListener(
-      wtf.events.EventType.INVALIDATED, this.handleSearchBoxChanges_, this);
+  this.playback_.seekToLastCall();
+  this.emitEvent(
+      wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
+          .MANUAL_SUB_STEP_SEEK);
 };
 
 

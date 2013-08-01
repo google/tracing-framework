@@ -926,6 +926,31 @@ wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
 
 
 /**
+ * Seeks to the last call within the current step.
+ */
+wtf.replay.graphics.Playback.prototype.seekToLastCall = function() {
+  var currentStep = this.getCurrentStep();
+  if (!currentStep) {
+    throw new Error('Seek to last call attempted with no current step.');
+  }
+
+  var it = currentStep.getEventIterator(true);
+  var eventJustFinished = this.subStepId_;
+
+  // Keep calling events in the step until the step is done.
+  it.seek(eventJustFinished + 1);
+  while (!it.done()) {
+    this.realizeEvent_(it);
+    it.next();
+  }
+
+  this.subStepId_ = it.getIndex() - 1;
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
+};
+
+
+/**
  * Seeks to the previous draw call within the current step. If no draw call is
  * before the current call within the step, seeks to the start of the step.
  */
@@ -963,7 +988,7 @@ wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
 
 
 /**
- * Seeks to the next draw call within the current step. If no draw call left,
+ * Seeks to the next draw call within the current step. If no draw is call left,
  * finishes running the step.
  */
 wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
