@@ -239,7 +239,6 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
   // Iterate ahead to the event represented by the top row displayed.
   var currentRow = this.playback_.getSubStepEventId();
-  var currentContextHandle = currentStep.getInitialCurrentContext();
   var contextChangingEvents = currentStep.getContextChangingEvents();
   for (var i = 1; i < first; ++i) {
     it.next();
@@ -261,8 +260,12 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
   // Get the current entry in the list of context-changing events in the step.
   var currentContextEntry = this.getContextChange_(
-      currentContextHandle, contextChangingEvents, it.getIndex());
-  if (contextChangingEvents.length) {
+      contextChangingEvents, it.getIndex());
+  var currentContextHandle;
+  if (currentContextEntry == -1) {
+    // Use initial context handle.
+    currentContextHandle = currentStep.getInitialCurrentContext();
+  } else {
     currentContextHandle = contextChangingEvents[currentContextEntry][1];
   }
 
@@ -319,14 +322,6 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           ctx.font = fonts.DEFAULT;
         }
 
-        // Change to the next current context if necessary.
-        if (currentContextEntry < contextChangingEvents.length &&
-            contextChangingEvents[currentContextEntry][0] <= it.getIndex()) {
-          currentContextHandle =
-              contextChangingEvents[currentContextEntry][1];
-          ++currentContextEntry;
-        }
-
         // Add friendly text for context-changing events, and remove prefix.
         var typeId = it.getTypeId();
         if (typeId == createContextTypeId) {
@@ -352,6 +347,17 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           ctx.fillStyle = colors.ARGS_ALTERED_TEXT;
         }
 
+        // Determine the next context.
+        if (contextChangingEvents.length) {
+          var nextEntry = currentContextEntry + 1;
+          if (nextEntry < contextChangingEvents.length &&
+              contextChangingEvents[nextEntry][0] <= it.getIndex()) {
+            currentContextEntry = nextEntry;
+            currentContextHandle =
+                contextChangingEvents[currentContextEntry][1];
+          }
+        }
+
         // Write the current context.
         var contextHandleText = currentContextHandle != -1 ?
             '' + currentContextHandle : '-';
@@ -375,35 +381,44 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
 
 /**
  * Gets the current entry within the table of events that change the context
- * within a step based on the index of the current event.
- * @param {number} initialContextHandle The handle of the current context at
- *     the beginning of this step.
+ * within a step based on the index of the current event. Or -1 if the initial
+ * context handle should be used.
  * @param {!Array.<!Array.<number>>} contextChangingEvents A list of 2-tuples.
  *     Each 2-tuple contains the ID of a context-changing event and the new
  *     context handle.
  * @param {number} eventIndex The index of the current event.
- * @return {number} The index within the table of events.
+ * @return {number} The index within the table of events. Or -1 if the initial
+ *     context handle should be used.
  * @private
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getContextChange_ =
-    function(initialContextHandle, contextChangingEvents, eventIndex) {
-  // Find out which context the first displayed event pertains to.
-  var lowContextEntry = 0;
-  var highContextEntry = contextChangingEvents.length;
-  var midContextEntry = 0;
-  while (lowContextEntry < highContextEntry) {
-    midContextEntry = lowContextEntry +
-        Math.floor((highContextEntry - lowContextEntry) / 2);
-    if (contextChangingEvents[midContextEntry][0] == eventIndex) {
-      break;
-    } else if (contextChangingEvents[midContextEntry][0] < eventIndex) {
-      lowContextEntry = midContextEntry + 1;
+    function(contextChangingEvents, eventIndex) {
+  // If event index precedes all context-changing events, use initial context.
+  if (!contextChangingEvents.length ||
+      eventIndex < contextChangingEvents[0][0]) {
+    return -1;
+  }
+
+  // Binary search for the lower-bounding context-changing event.
+  var low = 0;
+  var high = contextChangingEvents.length;
+
+  while (low < high) {
+    var mid = low + Math.floor((high - low) / 2);
+    if (contextChangingEvents[mid][0] < eventIndex) {
+      // Look on the right side.
+      low = mid + 1;
+    } else if (contextChangingEvents[mid][0] > eventIndex) {
+      // Look on the left side.
+      high = mid;
     } else {
-      highContextEntry = midContextEntry - 1;
+      // If the event IDs match, event with @eventIndex changes the context.
+      return mid;
     }
   }
 
-  return midContextEntry;
+  // We seek 1 less than the lower bound since the event falls before.
+  return low - 1;
 };
 
 
@@ -527,13 +542,18 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.playbackToCurrent_ =
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getContextOfEvent_ =
     function(it) {
   var currentStep = this.playback_.getCurrentStep();
-  var currentContextHandle = currentStep.getInitialCurrentContext();
   var contextChangingEvents = currentStep.getContextChangingEvents();
   var currentContextEntry = this.getContextChange_(
-      currentContextHandle, contextChangingEvents, it.getIndex());
-  if (contextChangingEvents.length) {
+      contextChangingEvents, it.getIndex());
+
+  var currentContextHandle;
+  if (currentContextEntry == -1) {
+    // Use initial context.
+    currentContextHandle = currentStep.getInitialCurrentContext();
+  } else {
     currentContextHandle = contextChangingEvents[currentContextEntry][1];
   }
+
   return String(currentContextHandle);
 };
 
