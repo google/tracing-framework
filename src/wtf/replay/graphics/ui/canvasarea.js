@@ -95,6 +95,9 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
       function(context, contextHandle) {
         if (!this.displayedContexts_[contextHandle]) {
           this.addContext(contextHandle, context);
+        } else {
+          var contextBox = this.displayedContexts_[contextHandle];
+          contextBox.update();
         }
       }, this);
 
@@ -128,13 +131,13 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
 
 /**
  * Removes a context and its canvas from the area.
- * @param {string} handle The handle of the context.
+ * @param {string} contextHandle The handle of the context.
  * @private
  */
 wtf.replay.graphics.ui.CanvasesArea.prototype.removeContext_ = function(
-    handle) {
-  var contextBox = this.displayedContexts_[handle];
+    contextHandle) {
+  var contextBox = this.displayedContexts_[contextHandle];
   this.getRootElement().removeChild(contextBox.getRootElement());
   goog.dispose(contextBox);
-  delete this.displayedContexts_[handle];
+  delete this.displayedContexts_[contextHandle];
 };

@@ -33,7 +33,21 @@ goog.require('wtf.ui.Control');
 wtf.replay.graphics.ui.ContextBox = function(
     context, contextHandle, parentElement, opt_domHelper) {
   goog.base(this, parentElement, opt_domHelper);
-  this.createContextLabel_(contextHandle);
+
+  /**
+   * Label element.
+   * @type {!Element}
+   * @private
+   */
+  this.label_ = this.getChildElement(
+      goog.getCssName('replayGraphicsContextBoxHandleLabel'));
+
+  /**
+   * Context handle used to identify the context to the user.
+   * @type {string}
+   * @private
+   */
+  this.contextHandle_ = contextHandle;
 
   /**
    * The context this box encapsulates.
@@ -42,6 +56,8 @@ wtf.replay.graphics.ui.ContextBox = function(
    */
   this.context_ = context;
   this.appendCanvas_();
+
+  this.update();
 };
 goog.inherits(wtf.replay.graphics.ui.ContextBox, wtf.ui.Control);
 
@@ -58,20 +74,6 @@ wtf.replay.graphics.ui.ContextBox.prototype.createDom = function(dom) {
 
 
 /**
- * Creates a label for the context.
- * @param {string} contextHandle The handle of the context.
- * @private
- */
-wtf.replay.graphics.ui.ContextBox.prototype.createContextLabel_ = function(
-    contextHandle) {
-  var label = 'Context with Handle ' + contextHandle;
-  var labelElement = this.getChildElement(
-      goog.getCssName('replayGraphicsContextBoxHandleLabel'));
-  goog.dom.setTextContent(labelElement, label);
-};
-
-
-/**
  * Appends the context to the canvas box.
  * @private
  */
@@ -80,4 +82,17 @@ wtf.replay.graphics.ui.ContextBox.prototype.appendCanvas_ = function() {
       this.getChildElement(
           goog.getCssName('replayGraphicsContextBoxCanvasContainer')),
       this.context_.canvas);
+};
+
+
+/**
+ * Handles context updates.
+ * May indicate the canvas has been resized.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.update = function() {
+  var width = this.context_.drawingBufferWidth;
+  var height = this.context_.drawingBufferHeight;
+  var label =
+      'Context ' + this.contextHandle_ + ' (' + width + 'x' + height + ')';
+  goog.dom.setTextContent(this.label_, label);
 };

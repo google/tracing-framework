@@ -1050,6 +1050,16 @@ wtf.replay.graphics.Playback.prototype.setOwningContext_ = function(
 
 
 /**
+ * Gets a context by handle.
+ * @param {string} contextHandle Context handle.
+ * @return {WebGLRenderingContext} Rendering context, if found.
+ */
+wtf.replay.graphics.Playback.prototype.getContext = function(contextHandle) {
+  return this.contexts_[contextHandle] || null;
+};
+
+
+/**
  * Gets the number of steps.
  * @return {number} The number of steps.
  */

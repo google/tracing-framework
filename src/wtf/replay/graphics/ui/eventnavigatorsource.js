@@ -74,6 +74,14 @@ wtf.replay.graphics.ui.EventNavigatorTableSource = function(
    */
   this.domHelper_ = domHelper;
 
+  /**
+   * Width of '0' character.
+   * Updated each paint.
+   * @type {number}
+   * @private
+   */
+  this.charWidth_ = 0;
+
   var currentStep = playback.getCurrentStep();
   var eventIterator = currentStep ? currentStep.getEventIterator(true) : null;
   var numEventsInStep = currentStep ? eventIterator.getCount() : 0;
@@ -104,6 +112,11 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_ = {
   GUTTER_BACKGROUND: '#eeeeee',
 
   /**
+   * Right-hand border color of the gutter.
+   */
+  GUTTER_BORDER: '#dddddd',
+
+  /**
    * The background color of the column of context handles.
    */
   CONTEXT_BACKGROUND: '#ffffff',
@@ -131,7 +144,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_ = {
   /**
    * The text color of the button for editing arguments.
    */
-  ALTER_BUTTON_TEXT: '#4d90fe',
+  ALTER_BUTTON_TEXT: '#aaaaaa',
 
   /**
    * The background color of rows for events with altered arguments.
@@ -142,11 +155,6 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_ = {
    * The text color of rows for events with altered arguments.
    */
   ARGS_ALTERED_TEXT: '#000000',
-
-  /**
-   * The color of the line to the right of the column of context handles.
-   */
-  CONTEXT_LINE: '#000000',
 
   /**
    * The background color of rows that match a query.
@@ -171,11 +179,6 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_ = {
    * The width of the edit button.
    */
   EDIT_WIDTH: 28,
-
-  /**
-   * The width of the column of context handles.
-   */
-  CONTEXT_WIDTH: 21,
 
   /**
    * The width of the gutter.
@@ -208,27 +211,31 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.FONT_ = {
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     function(ctx, bounds, scrollBounds, rowOffset, rowHeight, first, last) {
-  var currentStep = this.playback_.getCurrentStep();
-  var it = currentStep ? currentStep.getEventIterator(true) : null;
-  if (!it) {
-    return;
-  }
-
   // Alias enums.
   var colors = wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_;
   var fonts = wtf.replay.graphics.ui.EventNavigatorTableSource.FONT_;
   var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
-
-  this.setRowCount(currentStep ? it.getCount() + 1 : 0);
-  ctx.font = fonts.DEFAULT;
-  var charWidth = ctx.measureText('0').width;
-  var rowCenter = rowHeight / 2 + 10 / 2;
 
   // Gutter.
   // TODO(benvanik): move into table as an option?
   var gutterWidth = lengths.GUTTER_WIDTH;
   ctx.fillStyle = colors.GUTTER_BACKGROUND;
   ctx.fillRect(0, 0, gutterWidth, bounds.height);
+  ctx.fillStyle = colors.GUTTER_BORDER;
+  ctx.fillRect(gutterWidth - 1, 0, 1, bounds.height);
+
+  // Grab the step and see if we have anything to draw.
+  var currentStep = this.playback_.getCurrentStep();
+  var it = currentStep ? currentStep.getEventIterator(true) : null;
+  if (!it) {
+    return;
+  }
+  this.setRowCount(currentStep ? it.getCount() + 1 : 0);
+
+  ctx.font = fonts.DEFAULT;
+  var charWidth = ctx.measureText('0').width;
+  this.charWidth_ = charWidth;
+  var rowCenter = rowHeight / 2 + 10 / 2;
 
   // Iterate ahead to the event represented by the top row displayed.
   var currentRow = this.playback_.getSubStepEventId();
@@ -323,9 +330,9 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
         // Add friendly text for context-changing events, and remove prefix.
         var typeId = it.getTypeId();
         if (typeId == createContextTypeId) {
-          columnTitle = 'New context created.';
+          columnTitle = '(new context created)';
         } else if (typeId == setContextTypeId) {
-          columnTitle = 'Context set as current.';
+          columnTitle = '(context set as current)';
         } else {
           // Remove the 'WebGLRenderingContext#' prefix.
           columnTitle = it.getLongString(true).substring(22);
@@ -353,13 +360,14 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
         it.next();
       }
     } else {
-      columnTitle = 'Beginning of step.';
+      // TODO(benvanik): get frame from step or intra-frame range.
+      columnTitle = '(beginning of step)';
     }
 
     ctx.fillText(columnTitle, mainTitleXPosition, Math.floor(y + rowCenter));
 
     // Draw line separating the context handle from the event title.
-    ctx.fillStyle = colors.CONTEXT_LINE;
+    ctx.fillStyle = colors.GUTTER_BORDER;
     ctx.fillRect(contextLinePosition - 1, 0, 1, bounds.height);
   }
 };
@@ -510,6 +518,27 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.playbackToCurrent_ =
 
 
 /**
+ * Gets the context handle of the given event.
+ * This is slow and should be used sparingly.
+ * @param {!wtf.db.EventIterator} it Iterator.
+ * @return {string?} Context handle, if any.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getContextOfEvent_ =
+    function(it) {
+  var currentStep = this.playback_.getCurrentStep();
+  var currentContextHandle = currentStep.getInitialCurrentContext();
+  var contextChangingEvents = currentStep.getContextChangingEvents();
+  var currentContextEntry = this.getContextChange_(
+      currentContextHandle, contextChangingEvents, it.getIndex());
+  if (contextChangingEvents.length) {
+    currentContextHandle = contextChangingEvents[currentContextEntry][1];
+  }
+  return String(currentContextHandle);
+};
+
+
+/**
  * @override
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
@@ -529,11 +558,37 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
   var it = currentStep.getEventIterator(true);
   it.seek(row - 1);
 
-  // If the user hovers over the edit button and event arguments exist,
-  // display instructions.
+  // TODO(benvanik): move to a metrics calculation object.
   var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
-  if (x <= lengths.EDIT_WIDTH && it.getType().getArguments().length) {
-    return 'Edit arguments for ' + it.getName() + '.';
+  var editLeft = 0;
+  var editRight = editLeft + lengths.EDIT_WIDTH;
+  var contextLeft = lengths.GUTTER_WIDTH;
+  var contextRight = contextLeft + 5 * this.charWidth_;
+
+  if (x > editLeft && x < editRight && it.getType().getArguments().length) {
+    // Edit button.
+    return 'Edit arguments for ' + it.getName();
+  } else if (x > contextLeft && x < contextRight) {
+    // Context handle column.
+    var contextHandle = this.getContextOfEvent_(it);
+    if (!contextHandle) {
+      return null;
+    }
+    var lines = [];
+    lines.push('Context ' + contextHandle);
+    var context = this.playback_.getContext(contextHandle);
+    if (context) {
+      lines.push('width: ' + context.drawingBufferWidth);
+      lines.push('height: ' + context.drawingBufferHeight);
+      var attributes = context.getContextAttributes();
+      lines.push('attributes:');
+      for (var key in attributes) {
+        if (attributes.hasOwnProperty(key)) {
+          lines.push('  ' + key + ': ' + attributes[key]);
+        }
+      }
+    }
+    return lines.join('\n');
   }
 
   return it.getInfoString();
