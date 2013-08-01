@@ -42,6 +42,28 @@ wtf.replay.graphics.ContextPool_test =
     assert.equal(attributes.preserveDrawingBuffer,
         retrievedAttributes.preserveDrawingBuffer);
 
+    // Ensure that we get a canvas with the right dimensions.
+    var desiredWidth = 8;
+    var desiredHeight = 12;
+    retrievedContext = contextPool.getContext(
+        'webgl', attributes, desiredWidth, desiredHeight);
+    var retrievedCanvas = retrievedContext.canvas;
+    assert.equal(retrievedCanvas.width, desiredWidth);
+    assert.equal(retrievedCanvas.height, desiredHeight);
+
+    // Alter the width and height.
+    retrievedCanvas.height = desiredHeight + 1;
+    retrievedCanvas.width = desiredWidth + 100;
+
+    // After releasing this context and retrieving a context with a canvas
+    // with the same dimensions, the same context is retrieved.
+    contextPool.releaseContext(retrievedContext);
+    var anotherRetrievedContext = contextPool.getContext(
+        'webgl', attributes, desiredWidth, desiredHeight);
+    assert.equal(anotherRetrievedContext.canvas.width, desiredWidth);
+    assert.equal(anotherRetrievedContext.canvas.height, desiredHeight);
+    assert.equal(anotherRetrievedContext.canvas, retrievedCanvas);
+
     // If the context type is unsupported, null should be returned.
     var invalidContext = contextPool.getContext('some_invalid_ctx_type');
     assert.isNull(invalidContext);
