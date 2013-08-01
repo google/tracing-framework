@@ -17,6 +17,7 @@ goog.require('goog.asserts');
 goog.require('goog.string');
 goog.require('goog.webgl');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.data.Variable');
 goog.require('wtf.timing');
 goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
@@ -161,28 +162,10 @@ wtf.trace.providers.WebGLProvider.prototype.getSettingsSectionConfigs =
           'default': true
         },
         {
-          'type': 'dropdown',
-          'key': 'wtf.trace.provider.webgl.captureLevel',
-          'title': 'Capture:',
-          'options': [
-            {
-              'value': 'draw_calls',
-              'title': 'Draw/read/uploads only'
-            },
-            {
-              'value': 'all_calls',
-              'title': 'All calls'
-            },
-            {
-              'value': 'all_calls_with_arguments',
-              'title': 'All calls with arguments'
-            },
-            {
-              'value': 'all_calls_with_data',
-              'title': 'All calls with textures/buffers'
-            }
-          ],
-          'default': 'draw_calls'
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.webgl.replayable',
+          'title': 'Capture textures/buffers for replay (slow)',
+          'default': true
         },
         {
           'type': 'checkbox',
@@ -316,6 +299,21 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     return;
   }
 
+  var replayable = this.options.getBoolean(
+      'wtf.trace.provider.webgl.replayable', true);
+  var embedRemoteImages = this.options.getBoolean(
+      'wtf.trace.provider.webgl.embedRemoteImages', true);
+
+  // Record that we have injected on a canvas and what the options were.
+  // This will let apps using this data easily check if if the trace is
+  // replayable.
+  var initEvent = wtf.trace.events.createInstance(
+      'wtf.webgl#init(any options)');
+  initEvent({
+    'replayable': replayable,
+    'embedRemoteImages': embedRemoteImages
+  });
+
   var provider = this;
 
   var getHandle = wtf.trace.providers.WebGLProvider.getHandle;
@@ -344,57 +342,92 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           ctx.drawingBufferWidth, ctx.drawingBufferHeight);
     }
   };
-  var thisSetContext = function() {
-    setCurrentContext(this);
-  };
 
-  var mode = this.options.getString(
-      'wtf.trace.provider.webgl.captureLevel', 'all_calls_with_arguments');
-  var onlyDraws = mode == 'draw_calls';
-  var includeArgs = !onlyDraws && mode != 'all_calls';
-  var includeResources = mode == 'all_calls_with_data';
-  var embedRemoteImages = this.options.getBoolean(
-      'wtf.trace.provider.webgl.embedRemoteImages', true);
+  // Stash off functions that let us quickly restore the context prototype
+  // to its original state.
+  var contextRestoreFns = this.contextRestoreFns_;
+  goog.asserts.assert(!contextRestoreFns.length);
 
-  var contextRestoreFns = [];
   /**
    * Wraps a method on the target prototype with a scoped event.
    * Optionally the method can provide a custom callback routine.
    * @param {!Object} target Target object/prototype.
+   * @param {string} targetType Target type name.
    * @param {string} signature Event signature.
    * @param {Function=} opt_generator Generator function.
    */
-  function wrapMethod(target, signature, opt_generator) {
-    var signatureParts = /^([a-zA-Z0-9_\.:]+)(\((.*)\)$)?/.exec(signature);
-    var signatureName = signatureParts[1]; // entire name before ()
+  function wrapMethod(target, targetType, signature, opt_generator) {
+    // Parse signature.
+    var parsedSignature = wtf.data.Variable.parseSignature(signature);
+    var methodName = parsedSignature.name;
 
-    if (!includeArgs) {
-      // Strip signature args, as we don't want them.
-      signature = signatureName;
+    // Define a custom event type at runtime.
+    var customEvent = wtf.trace.events.createScope(
+        targetType + '#' + signature);
+    goog.asserts.assert(customEvent);
+
+    // Grab the original method from the target.
+    var rawFn = target[methodName];
+    goog.asserts.assert(rawFn);
+
+    // Generate a bound function.
+    var instrumentedFn;
+    if (opt_generator) {
+      // Custom enter function generator.
+      instrumentedFn = opt_generator(rawFn, customEvent);
+    } else {
+      // Default case of simple event.
+      instrumentedFn = function() {
+        // Always call setCurrentContext first to ensure proper event order.
+        setCurrentContext(this);
+
+        // Enter scope with the arguments of the call.
+        var scope = customEvent.apply(null, arguments);
+
+        // Call the original method.
+        var result = rawFn.apply(this, arguments);
+
+        // Return the result and leave the scope.
+        return leaveScope(scope, result);
+      };
     }
 
-    var rawFn = target[signatureName];
-    goog.asserts.assert(rawFn);
-    var instrumentedFn = wtf.trace.instrument(
-        rawFn,
-        signature,
-        'WebGLRenderingContext#',
-        includeArgs ? opt_generator : null,
-        thisSetContext);
+    // Swap the method and save a restore function so that we can swap it back.
     instrumentedFn['raw'] = rawFn;
-    target[signatureName] = instrumentedFn;
+    target[methodName] = instrumentedFn;
     contextRestoreFns.push(function() {
-      target[signatureName] = rawFn;
+      target[methodName] = rawFn;
     });
   };
 
-  var ctxproto = WebGLRenderingContext.prototype;
+  /**
+   * @param {string} signature Event signature.
+   * @param {Function=} opt_generator Generator function.
+   */
+  function wrapContextMethod(signature, opt_generator) {
+    wrapMethod(
+        WebGLRenderingContext.prototype, 'WebGLRenderingContext',
+        signature, opt_generator);
+  };
 
-  !onlyDraws && wrapMethod(ctxproto,
+  function coercePixelTypeToUint8(source) {
+    if (!(source instanceof Uint8Array)) {
+      if (source.buffer.byteLength == source.byteLength) {
+        return new Uint8Array(source.buffer);
+      } else {
+        return new Uint8Array(
+            source.buffer, source.byteOffset, source.byteLength);
+      }
+    } else {
+      return source;
+    }
+  };
+
+  wrapContextMethod(
       'getContextAttributes()');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'isContextLost()');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getSupportedExtensions()',
       function(fn, eventType) {
         return function getSupportedExtensions(name) {
@@ -405,7 +438,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, result);
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getExtension(ascii name, bool result)',
       function(fn, eventType) {
         return function getExtension(name) {
@@ -418,9 +451,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, result);
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'activeTexture(uint32 texture)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'attachShader(uint32 program, uint32 shader)',
       function(fn, eventType) {
         return function attachShader(program, shader) {
@@ -429,7 +462,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'bindAttribLocation(uint32 program, uint32 index, utf8 name)',
       function(fn, eventType) {
         return function bindAttribLocation(program, index, name) {
@@ -438,7 +471,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'bindBuffer(uint32 target, uint32 buffer)',
       function(fn, eventType) {
         return function bindBuffer(target, buffer) {
@@ -447,7 +480,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'bindFramebuffer(uint32 target, uint32 framebuffer)',
       function(fn, eventType) {
         return function bindFramebuffer(target, framebuffer) {
@@ -456,7 +489,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'bindRenderbuffer(uint32 target, uint32 renderbuffer)',
       function(fn, eventType) {
         return function bindRenderbuffer(target, renderbuffer) {
@@ -465,7 +498,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'bindTexture(uint32 target, uint32 texture)',
       function(fn, eventType) {
         return function bindTexture(target, texture) {
@@ -474,18 +507,18 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'blendColor(float red, float green, float blue, float alpha)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'blendEquation(uint32 mode)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'blendEquationSeparate(uint32 modeRGB, uint32 modeAlpha)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'blendFunc(uint32 sfactor, uint32 dfactor)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'blendFuncSeparate(uint32 srcRGB, uint32 dstRGB, uint32 srcAlpha, ' +
           'uint32 dstAlpha)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'bufferData(uint32 target, uint32 size, uint32 usage, uint8[] data)',
       function(fn, eventType) {
         return function bufferData(target, data, usage) {
@@ -495,7 +528,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
             return leaveScope(scope, fn.apply(this, arguments));
           } else {
             var dataLength = data.byteLength;
-            if (includeResources) {
+            if (replayable) {
               if (data instanceof ArrayBuffer) {
                 data = new Uint8Array(data);
               } else if (!(data instanceof Uint8Array)) {
@@ -509,12 +542,12 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           }
         };
       });
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'bufferSubData(uint32 target, uint32 offset, uint8[] data)',
       function(fn, eventType) {
         return function bufferSubData(target, offset, data) {
           setCurrentContext(this);
-          if (includeResources) {
+          if (replayable) {
             if (data instanceof ArrayBuffer) {
               data = new Uint8Array(data);
             } else if (!(data instanceof Uint8Array)) {
@@ -527,19 +560,19 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'checkFramebufferStatus(uint32 target)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'clear(uint32 mask)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'clearColor(float red, float green, float blue, float alpha)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'clearDepth(float depth)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'clearStencil(int32 s)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'colorMask(uint8 red, uint8 green, uint8 blue, uint8 alpha)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'compileShader(uint32 shader)',
       function(fn, eventType) {
         return function compileShader(shader) {
@@ -548,32 +581,50 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  // TODO(benvanik): compressedTexImage2D
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'compressedTexImage2D(uint32 target, int32 level, ' +
           'uint32 internalformat, int32 width, int32 height, int32 border, ' +
-          'uint8[] data)');
-  wrapMethod(ctxproto,
+          'uint8[] data)',
+      function(fn, eventType) {
+        return function compressedTexImage2D() {
+          setCurrentContext(this);
+          var scope = eventType(
+              arguments[0], arguments[1], arguments[2], arguments[3],
+              arguments[4], arguments[5],
+              replayable ? coercePixelTypeToUint8(arguments[6]) : null);
+          return leaveScope(scope, fn.apply(this, arguments));
+        };
+      });
+  wrapContextMethod(
       'compressedTexSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
           'int32 yoffset, int32 width, int32 height, uint32 format, ' +
-          'uint8[] data)');
-  wrapMethod(ctxproto,
+          'uint8[] data)',
+      function(fn, eventType) {
+        return function compressedTexSubImage2D() {
+          setCurrentContext(this);
+          var scope = eventType(
+              arguments[0], arguments[1], arguments[2], arguments[3],
+              arguments[4], arguments[5], arguments[6],
+              replayable ? coercePixelTypeToUint8(arguments[7]) : null);
+          return leaveScope(scope, fn.apply(this, arguments));
+        };
+      });
+  wrapContextMethod(
       'copyTexImage2D(uint32 target, int32 level, uint32 internalformat, ' +
           'int32 x, int32 y, int32 width, int32 height, int32 border)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'copyTexSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
           'int32 yoffset, int32 x, int32 y, int32 width, int32 height)');
   /**
-   * @param {!Object} target Target.
    * @param {string} name Method name, like 'createProgram'.
    * @param {string} typeName Type name, like 'program'.
    * @param {string=} opt_arg Argument.
    */
-  function wrapCreateMethod(target, name, typeName, opt_arg) {
+  function wrapCreateMethod(name, typeName, opt_arg) {
     var signature =
         name + '(' + (opt_arg ? opt_arg + ', ' : '') +
         'uint32 ' + typeName + ')';
-    wrapMethod(target, signature, function(fn, eventType) {
+    wrapContextMethod(signature, function(fn, eventType) {
       return function(arg) {
         setCurrentContext(this);
         var id = provider.nextObjectId_++;
@@ -590,23 +641,23 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  !onlyDraws && wrapCreateMethod(ctxproto,
+  wrapCreateMethod(
       'createBuffer', 'buffer');
-  !onlyDraws && wrapCreateMethod(ctxproto,
+  wrapCreateMethod(
       'createFramebuffer', 'framebuffer');
-  !onlyDraws && wrapCreateMethod(ctxproto,
+  wrapCreateMethod(
       'createProgram', 'program');
-  !onlyDraws && wrapCreateMethod(ctxproto,
+  wrapCreateMethod(
       'createRenderbuffer', 'renderbuffer');
-  !onlyDraws && wrapCreateMethod(ctxproto,
+  wrapCreateMethod(
       'createShader', 'shader', 'uint32 type');
-  !onlyDraws && wrapCreateMethod(ctxproto,
+  wrapCreateMethod(
       'createTexture', 'texture');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'cullFace(uint32 mode)');
-  function wrapDeleteMethod(target, name, typeName) {
+  function wrapDeleteMethod(name, typeName) {
     var signature = name + '(uint32 ' + typeName + ')';
-    wrapMethod(target, signature, function(fn, eventType) {
+    wrapContextMethod(signature, function(fn, eventType) {
       return function(value) {
         setCurrentContext(this);
         var scope = eventType(getHandle(value));
@@ -614,25 +665,25 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  !onlyDraws && wrapDeleteMethod(ctxproto,
+  wrapDeleteMethod(
       'deleteBuffer', 'buffer');
-  !onlyDraws && wrapDeleteMethod(ctxproto,
+  wrapDeleteMethod(
       'deleteFramebuffer', 'framebuffer');
-  !onlyDraws && wrapDeleteMethod(ctxproto,
+  wrapDeleteMethod(
       'deleteProgram', 'program');
-  !onlyDraws && wrapDeleteMethod(ctxproto,
+  wrapDeleteMethod(
       'deleteRenderbuffer', 'renderbuffer');
-  !onlyDraws && wrapDeleteMethod(ctxproto,
+  wrapDeleteMethod(
       'deleteShader', 'shader');
-  !onlyDraws && wrapDeleteMethod(ctxproto,
+  wrapDeleteMethod(
       'deleteTexture', 'texture');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'depthFunc(uint32 func)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'depthMask(uint8 flag)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'depthRange(float zNear, float zFar)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'detachShader(uint32 program, uint32 shader)',
       function(fn, eventType) {
         return function detachShader(program, shader) {
@@ -641,23 +692,23 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'disable(uint32 cap)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'disableVertexAttribArray(uint8 index)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'drawArrays(uint32 mode, uint32 first, int32 count)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'drawElements(uint32 mode, int32 count, uint32 type, uint32 offset)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'enable(uint32 cap)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'enableVertexAttribArray(uint8 index)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'finish()');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'flush()');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'framebufferRenderbuffer(uint32 target, uint32 attachment, ' +
           'uint32 renderbuffertarget, uint32 renderbuffer)',
       function(fn, eventType) {
@@ -669,7 +720,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'framebufferTexture2D(uint32 target, uint32 attachment, ' +
           'uint32 textarget, uint32 texture, int32 level)',
       function(fn, eventType) {
@@ -681,11 +732,11 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'frontFace(uint32 mode)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'generateMipmap(uint32 target)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getActiveAttrib(uint32 program, uint32 index)',
       function(fn, eventType) {
         return function getActiveAttrib(program, index) {
@@ -694,7 +745,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getActiveUniform(uint32 program, uint32 index)',
       function(fn, eventType) {
         return function getActiveUniform(program, index) {
@@ -703,7 +754,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getAttachedShaders(uint32 program)',
       function(fn, eventType) {
         return function getAttachedShaders(program) {
@@ -712,7 +763,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getAttribLocation(uint32 program, utf8 name)',
       function(fn, eventType) {
         return function getAttribLocation(program, name) {
@@ -722,16 +773,16 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getBufferParameter(uint32 target, uint32 pname)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getParameter(uint32 pname)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getError()');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getFramebufferAttachmentParameter(uint32 target, uint32 attachment, ' +
           'uint32 pname)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getProgramParameter(uint32 program, uint32 pname)',
       function(fn, eventType) {
         return function getProgramParameter(program, pname) {
@@ -740,7 +791,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getProgramInfoLog(uint32 program)',
       function(fn, eventType) {
         return function getProgramInfoLog(program) {
@@ -749,9 +800,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getRenderbufferParameter(uint32 target, uint32 pname)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getShaderParameter(uint32 shader, uint32 pname)',
       function(fn, eventType) {
         return function getShaderParameter(shader, pname) {
@@ -760,9 +811,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getShaderPrecisionFormat(uint32 shadertype, uint32 precisiontype)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getShaderInfoLog(uint32 shader)',
       function(fn, eventType) {
         return function getShaderInfoLog(shader) {
@@ -771,7 +822,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getShaderSource(uint32 shader)',
       function(fn, eventType) {
         return function getShaderSource(shader) {
@@ -780,12 +831,12 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getTexParameter(uint32 target, uint32 pname)');
   // TODO(benvanik): getUniform
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getUniform');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getUniformLocation(uint32 program, utf8 name, uint32 value)',
       function(fn, eventType) {
         return function getUniformLocation(program, name) {
@@ -801,17 +852,17 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, obj);
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getVertexAttrib(uint32 index, uint32 pname)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'getVertexAttribOffset(uint32 index, uint32 pname)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'hint(uint32 target, uint32 mode)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'isEnabled(uint32 cap)');
-  function wrapIsMethod(target, name) {
+  function wrapIsMethod(name) {
     var signature = name + '(uint32 type)';
-    wrapMethod(target, signature, function(fn, eventType) {
+    wrapContextMethod(signature, function(fn, eventType) {
       return function(value) {
         setCurrentContext(this);
         var scope = eventType(getHandle(value));
@@ -819,15 +870,15 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  !onlyDraws && wrapIsMethod(ctxproto, 'isBuffer');
-  !onlyDraws && wrapIsMethod(ctxproto, 'isFramebuffer');
-  !onlyDraws && wrapIsMethod(ctxproto, 'isProgram');
-  !onlyDraws && wrapIsMethod(ctxproto, 'isRenderbuffer');
-  !onlyDraws && wrapIsMethod(ctxproto, 'isShader');
-  !onlyDraws && wrapIsMethod(ctxproto, 'isTexture');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapIsMethod('isBuffer');
+  wrapIsMethod('isFramebuffer');
+  wrapIsMethod('isProgram');
+  wrapIsMethod('isRenderbuffer');
+  wrapIsMethod('isShader');
+  wrapIsMethod('isTexture');
+  wrapContextMethod(
       'lineWidth(float width)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'linkProgram(uint32 program)',
       function(fn, eventType) {
         return function linkProgram(program) {
@@ -836,7 +887,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           var linkProgramResults = fn.apply(this, arguments);
 
           // Collect the attributes upon linking the program if applicable.
-          if (includeResources) {
+          if (replayable) {
             var traceScope = wtf.trace.enterTracingScope();
 
             // A mapping from attribute names to locations.
@@ -864,22 +915,29 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, linkProgramResults);
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'pixelStorei(uint32 pname, int32 param)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'polygonOffset(float factor, float units)');
-  // TODO(benvanik): log input data type/length.
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'readPixels(int32 x, int32 y, int32 width, int32 height, ' +
-          'uint32 format, uint32 type)');
-  !onlyDraws && wrapMethod(ctxproto,
+          'uint32 format, uint32 type, uint32 size)',
+      function(fn, eventType) {
+        return function readPixels(x, y, width, height, format, type, pixels) {
+          setCurrentContext(this);
+          var size = pixels.byteLength;
+          var scope = eventType(x, y, width, height, format, type, size);
+          return leaveScope(scope, fn.apply(this, arguments));
+        };
+      });
+  wrapContextMethod(
       'renderbufferStorage(uint32 target, uint32 internalformat, ' +
           'int32 width, int32 height)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'sampleCoverage(float value, uint8 invert)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'scissor(int32 x, int32 y, int32 width, int32 height)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'shaderSource(uint32 shader, utf8 source)',
       function(fn, eventType) {
         return function shaderSource(shader, source) {
@@ -888,20 +946,20 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'stencilFunc(uint32 func, int32 ref, uint32 mask)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'stencilFuncSeparate(uint32 face, uint32 func, int32 ref, uint32 mask)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'stencilMask(uint32 mask)');
-  !onlyDraws && wrapMethod(ctxproto,
-      'stencilMaskSeaprate(uint32 face, uint32 mask)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
+      'stencilMaskSeparate(uint32 face, uint32 mask)');
+  wrapContextMethod(
       'stencilOp(uint32 fail, uint32 zfail, uint32 zpass)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'stencilOpSeparate(uint32 face, uint32 fail, uint32 zfail, ' +
           'uint32 zpass)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'texImage2D(uint32 target, int32 level, uint32 internalformat, ' +
           'int32 width, int32 height, int32 border, uint32 format, ' +
           'uint32 type, uint8[] pixels, ascii dataType)',
@@ -915,18 +973,18 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
               scope = eventType(
                   target, level, internalformat, arguments[3], arguments[4],
                   arguments[5], arguments[6], arguments[7],
-                  includeResources ? arguments[8] : [],
-                  includeResources ? 'pixels' : 'ignored');
+                  replayable ? coercePixelTypeToUint8(arguments[8]) : null,
+                  replayable ? 'pixels' : 'ignored');
             } else {
               scope = eventType(
                   target, level, internalformat, arguments[3], arguments[4],
-                  arguments[5], arguments[6], arguments[7], [],
+                  arguments[5], arguments[6], arguments[7], null,
                   'null');
             }
           } else {
             // DOM element variant.
             var imageData = null;
-            if (includeResources) {
+            if (replayable) {
               var traceScope = wtf.trace.enterTracingScope();
               imageData = wtf.trace.providers.WebGLProvider.extractImageData(
                   arguments[5], internalformat, embedRemoteImages);
@@ -940,7 +998,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
                 0,
                 arguments[3],
                 arguments[4],
-                imageData ? imageData.pixels : [],
+                imageData ? imageData.pixels : null,
                 imageData ? imageData.dataType : 'ignored');
           }
           try {
@@ -950,11 +1008,11 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           }
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'texParameterf(uint32 target, uint32 pname, float param)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'texParameteri(uint32 target, uint32 pname, int32 param)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'texSubImage2D(uint32 target, int32 level, int32 xoffset, ' +
           'int32 yoffset, int32 width, int32 height, uint32 format, ' +
           'uint32 type, uint8[] pixels, ascii dataType)',
@@ -968,18 +1026,18 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
               scope = eventType(
                   target, level, xoffset, yoffset, arguments[4], arguments[5],
                   arguments[6], arguments[7],
-                  includeResources ? arguments[8] : [],
-                  includeResources ? 'pixels' : 'ignored');
+                  replayable ? coercePixelTypeToUint8(arguments[8]) : null,
+                  replayable ? 'pixels' : 'ignored');
             } else {
               scope = eventType(
                   target, level, xoffset, yoffset, arguments[4], arguments[5],
-                  arguments[6], arguments[7], [],
+                  arguments[6], arguments[7], null,
                   'null');
             }
           } else {
             // DOM element variant.
             var imageData = null;
-            if (includeResources) {
+            if (replayable) {
               var traceScope = wtf.trace.enterTracingScope();
               imageData = wtf.trace.providers.WebGLProvider.extractImageData(
                   arguments[6], arguments[4], embedRemoteImages);
@@ -1002,7 +1060,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           }
         };
       });
-  function wrapUniformMethod(target, name, type, count) {
+  function wrapUniformMethod(name, type, count) {
     var signature = name + '(uint32 location';
     var names = ['x', 'y', 'z', 'w'];
     for (var n = 0; n < count; n++) {
@@ -1011,7 +1069,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     signature += ')';
     switch (count) {
       case 1:
-        wrapMethod(target, signature, function(fn, eventType) {
+        wrapContextMethod(signature, function(fn, eventType) {
           return function(location, x) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x);
@@ -1020,7 +1078,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         });
         break;
       case 2:
-        wrapMethod(target, signature, function(fn, eventType) {
+        wrapContextMethod(signature, function(fn, eventType) {
           return function(location, x, y) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x, y);
@@ -1029,7 +1087,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         });
         break;
       case 3:
-        wrapMethod(target, signature, function(fn, eventType) {
+        wrapContextMethod(signature, function(fn, eventType) {
           return function(location, x, y, z) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x, y, z);
@@ -1038,7 +1096,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         });
         break;
       case 4:
-        wrapMethod(target, signature, function(fn, eventType) {
+        wrapContextMethod(signature, function(fn, eventType) {
           return function(location, x, y, z, w) {
             setCurrentContext(this);
             var scope = eventType(getHandle(location), x, y, z, w);
@@ -1048,9 +1106,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         break;
     }
   };
-  function wrapUniformArrayMethod(target, name, type, count) {
+  function wrapUniformArrayMethod(name, type, count) {
     var signature = name + '(uint32 location, ' + type + '[] v)';
-    wrapMethod(target, signature, function(fn, eventType) {
+    wrapContextMethod(signature, function(fn, eventType) {
       return function(location, v) {
         setCurrentContext(this);
         var scope = eventType(getHandle(location), v);
@@ -1058,10 +1116,10 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  function wrapUniformMatrixMethod(target, name, type, count) {
+  function wrapUniformMatrixMethod(name, type, count) {
     var signature =
         name + '(uint32 location, uint8 transpose, ' + type + '[] value)';
-    wrapMethod(target, signature, function(fn, eventType) {
+    wrapContextMethod(signature, function(fn, eventType) {
       return function(location, transpose, v) {
         setCurrentContext(this);
         var scope = eventType(getHandle(location), transpose, v);
@@ -1069,45 +1127,45 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       };
     });
   };
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform1f', 'float', 1);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform1i', 'int32', 1);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform2f', 'float', 2);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform2i', 'int32', 2);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform3f', 'float', 3);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform3i', 'int32', 3);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform4f', 'float', 4);
-  !onlyDraws && wrapUniformMethod(ctxproto,
+  wrapUniformMethod(
       'uniform4i', 'int32', 4);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform1fv', 'float', 1);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform1iv', 'int32', 1);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform2fv', 'float', 2);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform2iv', 'int32', 2);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform3fv', 'float', 3);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform3iv', 'int32', 3);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform4fv', 'float', 4);
-  !onlyDraws && wrapUniformArrayMethod(ctxproto,
+  wrapUniformArrayMethod(
       'uniform4iv', 'int32', 4);
-  !onlyDraws && wrapUniformMatrixMethod(ctxproto,
+  wrapUniformMatrixMethod(
       'uniformMatrix2fv', 'float', 4);
-  !onlyDraws && wrapUniformMatrixMethod(ctxproto,
+  wrapUniformMatrixMethod(
       'uniformMatrix3fv', 'float', 9);
-  !onlyDraws && wrapUniformMatrixMethod(ctxproto,
+  wrapUniformMatrixMethod(
       'uniformMatrix4fv', 'float', 16);
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'useProgram(uint32 program)',
       function(fn, eventType) {
         return function useProgram(program) {
@@ -1116,7 +1174,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'validateProgram(uint32 program)',
       function(fn, eventType) {
         return function validateProgram(program) {
@@ -1125,9 +1183,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib1f(uint8 indx, float x)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib1fv(uint8 indx, float x)',
       function(fn, eventType) {
         return function vertexAttrib4fv(indx, values) {
@@ -1136,9 +1194,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib2f(uint8 indx, float x, float y)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib2fv(uint8 indx, float x, float y)',
       function(fn, eventType) {
         return function vertexAttrib4fv(indx, values) {
@@ -1147,9 +1205,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib3f(uint8 indx, float x, float y, float z)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib3fv(uint8 indx, float x, float y, float z)',
       function(fn, eventType) {
         return function vertexAttrib3fv(indx, values) {
@@ -1158,9 +1216,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib4f(uint8 indx, float x, float y, float z, float w)');
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttrib4fv(uint8 indx, float x, float y, float z, float w)',
       function(fn, eventType) {
         return function vertexAttrib4fv(indx, values) {
@@ -1170,10 +1228,10 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           return leaveScope(scope, fn.apply(this, arguments));
         };
       });
-  !onlyDraws && wrapMethod(ctxproto,
+  wrapContextMethod(
       'vertexAttribPointer(uint8 indx, int32 size, uint32 type, ' +
           'uint8 normalized, int32 stride, uint32 offset)');
-  wrapMethod(ctxproto,
+  wrapContextMethod(
       'viewport(int32 x, int32 y, int32 width, int32 height)');
 };
 
@@ -1252,29 +1310,7 @@ wtf.trace.providers.WebGLProvider.restoreContext = function(context) {
  */
 wtf.trace.providers.WebGLProvider.getPixelsFromImageData = function(
     width, height, internalformat, imageData) {
-  var bpp = 4;
-  switch (internalformat) {
-    case 0x1907: // RGB
-      bpp = 3;
-      break;
-    case 0x1908: // RGBA
-      bpp = 4;
-      break;
-  }
-  var id = imageData.data;
-  var pixels = new Uint8Array(width * height * bpp);
-  if (bpp == 3) {
-    for (var i = 0, j = 0; i < width * height * 4; i += 4, j += 3) {
-      pixels[j] = id[i];
-      pixels[j + 1] = id[i + 1];
-      pixels[j + 2] = id[i + 2];
-    }
-  } else if (bpp == 4) {
-    for (var i = 0; i < width * height * 4; i++) {
-      pixels[i] = id[i];
-    }
-  }
-  return pixels;
+  return new Uint8Array(imageData.data.buffer);
 };
 
 
@@ -1305,7 +1341,13 @@ wtf.trace.providers.WebGLProvider.extractImageData = function(
   var height = /** @type {number} */ (el.height);
   if ((el instanceof HTMLImageElement || el instanceof Image) &&
       el.src.indexOf('blob:') != 0) {
-    if (embedRemoteImages) {
+    if (el.src.indexOf('data:') == 0) {
+      // Drop this string right out for playback.
+      return {
+        pixels: [],
+        dataType: el.src
+      };
+    } else if (embedRemoteImages) {
       // Synchronous XHR to get the image in compressed form.
       // HEAD first to get the mime type.
       var xhrType = goog.global['XMLHttpRequest'];
@@ -1356,18 +1398,16 @@ wtf.trace.providers.WebGLProvider.extractImageData = function(
     var id = ctx.getImageData(0, 0, width, height);
     var pixels = wtf.trace.providers.WebGLProvider.getPixelsFromImageData(
         width, height, internalformat, id);
-    // TODO(benvanik): RLE pixels?
     return {
       pixels: pixels,
-      dataType: 'pixels'
+      dataType: 'canvas'
     };
   } else if (el instanceof ImageData) {
     var pixels = wtf.trace.providers.WebGLProvider.getPixelsFromImageData(
         width, height, internalformat, el);
-    // TODO(benvanik): RLE pixels?
     return {
       pixels: pixels,
-      dataType: 'pixels'
+      dataType: 'canvas'
     };
   } else {
     // Canvas/video/etc need to be encoded as pixels.
@@ -1390,7 +1430,7 @@ wtf.trace.providers.WebGLProvider.extractImageData = function(
         width, height, internalformat, id);
     return {
       pixels: pixels,
-      dataType: 'pixels'
+      dataType: 'canvas'
     };
   }
 };

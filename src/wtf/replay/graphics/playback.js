@@ -17,9 +17,12 @@ goog.provide('wtf.replay.graphics.Playback');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
+goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.fs');
 goog.require('goog.object');
+goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
 goog.require('wtf.replay.graphics.Step');
@@ -604,7 +607,17 @@ wtf.replay.graphics.Playback.prototype.fetchResources_ = function() {
     if (typeId == texImage2DEventId || typeId == texSubImage2DEventId) {
       var args = it.getArguments();
       var dataType = args['dataType'];
-      if (dataType != 'pixels' && dataType != 'null') {
+      if (dataType == 'canvas') {
+        // TODO(benvanik): use the canvas pool?
+        var canvas = goog.dom.createElement(goog.dom.TagName.CANVAS);
+        canvas.width = args['width'];
+        canvas.height = args['height'];
+        var ctx = canvas.getContext('2d');
+        var imageData = ctx.createImageData(args['width'], args['height']);
+        imageData.data.set(args['pixels']);
+        ctx.putImageData(imageData, 0, 0);
+        this.resources_[it.getId()] = canvas;
+      } else if (dataType != 'pixels' && dataType != 'null') {
         var url;
         if (dataType.indexOf('image/') == 0) {
           url = goog.fs.createObjectUrl(
@@ -1042,6 +1055,34 @@ wtf.replay.graphics.Playback.prototype.setOwningContext_ = function(
  */
 wtf.replay.graphics.Playback.prototype.getStepCount = function() {
   return this.steps_.length;
+};
+
+
+/**
+ * Coerces a typed array into the proper format as required by WebGL.
+ * Certain methods, like texImage2D, require the ArrayBufferView passed in to
+ * be in the same type as the target texture.
+ * @param {number} type WebGL data type.
+ * @param {!(ArrayBuffer|ArrayBufferView)} source Source data.
+ * @return {!ArrayBufferView} Array buffer view in the correct type.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.coercePixelType_ =
+    function(type, source) {
+  var buffer = source.buffer ? source.buffer : source;
+  switch (type) {
+    case goog.webgl.UNSIGNED_BYTE:
+      return new Uint8Array(buffer);
+    case goog.webgl.UNSIGNED_SHORT_5_6_5:
+    case goog.webgl.UNSIGNED_SHORT_5_5_5_1:
+    case goog.webgl.UNSIGNED_SHORT_4_4_4_4:
+      return new Uint16Array(buffer);
+    case goog.webgl.FLOAT:
+      return new Float32Array(buffer);
+    default:
+      goog.asserts.fail('Unsupported texture type');
+      return new Uint8Array(buffer);
+  }
 };
 
 
@@ -1591,7 +1632,7 @@ wtf.replay.graphics.Playback.CALLS_ = {
           args['border'],
           args['format'],
           args['type'],
-          args['pixels']
+          playback.coercePixelType_(args['type'], args['pixels'])
       );
     } else if (dataType == 'null') {
       gl.texImage2D(
@@ -1630,7 +1671,7 @@ wtf.replay.graphics.Playback.CALLS_ = {
           args['height'],
           args['format'],
           args['type'],
-          args['pixels']
+          playback.coercePixelType_(args['type'], args['pixels'])
       );
     } else if (dataType == 'null') {
       gl.texSubImage2D(
