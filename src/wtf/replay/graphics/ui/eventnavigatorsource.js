@@ -14,6 +14,7 @@
 goog.provide('wtf.replay.graphics.ui.EventNavigatorTableSource');
 
 goog.require('wtf.db.Filter');
+goog.require('wtf.events');
 goog.require('wtf.replay.graphics.ui.ArgumentsDialog');
 goog.require('wtf.ui.VirtualTableSource');
 
@@ -176,14 +177,29 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.COLOR_ = {
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_ = {
   /**
+   * The left side of the edit button.
+   */
+  EDIT_LEFT: 0,
+
+  /**
    * The width of the edit button.
    */
   EDIT_WIDTH: 28,
 
   /**
+   * The left side of the goto button.
+   */
+  GOTO_LEFT: 28,
+
+  /**
+   * The width of the goto button.
+   */
+  GOTO_WIDTH: 28,
+
+  /**
    * The width of the gutter.
    */
-  GUTTER_WIDTH: 65
+  GUTTER_WIDTH: 80
 };
 
 
@@ -244,17 +260,32 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
     it.next();
   }
 
+  // Draw line numbers.
   var y = rowOffset;
+  ctx.fillStyle = colors.DEFAULT_TEXT;
   for (var n = first; n <= last; n++, y += rowHeight) {
     var line = String(n);
-    ctx.fillStyle = colors.DEFAULT_TEXT;
     var lineNumberXPosition = gutterWidth - ((line.length + 1) * charWidth);
     var yTextPosition = Math.floor(y + rowCenter);
     ctx.fillText(line, lineNumberXPosition, yTextPosition);
   }
 
+  // Draw goto buttons.
+  if (wtf.events.getCommandManager()) {
+    y = rowOffset;
+    ctx.font = fonts.EDIT_BUTTON;
+    ctx.fillStyle = colors.ALTER_BUTTON_TEXT;
+    for (var n = first; n <= last; n++, y += rowHeight) {
+      if (n != 0) {
+        ctx.fillText('\u2299', lengths.GOTO_LEFT, y + rowHeight);
+      }
+    }
+  }
+
   // Draw row contents.
   y = rowOffset;
+  ctx.font = fonts.DEFAULT;
+  ctx.fillStyle = colors.DEFAULT_TEXT;
   var x = gutterWidth + charWidth;
   var rectWidth = bounds.width - gutterWidth;
 
@@ -313,7 +344,6 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
       if (it.isScope() || it.isInstance()) {
         // Draw the edit button if arguments exist.
         if (it.getType().getArguments().length) {
-          ctx.fillStyle = colors.DEFAULT_TEXT;
           ctx.font = fonts.EDIT_BUTTON;
           var oldColor = ctx.fillStyle;
           ctx.fillStyle = colors.ALTER_BUTTON_TEXT;
@@ -433,17 +463,41 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
     return;
   }
 
+  // TODO(benvanik): move to a metrics calculation object.
+  var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
+  var editLeft = lengths.EDIT_LEFT;
+  var editRight = editLeft + lengths.EDIT_WIDTH;
+  var gotoLeft = lengths.GOTO_LEFT;
+  var gotoRight = lengths.GUTTER_WIDTH;
+  var contextLeft = lengths.GUTTER_WIDTH;
+  var contextRight = contextLeft + 5 * this.charWidth_;
+
   // If this row reflects an event, go to it.
   if (row) {
-    var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
-    if (x <= lengths.EDIT_WIDTH) {
-      var it = currentStep.getEventIterator(true);
-      it.seek(row - 1);
+    var it = currentStep.getEventIterator(true);
+    it.seek(row - 1);
 
-      // Only allow for clicking the edit button if arguments exist.
+    if (x > editLeft && x <= editRight) {
+      // Edit button.
       if (it.getType().getArguments().length) {
         this.handleEditClick_(row);
       }
+    } else if (x > gotoLeft && x <= gotoRight) {
+      // Goto button.
+      var commandManager = wtf.events.getCommandManager();
+      if (commandManager) {
+        var startTime = it.getTime();
+        var endTime = it.isScope() ? it.getEndTime() : startTime;
+        if (startTime == endTime) {
+          endTime += 1;
+        }
+        commandManager.execute('navigate', this, null, 'tracks');
+        commandManager.execute('goto_range', this, null,
+            startTime, endTime, true);
+      }
+    } else if (x > contextLeft && x <= contextRight) {
+      // Only allow for clicking the edit button if arguments exist.
+      // TODO(benvanik): context click?
     } else {
       var soughtIndex = row - 1;
       if (soughtIndex != playback.getSubStepEventId()) {
@@ -580,15 +634,23 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
 
   // TODO(benvanik): move to a metrics calculation object.
   var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
-  var editLeft = 0;
+  var editLeft = lengths.EDIT_LEFT;
   var editRight = editLeft + lengths.EDIT_WIDTH;
+  var gotoLeft = lengths.GOTO_LEFT;
+  var gotoRight = lengths.GUTTER_WIDTH;
   var contextLeft = lengths.GUTTER_WIDTH;
   var contextRight = contextLeft + 5 * this.charWidth_;
 
-  if (x > editLeft && x < editRight && it.getType().getArguments().length) {
+  if (x > editLeft && x <= editRight) {
     // Edit button.
-    return 'Edit arguments for ' + it.getName();
-  } else if (x > contextLeft && x < contextRight) {
+    if (it.getType().getArguments().length) {
+      return 'Edit arguments for ' + it.getName();
+    }
+    return null;
+  } else if (x > gotoLeft && x <= gotoRight) {
+    // Goto button.
+    return it.getScopeStackString();
+  } else if (x > contextLeft && x <= contextRight) {
     // Context handle column.
     var contextHandle = this.getContextOfEvent_(it);
     if (!contextHandle) {

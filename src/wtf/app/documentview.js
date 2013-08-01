@@ -271,15 +271,16 @@ wtf.app.DocumentView.prototype.setupCommands_ = function() {
       }, this);
 
   commandManager.registerSimpleCommand(
-      'goto_mark', function(source, target, mark) {
+      'goto_mark', function(source, target, mark, opt_immediate) {
         // Go to mark event.
         var timeStart = mark.getTime();
         var timeEnd = mark.getEndTime();
-        commandManager.execute('goto_range', this, null, timeStart, timeEnd);
+        commandManager.execute('goto_range', this, null,
+            timeStart, timeEnd, opt_immediate);
       }, this);
 
   commandManager.registerSimpleCommand(
-      'goto_frame', function(source, target, frameOrNumber) {
+      'goto_frame', function(source, target, frameOrNumber, opt_immediate) {
         var frame = null;
         if (goog.isNumber(frameOrNumber)) {
           // Find a frame list with frames in it.
@@ -300,7 +301,8 @@ wtf.app.DocumentView.prototype.setupCommands_ = function() {
         // Go to frame.
         var timeStart = frame.getTime();
         var timeEnd = frame.getEndTime();
-        commandManager.execute('goto_range', this, null, timeStart, timeEnd);
+        commandManager.execute('goto_range', this, null,
+            timeStart, timeEnd, opt_immediate);
       }, this);
 };
 

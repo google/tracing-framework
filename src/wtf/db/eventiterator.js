@@ -715,6 +715,25 @@ wtf.db.EventIterator.prototype.getInstanceInfoString_ = function(units) {
 };
 
 
+/**
+ * Gets a string describing the scope stack of the event.
+ * @return {string} A string with newlines.
+ */
+wtf.db.EventIterator.prototype.getScopeStackString = function() {
+  var stack = [];
+  var it = this;
+  while (!it.done()) {
+    var type = it.getType();
+    stack.push(type.name);
+    it = it.getParent(true);
+  }
+  for (var n = 0; n < stack.length; n++) {
+    stack[n] = (stack.length - n - 1) + ': ' + stack[n];
+  }
+  return stack.join('\n');
+};
+
+
 goog.exportSymbol(
     'wtf.db.EventIterator',
     wtf.db.EventIterator);
@@ -805,3 +824,6 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.EventIterator.prototype, 'getInfoString',
     wtf.db.EventIterator.prototype.getInfoString);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getScopeStackString',
+    wtf.db.EventIterator.prototype.getScopeStackString);

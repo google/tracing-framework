@@ -243,13 +243,17 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.dispatchSeekToFrame_ =
   }
 
   var commandManager = wtf.events.getCommandManager();
+  if (!commandManager) {
+    return;
+  }
+
   if (step.getFrame()) {
-    commandManager.execute('goto_frame', this, null, step.getFrame());
+    commandManager.execute('goto_frame', this, null, step.getFrame(), true);
   } else {
     var it = step.getEventIterator();
     var timeLeft = it.getTime();
     it.seek(it.getCount() - 1);
     var timeRight = it.getTime();
-    commandManager.execute('goto_range', this, null, timeLeft, timeRight);
+    commandManager.execute('goto_range', this, null, timeLeft, timeRight, true);
   }
 };
