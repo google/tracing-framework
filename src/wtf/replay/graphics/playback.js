@@ -1282,7 +1282,8 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#detachShader': function(
       eventId, playback, gl, args, objs) {
     gl.detachShader(
-        args['program'], args['shader']);
+        /** @type {WebGLProgram} */ (objs[args['program']]),
+        /** @type {WebGLShader} */ (objs[args['shader']]));
   },
   'WebGLRenderingContext#disable': function(
       eventId, playback, gl, args, objs) {
@@ -1518,9 +1519,10 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#readPixels': function(
       eventId, playback, gl, args, objs) {
+    var pixels = new Uint8Array(args['size']);
     gl.readPixels(args['x'], args['y'],
         args['width'], args['height'], args['format'],
-        args['type'], args['pixels']);
+        args['type'], pixels);
   },
   'WebGLRenderingContext#renderbufferStorage': function(
       eventId, playback, gl, args, objs) {
