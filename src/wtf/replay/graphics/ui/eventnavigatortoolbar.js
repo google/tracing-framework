@@ -201,6 +201,7 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
         }
       }, this);
 
+  // Handle button clicks.
   var eh = this.getHandler();
   eh.listen(
       this.firstCallButton_,

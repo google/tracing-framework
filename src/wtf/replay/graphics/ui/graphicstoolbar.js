@@ -15,6 +15,8 @@ goog.provide('wtf.replay.graphics.ui.GraphicsToolbar');
 
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
+goog.require('wtf.events');
+goog.require('wtf.events.KeyboardScope');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.graphicsToolbar');
 goog.require('wtf.ui.Control');
@@ -44,12 +46,20 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
   this.playback_ = playback;
 
   /**
+   * Whether the UI is currently enabled.
+   * Set by {@see #setReady_} and upon state change.
+   * @type {boolean}
+   * @private
+   */
+  this.enabled_ = false;
+
+  /**
    * The reset button.
    * @type {!Element}
    * @private
    */
   this.resetButton_ =
-      this.getChildElement(goog.getCssName('graphicsReplayResetButton'));
+      this.getChildElement(goog.getCssName('resetButton'));
 
   /**
    * The backwards-1-step button.
@@ -57,7 +67,7 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
    * @private
    */
   this.backButton_ =
-      this.getChildElement(goog.getCssName('graphicsReplayBackButton'));
+      this.getChildElement(goog.getCssName('backButton'));
 
   /**
    * The play button.
@@ -65,7 +75,7 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
    * @private
    */
   this.playButton_ =
-      this.getChildElement(goog.getCssName('graphicsReplayPlayButton'));
+      this.getChildElement(goog.getCssName('playButton'));
 
   /**
    * The forward button.
@@ -73,14 +83,11 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
    * @private
    */
   this.forwardButton_ =
-      this.getChildElement(goog.getCssName('graphicsReplayForwardButton'));
-
+      this.getChildElement(goog.getCssName('forwardButton'));
 
   // Only enable this toolbar after the playback has loaded.
   deferred.addCallback(function() {
-    this.setInitialButtonStates_();
-    this.listenToButtonStateEvents_();
-    this.listenToClickEvents_();
+    this.setReady_();
   }, this);
 };
 goog.inherits(wtf.replay.graphics.ui.GraphicsToolbar, wtf.ui.Control);
@@ -96,28 +103,31 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.createDom = function(dom) {
 
 
 /**
- * Sets which buttons are initially enabled.
+ * Sets the toolbar as ready for use.
  * @private
  */
-wtf.replay.graphics.ui.GraphicsToolbar.prototype.setInitialButtonStates_ =
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
     function() {
   // If no steps to play, no need to enable toolbar.
   if (!this.playback_.getStepCount()) {
     return;
   }
 
-  this.toggleButton(goog.getCssName('graphicsReplayResetButton'), true);
-  this.toggleButton(goog.getCssName('graphicsReplayPlayButton'), true);
-  this.toggleButton(goog.getCssName('graphicsReplayForwardButton'), true);
-};
+  // Listen to events that change whether buttons are enabled.
+  var dom = this.getDom();
+  var playback = this.playback_;
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
+      function() {
+        this.setEnabled_(true);
+      }, this);
+  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
+      function() {
+        dom.setTextContent(this.playButton_, 'Play');
+        this.setEnabled_(true);
+      }, this);
 
-
-/**
- * Listens to click events.
- * @private
- */
-wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToClickEvents_ =
-    function() {
+  // Handle button clicks.
   var eh = this.getHandler();
   eh.listen(
       this.resetButton_,
@@ -135,48 +145,40 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToClickEvents_ =
       this.forwardButton_,
       goog.events.EventType.CLICK,
       this.forwardClickHandler_, false, this);
+
+  // Setup keyboard shortcuts.
+  var keyboard = wtf.events.getWindowKeyboard(this.getDom());
+  var keyboardScope = new wtf.events.KeyboardScope(keyboard);
+  this.registerDisposable(keyboardScope);
+  keyboardScope.addShortcut('ctrl+shift+left', function() {
+    this.resetClickHandler_();
+  }, this);
+  keyboardScope.addShortcut('ctrl+left', function() {
+    this.backClickHandler_();
+  }, this);
+  keyboardScope.addShortcut('ctrl+space', function() {
+    this.playClickHandler_();
+  }, this);
+  keyboardScope.addShortcut('ctrl+right', function() {
+    this.forwardClickHandler_();
+  }, this);
+
+  this.setEnabled_(true);
 };
 
 
 /**
- * Listens to events that change whether buttons are enabled.
+ * Toggle all of the buttons and other UI elements on/off.
+ * @param {boolean} enabled Whether the elements are enabled.
  * @private
  */
-wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
-    function() {
-  var dom = this.getDom();
-  var playback = this.playback_;
-  playback.addListener(
-      wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
-      function() {
-        // There are still steps left.
-        if (this.playback_.getCurrentStep()) {
-          this.toggleButton(
-              goog.getCssName('graphicsReplayPlayButton'), true);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayForwardButton'),
-              playback.getCurrentStepIndex() < playback.getStepCount() - 1);
-
-          // If we are at the beginning, disable back button.
-          this.toggleButton(goog.getCssName('graphicsReplayBackButton'),
-              !!this.playback_.getCurrentStepIndex());
-        } else {
-          // We are at the end. No steps left.
-          this.toggleButton(
-              goog.getCssName('graphicsReplayPlayButton'), false);
-          this.toggleButton(
-              goog.getCssName('graphicsReplayForwardButton'), false);
-        }
-      }, this);
-
-  playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
-      function() {
-        dom.setTextContent(this.playButton_, 'Play');
-        if (!playback.getCurrentStep()) {
-          this.toggleButton(
-              goog.getCssName('graphicsReplayPlayButton'), false);
-        }
-      }, this);
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.setEnabled_ =
+    function(enabled) {
+  this.enabled_ = enabled;
+  this.toggleButton(goog.getCssName('resetButton'), enabled);
+  this.toggleButton(goog.getCssName('backButton'), this.canMoveBack_());
+  this.toggleButton(goog.getCssName('playButton'), this.canPlay_());
+  this.toggleButton(goog.getCssName('forwardButton'), this.canMoveForward_());
 };
 
 
@@ -186,7 +188,19 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.listenToButtonStateEvents_ =
  */
 wtf.replay.graphics.ui.GraphicsToolbar.prototype.resetClickHandler_ =
     function() {
+  if (!this.enabled_) {
+    return;
+  }
   this.playback_.reset();
+};
+
+
+/**
+ * @return {boolean} True if the back button can be used.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.canMoveBack_ = function() {
+  return this.enabled_ && !!this.playback_.getCurrentStepIndex();
 };
 
 
@@ -196,6 +210,10 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.resetClickHandler_ =
  */
 wtf.replay.graphics.ui.GraphicsToolbar.prototype.backClickHandler_ =
     function() {
+  if (!this.canMoveBack_()) {
+    return;
+  }
+
   var playback = this.playback_;
   var currentStepIndex = playback.getCurrentStepIndex();
   if (currentStepIndex <= 0) {
@@ -206,11 +224,24 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.backClickHandler_ =
 
 
 /**
+ * @return {boolean} True if the play button can be used.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.canPlay_ = function() {
+  return this.enabled_ && !!this.playback_.getCurrentStep();
+};
+
+
+/**
  * Handles clicks of the play button.
  * @private
  */
 wtf.replay.graphics.ui.GraphicsToolbar.prototype.playClickHandler_ =
     function() {
+  if (!this.canPlay_()) {
+    return;
+  }
+
   var dom = this.getDom();
   var playback = this.playback_;
   if (playback.isPlaying()) {
@@ -224,11 +255,25 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.playClickHandler_ =
 
 
 /**
+ * @return {boolean} True if the forward button can be used.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.canMoveForward_ = function() {
+  return this.enabled_ && !!this.playback_.getCurrentStep() &&
+      this.playback_.getCurrentStepIndex() < this.playback_.getStepCount() - 1;
+};
+
+
+/**
  * Handles clicks of the forward button.
  * @private
  */
 wtf.replay.graphics.ui.GraphicsToolbar.prototype.forwardClickHandler_ =
     function() {
+  if (!this.canMoveForward_()) {
+    return;
+  }
+
   var playback = this.playback_;
   var currentStepIndex = playback.getCurrentStepIndex();
   var lastStepIndex = playback.getStepCount() - 1;
