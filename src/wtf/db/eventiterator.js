@@ -564,11 +564,14 @@ wtf.db.EventIterator.prototype.buildArgumentString_ = function(
   var first = true;
   var argVars = type.getArguments();
   var argData = this.getArguments();
+
   // TODO(benvanik): sometimes arguments may not exist. Issue #410.
-  goog.asserts.assert(argData);
-  if (!argData) {
+  goog.asserts.assert(!type.args.length || argData);
+
+  if (!type.args.length || !argData) {
     return;
   }
+
   for (var n = 0; n < argVars.length; n++) {
     var argVar = argVars[n];
     appendArgument(first, argVar.name, argData[argVar.name]);
