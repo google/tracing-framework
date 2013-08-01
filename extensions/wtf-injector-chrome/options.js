@@ -295,7 +295,7 @@ Options.prototype.getDefaultPageOptions = function(url) {
     // The presence of this indicates that the options come from the injector.
     'wtf.injector': true,
 
-    'wtf.trace.session.maximumMemoryUsage': 128 * 1024 * 1024,
+    'wtf.trace.session.maximumMemoryUsage': 512 * 1024 * 1024,
     'wtf.hud.app.mode': this.defaultEndpoint_.mode,
     'wtf.hud.app.endpoint': this.defaultEndpoint_.endpoint,
     'wtf.addons': addons,
