@@ -16,6 +16,7 @@ goog.provide('wtf.replay.graphics.ContextPool');
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
 goog.require('goog.json');
 goog.require('goog.webgl');
 
@@ -117,29 +118,33 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
       contextType, opt_attributes, opt_width, opt_height);
   var contextList = this.contexts_[contextHash];
 
-  // If context with desired type and attributes exists, return it.
+  var retrievedContext;
   if (contextList && contextList.length) {
-    var retrievedContext = contextList.pop();
+    // Since context with desired type and attributes exists, return it.
+    retrievedContext = contextList.pop();
     this.resetWebGLContext_(retrievedContext);
-    return retrievedContext;
+  } else {
+    // Create a new context.
+    var newCanvas = this.dom_.createElement(goog.dom.TagName.CANVAS);
+    retrievedContext = newCanvas.getContext(contextType, opt_attributes);
+
+    // If context type is unsupported, return null.
+    if (!retrievedContext) {
+      return null;
+    }
+
+    // Assign a hash to the context.
+    retrievedContext[wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_] =
+        contextHash;
   }
 
-  // Create a new context with a canvas of appropriate size if applicable.
-  var newCanvas = this.dom_.createElement('canvas');
+  // Set the canvas's size if it is specified.
   if (opt_width && opt_height) {
-    newCanvas.width = opt_width;
-    newCanvas.height = opt_height;
-  }
-  var newContext = newCanvas.getContext(contextType, opt_attributes);
-
-  // If context type is unsupported, return null.
-  if (!newContext) {
-    return null;
+    retrievedContext.canvas.width = opt_width;
+    retrievedContext.canvas.height = opt_height;
   }
 
-  newContext[wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_] =
-      contextHash;
-  return newContext;
+  return retrievedContext;
 };
 
 
