@@ -13,6 +13,8 @@
 
 
 .graphicsReplayPanel {
+  @eventNavigationWidth: 525px;
+
   .graphicsReplayToolbarContainer {}
 
   .graphicsReplayRangeSeekerContainer {}
@@ -30,7 +32,7 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 300px;
+    width: @eventNavigationWidth;
     overflow: hidden;
 
     .graphicsReplayEventNavigatorContainer {
@@ -44,7 +46,7 @@
 
   .graphicsReplayMainDisplay {
     position: absolute;
-    left: 300px;
+    left: @eventNavigationWidth;
     right: 0;
     top: 0;
     bottom: 0;
