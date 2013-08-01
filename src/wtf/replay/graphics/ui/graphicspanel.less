@@ -13,16 +13,27 @@
 
 
 .graphicsReplayPanel {
+  @topRowHeight: 50px;
   @eventNavigationWidth: 525px;
 
-  .graphicsReplayToolbarContainer {}
+  .topRow {
+    width: 100%;
+    margin: 10px;
 
-  .graphicsReplayRangeSeekerContainer {}
+    .toolbar {
+      vertical-align: top;
+      min-width: 250px;
+    }
+    .rangeSeeker {
+      vertical-align: top;
+      width: 100%;
+    }
+  }
 
   .graphicsReplayMainContent {
     position: absolute;
     left: 0;
-    top: 80px;
+    top: @topRowHeight;
     right: 0;
     bottom: 0;
 

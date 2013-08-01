@@ -75,7 +75,7 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
    * @private
    */
   this.toolbar_ = new wtf.replay.graphics.ui.GraphicsToolbar(
-      this.getChildElement(goog.getCssName('graphicsReplayToolbarContainer')),
+      this.getChildElement(goog.getCssName('toolbar')),
       playback, this.loadDeferred_, this.getDom());
   this.registerDisposable(this.toolbar_);
 
@@ -195,8 +195,7 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.createRangeSeeker_ =
   var playback = this.playback_;
   var slider = new wtf.replay.graphics.ui.RangeSeeker(
       0, playback.getStepCount() - 1,
-      this.getChildElement(
-          goog.getCssName('graphicsReplayRangeSeekerContainer')),
+      this.getChildElement(goog.getCssName('rangeSeeker')),
       this.getDom());
 
   // Enable the slider only after the playback has loaded.

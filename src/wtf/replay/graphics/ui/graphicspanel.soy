@@ -19,8 +19,12 @@
  */
 {template .controller}
   <div class="{css graphicsReplayPanel}">
-    <div class="{css graphicsReplayToolbarContainer}"></div>
-    <div class="{css graphicsReplayRangeSeekerContainer}"></div>
+    <table class="{css topRow}" cellspacing="0">
+      <tr>
+        <td class="{css toolbar}"></td>
+        <td class="{css rangeSeeker}"></td>
+      </tr>
+    </table>
     <div class="{css graphicsReplayMainContent}">
       <div class="{css graphicsReplayStepEventNavigation}">
         <div class="{css graphicsReplayEventNavigatorContainer}"></div>
