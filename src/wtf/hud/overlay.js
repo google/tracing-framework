@@ -73,10 +73,12 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
    * DOM channel, if supported.
    * This can be used to listen to notifications from the extension or send
    * messages to the content script.
-   * @type {!wtf.ipc.Channel}
+   * @type {wtf.ipc.Channel}
    * @private
    */
-  this.extensionChannel_ = wtf.ipc.getWindowMessageChannel(window);
+  this.extensionChannel_ =
+      options.getOptionalBoolean('wtf.injector', false) ?
+          wtf.ipc.getWindowMessageChannel(window) : null;
 
   /**
    * The last name used when opening a popup window.
@@ -157,8 +159,10 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   this.reloadOptions_();
 
   // Listen for messages from the extension.
-  this.extensionChannel_.addListener(
-      wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this);
+  if (this.extensionChannel_) {
+    this.extensionChannel_.addListener(
+        wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this);
+  }
 
   // TODO(benvanik): generate counter code
   /*
@@ -319,26 +323,36 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
       break;
   }
 
+  // If any setting changed was reload-worthy, reload now.
+  var needsReload = false;
+  if (opt_changedKeys) {
+    var changedKeys = opt_changedKeys.slice();
+    for (var n = 0; n < safeReloadKeys.length; n++) {
+      goog.array.remove(changedKeys, safeReloadKeys[n]);
+    }
+    needsReload = !!changedKeys.length;
+  }
+
   // If there's an extension connected, save the settings to it.
   if (this.extensionChannel_) {
     this.extensionChannel_.postMessage({
       'command': 'save_settings',
       'content': this.options_.save()
     });
+  } else {
+    // No extension - save to local storage.
+    goog.global.localStorage.setItem('__wtf_options__', options.save());
+  }
 
-    // If any setting changed was reload-worthy, reload now.
-    var needsReload = false;
-    if (opt_changedKeys) {
-      var changedKeys = opt_changedKeys.slice();
-      for (var n = 0; n < safeReloadKeys.length; n++) {
-        goog.array.remove(changedKeys, safeReloadKeys[n]);
-      }
-      needsReload = !!changedKeys.length;
-    }
-    if (needsReload) {
+  if (needsReload) {
+    if (this.extensionChannel_) {
+      // Reload via extension to get guaranteed cache bypass.
       this.extensionChannel_.postMessage({
         'command': 'reload'
       });
+    } else {
+      // No extension - reload via browser.
+      goog.global.location.reload(true);
     }
   }
 };
@@ -653,6 +667,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
       blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
       blobUrls.push(goog.fs.createObjectUrl(blob));
 
+      goog.asserts.assert(this.extensionChannel_);
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',
         'page_url': endpoint,

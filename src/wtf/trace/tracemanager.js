@@ -84,6 +84,21 @@ wtf.trace.TraceManager = function(opt_options) {
   options.mixin(goog.global['wtf_trace_options']);
   options.mixin(goog.global['wtf_hud_options']);
 
+  // If we don't have an extension try to load settings from local storage.
+  if (goog.global.localStorage) {
+    if (!options.getOptionalBoolean('wtf.injector', false)) {
+      // Load from local storage.
+      var value = goog.global.localStorage.getItem('__wtf_options__');
+      if (value) {
+        options.load(value);
+      }
+    } else {
+      // Otherwise, remove settings from local storage so they don't conflict
+      // with the extension.
+      goog.global.localStorage.removeItem('__wtf_options__');
+    }
+  }
+
   /**
    * Global options.
    * @type {!wtf.util.Options}

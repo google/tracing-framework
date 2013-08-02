@@ -274,6 +274,11 @@ wtf.util.Options.prototype.getNumber = function(key, defaultValue) {
   if (value === undefined) {
     value = defaultValue;
   } else {
+    if (value === true) {
+      value = 1;
+    } else if (value === false) {
+      value = 0;
+    }
     goog.asserts.assert(goog.isNumber(value));
   }
   return value;
