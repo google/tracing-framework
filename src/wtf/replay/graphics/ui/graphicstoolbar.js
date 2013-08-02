@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.GraphicsToolbar');
 
+goog.require('goog.dom.classes');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.events');
@@ -114,7 +115,6 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
   }
 
   // Listen to events that change whether buttons are enabled.
-  var dom = this.getDom();
   var playback = this.playback_;
   playback.addListener(
       wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
@@ -123,9 +123,10 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
       }, this);
   playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
       function() {
-        dom.setTextContent(this.playButton_, 'Play');
+        this.setPlayButtonState_(false);
         this.setEnabled_(true);
       }, this);
+  this.setPlayButtonState_(false);
 
   // Handle button clicks.
   var eh = this.getHandler();
@@ -242,15 +243,26 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.playClickHandler_ =
     return;
   }
 
-  var dom = this.getDom();
   var playback = this.playback_;
   if (playback.isPlaying()) {
-    dom.setTextContent(this.playButton_, 'Play');
+    this.setPlayButtonState_(false);
     playback.pause();
   } else {
-    dom.setTextContent(this.playButton_, 'Pause');
+    this.setPlayButtonState_(true);
     playback.play();
   }
+};
+
+
+/**
+ * Sets the play button state to playing or paused.
+ * @param {boolean} playing True if currently playing.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.setPlayButtonState_ = function(
+    playing) {
+  goog.dom.classes.enable(
+      this.playButton_, goog.getCssName('playing'), playing);
 };
 
 
