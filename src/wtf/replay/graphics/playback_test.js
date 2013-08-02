@@ -66,10 +66,12 @@ wtf.replay.graphics.Playback_test =
   test('#load', function() {
     var playback = new wtf.replay.graphics.Playback(
         eventList, frameList, new wtf.replay.graphics.ContextPool());
-    var checkIfLoadComplete = assert.expectEvent(
-        playback, wtf.replay.graphics.Playback.EventType.RESOURCES_DONE);
-    playback.load();
-    checkIfLoadComplete();
+
+    var deferred = playback.load();
+    deferred.addErrback(function(error) {
+      assert.fail('Loading the playback failed: ' + String(error));
+    });
+
     goog.dispose(playback);
   });
 
@@ -78,18 +80,6 @@ wtf.replay.graphics.Playback_test =
         eventList, frameList, new wtf.replay.graphics.ContextPool());
     // Test for right sequence of events while playing.
     var sequenceOfEvents = [
-      [wtf.replay.graphics.Playback.EventType.RESOURCES_DONE,
-       function() {
-         // We can play without an exception after resources loaded.
-         var exceptionThrown = false;
-         try {
-           playback.play();
-         } catch (exception) {
-           exceptionThrown = true;
-         } finally {
-           assert.isFalse(exceptionThrown);
-         }
-       }],
       [wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
        function() {
          assert.isTrue(playback.isPlaying());
@@ -109,30 +99,39 @@ wtf.replay.graphics.Playback_test =
          assert.isFalse(playback.isPlaying());
        }]
     ];
+
     assert.expectEventSequence(playback, sequenceOfEvents);
-    playback.load();
+
+    var deferred = playback.load();
+    deferred.addErrback(function(error) {
+      assert.fail('Playback failed to load: ' + String(error));
+    });
+    deferred.addCallback(function() {
+      playback.play();
+    });
+
     goog.dispose(playback);
 
     // Attempting to play while playing should trigger an exception.
     playback = new wtf.replay.graphics.Playback(
         eventList, frameList, new wtf.replay.graphics.ContextPool());
-    sequenceOfEvents = [
-      [wtf.replay.graphics.Playback.EventType.RESOURCES_DONE,
-       function() {
-         var exceptionThrown = false;
-         try {
-           playback.play();
-           assert.isTrue(playback.isPlaying());
-           playback.play();
-         } catch (exception) {
-           exceptionThrown = true;
-         } finally {
-           assert.isTrue(exceptionThrown);
-         }
-       }]];
-    assert.expectEventSequence(playback, sequenceOfEvents);
-    playback.load();
-    goog.dispose(playback);
+    deferred = playback.load();
+    deferred.addErrback(function(error) {
+      assert.fail('Playback failed to load: ' + String(error));
+    });
+    deferred.addCallback(function() {
+      var exceptionThrown = false;
+      try {
+        playback.play();
+        assert.isTrue(playback.isPlaying());
+        playback.play();
+      } catch (exception) {
+        exceptionThrown = true;
+      } finally {
+        assert.isTrue(exceptionThrown);
+        goog.dispose(playback);
+      }
+    });
 
     // Attempting to play before resources loaded should trigger an exception.
     playback = new wtf.replay.graphics.Playback(
@@ -143,9 +142,9 @@ wtf.replay.graphics.Playback_test =
     } catch (exception) {
       exceptionThrown = true;
     } finally {
+      goog.dispose(playback);
       assert.isTrue(exceptionThrown);
     }
-    goog.dispose(playback);
 
     // Now, test play with an empty framelist.
     eventList = wtf.testing.createEventList({
@@ -167,15 +166,6 @@ wtf.replay.graphics.Playback_test =
     playback = new wtf.replay.graphics.Playback(
         eventList, frameList, new wtf.replay.graphics.ContextPool());
     sequenceOfEvents = [
-      [wtf.replay.graphics.Playback.EventType.RESOURCES_DONE,
-       function() {
-         var currentStep = playback.getCurrentStep();
-         assert.equal(currentStep.getStartEventId(), 0);
-         assert.equal(currentStep.getEndEventId(), 5);
-         assert.equal(currentStep.getEventIterator().getCount(), 6);
-         assert.isNull(currentStep.getFrame());
-         playback.play();
-       }],
       [wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
        function() {
          assert.isTrue(playback.isPlaying());
@@ -187,18 +177,27 @@ wtf.replay.graphics.Playback_test =
          goog.dispose(playback);
        }]
     ];
+
+    deferred = playback.load();
     assert.expectEventSequence(playback, sequenceOfEvents);
-    playback.load();
+
+    deferred.addErrback(function(error) {
+      assert.fail('Playback failed to load: ' + String(error));
+    });
+    deferred.addCallback(function() {
+      var currentStep = playback.getCurrentStep();
+      assert.equal(currentStep.getStartEventId(), 0);
+      assert.equal(currentStep.getEndEventId(), 5);
+      assert.equal(currentStep.getEventIterator().getCount(), 6);
+      assert.isNull(currentStep.getFrame());
+      playback.play();
+    });
   });
 
   test('#pause', function() {
     var playback = new wtf.replay.graphics.Playback(
         eventList, frameList, new wtf.replay.graphics.ContextPool());
     var sequenceOfEvents = [
-      [wtf.replay.graphics.Playback.EventType.RESOURCES_DONE,
-       function() {
-         playback.play();
-       }],
       [wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
        function() {
          assert.isTrue(playback.isPlaying());
@@ -223,23 +222,26 @@ wtf.replay.graphics.Playback_test =
          } catch (exception) {
            exceptionThrown = true;
          } finally {
-           assert.isTrue(exceptionThrown);
+            goog.dispose(playback);
+            assert.isTrue(exceptionThrown);
          }
-         goog.dispose(playback);
        }]
     ];
+
+    var deferred = playback.load();
     assert.expectEventSequence(playback, sequenceOfEvents);
-    playback.load();
+    deferred.addErrback(function(error) {
+      assert.fail('Playback failed to load: ' + String(error));
+    });
+    deferred.addCallback(function() {
+      playback.play();
+    });
   });
 
   test('#restart', function() {
     var playback = new wtf.replay.graphics.Playback(
         eventList, frameList, new wtf.replay.graphics.ContextPool());
     var sequenceOfEvents = [
-      [wtf.replay.graphics.Playback.EventType.RESOURCES_DONE,
-       function() {
-         playback.play();
-       }],
       [wtf.replay.graphics.Playback.EventType.PLAY_BEGAN,
        function() {
          assert.isTrue(playback.isPlaying());
@@ -256,43 +258,49 @@ wtf.replay.graphics.Playback_test =
       [wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
        function() {
          assert.isFalse(playback.isPlaying());
+         goog.dispose(playback);
        }]
     ];
+
+    var deferred = playback.load();
     assert.expectEventSequence(playback, sequenceOfEvents);
-    playback.load();
-    goog.dispose(playback);
+    deferred.addErrback(function(error) {
+      assert.fail('Playback failed to load: ' + String(error));
+    });
+    deferred.addCallback(function() {
+      playback.play();
+    });
   });
 
   test('#seekStep', function() {
     var playback = new wtf.replay.graphics.Playback(
         eventList, frameList, new wtf.replay.graphics.ContextPool());
-    var currentStep;
-    var sequenceOfEvents = [
-      [wtf.replay.graphics.Playback.EventType.RESOURCES_DONE,
-       function() {
-         // We should not get an exception if we seek validly after loading.
-         var exceptionThrown = false;
-         try {
-           // Seek forwards to a step with a frame.
-           playback.seekStep(2);
-           currentStep = playback.getCurrentStep();
-           assert.equal(currentStep.getStartEventId(), 11);
-           assert.isNotNull(currentStep.getFrame());
+    var deferred = playback.load();
+    deferred.addErrback(function(error) {
+      assert.fail('Playback failed to load: ' + String(error));
+    });
+    deferred.addCallback(function() {
+      // We should not get an exception if we seek validly after loading.
+      var exceptionThrown = false;
+      try {
+        // Seek forwards to a step with a frame.
+        playback.seekStep(2);
+        var currentStep = playback.getCurrentStep();
+        assert.equal(currentStep.getStartEventId(), 11);
+        assert.isNotNull(currentStep.getFrame());
 
-           // Now, seek backwards to a step without a frame.
-           playback.seekStep(1);
-           currentStep = playback.getCurrentStep();
-           assert.equal(currentStep.getStartEventId(), 6);
-           assert.isNotNull(currentStep.getFrame());
-         } catch (exception) {
-           exceptionThrown = true;
-         } finally {
-           assert.isFalse(exceptionThrown);
-         }
-       }]];
-    assert.expectEventSequence(playback, sequenceOfEvents);
-    playback.load();
-    goog.dispose(playback);
+        // Now, seek backwards to a step without a frame.
+        playback.seekStep(1);
+        currentStep = playback.getCurrentStep();
+        assert.equal(currentStep.getStartEventId(), 6);
+        assert.isNotNull(currentStep.getFrame());
+      } catch (exception) {
+        exceptionThrown = true;
+      } finally {
+        goog.dispose(playback);
+        assert.isFalse(exceptionThrown);
+      }
+    });
 
     // If we seek before playback is loaded, we trigger an exception.
     playback = new wtf.replay.graphics.Playback(
@@ -303,8 +311,8 @@ wtf.replay.graphics.Playback_test =
     } catch (exception) {
       exceptionThrown = true;
     } finally {
+      goog.dispose(playback);
       assert.isTrue(exceptionThrown);
     }
-    goog.dispose(playback);
   });
 });

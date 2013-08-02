@@ -212,7 +212,7 @@ wtf.replay.graphics.ui.EventNavigator.prototype.setSearchValue_ = function(
  */
 wtf.replay.graphics.ui.EventNavigator.prototype.updateScrolling = function(
     playback) {
-  var rowToScrollTo = playback.getSubStepEventId() + 1;
+  var rowToScrollTo = playback.getSubStepEventIndex() + 1;
   this.table_.scrollToRow(
       rowToScrollTo, wtf.ui.VirtualTable.Alignment.MIDDLE);
 };
