@@ -193,17 +193,26 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiTracksPanel .tracksCanvas{cursor:crosshair;}
 .appUiQueryPanel{position:absolute;left:0;right:0;top:0;bottom:0;}
 .replayTimeTravelController{position:absolute;left:0;right:0;top:0;bottom:0;}
-.graphicsReplayArgumentsDialog .form{}.graphicsReplayArgumentsDialog .form .header .buttons .kButton{margin:0 0 0 16px;}
-.graphicsReplayArgumentsDialog .form .dialogFields .graphicsReplayArgumentsDialogArgKeyPair{margin:15px 0 0 0;}
+.graphicsReplayArgumentsDialog{height:auto;}.graphicsReplayArgumentsDialog .form{}.graphicsReplayArgumentsDialog .form .header .buttons .kButton{margin:0 0 0 16px;}
+.graphicsReplayArgumentsDialog .form .contents{margin:0 0 0 40px;position:static;}
+.graphicsReplayArgumentsDialog .form .dialogFields{margin:10px 0 0 0;}.graphicsReplayArgumentsDialog .form .dialogFields .graphicsReplayArgumentsDialogArgKeyPair{margin:15px 0 0 0;}.graphicsReplayArgumentsDialog .form .dialogFields .graphicsReplayArgumentsDialogArgKeyPair .graphicsReplayArgumentsDialogInputContainer .dataDumpText{width:100%;}
 .graphicsReplayArgumentsDialog .form .hiddenSubmit{visibility:hidden;}
-.replayGraphicsContextBox{border:1px solid #000;margin:5px;padding:5px;}.replayGraphicsContextBox .replayGraphicsContextBoxHandleLabel{margin:0 0 10px 0;}
+.replayGraphicsContextBox{border:1px solid #bbbbbb;margin:5px;float:left;}.replayGraphicsContextBox .replayGraphicsContextBoxHandleLabel{padding:5px;border-bottom:1px solid #bbbbbb;background-color:#ebebeb;font-family:monospace;}
+.replayGraphicsContextBox .replayGraphicsContextBoxCanvasContainer{line-height:0;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJUlEQVQYV2N8/fr1fwY0ICoqyoguxjgUFKI7GsTH5m4M3w1ChQC9EybLRzKdKQAAAABJRU5ErkJggg==) repeat;}
 .replayGraphicsEventNavigator{position:absolute;left:0;right:0;top:0;bottom:0;}.replayGraphicsEventNavigator .toolbarContainer{position:absolute;left:0;right:0;top:0;bottom:0;}
-.replayGraphicsEventNavigator .tableOuter{position:absolute;left:0;right:0;top:0;bottom:0;margin-top:80px;}
-.graphicsReplayEventNavigatorToolbar{padding:0 10px;}.graphicsReplayEventNavigatorToolbar .graphicsReplayToolbarSearchBox{margin:10px 0 0 0;}
-.graphicsReplayPanel .graphicsReplayMainContent{position:absolute;left:0;top:80px;right:0;bottom:0;}
-.graphicsReplayPanel .graphicsReplayStepEventNavigation{position:absolute;left:0;top:0;bottom:0;width:300px;overflow:hidden;}.graphicsReplayPanel .graphicsReplayStepEventNavigation .graphicsReplayEventNavigatorContainer{position:absolute;left:0;right:0;top:0;bottom:0;margin-right:8px;}
-.graphicsReplayPanel .graphicsReplayMainDisplay{position:absolute;left:300px;right:0;top:0;bottom:0;overflow-x:hidden;overflow-y:auto;}
-.graphicsReplayToolbar{margin:10px;}
-.graphicsReplayRangeSeekerDisplayer{display:inline-block;margin:0 0 0 10px;width:5%;}.graphicsReplayRangeSeekerDisplayer input{width:100%;}
+.replayGraphicsEventNavigator .tableOuter{position:absolute;left:0;right:0;top:0;bottom:0;top:40px;}
+.graphicsReplayEventNavigatorToolbar{padding:5px;border-bottom:1px solid #ebebeb;}.graphicsReplayEventNavigatorToolbar td{vertical-align:top;}
+.graphicsReplayEventNavigatorToolbar .leftButtons{min-width:208px;}
+.graphicsReplayEventNavigatorToolbar .center{width:100%;padding-right:5px;}.graphicsReplayEventNavigatorToolbar .center .kSearchField{width:100%;font-family:monospace;font-size:11px;}
+.graphicsReplayEventNavigatorToolbar .rightButtons{width:1%;padding-left:5px;}
+.graphicsReplayPanel .topRow{width:100%;margin:5px;}.graphicsReplayPanel .topRow .toolbar{vertical-align:top;min-width:250px;}
+.graphicsReplayPanel .topRow .rangeSeeker{vertical-align:top;width:100%;}
+.graphicsReplayPanel .graphicsReplayMainContent{position:absolute;left:0;top:40px;right:0;bottom:0;border-top:1px solid #ebebeb;}
+.graphicsReplayPanel .graphicsReplayStepEventNavigation{position:absolute;left:0;top:0;bottom:0;width:525px;overflow:hidden;border-right:1px solid #ebebeb;}.graphicsReplayPanel .graphicsReplayStepEventNavigation .graphicsReplayEventNavigatorContainer{position:absolute;left:0;right:0;top:0;bottom:0;margin-right:8px;}
+.graphicsReplayPanel .graphicsReplayMainDisplay{position:absolute;left:525px;right:0;top:0;bottom:0;overflow-x:auto;overflow-y:auto;}
+.graphicsReplayToolbar .playButton>.pauseButtonIcon{display:none;}
+.graphicsReplayToolbar .playing>.playButtonIcon{display:none;}
+.graphicsReplayToolbar .playing>.pauseButtonIcon{display:inline;}
+.graphicsReplayRangeSeekerDisplayer{display:inline-block;margin:-14px 0 0 10px;width:5%;}.graphicsReplayRangeSeekerDisplayer .kTextField{margin:-15px 0 0 0;width:50%;vertical-align:middle;}
 .graphicsReplayRangeSeekerSlider{display:inline-block;margin:5px 0 0 10px;width:90%;}.graphicsReplayRangeSeekerSlider input{width:100%;}
 body{overflow:hidden;}
