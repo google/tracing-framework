@@ -370,7 +370,10 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
 
     // Grab the original method from the target.
     var rawFn = target[methodName];
-    goog.asserts.assert(rawFn);
+    if (!rawFn) {
+      goog.global.console.log(targetType + ' is missing ' + methodName);
+      return;
+    }
 
     // Generate a bound function.
     var instrumentedFn;
