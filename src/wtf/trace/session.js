@@ -15,6 +15,7 @@ goog.provide('wtf.trace.Session');
 
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
+goog.require('goog.userAgent');
 goog.require('wtf.trace.BuiltinEvents');
 goog.require('wtf.trace.Scope');
 
@@ -115,7 +116,7 @@ goog.inherits(wtf.trace.Session, goog.Disposable);
  * @private
  */
 wtf.trace.Session.DEFAULT_MAX_MEMORY_USAGE_ =
-    16 * 1024 * 1024;
+    goog.userAgent.MOBILE ? 16 * 1024 * 1024 : 512 * 1024 * 1024;
 
 
 /**
