@@ -238,12 +238,7 @@ wtf.replay.graphics.Playback.EventType = {
    * Playing stopped. Could be due to finishing the animation, pausing,
    * or resetting.
    */
-  PLAY_STOPPED: goog.events.getUniqueId('play_stopped'),
-
-  /**
-   * Resources finished loading.
-   */
-  RESOURCES_DONE: goog.events.getUniqueId('resources_done')
+  PLAY_STOPPED: goog.events.getUniqueId('play_stopped')
 };
 
 
@@ -666,8 +661,6 @@ wtf.replay.graphics.Playback.prototype.fetchResources_ = function() {
 
     // Let user know that resources have finished loading.
     this.resourcesDoneLoading_ = true;
-    this.emitEvent(
-        wtf.replay.graphics.Playback.EventType.RESOURCES_DONE);
   }, this);
   return deferred;
 };
@@ -924,12 +917,13 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
 
 
 /**
- * Gets the 0-based index of the substep event ID or -1 if it does not exist.
- * @return {number} The index of the substep event ID or -1 if it does not
+ * Gets the index of the substep event (which is 0-based from the first event
+ * in the current step) or -1 if the substep event does not exist.
+ * @return {number} The index of the substep event or -1 if it does not
  *     exist (It does not exist if we are not playing within a step or if we
  *     are at the very beginning of a step.).
  */
-wtf.replay.graphics.Playback.prototype.getSubStepEventId = function() {
+wtf.replay.graphics.Playback.prototype.getSubStepEventIndex = function() {
   return this.subStepId_;
 };
 
