@@ -13,7 +13,6 @@
 
 goog.provide('wtf.db.EventIterator');
 
-goog.require('goog.asserts');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.db.EventStruct');
 goog.require('wtf.db.Unit');
