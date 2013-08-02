@@ -618,7 +618,15 @@ wtf.replay.graphics.Playback.prototype.fetchResources_ = function() {
         canvas.height = args['height'];
         var ctx = canvas.getContext('2d');
         var imageData = ctx.createImageData(args['width'], args['height']);
-        imageData.data.set(args['pixels']);
+        var targetData = imageData.data;
+        var sourceData = args['pixels'];
+        if (targetData.set) {
+          targetData.set(sourceData);
+        } else {
+          for (var n = 0; n < sourceData.length; n++) {
+            targetData[n] = sourceData[n];
+          }
+        }
         ctx.putImageData(imageData, 0, 0);
         this.resources_[it.getId()] = canvas;
       } else if (dataType != 'pixels' && dataType != 'null') {
