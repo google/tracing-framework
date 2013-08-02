@@ -254,7 +254,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
   var rowCenter = rowHeight / 2 + 10 / 2;
 
   // Iterate ahead to the event represented by the top row displayed.
-  var currentRow = this.playback_.getSubStepEventId();
+  var currentRow = this.playback_.getSubStepEventIndex();
   var contextChangingEvents = currentStep.getContextChangingEvents();
   for (var i = 1; i < first; ++i) {
     it.next();
@@ -500,7 +500,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
       // TODO(benvanik): context click?
     } else {
       var soughtIndex = row - 1;
-      if (soughtIndex != playback.getSubStepEventId()) {
+      if (soughtIndex != playback.getSubStepEventIndex()) {
         playback.seekSubStepEvent(soughtIndex);
       }
     }
@@ -580,7 +580,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.markArgsReset_ =
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.playbackToCurrent_ =
     function() {
   var playback = this.playback_;
-  var targetIndex = playback.getSubStepEventId();
+  var targetIndex = playback.getSubStepEventIndex();
   playback.seekStep(playback.getCurrentStepIndex());
   playback.seekSubStepEvent(targetIndex);
 };
