@@ -42,6 +42,13 @@ wtf.trace.providers.WebGLProvider = function(traceManager, options) {
   goog.base(this, options);
 
   /**
+   * The next ID to give to a context when created.
+   * @type {number}
+   * @private
+   */
+  this.nextContextId_ = 1;
+
+  /**
    * The next ID to give to an object when created.
    * ID 0 indicates null/nothing.
    * All contexts share the namespace to make it easier to search the traces.
@@ -217,7 +224,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectCanvas_ = function() {
           if (result) {
             if (!wtf.trace.providers.WebGLProvider.getHandle(result)) {
               // Not yet registered - setup.
-              var handle = provider.nextObjectId_++;
+              var handle = provider.nextContextId_++;
               wtf.trace.providers.WebGLProvider.setHandle(result, handle);
               provider.createdContexts_.push(result);
               createContextEvent(handle, opt_attrs);
