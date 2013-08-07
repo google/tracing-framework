@@ -267,7 +267,6 @@ file_set(
     name='wtf_trace_web_release',
     srcs=[
         ':wtf_trace_web_js_compiled',
-        ':wtf_trace_web_styles_release',
         ],
     src_exclude_filter='*-deps.js')
 
@@ -493,6 +492,12 @@ archive_files(
         ':wtf_trace_web_release',
         ] + glob('shims/*.*'))
 
+archive_files(
+    name='wtf-app',
+    srcs=[
+        'app:release',
+        ])
+
 file_set(
     name='injector',
     srcs=[
@@ -507,6 +512,7 @@ file_set(
         ':wtf_node_release',
         'app:release',
         ':wtf-trace-web-api',
+        ':wtf-app',
         ':injector',
         ],
     src_exclude_filter='*-deps.js',
