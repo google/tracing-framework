@@ -93,7 +93,8 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.contextAttributes_ = {};
 
   /**
-   * A mapping of handles to contexts.
+   * A mapping of handles to contexts. Keys are context handles from event
+   * arguments.
    * @type {!Object.<!WebGLRenderingContext>}
    * @private
    */
@@ -105,6 +106,21 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
    * @private
    */
   this.resources_ = {};
+
+  /**
+   * A set of handles of cache-able programs. Keys are program handles from
+   * event arguments.
+   * @type {!Object.<boolean>}
+   * @private
+   */
+  this.cacheableProgramHandles_ = {};
+
+  /**
+   * A cache of programs. Keys are program handles from event arguments.
+   * @type {!Object.<!WebGLProgram>}
+   * @private
+   */
+  this.programs_ = {};
 
   /**
    * Whether resources have finished loading. Set to true after a
@@ -249,7 +265,9 @@ wtf.replay.graphics.Playback.prototype.disposeInternal = function() {
   if (this.loadDeferred_) {
     this.loadDeferred_.cancel();
   }
-  this.clearWebGLObjects_();
+
+  // Make sure to clear cached objects too, lest we leak GPU memory.
+  this.clearWebGlObjects_(true);
   goog.base(this, 'disposeInternal');
 };
 
@@ -354,44 +372,51 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   var visibleEventExists = false;
 
   // Keep track of the handles of contexts that are made.
-  var contextsMade = {};
+  var contextAdded = false;
+  var contexts = {};
   var contextsMadeSoFar = {};
   while (!it.done()) {
     var currentEventTypeId = it.getTypeId();
     if (currentEventTypeId == frameStartEventId) {
       // Only store previous step if it has at least 1 event.
       if (!noEventsForPreviousStep) {
-        var contexts = goog.object.clone(contextsMade);
 
         // Only include this step if it has visible events.
         if (visibleEventExists) {
+          // Clone only if a context was added during the last step.
+          if (contextAdded) {
+            contexts = goog.object.clone(contextsMadeSoFar);
+          }
+
           var newStep = new wtf.replay.graphics.Step(
               eventList, currentStartId, currentEndId, null, contexts,
               displayedEventsIds, stepBeginContext);
           steps.push(newStep);
+          contextAdded = false;
         }
 
         visibleEventExists = false;
         stepBeginContext = currentContext;
-        contextsMade = goog.object.clone(contextsMadeSoFar);
       }
       currentStartId = it.getId();
       it.next();
     } else if (currentEventTypeId == frameEndEventId) {
-      // Include the end frame event in the step for drawing the frame.
-      var contexts = goog.object.clone(contextsMade);
-
       // Only include this step if it has visible events.
       if (visibleEventExists) {
+        // Clone only if a context was added during the last step.
+        if (contextAdded) {
+          contexts = goog.object.clone(contextsMadeSoFar);
+        }
+
         var newStep = new wtf.replay.graphics.Step(
             eventList, currentStartId, it.getId(), currentFrame, contexts,
             displayedEventsIds, stepBeginContext);
         steps.push(newStep);
+        contextAdded = false;
       }
 
       visibleEventExists = false;
       stepBeginContext = currentContext;
-      contextsMade = goog.object.clone(contextsMadeSoFar);
       noEventsForPreviousStep = true;
       if (currentFrame) {
         currentFrame = frameList.getNextFrame(currentFrame);
@@ -406,6 +431,7 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
       contextsMadeSoFar[handleValue] = true;
       currentContext = handleValue;
       visibleEventExists = true;
+      contextAdded = true;
       it.next();
     } else if (currentEventTypeId == contextSetEventId) {
       currentContext = /** @type {number} */ (it.getArgument('handle'));
@@ -427,7 +453,7 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   // Store any events still left if there are any.
   if (!noEventsForPreviousStep && visibleEventExists) {
     var newStep = new wtf.replay.graphics.Step(
-        eventList, currentStartId, currentEndId, null, null,
+        eventList, currentStartId, currentEndId, null, contexts,
         displayedEventsIds, stepBeginContext);
     steps.push(newStep);
   }
@@ -445,7 +471,7 @@ wtf.replay.graphics.Playback.prototype.load = function() {
     throw new Error('Attempted to load twice.');
   }
   var deferred = new goog.async.Deferred();
-  this.checkExtensions_().addCallbacks(function() {
+  this.initialize_().addCallbacks(function() {
     this.fetchResources_().chainDeferred(deferred);
   }, function(e) {
     deferred.errback(e);
@@ -456,19 +482,29 @@ wtf.replay.graphics.Playback.prototype.load = function() {
 
 
 /**
- * Issues an error that lists unsupported extensions if there are any.
- * @return {!goog.async.Deferred} A deferred for checking extensions.
+ * Initializes the playback. Performs functions such as checking for
+ * unsupported extensions and caching programs.
+ * @return {!goog.async.Deferred} A deferred for initializing the playback.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.checkExtensions_ = function() {
+wtf.replay.graphics.Playback.prototype.initialize_ = function() {
   var numUnsupportedExtensions = 0;
   var unsupportedExtensions = {};
   var getExtensionEventId =
       this.eventList_.getEventTypeId('WebGLRenderingContext#getExtension');
+  var linkProgramEventId =
+      this.eventList_.getEventTypeId('WebGLRenderingContext#linkProgram');
+  var deleteProgramEventId =
+      this.eventList_.getEventTypeId('WebGLRenderingContext#deleteProgram');
+
+  // Track programs to cache.
+  var visitedProgramHandles = {};
+  var cacheableProgramHandles = {};
 
   for (var it = this.eventList_.begin(); !it.done(); it.next()) {
-    if (it.getTypeId() == getExtensionEventId) {
-      var args = it.getArguments();
+    var args = it.getArguments();
+    var typeId = it.getTypeId();
+    if (typeId == getExtensionEventId) {
 
       // Ignore getExtension calls that failed.
       if (!args['result']) {
@@ -486,8 +522,23 @@ wtf.replay.graphics.Playback.prototype.checkExtensions_ = function() {
           ++numUnsupportedExtensions;
         }
       }
+    } else if (typeId == linkProgramEventId) {
+      var programHandle = args['program'];
+      if (visitedProgramHandles[programHandle]) {
+        // Do not cache a program that is linked more than once.
+        delete cacheableProgramHandles[programHandle];
+      } else {
+        // New program linked. Cache it for now, and note that we visited it.
+        cacheableProgramHandles[programHandle] = true;
+        visitedProgramHandles[programHandle] = true;
+      }
+    } else if (typeId == deleteProgramEventId) {
+      // Do not cache programs that are deleted at some point.
+      delete cacheableProgramHandles[args['program']];
     }
   }
+
+  this.cacheableProgramHandles_ = cacheableProgramHandles;
 
   // If any unsupported extensions, provide an error with a list of them.
   var deferred = new goog.async.Deferred();
@@ -519,7 +570,7 @@ wtf.replay.graphics.Playback.prototype.reset = function() {
  * @private
  */
 wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
-  this.clearWebGLObjects_();
+  this.clearWebGlObjects_();
   this.currentStepIndex_ = 0;
   this.subStepId_ = -1;
 };
@@ -527,16 +578,22 @@ wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
 
 /**
  * Clears WebGL objects.
+ * @param {boolean=} opt_clearCached True if cached programs should be cleared
+ *     too. False by default.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.clearWebGLObjects_ = function() {
+wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
+    opt_clearCached) {
   if (this.isPlaying()) {
     this.pause();
   }
 
   // Clear resources on the GPU.
   for (var objectKey in this.objects_) {
-    this.clearGPUResource_(this.objects_[objectKey]);
+    if (!this.programs_[objectKey] || opt_clearCached) {
+      // Do not clear cached programs.
+      this.clearGpuResource_(this.objects_[objectKey]);
+    }
   }
   this.objects_ = {};
 
@@ -551,15 +608,27 @@ wtf.replay.graphics.Playback.prototype.clearWebGLObjects_ = function() {
 
 
 /**
+ * Clears the cache of programs. Useful when the cache has been invalidated.
+ */
+wtf.replay.graphics.Playback.prototype.clearProgramsCache = function() {
+  var programs = this.programs_;
+  for (var handle in programs) {
+    this.clearGpuResource_(programs[handle]);
+    delete this.objects_[handle];
+  }
+  this.programs_ = {};
+};
+
+
+/**
  * Clears a GPU resource.
  * @param {Object} obj A GPU resource.
  * @private
  */
-wtf.replay.graphics.Playback.prototype.clearGPUResource_ = function(obj) {
+wtf.replay.graphics.Playback.prototype.clearGpuResource_ = function(obj) {
   if (!obj) {
     return;
   }
-
   var ctx = obj[wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME_];
   goog.asserts.assert(ctx);
   if (obj instanceof WebGLBuffer) {
@@ -567,6 +636,8 @@ wtf.replay.graphics.Playback.prototype.clearGPUResource_ = function(obj) {
   } else if (obj instanceof WebGLFramebuffer) {
     ctx.deleteFramebuffer(obj);
   } else if (obj instanceof WebGLProgram) {
+    // Reset the uniforms, and then delete the program.
+    this.resetProgramUniforms_(obj);
     ctx.deleteProgram(obj);
   } else if (obj instanceof WebGLRenderbuffer) {
     ctx.deleteRenderbuffer(obj);
@@ -575,6 +646,85 @@ wtf.replay.graphics.Playback.prototype.clearGPUResource_ = function(obj) {
   } else if (obj instanceof WebGLTexture) {
     ctx.deleteTexture(obj);
   }
+};
+
+
+/**
+ * Resets the uniforms of a program.
+ * @param {!WebGLProgram} program WebGL program.
+ * @private
+ */
+wtf.replay.graphics.Playback.prototype.resetProgramUniforms_ = function(
+    program) {
+  var context =
+      program[wtf.replay.graphics.Playback.GL_CONTEXT_PROPERTY_NAME_];
+  var uniformsCount =
+      context.getProgramParameter(program, goog.webgl.ACTIVE_UNIFORMS);
+  context.useProgram(program);
+  for (var n = 0; n < uniformsCount; n++) {
+    var uniformInfo = context.getActiveUniform(program, n);
+    var uniformLocation =
+        context.getUniformLocation(program, uniformInfo.name);
+    var size = uniformInfo.size;
+    switch (uniformInfo.type) {
+      case goog.webgl.BOOL:
+        context.uniform1i(uniformLocation, new Int32Array(size));
+        break;
+      case goog.webgl.BOOL_VEC2:
+        context.uniform2iv(uniformLocation, new Int32Array(2 * size));
+        break;
+      case goog.webgl.BOOL_VEC3:
+        context.uniform3iv(uniformLocation, new Int32Array(3 * size));
+        break;
+      case goog.webgl.INT:
+        context.uniform1i(uniformLocation, new Int32Array(size));
+        break;
+      case goog.webgl.INT_VEC2:
+        context.uniform2iv(uniformLocation, new Int32Array(2 * size));
+        break;
+      case goog.webgl.INT_VEC3:
+        context.uniform3iv(uniformLocation, new Int32Array(3 * size));
+        break;
+      case goog.webgl.INT_VEC4:
+        context.uniform4iv(uniformLocation, new Int32Array(4 * size));
+        break;
+      case goog.webgl.FLOAT:
+        context.uniform1f(uniformLocation, new Float32Array(size));
+        break;
+      case goog.webgl.FLOAT_VEC2:
+        context.uniform2fv(uniformLocation, new Float32Array(2 * size));
+        break;
+      case goog.webgl.FLOAT_VEC3:
+        context.uniform3fv(uniformLocation, new Float32Array(3 * size));
+        break;
+      case goog.webgl.FLOAT_VEC4:
+        context.uniform4fv(uniformLocation, new Float32Array(4 * size));
+        break;
+      case goog.webgl.FLOAT_MAT2:
+        context.uniformMatrix2fv(
+            uniformLocation, false, new Float32Array(4 * size));
+        break;
+      case goog.webgl.FLOAT_MAT3:
+        context.uniformMatrix3fv(
+            uniformLocation, false, new Float32Array(9 * size));
+        break;
+      case goog.webgl.FLOAT_MAT4:
+        context.uniformMatrix4fv(
+            uniformLocation, false, new Float32Array(16 * size));
+        break;
+      case goog.webgl.SAMPLER_2D:
+        context.uniform1i(uniformLocation, new Int32Array(size));
+        break;
+      case goog.webgl.SAMPLER_CUBE:
+        context.uniform1i(uniformLocation, new Int32Array(size));
+        break;
+      default:
+        goog.asserts.fail('Unsupported uniform type.');
+        break;
+    }
+  }
+
+  context.useProgram(null);
 };
 
 
@@ -1149,6 +1299,11 @@ wtf.replay.graphics.Playback.Call_;
 wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#attachShader': function(
       eventId, playback, gl, args, objs) {
+    if (playback.programs_[args['program']]) {
+      // Do not attach a shader if the program is cached.
+      return;
+    }
+
     gl.attachShader(
         /** @type {WebGLProgram} */ (objs[args['program']]),
         /** @type {WebGLShader} */ (objs[args['shader']]));
@@ -1311,7 +1466,15 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#createProgram': function(
       eventId, playback, gl, args, objs) {
-    objs[args['program']] = gl.createProgram();
+    if (playback.programs_[args['program']]) {
+      // Use the cached program.
+      objs[args['program']] = playback.programs_[args['program']];
+    } else {
+      var newProgram = gl.createProgram();
+      playback.setOwningContext_(newProgram, gl);
+      objs[args['program']] = newProgram;
+    }
+
     playback.setOwningContext_(objs[args['program']], gl);
   },
   'WebGLRenderingContext#createShader': function(
@@ -1336,8 +1499,10 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#deleteProgram': function(
       eventId, playback, gl, args, objs) {
+    var programHandle = args['program'];
     gl.deleteProgram(
-        /** @type {WebGLProgram} */ (objs[args['program']]));
+        /** @type {WebGLProgram} */ (objs[programHandle]));
+    delete objs[programHandle];
   },
   'WebGLRenderingContext#deleteRenderbuffer': function(
       eventId, playback, gl, args, objs) {
@@ -1585,6 +1750,18 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#linkProgram': function(
       eventId, playback, gl, args, objs) {
+    var linkProgram = true;
+    if (playback.cacheableProgramHandles_[args['program']]) {
+      if (playback.programs_[args['program']]) {
+        // Already cached program. No need to link.
+        linkProgram = false;
+        objs[args['program']] = playback.programs_[args['program']];
+      } else {
+        // Program was created, but not linked yet.
+        playback.programs_[args['program']] = objs[args['program']];
+      }
+    }
+
     // Do all the attribute bindings, then link.
     var attribMap = args['attributes'];
     for (var attribName in attribMap) {
@@ -1592,8 +1769,12 @@ wtf.replay.graphics.Playback.CALLS_ = {
           /** @type {WebGLProgram} */ (objs[args['program']]),
           attribMap[attribName], attribName);
     }
-    gl.linkProgram(
-        /** @type {WebGLProgram} */ (objs[args['program']]));
+
+    if (linkProgram) {
+      // Link the program only if the program was not cached.
+      gl.linkProgram(
+          /** @type {WebGLProgram} */ (objs[args['program']]));
+    }
   },
   'WebGLRenderingContext#pixelStorei': function(
       eventId, playback, gl, args, objs) {

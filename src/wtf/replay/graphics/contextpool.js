@@ -213,7 +213,4 @@ wtf.replay.graphics.ContextPool.prototype.resetWebGLContext_ =
   ctx.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.clear(goog.webgl.COLOR_BUFFER_BIT |
       goog.webgl.DEPTH_BUFFER_BIT | goog.webgl.STENCIL_BUFFER_BIT);
-
-  // TODO: This should NOT be needed but Firefox fails with 'hint'
-  while (ctx.getError()) {}
 };
