@@ -845,9 +845,15 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       });
   wrapContextMethod(
       'getTexParameter(uint32 target, uint32 pname)');
-  // TODO(benvanik): getUniform
   wrapContextMethod(
-      'getUniform');
+      'getUniform(uint32 program, uint32 location)',
+      function(fn, eventType) {
+        return function getUniform(program, location) {
+          setCurrentContext(this);
+          var scope = eventType(getHandle(program), getHandle(location));
+          return leaveScope(scope, fn.apply(this, arguments));
+        };
+      });
   wrapContextMethod(
       'getUniformLocation(uint32 program, utf8 name, uint32 value)',
       function(fn, eventType) {
