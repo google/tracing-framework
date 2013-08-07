@@ -20,15 +20,6 @@ this functionality is added to browsers. Show your support if you want it!
 
 Chrome bug: [issue 169318](https://code.google.com/p/chromium/issues/detail?id=169318)
 
-## Settings Not Saved with Embedded WTF
-
-Currently any settings changed on a page are only saved when WTF was added with
-the Chrome extension. If you've manually put WTF on a page the settings won't
-save on reload.
-
-Workaround: specify any settings you want in the options object before calling
-`wtf.trace.prepare`.
-
 ## XHR Recording is Slow
 
 The recording of XMLHttpRequest open/send/etc is currently slow. The times
