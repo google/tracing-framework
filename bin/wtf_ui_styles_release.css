@@ -177,7 +177,7 @@ blockquote:before,blockquote:after,q:before,q:after{content:'';content:none;}
 .appUiNavbarStatsBox .numbersOuter .numbersTable td{-moz-user-select:auto !important;-ms-user-select:auto !important;-webkit-user-select:auto !important;}
 .appUiNavbarStatsBox .numbersOuter .empty{color:lightgray;cursor:default;}
 .appUiQueryPanel{position:absolute;left:0;right:0;top:0;bottom:0;}.appUiQueryPanel .header{position:absolute;width:100%;top:0;height:35px;border-bottom:1px solid #EBEBEB;}.appUiQueryPanel .header .headerLeft{position:absolute;top:0;bottom:0;left:0;right:237px;}.appUiQueryPanel .header .headerLeft .zoneSelect{float:left;width:128px;margin-left:5px;margin-right:5px;margin-top:8px;}
-.appUiQueryPanel .header .headerLeft .searchBox{float:left;position:absolute;left:128px;right:0;margin-top:3px;margin-bottom:3px;margin-left:10px;padding-right:7px;}.appUiQueryPanel .header .headerLeft .searchBox .kTextField{width:100%;}
+.appUiQueryPanel .header .headerLeft .searchBox{float:left;position:absolute;left:128px;right:0;margin-top:3px;margin-bottom:3px;margin-left:10px;padding-right:7px;}.appUiQueryPanel .header .headerLeft .searchBox .kTextField{width:100%;font-family:monospace;font-size:11px;}
 .appUiQueryPanel .header .headerRight{width:230px;right:0;float:right;margin:3px;}.appUiQueryPanel .header .headerRight .kButtonBar{float:left;margin-right:6px;}
 .appUiQueryPanel .header .headerRight .resultInfo{float:left;padding-top:7px;}
 .appUiQueryPanel .resultsOuter{position:absolute;width:100%;top:36px;bottom:0;overflow-x:hidden;overflow-y:auto;}.appUiQueryPanel .resultsOuter .results{position:absolute;left:0;right:0;top:0;bottom:0;cursor:pointer;}
