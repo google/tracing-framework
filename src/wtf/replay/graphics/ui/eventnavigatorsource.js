@@ -551,6 +551,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.handleEditClick_ =
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.markArgsAltered_ =
     function(eventId) {
   this.idsOfEventsWithUpdatedArguments_[eventId] = true;
+  this.playback_.clearProgramsCache();
   this.playbackToCurrent_();
   this.invalidate();
 };
@@ -568,6 +569,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.markArgsReset_ =
   }
 
   delete this.idsOfEventsWithUpdatedArguments_[eventId];
+  this.playback_.clearProgramsCache();
   this.playbackToCurrent_();
   this.invalidate();
 };
