@@ -16,7 +16,7 @@ Settings for your editor:
 
 ### Linting
 
-Use the Closure linter to lint and automatically fix some errors (of certain
+Use the [Closure linter](https://developers.google.com/closure/utilities/) to lint and automatically fix some errors (of certain
 types).
 
     # Fix regular errors (missing goog.require/provide, etc)
