@@ -348,7 +348,7 @@ var options = {
 var options = {
   'wtf.trace.provider.webgl': true,
   'wtf.trace.provider.webgl.recordAtStartup': true,
-  'wtf.trace.provider.webgl.captureLevel': 'draw_calls',
+  'wtf.trace.provider.webgl.replayable': true,
   'wtf.trace.provider.webgl.embedRemoteImages': false
 };</pre>
 
@@ -356,21 +356,9 @@ var options = {
 
   <p>By default the provider begins recording WebGL data immediately on startup. Since in certain recording modes the amount of data can be very large it can be useful to only record data when desired. When the <code>wtf.trace.provider.webgl.recordAtStartup</code> option is set to <code>false</code> a 'WebGL' button will show up on the on-page HUD that lets you toggle recording on and off. It will also force a WebGL context loss/restore when clicked, allowing for context creation to be observed in the trace.</p>
 
-  <h3>Capture Levels</h3>
-  <p>Possible values for the <code>wtf.trace.provider.webgl.captureLevel</code> option:
-    <ul>
-      <li><code>draw_calls</code><br/>
-      Record only the draw calls and related operations such as buffer and texture uploads. This is the lowest overhead mode and is useful for seeing what kind of things are being drawn when.
-      <li><code>all_calls</code><br/>
-      Record all calls without arguments.
-      <li><code>all_calls_with_arguments</code><br/>
-      Record all calls with arguments. This mode does not allow for full replay but will let you see every WebGL call made and what the arguments were (excluding the actual buffers/textures).
-      <li><code>all_calls_with_data</code><br/>
-      This mode will record all WebGL calls along with all arguments and any data referenced by them (such as buffers and textures). This is required for full playback of the command stream.
-    </ul>
-  </p>
+  <p>Replayable traces will record a tremendous amount of data and cannot be used to get reliable timing information. When a trace is recorded with replay enabled a 'WebGL' tab will appear in the UI and all recorded WebGL frames can be replayed and inspected, similar to <a href="http://benvanik.github.io/WebGL-Inspector/" target="_blank">WebGL Inspector</a>.</p>
 
-  <p>When recording in the <code>all_calls_with_data</code> mode references to remote images and videos will be recorded with their URL. Since some URLs are transient (blob URLs, etc) or may not be accessible from the machine performing the replay (URLs that are unique per session/cookie), an option, <code>wtf.trace.provider.webgl.embedRemoteImages</code>, exists to synchronously fetch and embed the data within the trace. This will result in very large trace files and cause a severe performance penalty each time an image is requested. Do not use this option when trying to get performance numbers.
+  <p>When recording in replayable mode references to remote images and videos will be recorded with their URL. Since some URLs are transient (blob URLs, etc) or may not be accessible from the machine performing the replay (URLs that are unique per session/cookie), an option, <code>wtf.trace.provider.webgl.embedRemoteImages</code>, exists to synchronously fetch and embed the data within the trace. This will result in very large trace files and cause a severe performance penalty each time an image is requested. Do not use this option when trying to get performance numbers.
 </section>
 
 
