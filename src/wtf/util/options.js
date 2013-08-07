@@ -202,9 +202,8 @@ wtf.util.Options.prototype.mixin = function(obj) {
  * @param {string} key Option key.
  * @param {wtf.util.Options.Value|undefined} value New value or undefined to
  *     remove.
- * @private
  */
-wtf.util.Options.prototype.setValue_ = function(key, value) {
+wtf.util.Options.prototype.setValue = function(key, value) {
   if (this.obj_[key] !== value) {
     this.beginChanging();
     if (value !== undefined) {
@@ -259,7 +258,7 @@ wtf.util.Options.prototype.getOptionalBoolean = function(
  * @param {boolean|undefined} value New value or undefined to remove.
  */
 wtf.util.Options.prototype.setBoolean = function(key, value) {
-  this.setValue_(key, value);
+  this.setValue(key, value);
 };
 
 
@@ -308,7 +307,7 @@ wtf.util.Options.prototype.getOptionalNumber = function(key, opt_defaultValue) {
  * @param {number|undefined} value New value or undefined to remove.
  */
 wtf.util.Options.prototype.setNumber = function(key, value) {
-  this.setValue_(key, value);
+  this.setValue(key, value);
 };
 
 
@@ -352,7 +351,7 @@ wtf.util.Options.prototype.getOptionalString = function(key, opt_defaultValue) {
  * @param {string|undefined} value New value or undefined to remove.
  */
 wtf.util.Options.prototype.setString = function(key, value) {
-  this.setValue_(key, value);
+  this.setValue(key, value);
 };
 
 
@@ -404,7 +403,7 @@ wtf.util.Options.prototype.addArrayValue = function(key, value) {
     return;
   }
   array.push(value);
-  this.setValue_(key, array);
+  this.setValue(key, array);
 };
 
 
@@ -416,6 +415,6 @@ wtf.util.Options.prototype.addArrayValue = function(key, value) {
 wtf.util.Options.prototype.removeArrayValue = function(key, value) {
   var array = this.getArray(key, []);
   if (goog.array.remove(array, value)) {
-    this.setValue_(key, array.length ? array : undefined);
+    this.setValue(key, array.length ? array : undefined);
   }
 };

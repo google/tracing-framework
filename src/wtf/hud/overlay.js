@@ -13,6 +13,7 @@
 
 goog.provide('wtf.hud.Overlay');
 
+goog.require('goog.Uri');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
@@ -621,6 +622,43 @@ wtf.hud.Overlay.prototype.sendSnapshot_ = function(opt_newWindow) {
 
 
 /**
+ * Gets a fallback URL for the app maindisplay.html page.
+ * This tries to guess the URL by looking for the WTF <script> tag, falling back
+ * to a well-known address if that fails.
+ * @return {string} URL of the maindisplay.html file.
+ * @private
+ */
+wtf.hud.Overlay.prototype.getMainDisplayUrl_ = function() {
+  // If we are compiled we can pull from the main appspot hosting site.
+  // Otherwise, we are debug and should force to the current host.
+  var baseUrl;
+  if (COMPILED) {
+    baseUrl = '//tracing-framework.appspot.com/CURRENT/';
+
+    // If we find a script tag on the page with the injector js we can use that
+    // as our base instead.
+    var dom = this.getDom();
+    var scripts = dom.getElementsByTagNameAndClass(goog.dom.TagName.SCRIPT);
+    for (var n = 0; n < scripts.length; n++) {
+      var script = scripts[n];
+      if (script.src &&
+          goog.string.endsWith(script.src, 'wtf_trace_web_js_compiled.js')) {
+        // Use this as the script base.
+        baseUrl = script.src;
+        break;
+      }
+    }
+  } else {
+    var uri = new goog.Uri(goog.global.location.toString());
+    uri.setPath('');
+    baseUrl = uri.toString();
+  }
+  var uri = goog.Uri.resolve(baseUrl, 'app/maindisplay.html');
+  return uri.toString();
+};
+
+
+/**
  * Sends a snapshot to a webpage via message channel.
  * @param {string=} opt_endpoint Target URL.
  * @param {boolean=} opt_newWindow Force into a new window.
@@ -633,7 +671,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
   // immediately when requested.
   wtf.trace.snapshotAll(function(blobs) {
     // Get the page URL.
-    var endpoint = opt_endpoint || 'http://localhost:8080/app/maindisplay.html';
+    var endpoint = opt_endpoint || this.getMainDisplayUrl_();
 
     var contentLength = 0;
     for (var n = 0; n < blobs.length; n++) {

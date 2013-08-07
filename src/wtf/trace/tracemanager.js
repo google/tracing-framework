@@ -81,8 +81,6 @@ wtf.trace.TraceManager = function(opt_options) {
 
   var options = new wtf.util.Options();
   options.mixin(opt_options);
-  options.mixin(goog.global['wtf_trace_options']);
-  options.mixin(goog.global['wtf_hud_options']);
 
   // If we don't have an extension try to load settings from local storage.
   if (goog.global.localStorage) {
@@ -98,6 +96,25 @@ wtf.trace.TraceManager = function(opt_options) {
       goog.global.localStorage.removeItem('__wtf_options__');
     }
   }
+
+  // Always prefer certain options from the user to stored ones.
+  // If we don't do this, things like the injector setting will be saved.
+  var OVERRIDE_KEYS = [
+    'wtf.injector',
+    'wtf.hud.app.mode',
+    'wtf.hud.app.endpoint',
+    'wtf.addons',
+    'wtf.trace.provider.chromeDebug.present',
+    'wtf.trace.provider.chromeDebug.tracing'
+  ];
+  for (var n = 0; n < OVERRIDE_KEYS.length; n++) {
+    var key = OVERRIDE_KEYS[n];
+    options.setValue(key, opt_options ? opt_options[key] : undefined);
+  }
+
+  // Mixin any global overrides, if present.
+  options.mixin(goog.global['wtf_trace_options']);
+  options.mixin(goog.global['wtf_hud_options']);
 
   /**
    * Global options.
