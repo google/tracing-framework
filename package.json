@@ -28,7 +28,7 @@
   "devDependencies": {
     "benchmark": "1.0.0",
     "chai": "1.2.0",
-    "less": "1.4.0",
+    "less": "1.4.2",
     "mocha": "1.4.2",
     "pegjs": "~0.7.0",
     "wd": "0.0.32"
