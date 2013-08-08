@@ -200,11 +200,22 @@ wtf.ui.Dialog.Shield_ = function(dialog, clickToClose) {
 
   var dom = dialog.getDom();
 
+  /**
+   * Wrapper with wtfReset.
+   * This is the root shield element in the DOM.
+   * @type {!Element}
+   * @private
+   */
+  this.wrapper_ = dom.createElement(goog.dom.TagName.DIV);
+  goog.dom.classes.add(this.wrapper_, goog.getCssName('wtfReset'));
+
+  // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('uiDialogShield'));
   wtf.timing.setImmediate(function() {
     goog.dom.classes.add(el, goog.getCssName('uiDialogShieldPoppedIn'));
   });
+  dom.appendChild(this.wrapper_, el);
 
   /**
    * Shield element.
@@ -229,7 +240,7 @@ wtf.ui.Dialog.Shield_ = function(dialog, clickToClose) {
 
   // Add to document.
   var doc = dom.getDocument();
-  doc.body.appendChild(el);
+  doc.body.appendChild(this.wrapper_);
 };
 goog.inherits(wtf.ui.Dialog.Shield_, goog.Disposable);
 
@@ -238,10 +249,14 @@ goog.inherits(wtf.ui.Dialog.Shield_, goog.Disposable);
  * @override
  */
 wtf.ui.Dialog.Shield_.prototype.disposeInternal = function() {
-  var el = this.el_;
-  goog.dom.classes.remove(el, goog.getCssName('uiDialogShieldPoppedIn'));
+  // Start fade out animation.
+  goog.dom.classes.remove(this.el_, goog.getCssName('uiDialogShieldPoppedIn'));
+
+  // After the animation completes remove everything from the DOM.
+  var wrapper = this.wrapper_;
   wtf.timing.setTimeout(218, function() {
-    goog.dom.removeNode(el);
-  });
+    goog.dom.removeNode(wrapper);
+  }, this);
+
   goog.base(this, 'disposeInternal');
 };

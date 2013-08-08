@@ -526,7 +526,7 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
   var body = dom.getDocument().body;
   goog.asserts.assert(body);
   var dialog = new wtf.ui.SettingsDialog(
-      this.options_, 'Tracing Settings', body, dom);
+      this.options_, 'Tracing Settings', this.getParentElement(), dom);
 
   // Add provider sections.
   var traceManager = wtf.trace.getTraceManager();

@@ -16,10 +16,9 @@
   z-index: 99999;
   background-color: #DFDFDF;
   border: 1px solid #C1C1C1;
-  border-radius: 2px;
-}
 
-.hudControl {
+  /* hack to force compositor layer */
+  -webkit-transform: translateZ(0);
 }
 
 .hudGraph {
@@ -102,4 +101,5 @@
 }
 
 .hudSplitter {
+  position: absolute;
 }
