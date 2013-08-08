@@ -17,7 +17,7 @@ For documentation, tutorials, etc see the [main Web Tracing Framework website](h
 For a list of known issues see [KNOWN_ISSUES](https://github.com/google/tracing-framework/blob/master/KNOWN_ISSUES.md)
 or the Github issues list.
 
-[![Screenshot](https://raw.github.com/google/tracing-framework/master/docs/assets/screenshot-1.png)](http://google.github.io/tracing-framework/)
+[![Screenshot](https://raw.github.com/google/tracing-framework/master/assets/store/screenshot-1.png)](http://google.github.io/tracing-framework/)
 
 ## Setup
 
