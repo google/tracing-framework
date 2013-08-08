@@ -63,11 +63,14 @@ wtf.replay.graphics.ExtensionManager.PREFIXES = ['MOZ_', 'WEBKIT_'];
  */
 wtf.replay.graphics.ExtensionManager.prototype.getSupportedExtensions_ =
     function() {
-  var webglContext = this.contextPool_.getContext('webgl') ||
+  var gl = this.contextPool_.getContext('webgl') ||
       this.contextPool_.getContext('experimental-webgl');
-  var supportedExtensions =
-      goog.object.createSet(webglContext.getSupportedExtensions());
-  this.contextPool_.releaseContext(webglContext);
+  if (!gl) {
+    throw new Error('Unable to get WebGL context.');
+  }
+  var extensionList = gl.getSupportedExtensions();
+  var supportedExtensions = goog.object.createSet(extensionList);
+  this.contextPool_.releaseContext(gl);
   return supportedExtensions;
 };
 

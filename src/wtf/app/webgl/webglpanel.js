@@ -18,6 +18,7 @@ goog.require('wtf.app.TabPanel');
 goog.require('wtf.app.webgl.webglpanel');
 goog.require('wtf.events');
 goog.require('wtf.replay.graphics');
+goog.require('wtf.ui.ErrorDialog');
 
 
 
@@ -70,9 +71,20 @@ wtf.app.webgl.WebGLPanel.prototype.ensureSessionCreated_ = function() {
   var db = doc.getDatabase();
 
   // Create the session.
-  this.session_ = wtf.replay.graphics.setup(
-      db, this.getRootElement(), this.getDom());
-  this.registerDisposable(this.session_);
+  try {
+    this.session_ = wtf.replay.graphics.setup(
+        db, this.getRootElement(), this.getDom());
+    this.registerDisposable(this.session_);
+  } catch (e) {
+    wtf.ui.ErrorDialog.show(
+        'Unable to setup replay',
+        'Ensure WebGL hasn\'t crashed (check for a ' +
+        '<a href="https://support.google.com/chrome/answer/2905826?hl=en" ' +
+        'target="_blank">Rats! WebGL hit a snag</a> bar above). You can try ' +
+        'reloading the page or restarting your browser.\n\n' + e.toString(),
+        this.getDom());
+    return;
+  }
 
   // Initial layout.
   this.session_.layout();
