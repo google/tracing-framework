@@ -39,13 +39,10 @@
   "files": [
     "build-out/wtf_node_js_compiled.js",
     "bin/",
+    "docs/",
     "AUTHORS",
     "CONTRIBUTORS.md",
-    "LICENSE",
-    "docs/node.md",
-    "docs/options.md",
-    "docs/wtf-json.md",
-    "docs/wtf-trace.md"
+    "LICENSE"
   ],
   "main": "./build-out/wtf_node_js_compiled",
   "bin": {

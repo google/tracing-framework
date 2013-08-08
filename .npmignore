@@ -1,0 +1,3 @@
+# Don't remove this file. It is needed to prevent npm from looking in the
+# .gitignore file and excluding our build output from the package.
+# What a terrible feature. Sigh.
