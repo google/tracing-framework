@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13758624E5
+  return 13759488E5
 };
 wtf.version.getCommit = function() {
-  return"c2f6d36d4486bc9e5643e6a063dd6fa08f7ee112"
+  return"89dbe021265711a495ff6308735e5389603dd2bd"
 };
 wtf.version.toString = function() {
-  return"2013.8.7-1"
+  return"2013.8.8-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -13303,7 +13303,7 @@ wtf.util.Options.prototype.mixin = function(a) {
     this.endChanging()
   }
 };
-wtf.util.Options.prototype.setValue_ = function(a, b) {
+wtf.util.Options.prototype.setValue = function(a, b) {
   this.obj_[a] !== b && (this.beginChanging(), void 0 !== b ? this.obj_[a] = b : delete this.obj_[a], this.changedKeys_[a] = !0, this.endChanging())
 };
 wtf.util.Options.prototype.getBoolean = function(a, b) {
@@ -13317,7 +13317,7 @@ wtf.util.Options.prototype.getOptionalBoolean = function(a, b) {
   return c
 };
 wtf.util.Options.prototype.setBoolean = function(a, b) {
-  this.setValue_(a, b)
+  this.setValue(a, b)
 };
 wtf.util.Options.prototype.getNumber = function(a, b) {
   var c = this.obj_[a];
@@ -13330,7 +13330,7 @@ wtf.util.Options.prototype.getOptionalNumber = function(a, b) {
   return c
 };
 wtf.util.Options.prototype.setNumber = function(a, b) {
-  this.setValue_(a, b)
+  this.setValue(a, b)
 };
 wtf.util.Options.prototype.getString = function(a, b) {
   var c = this.obj_[a];
@@ -13343,7 +13343,7 @@ wtf.util.Options.prototype.getOptionalString = function(a, b) {
   return c
 };
 wtf.util.Options.prototype.setString = function(a, b) {
-  this.setValue_(a, b)
+  this.setValue(a, b)
 };
 wtf.util.Options.prototype.getArray = function(a, b) {
   var c = this.obj_[a];
@@ -13357,11 +13357,11 @@ wtf.util.Options.prototype.getOptionalArray = function(a, b) {
 };
 wtf.util.Options.prototype.addArrayValue = function(a, b) {
   var c = this.getArray(a, []);
-  goog.array.contains(c, b) || (c.push(b), this.setValue_(a, c))
+  goog.array.contains(c, b) || (c.push(b), this.setValue(a, c))
 };
 wtf.util.Options.prototype.removeArrayValue = function(a, b) {
   var c = this.getArray(a, []);
-  goog.array.remove(c, b) && this.setValue_(a, c.length ? c : void 0)
+  goog.array.remove(c, b) && this.setValue(a, c.length ? c : void 0)
 };
 // Input 161
 wtf.trace.ISessionListener = function() {
@@ -13373,9 +13373,20 @@ wtf.trace.TraceManager = function(a) {
   goog.Disposable.call(this);
   var b = new wtf.util.Options;
   b.mixin(a);
+  if(goog.global.localStorage) {
+    if(b.getOptionalBoolean("wtf.injector", !1)) {
+      goog.global.localStorage.removeItem("__wtf_options__")
+    }else {
+      var c = goog.global.localStorage.getItem("__wtf_options__");
+      c && b.load(c)
+    }
+  }
+  for(var c = "wtf.injector wtf.hud.app.mode wtf.hud.app.endpoint wtf.addons wtf.trace.provider.chromeDebug.present wtf.trace.provider.chromeDebug.tracing".split(" "), d = 0;d < c.length;d++) {
+    var e = c[d];
+    b.setValue(e, a ? a[e] : void 0)
+  }
   b.mixin(goog.global.wtf_trace_options);
   b.mixin(goog.global.wtf_hud_options);
-  goog.global.localStorage && (b.getOptionalBoolean("wtf.injector", !1) ? goog.global.localStorage.removeItem("__wtf_options__") : (a = goog.global.localStorage.getItem("__wtf_options__")) && b.load(a));
   this.options_ = b;
   this.listeners_ = [];
   this.providers_ = [];
@@ -13384,8 +13395,8 @@ wtf.trace.TraceManager = function(a) {
   this.allZones_ = {};
   this.currentSession_ = null;
   wtf.trace.EventRegistry.getShared().addListener(wtf.trace.EventRegistry.EventType.EVENT_TYPE_REGISTERED, this.eventTypeRegistered_, this);
-  b = this.createZone("Script", wtf.data.ZoneType.SCRIPT, wtf.NODE ? goog.global.process.argv[1] : goog.global.location.href);
-  this.pushZone(b)
+  a = this.createZone("Script", wtf.data.ZoneType.SCRIPT, wtf.NODE ? goog.global.process.argv[1] : goog.global.location.href);
+  this.pushZone(a)
 };
 goog.inherits(wtf.trace.TraceManager, goog.Disposable);
 wtf.trace.TraceManager.prototype.disposeInternal = function() {
