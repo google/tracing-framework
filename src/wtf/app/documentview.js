@@ -27,10 +27,10 @@ goog.require('wtf.app.Statusbar');
 goog.require('wtf.app.Tabbar');
 goog.require('wtf.app.Toolbar');
 goog.require('wtf.app.documentview');
+goog.require('wtf.app.graphics.CanvasPanel');
 goog.require('wtf.app.nav.Navbar');
 goog.require('wtf.app.query.QueryPanel');
 goog.require('wtf.app.tracks.TracksPanel');
-goog.require('wtf.app.webgl.WebGLPanel');
 goog.require('wtf.db.BlobDataSourceInfo');
 goog.require('wtf.db.DriveDataSourceInfo');
 goog.require('wtf.db.HealthInfo');
@@ -444,9 +444,9 @@ wtf.app.DocumentView.prototype.databaseInvalidated_ = function() {
   // TODO(benvanik): add a new event that indicates the file is replayable.
   var hasWebGLEvents = !!db.getEventType('wtf.webgl#createContext');
   if (hasWebGLEvents) {
-    var panel = this.tabbar_.getPanel('webgl');
+    var panel = this.tabbar_.getPanel('canvas');
     if (!panel) {
-      this.tabbar_.addPanel(new wtf.app.webgl.WebGLPanel(this));
+      this.tabbar_.addPanel(new wtf.app.graphics.CanvasPanel(this));
     }
   }
 };

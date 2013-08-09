@@ -6,16 +6,16 @@
  */
 
 /**
- * @fileoverview 'WebGL' panel.
+ * @fileoverview 'Canvas' panel.
  *
  * @author benvanik@google.com (Ben Vanik)
  */
 
-goog.provide('wtf.app.webgl.WebGLPanel');
+goog.provide('wtf.app.graphics.CanvasPanel');
 
 goog.require('goog.soy');
 goog.require('wtf.app.TabPanel');
-goog.require('wtf.app.webgl.webglpanel');
+goog.require('wtf.app.graphics.canvaspanel');
 goog.require('wtf.events');
 goog.require('wtf.replay.graphics');
 goog.require('wtf.ui.ErrorDialog');
@@ -28,8 +28,8 @@ goog.require('wtf.ui.ErrorDialog');
  * @constructor
  * @extends {wtf.app.TabPanel}
  */
-wtf.app.webgl.WebGLPanel = function(documentView) {
-  goog.base(this, documentView, 'webgl', 'WebGL');
+wtf.app.graphics.CanvasPanel = function(documentView) {
+  goog.base(this, documentView, 'canvas', 'Canvas/WebGL');
 
   /**
    * Graphics replay session.
@@ -41,19 +41,19 @@ wtf.app.webgl.WebGLPanel = function(documentView) {
 
   var commandManager = wtf.events.getCommandManager();
   commandManager.registerSimpleCommand(
-      'goto_webgl_step', function(source, target, expression) {
-        // TODO(benvanik): go to webgl step/frame/whatever.
+      'goto_canvas_step', function(source, target, expression) {
+        // TODO(benvanik): go to graphics step/frame/whatever.
       }, this);
 };
-goog.inherits(wtf.app.webgl.WebGLPanel, wtf.app.TabPanel);
+goog.inherits(wtf.app.graphics.CanvasPanel, wtf.app.TabPanel);
 
 
 /**
  * @override
  */
-wtf.app.webgl.WebGLPanel.prototype.disposeInternal = function() {
+wtf.app.graphics.CanvasPanel.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
-  commandManager.unregisterCommand('goto_webgl_step');
+  commandManager.unregisterCommand('goto_canvas_step');
   goog.base(this, 'disposeInternal');
 };
 
@@ -62,7 +62,7 @@ wtf.app.webgl.WebGLPanel.prototype.disposeInternal = function() {
  * Ensures that the replay session is created, creating it if needed.
  * @private
  */
-wtf.app.webgl.WebGLPanel.prototype.ensureSessionCreated_ = function() {
+wtf.app.graphics.CanvasPanel.prototype.ensureSessionCreated_ = function() {
   if (this.session_) {
     return;
   }
@@ -94,16 +94,16 @@ wtf.app.webgl.WebGLPanel.prototype.ensureSessionCreated_ = function() {
 /**
  * @override
  */
-wtf.app.webgl.WebGLPanel.prototype.createDom = function(dom) {
+wtf.app.graphics.CanvasPanel.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
-      wtf.app.webgl.webglpanel.control, undefined, undefined, dom));
+      wtf.app.graphics.canvaspanel.control, undefined, undefined, dom));
 };
 
 
 /**
  * @override
  */
-wtf.app.webgl.WebGLPanel.prototype.layoutInternal = function() {
+wtf.app.graphics.CanvasPanel.prototype.layoutInternal = function() {
   if (this.session_) {
     this.session_.layout();
   }
@@ -113,7 +113,7 @@ wtf.app.webgl.WebGLPanel.prototype.layoutInternal = function() {
 /**
  * @override
  */
-wtf.app.webgl.WebGLPanel.prototype.setVisible = function(value) {
+wtf.app.graphics.CanvasPanel.prototype.setVisible = function(value) {
   goog.base(this, 'setVisible', value);
 
   // Create session when first set visible.
@@ -126,6 +126,6 @@ wtf.app.webgl.WebGLPanel.prototype.setVisible = function(value) {
 /**
  * @override
  */
-wtf.app.webgl.WebGLPanel.prototype.navigate = function(pathParts) {
+wtf.app.graphics.CanvasPanel.prototype.navigate = function(pathParts) {
   // TODO(benvanik): support navigation (to steps, resources, etc).
 };
