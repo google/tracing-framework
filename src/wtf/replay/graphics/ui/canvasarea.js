@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.CanvasesArea');
 
+goog.require('goog.object');
 goog.require('goog.soy');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.ContextBox');
@@ -43,6 +44,13 @@ wtf.replay.graphics.ui.CanvasesArea = function(
    */
   this.displayedContexts_ = {};
 
+  /**
+   * Whether the canvases are currently resized to fit the area.
+   * @type {boolean}
+   * @private
+   */
+  this.resizeCanvasesToFit_ = false;
+
   // Add contexts as they are made. Delete them as they are destroyed.
   this.trackDisplayingOfContexts_(playback);
 };
@@ -56,6 +64,38 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.disposeInternal = function() {
   var contextBoxes = this.displayedContexts_;
   for (var contextHandle in contextBoxes) {
     goog.dispose(contextBoxes[contextHandle]);
+  }
+};
+
+
+/**
+ * Gets whether the feature to resize canvases to fit is turned on.
+ * @return {boolean}
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.getResizeCanvasesToFit =
+    function() {
+  return this.resizeCanvasesToFit_;
+};
+
+
+/**
+ * Sets whether the feature to resize canvases to fit is turned on.
+ * @param {boolean} resizeCanvasesToFit Whether the feature to resize canvases
+ *     to fit is turned on.
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.setResizeCanvasesToFit =
+    function(resizeCanvasesToFit) {
+  if (resizeCanvasesToFit == this.resizeCanvasesToFit_) {
+    // Nothing to do. Already set to this option.
+    return;
+  }
+
+  this.resizeCanvasesToFit_ = resizeCanvasesToFit;
+  if (resizeCanvasesToFit) {
+    // Resize canvases so they fit.
+    this.resizeToFit_();
+  } else {
+    this.resizeToOriginalSizes_();
   }
 };
 
@@ -84,6 +124,111 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.createDom = function(dom) {
 
 
 /**
+ * Resizes canvases to their original sizes.
+ * @private
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.resizeToOriginalSizes_ =
+    function() {
+  var contextBoxes = this.displayedContexts_;
+  for (var contextHandle in contextBoxes) {
+    contextBoxes[contextHandle].resetCanvasDimensions();
+  }
+};
+
+
+/**
+ * Resizes canvases so they fit within the area.
+ * @private
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.resizeToFit_ = function() {
+  var contextBoxes = this.displayedContexts_;
+  if (goog.object.isEmpty(contextBoxes)) {
+    // No need to resize if no canvases are displayed.
+    return;
+  }
+
+  // Find the aspect ratio of the limiting container element.
+  var limitingContainer = this.getDom().getElementByClass(
+      goog.getCssName('graphicsReplayMainDisplay'));
+  var limitingWidth = limitingContainer.clientWidth;
+  var limitingHeight = limitingContainer.clientHeight;
+  var limitingContainerAspectRatio = limitingWidth / limitingHeight;
+
+  // Find the aspect ratio of the canvases.
+  var canvasesHeight = 0;
+  var canvasesWidth = 0;
+  for (var contextHandle in contextBoxes) {
+    // Include room for margins.
+    canvasesHeight += contextBoxes[contextHandle].getHeight() + 12;
+    var newCanvasesWidth = contextBoxes[contextHandle].getWidth() + 12;
+    if (newCanvasesWidth > canvasesWidth) {
+      canvasesWidth = newCanvasesWidth;
+    }
+  }
+  var originalAspectRatio = canvasesWidth / canvasesHeight;
+
+  if (limitingContainerAspectRatio < originalAspectRatio) {
+    // The width is limiting.
+    for (var contextHandle in contextBoxes) {
+      var allotedWidth = Math.floor(contextBoxes[contextHandle].getWidth() *
+          limitingWidth / canvasesWidth);
+      var newWidth = allotedWidth - 12;
+
+      // The width cannot be less than the minimum.
+      var minWidth = wtf.replay.graphics.ui.ContextBox.MIN_WIDTH;
+      if (newWidth < minWidth) {
+        newWidth = minWidth;
+      }
+
+      // The new width should also not exceed the original width.
+      var nativeWidth =
+          contextBoxes[contextHandle].getNativeCanvasWidth();
+      if (newWidth > nativeWidth) {
+        newWidth = nativeWidth;
+      }
+
+      // Scale the height accordingly.
+      var newHeight =
+          Math.floor(contextBoxes[contextHandle].getNativeCanvasHeight() *
+              newWidth / nativeWidth);
+
+      contextBoxes[contextHandle].setCanvasDimensions(newWidth, newHeight);
+    }
+  } else {
+    // The height is limiting.
+    for (var contextHandle in contextBoxes) {
+      var allotedHeight = Math.floor(contextBoxes[contextHandle].getHeight() *
+          limitingHeight / canvasesHeight);
+
+      // Take out the height of the label and margin.
+      var newHeight = allotedHeight - 36;
+
+      // The new height should not make the width less than the minimum width.
+      var nativeCanvasWidth =
+          contextBoxes[contextHandle].getNativeCanvasWidth();
+      var nativeCanvasHeight =
+          contextBoxes[contextHandle].getNativeCanvasHeight();
+      var minHeight = contextBoxes[contextHandle].getMinCanvasHeight();
+      if (newHeight < minHeight) {
+        newHeight = minHeight;
+      }
+
+      // The new height should also not exceed the original height.
+      if (newHeight > nativeCanvasHeight) {
+        newHeight = nativeCanvasHeight;
+      }
+
+      // Scale the width accordingly.
+      var newWidth = Math.ceil(
+          nativeCanvasWidth * newHeight / nativeCanvasHeight);
+
+      contextBoxes[contextHandle].setCanvasDimensions(newWidth, newHeight);
+    }
+  }
+};
+
+
+/**
  * Listens to the creation and destruction of canvases.
  * @param {!wtf.replay.graphics.Playback} playback The playback.
  * @private
@@ -98,6 +243,9 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
         } else {
           var contextBox = this.displayedContexts_[contextHandle];
           contextBox.update();
+        }
+        if (this.resizeCanvasesToFit_) {
+          this.resizeToFit_();
         }
       }, this);
 
@@ -140,4 +288,14 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.removeContext_ = function(
   this.getRootElement().removeChild(contextBox.getRootElement());
   goog.dispose(contextBox);
   delete this.displayedContexts_[contextHandle];
+};
+
+
+/**
+ * Lays out the area where the canvases are displayed.
+ */
+wtf.replay.graphics.ui.CanvasesArea.prototype.layout = function() {
+  if (this.resizeCanvasesToFit_) {
+    this.resizeToFit_();
+  }
 };

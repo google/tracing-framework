@@ -15,6 +15,7 @@ goog.provide('wtf.replay.graphics.ui.ContextBox');
 
 goog.require('goog.dom');
 goog.require('goog.soy');
+goog.require('goog.style');
 goog.require('wtf.replay.graphics.ui.contextBox');
 goog.require('wtf.ui.Control');
 
@@ -50,6 +51,30 @@ wtf.replay.graphics.ui.ContextBox = function(
   this.contextHandle_ = contextHandle;
 
   /**
+   * The native width of the canvas.
+   * @type {number}
+   * @private
+   */
+  this.nativeWidth_ = context.drawingBufferWidth;
+
+  /**
+   * The native height of the canvas.
+   * @type {number}
+   * @private
+   */
+  this.nativeHeight_ = context.drawingBufferHeight;
+
+  /**
+   * The minimum height that the canvas can take on. This takes into account
+   * the minimum width, so a canvas that has a height that is greater than or
+   * equal to the minimum height also has a width that is greater than or equal
+   * to the minimum width.
+   * @type {number}
+   * @private
+   */
+  this.minimumHeight_ = this.calculateMinCanvasHeight_();
+
+  /**
    * The context this box encapsulates.
    * @type {!WebGLRenderingContext}
    * @private
@@ -60,6 +85,14 @@ wtf.replay.graphics.ui.ContextBox = function(
   this.update();
 };
 goog.inherits(wtf.replay.graphics.ui.ContextBox, wtf.ui.Control);
+
+
+/**
+ * The minimum width of a canvas within a content box in pixels.
+ * @type {number}
+ * @const
+ */
+wtf.replay.graphics.ui.ContextBox.MIN_WIDTH = 210;
 
 
 /**
@@ -92,7 +125,115 @@ wtf.replay.graphics.ui.ContextBox.prototype.appendCanvas_ = function() {
 wtf.replay.graphics.ui.ContextBox.prototype.update = function() {
   var width = this.context_.drawingBufferWidth;
   var height = this.context_.drawingBufferHeight;
+  this.nativeWidth_ = width;
+  this.nativeHeight_ = height;
+
+  // Update the minimum height that this canvas can take on.
+  this.minimumHeight_ = this.calculateMinCanvasHeight_();
+  this.updateLabel_();
+};
+
+
+/**
+ * Updates the label of the context.
+ * @private
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.updateLabel_ = function() {
+  var canvasDisplaySize = goog.style.getSize(this.context_.canvas);
+  var shrinkPercent =
+      Math.floor(canvasDisplaySize.width * 100 / this.nativeWidth_);
+
   var label =
-      'Context ' + this.contextHandle_ + ' (' + width + 'x' + height + ')';
+      'Context ' + this.contextHandle_ + ' (' + this.nativeWidth_ + 'x' +
+          this.nativeHeight_ + '): ' + shrinkPercent + '%';
   goog.dom.setTextContent(this.label_, label);
+};
+
+
+/**
+ * Returns the total height of the canvas box.
+ * @return {number} Total height of canvas box.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.getHeight = function() {
+  return this.getRootElement().clientHeight;
+};
+
+
+/**
+ * Returns the total width of the canvas box.
+ * @return {number} Total width of canvas box.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.getWidth = function() {
+  return this.getRootElement().clientWidth;
+};
+
+
+/**
+ * Returns the native height of the canvas.
+ * @return {number} Native height of canvas.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.getNativeCanvasHeight =
+    function() {
+  return this.nativeHeight_;
+};
+
+
+/**
+ * Returns the native width of the canvas.
+ * @return {number} Native width of canvas.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.getNativeCanvasWidth =
+    function() {
+  return this.nativeWidth_;
+};
+
+
+/**
+ * Calculates the minimum display height that the canvas can take on without
+ * having a width that is less than the minimum width.
+ * @return {number} The minimum height that the canvas can take on.
+ * @private
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.calculateMinCanvasHeight_ =
+    function() {
+  return Math.ceil(wtf.replay.graphics.ui.ContextBox.MIN_WIDTH *
+      this.nativeHeight_ / this.nativeWidth_);
+};
+
+
+/**
+ * Returns the minimum height that the canvas can take on.
+ * @return {number} The minimum height that the canvas can take on.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.getMinCanvasHeight = function() {
+  return this.minimumHeight_;
+};
+
+
+/**
+ * Sets the dimensions of the actual canvas element displayed.
+ * @param {number} width The width of the canvas.
+ * @param {number} height The height of the canvas.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.setCanvasDimensions = function(
+    width, height) {
+  var context = this.context_;
+  var canvas = context.canvas;
+
+  goog.style.setWidth(canvas, width);
+  goog.style.setHeight(canvas, height);
+  this.updateLabel_();
+};
+
+
+/**
+ * Resets the CSS sizes of the canvases to their native sizes.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.resetCanvasDimensions = function() {
+  var context = this.context_;
+  var canvas = context.canvas;
+
+  goog.style.setWidth(canvas, 'auto');
+  goog.style.setHeight(canvas, 'auto');
+  this.updateLabel_();
 };
