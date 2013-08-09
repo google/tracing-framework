@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.GraphicsPanel');
 
+goog.require('goog.dom');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
@@ -130,6 +131,27 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
           goog.getCssName('graphicsReplayMainDisplay')), this.getDom());
   this.registerDisposable(this.canvasesArea_);
 
+  /**
+   * A button for toggling whether canvases should be resized to fit.
+   * @type {!Element}
+   * @private
+   */
+  this.toggleResizeCanvasesButton_ = this.getChildElement(
+      goog.getCssName('resizeCanvasesToFitButton'));
+  this.getHandler().listen(
+      this.toggleResizeCanvasesButton_,
+      goog.events.EventType.CLICK,
+      function() {
+        var newValue = !this.canvasesArea_.getResizeCanvasesToFit();
+        this.canvasesArea_.setResizeCanvasesToFit(newValue);
+        var button = this.toggleResizeCanvasesButton_;
+        if (newValue) {
+          goog.dom.setTextContent(button, 'Use Real Sizes');
+        } else {
+          goog.dom.setTextContent(button, 'Resize to Fit');
+        }
+      }, false, this);
+
   // Initial layout once the DOM is ready.
   wtf.timing.setImmediate(function() {
     this.layout();
@@ -182,6 +204,7 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.layoutInternal = function() {
       this.mainSplitter_.getSplitterSize() + 'px');
 
   this.eventNavigator_.layout();
+  this.canvasesArea_.layout();
 };
 
 
