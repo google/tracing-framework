@@ -23,6 +23,7 @@ goog.require('goog.json');
 goog.require('goog.object');
 goog.require('goog.soy');
 goog.require('goog.string');
+goog.require('wtf.events.Keyboard');
 goog.require('wtf.replay.graphics.ui.argumentsdialog');
 goog.require('wtf.ui.Dialog');
 
@@ -53,8 +54,21 @@ wtf.replay.graphics.ui.ArgumentsDialog = function(it, dom) {
 
   // Create the form based on the event.
   this.createForm_();
+
+  var keyboard = wtf.events.Keyboard.getWindowKeyboard();
+  keyboard.suspend();
 };
 goog.inherits(wtf.replay.graphics.ui.ArgumentsDialog, wtf.ui.Dialog);
+
+
+/**
+ * @override
+ */
+wtf.replay.graphics.ui.ArgumentsDialog.prototype.disposeInternal = function() {
+  var keyboard = wtf.events.Keyboard.getWindowKeyboard();
+  keyboard.resume();
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
