@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13763808E5
+  return 13763844E5
 };
 wtf.version.getCommit = function() {
-  return"ea53c192a08aeddf49e76fbb189c32d892dfbcfc"
+  return"be3898d2630a3cf321ed0b44912664b242efc514"
 };
 wtf.version.toString = function() {
-  return"2013.8.13-1"
+  return"2013.8.13-2"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
