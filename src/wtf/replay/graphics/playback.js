@@ -195,6 +195,15 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.currentContext_ = null;
 
   /**
+   * Attribute values that override those of created contexts.
+   * For example, setting 'preserveDrawingBuffer: true' will force the value to
+   * true regardless of what the original recording specified.
+   * @type {!Object}
+   * @private
+   */
+  this.contextAttributeOverrides_ = {};
+
+  /**
    * The extension manager.
    * @type {!wtf.replay.graphics.ExtensionManager}
    * @private
@@ -269,6 +278,27 @@ wtf.replay.graphics.Playback.prototype.disposeInternal = function() {
   // Make sure to clear cached objects too, lest we leak GPU memory.
   this.clearWebGlObjects_(true);
   goog.base(this, 'disposeInternal');
+};
+
+
+/**
+ * Gets the current context attribute overrides.
+ * @return {!Object} Attribute overrides.
+ */
+wtf.replay.graphics.Playback.prototype.getContextAttributeOverrides =
+    function() {
+  return goog.object.clone(this.contextAttributeOverrides_);
+};
+
+
+/**
+ * Sets new context attribute overrides.
+ * Changes only take effect after resetting the playback.
+ * @param {!Object} value New override values.
+ */
+wtf.replay.graphics.Playback.prototype.setContextAttributeOverrides = function(
+    value) {
+  this.contextAttributeOverrides_ = goog.object.clone(value);
 };
 
 
@@ -1246,6 +1276,19 @@ wtf.replay.graphics.Playback.prototype.getContext = function(contextHandle) {
 
 
 /**
+ * Gets the attributes of a context by handle.
+ * This is the original set of attributes the context was created with, not
+ * the ones used by the playback engine (which may differ).
+ * @param {string} contextHandle Context handle.
+ * @return {Object} Attributes.
+ */
+wtf.replay.graphics.Playback.prototype.getContextAttributes = function(
+    contextHandle) {
+  return this.contextAttributes_[contextHandle] || null;
+};
+
+
+/**
  * Gets the number of steps.
  * @return {number} The number of steps.
  */
@@ -2127,12 +2170,20 @@ wtf.replay.graphics.Playback.CALLS_ = {
     } else {
       // Otherwise, make a new context.
 
+      // Force overrides.
+      var createAttributes = goog.object.clone(attributes || {});
+      for (var key in playback.contextAttributeOverrides_) {
+        if (playback.contextAttributeOverrides_[key] !== undefined) {
+          createAttributes[key] = playback.contextAttributeOverrides_[key];
+        }
+      }
+
       // Assume that the context is a WebGL one for now.
       gl =
           playback.contextPool_.getContext(
-              'webgl', attributes, width, height) ||
+              'webgl', createAttributes, width, height) ||
           playback.contextPool_.getContext(
-              'experimental-webgl', attributes, width, height);
+              'experimental-webgl', createAttributes, width, height);
 
       if (!gl) {
         // WebGL is not supported.

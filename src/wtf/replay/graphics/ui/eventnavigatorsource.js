@@ -664,7 +664,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
     if (context) {
       lines.push('width: ' + context.drawingBufferWidth);
       lines.push('height: ' + context.drawingBufferHeight);
-      var attributes = context.getContextAttributes();
+      var attributes = this.playback_.getContextAttributes(contextHandle);
       lines.push('attributes:');
       for (var key in attributes) {
         if (attributes.hasOwnProperty(key)) {

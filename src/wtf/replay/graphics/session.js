@@ -62,6 +62,12 @@ wtf.replay.graphics.Session = function(db, parentElement, opt_domHelper) {
       zone.getEventList(), zone.getFrameList(), this.contextPool_);
   this.registerDisposable(this.playback_);
 
+  // TODO(benvanik): move this out of here - right now since the UI is hardcoded
+  //     into this it's fine, but other uses of the session may not want this.
+  this.playback_.setContextAttributeOverrides({
+    'preserveDrawingBuffer': true
+  });
+
   /**
    * A panel for controlling graphics replay.
    * @type {!wtf.replay.graphics.ui.GraphicsPanel}
