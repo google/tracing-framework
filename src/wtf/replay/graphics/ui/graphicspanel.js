@@ -141,16 +141,8 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
   this.getHandler().listen(
       this.toggleResizeCanvasesButton_,
       goog.events.EventType.CLICK,
-      function() {
-        var newValue = !this.canvasesArea_.getResizeCanvasesToFit();
-        this.canvasesArea_.setResizeCanvasesToFit(newValue);
-        var button = this.toggleResizeCanvasesButton_;
-        if (newValue) {
-          goog.dom.setTextContent(button, 'Use Real Sizes');
-        } else {
-          goog.dom.setTextContent(button, 'Resize to Fit');
-        }
-      }, false, this);
+      this.toggleResizeCanvases_, false, this);
+  this.toggleResizeCanvases_();
 
   // Initial layout once the DOM is ready.
   wtf.timing.setImmediate(function() {
@@ -278,5 +270,22 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.dispatchSeekToFrame_ =
     it.seek(it.getCount() - 1);
     var timeRight = it.getTime();
     commandManager.execute('goto_range', this, null, timeLeft, timeRight, true);
+  }
+};
+
+
+/**
+ * Toggles the resize canvas mode.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsPanel.prototype.toggleResizeCanvases_ =
+    function() {
+  var newValue = !this.canvasesArea_.getResizeCanvasesToFit();
+  this.canvasesArea_.setResizeCanvasesToFit(newValue);
+  var button = this.toggleResizeCanvasesButton_;
+  if (newValue) {
+    goog.dom.setTextContent(button, 'Use Real Sizes');
+  } else {
+    goog.dom.setTextContent(button, 'Resize to Fit');
   }
 };
