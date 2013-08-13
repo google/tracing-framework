@@ -200,6 +200,7 @@ table{border-collapse:collapse;border-spacing:0}
 .appUiToolbar .healthPane{float:left;margin-top:15px;height:100%;left:50%;right:50%}.appUiToolbar .healthPane .warning{font-weight:bold}
 .appUiToolbar .rightPane{position:relative;top:6px;bottom:6px;float:right}.appUiToolbar .rightPane .viewers{float:left;margin-right:6px;margin-top:6px;font-size:12px;color:#777}
 .appUiToolbar .rightPane .buttons{float:left}
+.appUiCanvasPanel{position:absolute;left:0;right:0;top:0;bottom:0}
 .appUiNavbar{position:relative;left:0;right:0;top:0;height:130px;overflow:hidden;background:#fff}.appUiNavbar .outer{position:absolute;left:0;right:0;height:100%;margin-right:301px;border-right:1px solid #ebebeb;overflow:hidden}.appUiNavbar .outer .canvas{cursor:crosshair}
 .appUiNavbar .outer .canvasOverlay{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;overflow:hidden;margin-top:16px}.appUiNavbar .outer .canvasOverlay .view{position:absolute;bottom:0;top:0;background-color:rgba(0,0,0,0.1);border-left:1px solid #ddd;border-right:1px solid #ddd}
 .appUiNavbar .boxesOuter{position:absolute;top:0;bottom:0;right:0;width:300px}.appUiNavbar .boxesOuter .boxes{position:absolute;left:0;right:0;top:0;bottom:0;overflow-x:hidden;overflow-y:auto}
@@ -225,7 +226,6 @@ table{border-collapse:collapse;border-spacing:0}
 .appUiTracksPanelInfo>.content{position:absolute;left:-2px;right:0;top:40px;bottom:0;overflow:hidden}.appUiTracksPanelInfo>.content .resultsOuter{position:absolute;width:100%;top:0;bottom:0;overflow-x:hidden;overflow-y:auto}.appUiTracksPanelInfo>.content .resultsOuter .results{position:absolute;left:0;right:0;top:0;bottom:0;cursor:pointer}
 .appUiTracksPanel .canvasOuter{position:absolute;left:0;right:0;top:0;bottom:0;margin-right:300px;border-right:1px solid #ebebeb;overflow:hidden}
 .appUiTracksPanel .tracksCanvas{cursor:crosshair}
-.appUiQueryPanel{position:absolute;left:0;right:0;top:0;bottom:0}
 .replayTimeTravelController{position:absolute;left:0;right:0;top:0;bottom:0}
 .graphicsReplayArgumentsDialog{height:auto}.graphicsReplayArgumentsDialog .form{}.graphicsReplayArgumentsDialog .form .header .buttons .kButton{margin:0 0 0 16px}
 .graphicsReplayArgumentsDialog .form .contents{margin:0 0 0 40px;position:static}
@@ -241,6 +241,7 @@ table{border-collapse:collapse;border-spacing:0}
 .graphicsReplayEventNavigatorToolbar .rightButtons{width:1%;padding-left:5px}
 .graphicsReplayPanel .topRow{width:100%;margin:5px}.graphicsReplayPanel .topRow .toolbar{vertical-align:top;min-width:250px}
 .graphicsReplayPanel .topRow .rangeSeeker{vertical-align:top;width:100%}
+.graphicsReplayPanel .topRow .resizeCanvasesToFitButton{margin:0 20px 0 0;width:100px}
 .graphicsReplayPanel .graphicsReplayMainContent{position:absolute;left:0;top:40px;right:0;bottom:0;border-top:1px solid #ebebeb}
 .graphicsReplayPanel .graphicsReplayStepEventNavigation{position:absolute;left:0;top:0;bottom:0;width:525px;overflow:hidden;border-right:1px solid #ebebeb}.graphicsReplayPanel .graphicsReplayStepEventNavigation .graphicsReplayEventNavigatorContainer{position:absolute;left:0;right:0;top:0;bottom:0;margin-right:8px}
 .graphicsReplayPanel .graphicsReplayMainDisplay{position:absolute;left:525px;right:0;top:0;bottom:0;overflow-x:auto;overflow-y:auto}
