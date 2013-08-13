@@ -24,7 +24,7 @@ goog.provide('wtf.version');
  */
 wtf.version.getValue = function() {
   // Set via update-version.sh
-  return 1375948800000; // time
+  return 1376380800000; // time
 };
 
 
@@ -34,7 +34,7 @@ wtf.version.getValue = function() {
  */
 wtf.version.getCommit = function() {
   // Set via update-version.sh
-  return '89dbe021265711a495ff6308735e5389603dd2bd'; // sha
+  return 'ea53c192a08aeddf49e76fbb189c32d892dfbcfc'; // sha
 };
 
 
@@ -45,7 +45,7 @@ wtf.version.getCommit = function() {
  */
 wtf.version.toString = function() {
   // Set via update-version.sh
-  return '2013.8.8-1'; // string
+  return '2013.8.13-1'; // string
 };
 
 
