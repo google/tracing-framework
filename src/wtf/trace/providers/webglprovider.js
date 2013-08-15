@@ -435,6 +435,78 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     }
   };
 
+  /**
+   * Wraps the ANGLEInstancedArrays extension object.
+   * @param {!WebGLRenderingContext} ctx Target context.
+   * @param {!Object} proto Prototype object.
+   */
+  function wrapInstancedArrays(ctx, proto) {
+    /**
+     * @param {string} signature Event signature.
+     * @param {Function=} opt_generator Generator function.
+     */
+    function wrapInstancedArraysMethod(signature, opt_generator) {
+      wrapMethod(
+          proto, 'ANGLEInstancedArrays',
+          signature, opt_generator);
+    };
+
+    wrapInstancedArraysMethod(
+        'drawArraysInstancedANGLE(uint32 mode, uint32 first, int32 count, ' +
+            'int32 primcount)',
+        function(fn, eventType) {
+          return function drawArraysInstancedANGLE() {
+            setCurrentContext(ctx);
+            var scope = eventType.apply(this, arguments);
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+    wrapInstancedArraysMethod(
+        'drawElementsInstancedANGLE(uint32 mode, int32 count, uint32 type, ' +
+            'uint32 offset, int32 primcount)',
+        function(fn, eventType) {
+          return function drawElementsInstancedANGLE() {
+            setCurrentContext(ctx);
+            var scope = eventType.apply(this, arguments);
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+    wrapInstancedArraysMethod(
+        'vertexAttribDivisorANGLE(uint32 index, uint32 divisor)',
+        function(fn, eventType) {
+          return function vertexAttribDivisorANGLE() {
+            setCurrentContext(ctx);
+            var scope = eventType.apply(this, arguments);
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+  };
+
+  /**
+   * Wraps an extension object.
+   * This should be called for each extension object as it is returned from
+   * getExtension so that its prototype can be instrumented, as required.
+   * @param {!WebGLRenderingContext} ctx Target context.
+   * @param {string} name Extension name.
+   * @param {!Object} object Extension object.
+   */
+  function instrumentExtensionObject(ctx, name, object) {
+    var proto = object.constructor.prototype;
+    if (proto['__gl_wrapped__']) {
+      return;
+    }
+    proto['__gl_wrapped__'] = true;
+    contextRestoreFns.push(function() {
+      delete proto['__gl_wrapped__'];
+    });
+
+    switch (name) {
+      case 'ANGLE_instanced_arrays':
+        wrapInstancedArrays(ctx, proto);
+        break;
+    }
+  };
+
   wrapContextMethod(
       'getContextAttributes()');
   wrapContextMethod(
@@ -459,6 +531,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           var result = fn.apply(this, arguments);
           if (!result) {
             wtf.trace.appendScopeData('result', false);
+          } else {
+            // Always check to see if we need to instrument this object.
+            instrumentExtensionObject(this, name, result);
           }
           return leaveScope(scope, result);
         };
