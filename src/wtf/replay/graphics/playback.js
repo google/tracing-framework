@@ -342,7 +342,9 @@ wtf.replay.graphics.Playback.prototype.getDrawCallIds_ = function() {
     'WebGLRenderingContext#drawArrays',
     'WebGLRenderingContext#drawElements',
     'WebGLRenderingContext#finish',
-    'WebGLRenderingContext#flush'
+    'WebGLRenderingContext#flush',
+    'ANGLEInstancedArrays#drawArraysInstancedANGLE',
+    'ANGLEInstancedArrays#drawElementsInstancedANGLE'
   ];
   var drawCallIds = {};
   var eventList = this.eventList_;
@@ -371,7 +373,9 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   }
 
   // Get the set of IDs of events that should be displayed.
-  var visibleEventsRegex = /^((WebGLRenderingContext#)|(wtf.webgl#))/;
+  // TODO(benvanik): make this list easier to add to.
+  var visibleEventsRegex =
+      /^((WebGLRenderingContext#)|(wtf.webgl#)|(ANGLEInstancedArrays#))/;
   var displayedEventsIds =
       this.eventList_.eventTypeTable.getSetMatching(visibleEventsRegex);
 
@@ -2147,6 +2151,30 @@ wtf.replay.graphics.Playback.CALLS_ = {
       eventId, playback, gl, args, objs) {
     gl.viewport(args['x'], args['y'], args['width'], args['height']);
   },
+
+  'ANGLEInstancedArrays#drawArraysInstancedANGLE': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('ANGLE_instanced_arrays');
+    ext['drawArraysInstancedANGLE'](
+        args['mode'], args['first'], args['count'], args['primcount']);
+  },
+  'ANGLEInstancedArrays#drawElementsInstancedANGLE': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('ANGLE_instanced_arrays');
+    ext['drawElementsInstancedANGLE'](
+        args['mode'], args['count'], args['type'], args['offset'],
+        args['primcount']);
+  },
+  'ANGLEInstancedArrays#vertexAttribDivisorANGLE': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('ANGLE_instanced_arrays');
+    ext['vertexAttribDivisorANGLE'](
+        args['index'], args['divisor']);
+  },
+
   'wtf.webgl#createContext': function(eventId, playback, gl, args, objs) {
     var attributes = args['attributes'];
     var contextHandle = args['handle'];

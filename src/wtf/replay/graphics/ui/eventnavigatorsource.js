@@ -360,9 +360,12 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           columnTitle = '(context set as current)';
         } else {
           // Remove the 'WebGLRenderingContext#' prefix.
-          columnTitle = it.getLongString(true).substring(22);
+          columnTitle = it.getLongString(true);
+          var hashIndex = columnTitle.indexOf('#');
+          if (hashIndex != -1) {
+            columnTitle = columnTitle.substring(hashIndex + 1);
+          }
         }
-        columnTitle = columnTitle;
 
         // Change text color under certain conditions.
         if (currentRow == n - 1) {
