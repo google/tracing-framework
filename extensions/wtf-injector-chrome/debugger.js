@@ -423,6 +423,16 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
     ];
   };
 
+  // PaintSetup: DOM element painting.
+  dispatch['PaintSetup'] = function(record) {
+    console.log(record);
+    return [
+      'PaintSetup',
+      record.startTime,
+      record.endTime
+    ];
+  };
+
   // Paint: DOM element painting.
   dispatch['Paint'] = function(record) {
     var rect = getClipRect(record.data.clip);

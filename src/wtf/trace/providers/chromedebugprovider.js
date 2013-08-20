@@ -17,6 +17,7 @@ goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
+goog.require('goog.userAgent');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ZoneType');
@@ -291,7 +292,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
     function() {
   // This table should match the one in
   // extensions/wtf-injector-chrome/debugger.js
-  var timebase = wtf.timebase();
+  var timebase = 0;
+  if (!goog.userAgent.isVersionOrHigher(30)) {
+    // Chrome 30+ started using page-load relative times.
+    // Older versions need to add the timebase.
+    timebase = wtf.timebase();
+  }
 
   // GCEvent: garbage collections.
   var gcEvent = wtf.trace.events.createScope(
@@ -377,6 +383,17 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
         record[3], record[4], record[5],
         record[6], record[7], record[8], record[9],
         startTime);
+    wtf.trace.leaveScope(scope, undefined, endTime);
+  };
+
+  // PaintSetup: DOM element painting.
+  var paintSetupEvent = wtf.trace.events.createScope(
+      'browser#paintSetup()',
+      wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_['PaintSetup'] = function(record) {
+    var startTime = record[1] - timebase;
+    var endTime = record[2] - timebase;
+    var scope = paintSetupEvent(startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
 
