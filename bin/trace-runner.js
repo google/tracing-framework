@@ -76,8 +76,16 @@ global.require = function(name) {
   return originalRequire(name);
 };
 
+// Object containing global context for VM
+var sandbox = {
+  require: global.require,
+  console: console,
+  module: module
+},
+context = vm.createContext(sandbox);
+
 // Starting the tracing framework.
 wtf.trace.node.start(options);
 
 // Execute the user script.
-vm.runInThisContext(code, filename);
+vm.runInContext(code, context, filename);
