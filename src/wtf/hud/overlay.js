@@ -501,7 +501,7 @@ wtf.hud.Overlay.prototype.sendSnapshotClicked_ = function(opt_e) {
       newWindow = true;
     }
   }
-  this.sendSnapshot_(newWindow);
+  this.sendSnapshot(newWindow);
 };
 
 
@@ -604,9 +604,8 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
 /**
  * Sends a snapshot to the UI.
  * @param {boolean=} opt_newWindow Force into a new window.
- * @private
  */
-wtf.hud.Overlay.prototype.sendSnapshot_ = function(opt_newWindow) {
+wtf.hud.Overlay.prototype.sendSnapshot = function(opt_newWindow) {
   var mode = this.options_.getString('wtf.hud.app.mode', 'page');
   var endpoint = this.options_.getOptionalString('wtf.hud.app.endpoint');
   switch (mode) {

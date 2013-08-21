@@ -184,3 +184,16 @@ wtf.hud.addButton = function(info) {
     overlay.insertButton(info);
   }
 };
+
+
+/**
+ * Sends a snapshot to a UI window.
+ * @param {boolean=} opt_newWindow Force into a new window, otherwise an
+ *     existing one will be used.
+ */
+wtf.hud.sendSnapshotToWindow = function(opt_newWindow) {
+  var overlay = wtf.hud.overlay_;
+  if (overlay) {
+    overlay.sendSnapshot(opt_newWindow);
+  }
+};

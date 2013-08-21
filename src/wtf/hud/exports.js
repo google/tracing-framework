@@ -45,4 +45,7 @@ if (wtf.hud.exports.ENABLE_EXPORTS) {
   goog.exportSymbol(
       'wtf.hud.addButton',
       wtf.hud.addButton);
+  goog.exportSymbol(
+      'wtf.hud.sendSnapshotToWindow',
+      wtf.hud.sendSnapshotToWindow);
 }
