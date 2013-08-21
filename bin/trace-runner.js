@@ -41,7 +41,6 @@ if (!wtfPath) {
   return;
 }
 var wtf = require(wtfPath.replace('.js', ''));
-global.wtf = wtf;
 
 // Load the target script file.
 var filename = path.join(process.cwd(), process.argv[2]);
@@ -67,7 +66,7 @@ var options = {
 // Make require relative to the input file.
 var targetPath = path.dirname(filename);
 var originalRequire = require;
-global.require = function(name) {
+function relativeRequire(name) {
   var relativePath = path.join(targetPath, name);
   try {
     return originalRequire(relativePath);
@@ -76,8 +75,20 @@ global.require = function(name) {
   return originalRequire(name);
 };
 
+// Create a new context to run the user code in.
+// It must have access to our globals as well as the modified require that
+// fixes path issues.
+var context = vm.createContext({
+  global: global,
+  __dirname: targetPath,
+  require: relativeRequire,
+  console: console,
+  module: module,
+  wtf: wtf
+});
+
 // Starting the tracing framework.
 wtf.trace.node.start(options);
 
 // Execute the user script.
-vm.runInThisContext(code, filename);
+vm.runInContext(code, context, filename);
