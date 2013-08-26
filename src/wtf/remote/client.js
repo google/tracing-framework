@@ -195,6 +195,9 @@ wtf.remote.Client.prototype.executeCommand_ = function(data) {
     case 'save_snapshot':
       // TODO(benvanik): use snapshotAll (or some future API).
       wtf.trace.snapshot(responseBuffers);
+      for (var n = 0; n < responseBuffers.length; n++) {
+        responseBuffers[n] = wtf.io.Blob.toNative(responseBuffers[n]);
+      }
       response['filename'] = wtf.trace.getTraceFilename();
       response['mimeType'] = 'application/x-extension-wtf-trace';
       break;
