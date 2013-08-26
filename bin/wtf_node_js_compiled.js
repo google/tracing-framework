@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13769856E5
+  return 1377504E6
 };
 wtf.version.getCommit = function() {
-  return"2271cc36ad26ea97a467a3b3dfe9730208660c5c"
+  return"ce11cbee18d4ed7f0fd8543a6ef126bbc66ee8b3"
 };
 wtf.version.toString = function() {
-  return"2013.8.20-1"
+  return"2013.8.26-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -8599,7 +8599,16 @@ wtf.io.Blob.toNative = function(a) {
 wtf.io.Blob.toNativeParts = function(a) {
   for(var b = Array(a.length), c = 0;c < a.length;c++) {
     var d = a[c];
-    wtf.io.Blob.isBlob(d) && (d = wtf.io.Blob.toNative(d));
+    if(wtf.io.Blob.isBlob(d)) {
+      d = wtf.io.Blob.toNative(d)
+    }else {
+      if(goog.userAgent.product.SAFARI && d && d.buffer instanceof ArrayBuffer) {
+        for(var e = new Uint8Array(d.buffer, d.byteOffset, d.byteLength), d = new Uint8Array(d.byteLength), f = 0;f < d.byteLength;f++) {
+          d[f] = e[f]
+        }
+        d = d.buffer
+      }
+    }
     b[c] = d
   }
   return b
@@ -12645,7 +12654,7 @@ wtf.io.transports.MemoryWriteTransport = function() {
 };
 goog.inherits(wtf.io.transports.MemoryWriteTransport, wtf.io.WriteTransport);
 wtf.io.transports.MemoryWriteTransport.prototype.disposeInternal = function() {
-  this.targetArray_ && this.targetArray_.push(this.getBlob());
+  this.targetArray_ && this.targetArray_.push(wtf.io.Blob.toNative(this.getBlob()));
   wtf.io.transports.MemoryWriteTransport.superClass_.disposeInternal.call(this)
 };
 wtf.io.transports.MemoryWriteTransport.prototype.setTargetArray = function(a) {
