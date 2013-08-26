@@ -53,7 +53,7 @@ goog.inherits(wtf.io.transports.MemoryWriteTransport, wtf.io.WriteTransport);
  */
 wtf.io.transports.MemoryWriteTransport.prototype.disposeInternal = function() {
   if (this.targetArray_) {
-    this.targetArray_.push(this.getBlob());
+    this.targetArray_.push(wtf.io.Blob.toNative(this.getBlob()));
   }
   goog.base(this, 'disposeInternal');
 };
