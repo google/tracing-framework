@@ -16,6 +16,7 @@
 goog.provide('wtf.io.Blob');
 
 goog.require('goog.asserts');
+goog.require('goog.userAgent.product');
 goog.require('wtf');
 
 
@@ -155,6 +156,20 @@ wtf.io.Blob.toNativeParts = function(parts) {
     var part = parts[n];
     if (wtf.io.Blob.isBlob(part)) {
       part = wtf.io.Blob.toNative(/** @type {!wtf.io.Blob} */ (part));
+    } else {
+      if (goog.userAgent.product.SAFARI &&
+          part && part.buffer instanceof ArrayBuffer) {
+        // Safari can't handle ArrayBufferView in Blob ctors, so we need to copy
+        // our view (which is likely not the whole size of the buffer) to ensure
+        // we write exactly what was requested.
+        var source = new Uint8Array(
+            part.buffer, part.byteOffset, part.byteLength);
+        part = new Uint8Array(part.byteLength);
+        for (var m = 0; m < part.byteLength; m++) {
+          part[m] = source[m];
+        }
+        part = part.buffer;
+      }
     }
     result[n] = part;
   }
