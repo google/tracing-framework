@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 1377504E6
+  return 13775076E5
 };
 wtf.version.getCommit = function() {
-  return"ce11cbee18d4ed7f0fd8543a6ef126bbc66ee8b3"
+  return"0f1cb712d27f7be4793a0f79cae47294f8a1d08f"
 };
 wtf.version.toString = function() {
-  return"2013.8.26-1"
+  return"2013.8.26-2"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -12654,7 +12654,7 @@ wtf.io.transports.MemoryWriteTransport = function() {
 };
 goog.inherits(wtf.io.transports.MemoryWriteTransport, wtf.io.WriteTransport);
 wtf.io.transports.MemoryWriteTransport.prototype.disposeInternal = function() {
-  this.targetArray_ && this.targetArray_.push(wtf.io.Blob.toNative(this.getBlob()));
+  this.targetArray_ && this.targetArray_.push(this.getBlob());
   wtf.io.transports.MemoryWriteTransport.superClass_.disposeInternal.call(this)
 };
 wtf.io.transports.MemoryWriteTransport.prototype.setTargetArray = function(a) {
