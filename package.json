@@ -51,6 +51,7 @@
     "wtf-dump": "./bin/dump.js",
     "wtf-instrument": "./bin/instrument.js",
     "wtf-query": "./bin/query.js",
-    "wtf-trace": "./bin/trace-runner.js"
+    "wtf-trace": "./bin/trace-runner.js",
+    "wtf-save-trace": "./bin/save-trace.js"
   }
 }
