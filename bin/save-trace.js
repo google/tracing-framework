@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 
-http = require('http');
 fs = require('fs');
+http = require('http');
+os = require('os');
+optimist = require('optimist')
 
-port = 8000;
-hostname = '0.0.0.0';
+main(optimist.default('port', 8000).argv);
 
-http.createServer(requestListener).listen(port, hostname);
+function main(argv) {
+  hostname = os.hostname();
+  port = argv.port;
+  console.log('Run this command from your JavaScript console:');
+  console.log('> wtf.trace.snapshot("http://%s:%s")', hostname, port);
+  http.createServer(requestListener).listen(port, hostname);
+}
 
 function requestListener(req, res) {
   if (req.method == 'OPTIONS')
