@@ -293,8 +293,8 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
   // This table should match the one in
   // extensions/wtf-injector-chrome/debugger.js
   var timebase = 0;
-  if (!goog.userAgent.isVersionOrHigher(30)) {
-    // Chrome 30+ started using page-load relative times.
+  if (!goog.userAgent.isVersionOrHigher(29)) {
+    // Chrome 29+ started using page-load relative times.
     // Older versions need to add the timebase.
     timebase = wtf.timebase();
   }
