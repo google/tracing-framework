@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13775076E5
+  return 13777632E5
 };
 wtf.version.getCommit = function() {
-  return"0f1cb712d27f7be4793a0f79cae47294f8a1d08f"
+  return"48c4d44e967a7066be09fc4595d6b6916f8a8019"
 };
 wtf.version.toString = function() {
-  return"2013.8.26-2"
+  return"2013.8.29-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -15051,7 +15051,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ = func
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ = function() {
   var a = 0;
-  goog.userAgent.isVersionOrHigher(30) || (a = wtf.timebase());
+  goog.userAgent.isVersionOrHigher(29) || (a = wtf.timebase());
   var b = wtf.trace.events.createScope("javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.GCEvent = function(c) {
     var d = c[2] - a;
