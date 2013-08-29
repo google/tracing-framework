@@ -16,6 +16,7 @@ goog.provide('wtf.remote.Client');
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('wtf.data.ContextInfo');
+goog.require('wtf.io.Blob');
 goog.require('wtf.trace');
 goog.require('wtf.trace.ISessionListener');
 

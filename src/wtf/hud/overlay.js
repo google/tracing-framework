@@ -60,6 +60,7 @@ wtf.hud.Overlay = function(session, options, opt_parentElement) {
   var wtfEl = dom.createElement(goog.dom.TagName.DIV);
   wtf.trace.util.ignoreDomTree(wtfEl);
   goog.dom.classes.add(wtfEl, goog.getCssName('wtfReset'));
+  goog.style.setStyle(wtfEl, 'display', 'block');
   parentElement.appendChild(wtfEl);
   parentElement = wtfEl;
 

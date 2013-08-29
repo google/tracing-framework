@@ -208,6 +208,7 @@ wtf.ui.Dialog.Shield_ = function(dialog, clickToClose) {
    */
   this.wrapper_ = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(this.wrapper_, goog.getCssName('wtfReset'));
+  goog.style.setStyle(this.wrapper_, 'display', 'block');
 
   // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
