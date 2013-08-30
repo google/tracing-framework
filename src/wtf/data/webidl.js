@@ -39,6 +39,16 @@ wtf.data.webidl.EVENT_TYPES = {
     }
   },
 
+  // https://chromium.googlesource.com/chromium/blink/+/master/Source/modules/websockets/CloseEvent.idl
+  'CloseEvent': {
+    inherits: 'Event',
+    attributes: {
+      'wasClean': 'bool',
+      'code': 'int16',
+      'reason' : 'utf8'
+    }
+  },
+
   // https://chromium.googlesource.com/chromium/blink/+/master/Source/core/dom/ErrorEvent.idl
   'ErrorEvent': {
     inherits: 'Event',
@@ -286,6 +296,16 @@ wtf.data.webidl.OBJECTS = {
   'MessagePort': {
     events: {
       'message': 'MessageEvent'
+    }
+  }, 
+
+  // https://chromium.googlesource.com/chromium/blink/+/master/Source/modules/websockets/WebSocket.idl
+  'WebSocket': {
+    events: {
+      'open': 'Event',
+      'error': 'Event',
+      'close': 'CloseEvent',
+      'message': 'Event'
     }
   }
 };
