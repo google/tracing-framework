@@ -339,21 +339,14 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
   if (this.extensionChannel_) {
     this.extensionChannel_.postMessage({
       'command': 'save_settings',
-      'content': this.options_.save()
+      'content': this.options_.save(),
+      'reload': needsReload
     });
   } else {
     // No extension - save to local storage.
     goog.global.localStorage.setItem('__wtf_options__', options.save());
-  }
 
-  if (needsReload) {
-    if (this.extensionChannel_) {
-      // Reload via extension to get guaranteed cache bypass.
-      this.extensionChannel_.postMessage({
-        'command': 'reload'
-      });
-    } else {
-      // No extension - reload via browser.
+    if (needsReload) {
       goog.global.location.reload(true);
     }
   }

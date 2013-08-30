@@ -177,6 +177,9 @@ InjectedTab.prototype.messageReceived_ = function(data, port) {
       options.setPageOptions(
           this.pageUrl_,
           JSON.parse(data['content']));
+      if (data['reload']) {
+        this.extension_.reloadTab(this.tabId_, tab.url);
+      }
       break;
 
     // Pops up a UI with the given snapshot data.

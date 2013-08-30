@@ -1,0 +1,41 @@
+# Copyright 2013 Google Inc. All Rights Reserved.
+
+__author__ = 'benvanik@google.com (Ben Vanik)'
+
+
+# Firefox injector extension release output
+
+
+# ------------------------------------------------------------------------------
+# Extension
+# ------------------------------------------------------------------------------
+
+# Files relating to the injected tracing code
+copy_files(
+    name='tracing_files',
+    srcs=[
+        '../..:wtf_trace_web_js_compiled',
+        ],
+    out='data/')
+
+file_set(
+    name='extension_files',
+    srcs=[
+        ':tracing_files',
+        'package.json',
+        'README.md',
+        ] +
+        glob('lib/**/*.js') +
+        glob('data/**/*.*'),
+    src_exclude_filter='*-deps.js')
+
+copy_files(
+    name='deploy',
+    srcs=[':extension_files'],
+    out='../../wtf-injector-firefox/',
+    flatten_paths=['extensions/wtf-injector-firefox/'])
+
+archive_files(
+    name='wtf-injector-firefox',
+    srcs=':extension_files',
+    flatten_paths=['extensions/wtf-injector-firefox/'])

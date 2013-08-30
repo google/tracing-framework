@@ -60,6 +60,14 @@ sed -i.bak \
     extensions/wtf-injector-chrome/manifest.json
 rm extensions/wtf-injector-chrome/manifest.json.bak
 
+echo "-> extensions/wtf-injector-firefox/package.json"
+# __"version": "2012.12.17.1",
+manifest_string="$ver_major.$ver_minor.$ver_patch.$ver_tag"
+sed -i.bak \
+    "s/^\ \ \"version\": \".*\",$/\ \ \"version\": \"$manifest_string\",/" \
+    extensions/wtf-injector-firefox/package.json
+rm extensions/wtf-injector-firefox/package.json.bak
+
 echo "-> src/wtf/version.js"
 # __return 1355734800000; // time
 sed -i.bak \

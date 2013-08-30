@@ -502,6 +502,7 @@ file_set(
     name='injector',
     srcs=[
         'extensions/wtf-injector-chrome:wtf-injector-chrome',
+        'extensions/wtf-injector-firefox:wtf-injector-firefox',
         ])
 
 file_set(

@@ -18,6 +18,7 @@ goog.require('wtf');
 goog.require('wtf.trace.providers.ChromeDebugProvider');
 goog.require('wtf.trace.providers.ConsoleProvider');
 goog.require('wtf.trace.providers.DomProvider');
+goog.require('wtf.trace.providers.FirefoxDebugProvider');
 goog.require('wtf.trace.providers.ImageProvider');
 goog.require('wtf.trace.providers.ReplayProvider');
 goog.require('wtf.trace.providers.TimingProvider');
@@ -50,6 +51,10 @@ wtf.trace.providers.setup = function(traceManager) {
     if (goog.userAgent.product.CHROME) {
       traceManager.addProvider(
           new wtf.trace.providers.ChromeDebugProvider(traceManager, options));
+    }
+    if (goog.userAgent.product.FIREFOX) {
+      traceManager.addProvider(
+          new wtf.trace.providers.FirefoxDebugProvider(traceManager, options));
     }
     traceManager.addProvider(
         new wtf.trace.providers.DomProvider(options));

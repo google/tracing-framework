@@ -105,7 +105,8 @@ wtf.trace.TraceManager = function(opt_options) {
     'wtf.hud.app.endpoint',
     'wtf.addons',
     'wtf.trace.provider.chromeDebug.present',
-    'wtf.trace.provider.chromeDebug.tracing'
+    'wtf.trace.provider.chromeDebug.tracing',
+    'wtf.trace.provider.firefoxDebug.present'
   ];
   for (var n = 0; n < OVERRIDE_KEYS.length; n++) {
     var key = OVERRIDE_KEYS[n];
