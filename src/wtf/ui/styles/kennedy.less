@@ -83,6 +83,13 @@
     color: #DD4B39;
   }
 
+  .kSeparator {
+    color: rgb(204, 204, 204);
+    background-color: rgb(204, 204, 204);
+    border: 0;
+    height: 1px;
+  }
+
   .kAppBar {
     padding: 10px 0;
     border-bottom: 1px solid #EBEBEB;
@@ -110,7 +117,9 @@
   }
   .kButtonBarVertical {
     padding-left: 2px;
+    padding-right: 2px;
     padding-top: 2px;
+    width: 100%;
   }
   .kButton {
     text-decoration: none;
@@ -202,7 +211,7 @@
     border: 1px solid transparent;
     color: #FFF;
     text-transform: uppercase;
-    letter-spacing:1;
+    letter-spacing: 1;
     .backgroundGradient(#dd4b39, #d14836);
 
     &:hover {
@@ -277,6 +286,8 @@
     left: 0;
     margin-left: 0px;
     margin-bottom: 2px;
+    padding: 0;
+    width: 100%;
   }
 
   .kMenuButton .kButtonDisclosure {

@@ -22,12 +22,13 @@ file_set(
     name='extension_files',
     srcs=[
         ':tracing_files',
+        'data:files',
         'package.json',
         'README.md',
         ] +
         glob('lib/**/*.js') +
         glob('data/**/*.*'),
-    src_exclude_filter='*-deps.js')
+    src_exclude_filter='*-deps.js|*.less|*.anvil')
 
 copy_files(
     name='deploy',

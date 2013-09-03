@@ -13,6 +13,7 @@
 
 var contextMenu = require('sdk/context-menu');
 var pageMod = require('sdk/page-mod');
+var panels = require('sdk/panel');
 var prefs = require('sdk/preferences/service');
 var self = require('sdk/self');
 var ss = require('sdk/simple-storage');
@@ -492,6 +493,28 @@ function toggleInjectionForActiveTab() {
 
 
 /**
+ * Resets WTF options for the currently active tab URL.
+ */
+function resetOptionsForActiveTab() {
+  var url = getCanonicalUrl(tabs.activeTab.url);
+  setPagePreference(url, 'options', '');
+  if (isInjectionEnabledForUrl(url)) {
+    disableInjectionForUrl(url, true);
+    enableInjectionForUrl(url);
+  }
+};
+
+
+/**
+ * Opens the UI in a new tab.
+ */
+function showUi() {
+  // TODO(benvanik): use internal version.
+  tabs.open('https://tracing-framework.appspot.com/CURRENT/app/maindisplay.html');
+};
+
+
+/**
  * Sets up the page context menu.
  */
 function setupContextMenu() {
@@ -508,11 +531,17 @@ function setupContextMenu() {
     label: 'Reset Settings For This URL',
     data: 'reset'
   });
+  var showUiContextMenuItem = contextMenu.Item({
+    label: 'Show UI',
+    data: 'show_ui'
+  });
   var rootContextMenuItem = contextMenu.Menu({
     label: 'Tracing Framework',
     items: [
       enableContextMenuItem,
-      resetSettingsContextMenuItem
+      resetSettingsContextMenuItem,
+      contextMenu.Separator(),
+      showUiContextMenuItem
     ],
     contentScript:
         "self.on('click', function(node, data) {" +
@@ -524,12 +553,10 @@ function setupContextMenu() {
           toggleInjectionForActiveTab();
           break;
         case 'reset':
-          var url = getCanonicalUrl(tabs.activeTab.url);
-          setPagePreference(url, 'options', '');
-          if (isInjectionEnabledForUrl(url)) {
-            disableInjectionForUrl(url, true);
-            enableInjectionForUrl(url);
-          }
+          resetOptionsForActiveTab();
+          break;
+        case 'show_ui':
+          showUi();
           break;
       }
     }
@@ -541,14 +568,56 @@ function setupContextMenu() {
  * Sets up the addon bar widget.
  */
 function setupAddonBarWidget() {
+  var panel = panels.Panel({
+    width: 200,
+    height: 128,
+    contentURL: self.data.url('widget-panel.html'),
+    contentScriptFile: self.data.url('widget-panel.js')
+  });
+  panel.on('show', function() {
+    var url = getCanonicalUrl(tabs.activeTab.url);
+    if (!url.length) {
+      panel.port.emit('show', null);
+    } else {
+      panel.port.emit('show', {
+        'enabled': isInjectionEnabledForUrl(url)
+      });
+    }
+  });
+  panel.port.on('perform', function(action) {
+    switch (action) {
+      case 'toggle':
+        toggleInjectionForActiveTab();
+        panel.hide();
+        break;
+      case 'reset':
+        resetOptionsForActiveTab();
+        panel.hide();
+        break;
+      case 'show_ui':
+        showUi();
+        panel.hide();
+        break;
+    }
+  });
+
   var widget = widgets.Widget({
     id: 'wtf-toggle',
     label: 'Toggle Web Tracing Framework',
-    contentURL: self.data.url('assets/icons/wtf-32.png'),
-    onClick: function() {
-      toggleInjectionForActiveTab();
-    }
+    contentURL: self.data.url('widget.html'),
+    contentScriptFile: self.data.url('widget.js'),
+    panel: panel
   });
+
+  // Update the widget icon when the URL changes.
+  function tabChanged() {
+    // TODO(benvanik): update widget icon.
+  };
+  tabs.on('open', tabChanged);
+  tabs.on('close', tabChanged);
+  tabs.on('ready', tabChanged);
+  tabs.on('activate', tabChanged);
+  tabs.on('deactivate', tabChanged);
 };
 
 
