@@ -127,13 +127,13 @@
   <p>The tracing framework and its tools are still very young. The feature list will continue to grow in an organic fashion.</p>
   <ul>
     <li>Easy embedding on any page</li>
-    <li><a href="https://chrome.google.com/webstore/detail/web-tracing-framework/gmdhhnlkjmknaopofnadmoamhmnlicme" target="_blank">Chrome extension</a> for getting internal browser data</li>
+    <li><a href="https://chrome.google.com/webstore/detail/web-tracing-framework/gmdhhnlkjmknaopofnadmoamhmnlicme" target="_blank" onclick="ga('send', 'event', 'overview', 'install');">Chrome extension</a> and <a href="https://tracing-framework.appspot.com/CURRENT/web-tracing-framework.xpi" target="_blank" onclick="ga('send', 'event', 'overview', 'install_firefox');">Firefox extension</a> for getting internal browser data</li>
     <li>Command line tools for processing data</li>
     <li>Cross-browser tracing (in <a href="#browser-support">modern browsers</a>)</li>
     <li><a href="getting-started.html#tracing-node-js">node.js tracing</a> (experimental)</li>
     <li>Rich custom trace events (with binary data, etc)</li>
     <li>Very low overhead (but <a href="#warnings">not free</a>!)</li>
-    <li>Show data from Chrome internals, such as garbage collection events</li>
+    <li>Show data from Chrome/Firefox internals, such as garbage collection events</li>
     <li><a href="https://github.com/google/tracing-framework/" target="_blank">Open source</a> and <a href="https://github.com/google/tracing-framework/blob/master/LICENSE" target="_blank">BSD licensed</a></li>
   </ul>
   <p>Have something you want to see? <a href="https://github.com/google/tracing-framework/issues?state=open" target="_blank">File an issue</a> or <a href="https://github.com/google/tracing-framework/blob/master/CONTRIBUTING.md" target="_blank">contribute</a>!
@@ -165,7 +165,7 @@
   <p>Instrumentation is optional, with some built-in browser events automatically being traced, however to get the most benefit from the tool you should at least add events for the major functions of your application. More advanced instrumentation such as asynchronous event flows and time ranges can be added to make navigating traces even easier.</p>
 
   <h3>2. <a href="./getting-started.html#injecting-the-library">Injecting The Library</a></h3>
-  <p>After instrumenting you need to either inject the framework onto your page via the Chrome extension or by manually embedding it, as found in the <a href="./getting-started.html">Getting Started</a> guide. This adds a small heads-up-display (HUD) that can be used to control the state of the library or change settings.</p>
+  <p>After instrumenting you need to either inject the framework onto your page via the Chrome or Firefox extension or by manually embedding it, as found in the <a href="./getting-started.html">Getting Started</a> guide. This adds a small heads-up-display (HUD) that can be used to control the state of the library or change settings.</p>
 
   <h3>3. <a href="./getting-started.html#capturing-a-trace">Capturing Snapshots</a></h3>
   <p>Snapshots can be captured and either downloaded for later analysis or opened in a pop-out UI. It's also possible to programmatically capture traces if running inside of a test system. The snapshot contains all data since the page loaded or the snapshot was cleared with a button on the HUD. If the buffer fills up then old data is overwritten in a circular fashion, meaning that you can usually keep the library active while using an application and snapshot at any time.</p>
@@ -246,7 +246,7 @@
       <tr>
         <th>Garbage collection events</th>
         <td class="is-supported">✔</td>
-        <td class="not-supported">✘</td>
+        <td class="is-supported">✔</td>
         <td class="not-supported">✘</td>
       </tr>
       <tr>

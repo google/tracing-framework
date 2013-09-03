@@ -103,14 +103,19 @@
   <p>The tracing framework is a suite of tools and libraries, and there are many different ways to obtain each. The easiest way to get started is to install the Chrome Extension (on Mac/Linux) and see what it records on your page. From there, you can start to add <a href="instrumenting-code.html">custom instrumentation</a> and <a href="analyzing-traces.html">analyzing the data</a>.</p>
 
   <div class="row-fluid">
-    <div class="span6">
+    <div class="span4">
       <h2>Chrome</h2>
-      <p>The most <strong>awesome, advanced features</strong> require the Chrome extension and some <a href="./advanced-features.html#chrome-flags">optional command line flags</a>. It's recommended you run with the <a href="http://www.chromium.org/getting-involved/dev-channel" target="_blank">dev channel</a> or a <a href="https://www.google.com/intl/en/chrome/browser/canary.html" target="_blank">Canary build</a>. Mac or Linux are preferred!</p>
       <p><a href="https://chrome.google.com/webstore/detail/web-tracing-framework/gmdhhnlkjmknaopofnadmoamhmnlicme" class="btn btn-primary btn-large" onclick="ga('send', 'event', 'getting_started', 'install');">Install Chrome Extension</a></p>
+      <p>The most <strong>awesome, advanced features</strong> require the Chrome extension and some <a href="./advanced-features.html#chrome-flags">optional command line flags</a>. It's recommended you run with the <a href="http://www.chromium.org/getting-involved/dev-channel" target="_blank">dev channel</a> or a <a href="https://www.google.com/intl/en/chrome/browser/canary.html" target="_blank">Canary build</a>. Mac or Linux are preferred!</p>
     </div>
-    <div class="span6">
+    <div class="span4">
+      <h2>Firefox</h2>
+      <p><a href="https://tracing-framework.appspot.com/CURRENT/web-tracing-framework.xpi" class="btn btn-primary btn-large" onclick="ga('send', 'event', 'getting_started', 'install_firefox');">Install Chrome Extension</a></p>
+      <p>Easily inject the Tracing Framework onto any page and get garbage collection information.</p>
+    </div>
+    <div class="span4">
       <h2>Others</h2>
-      <p>None yet! <a href="./contributing.html">Contribute some!</a> Maybe a Firefox one?</p>
+      <p>None yet! <a href="./contributing.html">Contribute some!</a> Maybe a Safari one?</p>
     </div>
   </div>
 
@@ -148,6 +153,9 @@ $ wtf-dump myapp-[date].wtf-trace # or open in the UI</pre>
       <small>Screenshot showing enabling and disabling the library.</small>
     </p>
   </p>
+
+  <h2><a id="tracing-with-extension-firefox"></a>Using the Firefox Extension</h2>
+  <p>Similar to the Chrome extension, the injection of the tracing fraemwork library is toggled on a per-uRL basis. Find the extension icon in the Firefox addons bar (ctrl+/ to show it if hidden) and click it to enable or disable the library.</p>
 
   <h2><a id="tracing-manually"></a>Manually Embedding</h2>
   <p>When running where a browser extension is not available, such as Internet Explorer or on mobile devices, it's possible to manually embed the library on a page using some <code>&lt;script&gt;</code> tags. This is also useful when running automated tests that cannot depend on user interaction.</p>
