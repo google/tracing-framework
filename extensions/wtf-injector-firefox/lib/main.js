@@ -395,7 +395,12 @@ function enableInjectionForUrl(url) {
     // 'wtf.hud.app.mode': '',
     // 'wtf.hud.app.endpoint': '',
 
-    'wtf.trace.provider.firefoxDebug.present': true
+    'wtf.trace.provider.firefoxDebug.present': true,
+
+    // Turn on embed remote images by default.
+    // When we have the UI in the extension and can fetch non-origin URLs this
+    // won't be required. Note that we allow the page to override this setting.
+    'wtf.trace.provider.webgl.embedRemoteImages': true
   };
   for (var key in storedOptions) {
     switch (key) {
