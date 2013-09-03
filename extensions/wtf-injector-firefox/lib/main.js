@@ -611,7 +611,10 @@ function setupAddonBarWidget() {
 
   // Update the widget icon when the URL changes.
   function tabChanged() {
-    // TODO(benvanik): update widget icon.
+    var url = getCanonicalUrl(tabs.activeTab.url);
+    widget.port.emit('update', {
+      'enabled': url.length ? isInjectionEnabledForUrl(url) : false
+    });
   };
   tabs.on('open', tabChanged);
   tabs.on('close', tabChanged);
