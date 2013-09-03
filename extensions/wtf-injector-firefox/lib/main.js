@@ -11,6 +11,7 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+var contextMenu = require('sdk/context-menu');
 var pageMod = require('sdk/page-mod');
 var prefs = require('sdk/preferences/service');
 var self = require('sdk/self');
@@ -92,6 +93,16 @@ function setPagePreference(url, key, value) {
   entry[key] = value;
   pageStore[url] = entry;
   ss.storage.pageStore = pageStore;
+  return true;
+};
+
+
+function resetPagePreferences(url) {
+  var pageStore = ss.storage.pageStore || {};
+  if (!pageStore[url]) {
+    return false;
+  }
+  delete pageStore[url];
   return true;
 };
 
@@ -467,25 +478,88 @@ function disableInjectionForUrl(url, opt_skipReload) {
 };
 
 
-var widget = widgets.Widget({
-  id: 'wtf-toggle',
-  label: 'Toggle Web Tracing Framework',
-  contentURL: self.data.url('assets/icons/wtf-32.png'),
-  onClick: function() {
-    var url = tabs.activeTab.url;
-    if (!isInjectionEnabledForUrl(url)) {
-      enableInjectionForUrl(url);
-    } else {
-      disableInjectionForUrl(url);
-    }
+/**
+ * Toggles injection for the currently active tab URL.
+ */
+function toggleInjectionForActiveTab() {
+  var url = tabs.activeTab.url;
+  if (!isInjectionEnabledForUrl(url)) {
+    enableInjectionForUrl(url);
+  } else {
+    disableInjectionForUrl(url);
   }
-});
+};
+
+
+/**
+ * Sets up the page context menu.
+ */
+function setupContextMenu() {
+  var enableContextMenuItem = contextMenu.Item({
+    label: 'Enable For This URL',
+    data: 'toggle',
+    contentScript:
+        "self.on('context', function(node) {" +
+        "  var hasWtf = !!document.querySelector('.wtf_a');" +
+        "  return !hasWtf ? 'Enable For This URL' : 'Disable For This URL';" +
+        "});"
+  });
+  var resetSettingsContextMenuItem = contextMenu.Item({
+    label: 'Reset Settings For This URL',
+    data: 'reset'
+  });
+  var rootContextMenuItem = contextMenu.Menu({
+    label: 'Tracing Framework',
+    items: [
+      enableContextMenuItem,
+      resetSettingsContextMenuItem
+    ],
+    contentScript:
+        "self.on('click', function(node, data) {" +
+        "  self.postMessage(data);" +
+        "});",
+    onMessage: function(action) {
+      switch (action) {
+        case 'toggle':
+          toggleInjectionForActiveTab();
+          break;
+        case 'reset':
+          var url = getCanonicalUrl(tabs.activeTab.url);
+          setPagePreference(url, 'options', '');
+          if (isInjectionEnabledForUrl(url)) {
+            disableInjectionForUrl(url, true);
+            enableInjectionForUrl(url);
+          }
+          break;
+      }
+    }
+  });
+};
+
+
+/**
+ * Sets up the addon bar widget.
+ */
+function setupAddonBarWidget() {
+  var widget = widgets.Widget({
+    id: 'wtf-toggle',
+    label: 'Toggle Web Tracing Framework',
+    contentURL: self.data.url('assets/icons/wtf-32.png'),
+    onClick: function() {
+      toggleInjectionForActiveTab();
+    }
+  });
+};
 
 
 exports.main = function(options, callbacks) {
   // Reset any temporary preferences that weren't properly reset last unload,
   // such as in the case of a browser crash.
   resetTemporaryPreferences();
+
+  // Setup UI/etc.
+  setupContextMenu();
+  setupAddonBarWidget();
 
   // Enable all pagemods for injected pages now.
   // This will reload any that are currently open.
