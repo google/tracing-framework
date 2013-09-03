@@ -492,17 +492,29 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
    */
   function instrumentExtensionObject(ctx, name, object) {
     var proto = object.constructor.prototype;
-    if (proto['__gl_wrapped__']) {
-      return;
-    }
-    proto['__gl_wrapped__'] = true;
-    contextRestoreFns.push(function() {
-      delete proto['__gl_wrapped__'];
-    });
+
+    // We do this check only for known extensions, as Firefox will return a
+    // generic 'Object' for others and that will break everything.
+    function checkInstrumented() {
+      if (proto['__gl_wrapped__']) {
+        return false;
+      }
+      Object.defineProperty(proto, '__gl_wrapped__', {
+        'configurable': true,
+        'enumerable': false,
+        'value': true
+      });
+      contextRestoreFns.push(function() {
+        delete proto['__gl_wrapped__'];
+      });
+      return true;
+    };
 
     switch (name) {
       case 'ANGLE_instanced_arrays':
-        wrapInstancedArrays(ctx, proto);
+        if (checkInstrumented()) {
+          wrapInstancedArrays(ctx, proto);
+        }
         break;
     }
   };
