@@ -14,6 +14,7 @@
 var pageMod = require('sdk/page-mod');
 var prefs = require('sdk/preferences/service');
 var self = require('sdk/self');
+var ss = require('sdk/simple-storage');
 var tabs = require('sdk/tabs');
 var timers = require('sdk/timers');
 var widgets = require('sdk/widget');
@@ -62,47 +63,25 @@ function resetTemporaryPreferences() {
 
 
 function getAllEnabledPageUrls() {
-  var json = prefs.get(prefRoot + 'pages', '{}');
-  if (!json) {
-    return [];
-  }
-  var pageStore;
-  try {
-    pageStore = JSON.parse(json);
-  } catch (e) {
-    return [];
-  }
+  var pageStore = ss.storage.pageStore || {};
   var urls = [];
   for (var key in pageStore) {
-    urls.push(key);
+    if (pageStore[key]['enabled']) {
+      urls.push(key);
+    }
   }
   return urls;
 };
 
 
 function getPagePreferences(url) {
-  var json = prefs.get(prefRoot + 'pages', '{}');
-  if (!json) {
-    return null;
-  }
-  var pageStore;
-  try {
-    pageStore = JSON.parse(json);
-  } catch (e) {
-    return null;
-  }
+  var pageStore = ss.storage.pageStore || {};
   return pageStore[url];
 };
 
 
 function setPagePreference(url, key, value) {
-  var json = prefs.get(prefRoot + 'pages') || '{}';
-  var pageStore;
-  try {
-    pageStore = JSON.parse(json);
-  } catch (e) {
-    pageStore = {};
-  }
+  var pageStore = ss.storage.pageStore || {};
   var entry = pageStore[url];
   if (!entry) {
     entry = {};
@@ -112,8 +91,7 @@ function setPagePreference(url, key, value) {
   }
   entry[key] = value;
   pageStore[url] = entry;
-  json = JSON.stringify(pageStore);
-  prefs.set(prefRoot + 'pages', json);
+  ss.storage.pageStore = pageStore;
   return true;
 };
 
@@ -505,6 +483,10 @@ var widget = widgets.Widget({
 
 
 exports.main = function(options, callbacks) {
+  // Reset any temporary preferences that weren't properly reset last unload,
+  // such as in the case of a browser crash.
+  resetTemporaryPreferences();
+
   // Enable all pagemods for injected pages now.
   // This will reload any that are currently open.
   for each (var url in getAllEnabledPageUrls()) {

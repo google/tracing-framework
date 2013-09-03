@@ -14,6 +14,7 @@
 goog.provide('wtf.trace.providers.FirefoxDebugProvider');
 
 goog.require('goog.async.Deferred');
+goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
