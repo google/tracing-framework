@@ -197,10 +197,11 @@ wtf.trace.providers.FirefoxDebugProvider.prototype.setupEventDispatch_ =
     // Format of this data:
     // https://developer.mozilla.org/en-US/docs/SpiderMonkey/Internals/GC/Statistics_API
     var data = goog.global.JSON.parse(record[1]);
-    var startTime = (data['timestamp'] / 1000) - timebase;
-    var totalTime = data['total_time'];
-    var endTime = startTime + totalTime;
     var run = gcNumber++;
+
+    // var startTime = (data['timestamp'] / 1000) - timebase;
+    // var totalTime = data['total_time'];
+    // var endTime = startTime + totalTime;
 
     // log('GC', startTime, totalTime);
     var slices = data['slices'];

@@ -29,15 +29,19 @@ cd third_party/firefox-addon-sdk/
 source bin/activate
 cd ../..
 cd build-bin/wtf-injector-firefox/
-cfx xpi
+cfx xpi \
+    --update-link https://tracing-framework.appspot.com/CURRENT/web-tracing-framework.xpi \
+    --update-url https://tracing-framework.appspot.com/CURRENT/web-tracing-framework.update.rdf
 cd ../..
 mv build-bin/wtf-injector-firefox/web-tracing-framework.xpi build-bin/extensions/
+mv build-bin/wtf-injector-firefox/web-tracing-framework.update.rdf build-bin/extensions/
 
 echo ""
 echo "Chrome extension:"
 echo "  build-bin/extensions/wtf-injector-chrome/wtf-injector-chrome.zip"
 echo "Firefox extension:"
-echo "  build-bin/extensions/web-tracing-framework.xpi"
+echo "  build-bin/extensions/web-tracing-framework.xpi  <-- zip"
+echo "  build-bin/extensions/web-tracing-framework.update.rdf  <-- update RDF"
 echo ""
 echo "Ready for npm publish and update-gh-pages."
 echo ""

@@ -23,6 +23,7 @@ file_set(
     srcs=[
         ':tracing_files',
         'data:files',
+        'icon.png',
         'package.json',
         'README.md',
         ] +
