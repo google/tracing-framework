@@ -6,7 +6,6 @@
 
 goog.provide('wtf.trace.providers.WsProvider');
 
-goog.require('wtf.trace');
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
@@ -60,7 +59,6 @@ wtf.trace.providers.WsProvider.prototype.getSettingsSectionConfigs =
 };
 
 
-
 /**
  * Injects the WebSocket shim.
  * @private
@@ -85,9 +83,11 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
   /**
    * Proxy WebSocket.
    * @constructor
+   * @param {string} url Destination URL.
+   * @param {string=} opt_protocols Optional protocol.
    * @extends {wtf.trace.eventtarget.BaseEventTarget}
    */
-  var ProxyWebSocket = function WebSocket(url, protocols) {
+  var ProxyWebSocket = function WebSocket(url, opt_protocols) {
     goog.base(this, descriptor);
 
     /**
@@ -95,10 +95,10 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
      * @type {!WebSocket}
      * @private
      */
-    this.handle_= arguments.length == 1 ? 
-      new originalWs(url) : 
-      new originalWs(url, protocols);
-    
+    this.handle_ = arguments.length == 1 ?
+        new originalWs(url) :
+        new originalWs(url, opt_protocols);
+
     /**
      * Event type trackers, by name.
      * @type {!Object.<Function>}
@@ -113,7 +113,7 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
      */
     this.props_ = {
       'url': url,
-      'protocol': protocols
+      'protocol': opt_protocols
     };
 
   };

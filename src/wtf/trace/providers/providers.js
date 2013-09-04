@@ -24,8 +24,8 @@ goog.require('wtf.trace.providers.ReplayProvider');
 goog.require('wtf.trace.providers.TimingProvider');
 goog.require('wtf.trace.providers.WebGLProvider');
 goog.require('wtf.trace.providers.WebWorkerProvider');
-goog.require('wtf.trace.providers.XhrProvider');
 goog.require('wtf.trace.providers.WsProvider');
+goog.require('wtf.trace.providers.XhrProvider');
 
 
 /**

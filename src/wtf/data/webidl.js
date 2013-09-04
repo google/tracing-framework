@@ -297,7 +297,7 @@ wtf.data.webidl.OBJECTS = {
     events: {
       'message': 'MessageEvent'
     }
-  }, 
+  },
 
   // https://chromium.googlesource.com/chromium/blink/+/master/Source/modules/websockets/WebSocket.idl
   'WebSocket': {
