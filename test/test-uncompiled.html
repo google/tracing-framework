@@ -102,6 +102,10 @@
         wtf.trace.leaveScope(scope);
       });
 
+      document.body.addEventListener('DOMMouseScroll', function(e) {
+        console.log('scroll!');
+      }, false);
+
       var el = document.createElement('a');
       el.innerText = 'aaa';
       document.body.appendChild(el);

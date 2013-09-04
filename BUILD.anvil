@@ -215,7 +215,9 @@ closure_js_library(
     srcs=':all_trace_web_compiled_js',
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
-    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + WTF_TRACE_WEB_JS_FLAGS)
+    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS +
+        WTF_TRACE_WEB_JS_FLAGS + [
+            ])
 
 # TODO(benvanik): test in IE
 STYLES_WRAPPER=''.join([
@@ -365,11 +367,13 @@ closure_js_library(
     name='wtf_ui_js_compiled',
     deps_out='wtf_ui_js',
     mode='ADVANCED',
+    #pretty_print=True,
     entry_points=WTF_UI_ENTRY_POINTS,
     srcs=':all_ui_compiled_js',
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
+        #'--debug',
         '--define=wtf.app.exports.ENABLE_EXPORTS=true',
         '--define=wtf.db.exports.ENABLE_EXPORTS=true',
         '--define=wtf.replay.graphics.exports.ENABLE_EXPORTS=true',

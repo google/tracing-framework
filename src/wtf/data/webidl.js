@@ -127,8 +127,9 @@ wtf.data.webidl.EVENT_TYPES = {
   'WheelEvent': {
     inherits: 'MouseEvent',
     attributes: {
-      'wheelDeltaX': 'int32',
-      'wheelDeltaY': 'int32',
+      'deltaX': 'float32',
+      'deltaY': 'float32',
+      'deltaZ': 'float32',
       'deltaMode': 'uint32',
       'wheelDelta': 'int32',
 
@@ -184,6 +185,7 @@ wtf.data.webidl.OBJECTS = {
       'mouseover': 'MouseEvent',
       'mouseup': 'MouseEvent',
       'mousewheel': 'WheelEvent',
+      'wheel': 'WheelEvent',
       'readystatechange': null,
       'scroll': null,
       'select': null,
@@ -200,7 +202,9 @@ wtf.data.webidl.OBJECTS = {
       'touchend': null,
       'touchcancel': null,
       'webkitfullscreenchange': null,
-      'webkitfullscreenerror': null
+      'webkitfullscreenerror': null,
+
+      'DOMMouseScroll': 'UIEvent'     // Non-standard Firefox
     }
   },
 

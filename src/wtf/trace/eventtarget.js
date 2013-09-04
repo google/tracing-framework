@@ -16,6 +16,7 @@ goog.provide('wtf.trace.eventtarget.BaseEventTarget');
 goog.provide('wtf.trace.eventtarget.Descriptor');
 goog.provide('wtf.trace.eventtarget.EventRegistration');
 
+goog.require('goog.userAgent');
 goog.require('wtf.data.webidl');
 goog.require('wtf.trace.Scope');
 goog.require('wtf.trace.events');
@@ -96,13 +97,32 @@ wtf.trace.eventtarget.getEventNames = function(target) {
   }
 
   var eventNames = [];
-  var allNames = Object.getOwnPropertyNames(target);
-  for (var n = 0; n < allNames.length; n++) {
-    var propertyName = allNames[n];
-    if (propertyName.indexOf('on') == 0 &&
-        propertyName.toLowerCase() == propertyName) {
-      var eventName = propertyName.substr(2);
-      eventNames.push(eventName);
+  var hasMouseEvents = false;
+  var propertyTarget = target;
+  while (true) {
+    var allNames = Object.getOwnPropertyNames(propertyTarget);
+    for (var n = 0; n < allNames.length; n++) {
+      var propertyName = allNames[n];
+      if (propertyName == 'onmousedown') {
+        hasMouseEvents = true;
+      }
+      if (propertyName.indexOf('on') == 0 &&
+          propertyName.toLowerCase() == propertyName) {
+        var eventName = propertyName.substr(2);
+        eventNames.push(eventName);
+      }
+    }
+    propertyTarget = Object.getPrototypeOf(propertyTarget);
+    if (!propertyTarget ||
+        propertyTarget == /** @type {Object} */ (Object.prototype)) {
+      break;
+    }
+  }
+
+  if (goog.userAgent.GECKO) {
+    // HACK: add firefox-specific events as needed.
+    if (hasMouseEvents) {
+      eventNames.push('DOMMouseScroll');
     }
   }
 
@@ -279,12 +299,19 @@ wtf.trace.eventtarget.setEventProperties = function(descriptor, target) {
   var eventInfos = descriptor.eventInfos;
   for (var n = 0; n < eventInfos.length; n++) {
     var eventInfo = eventInfos[n];
-    Object.defineProperty(target, 'on' + eventInfo.name, {
-      'configurable': false,
-      'enumerable': false,
-      'get': eventInfo.getter,
-      'set': eventInfo.setter
-    });
+    try {
+      Object.defineProperty(target, 'on' + eventInfo.name, {
+        'configurable': false,
+        'enumerable': false,
+        'get': eventInfo.getter,
+        'set': eventInfo.setter
+      });
+    } catch (e) {
+      if (goog.DEBUG) {
+        goog.global.console.log('Unable to define property ' + eventInfo.name +
+            ' on ' + descriptor.prefix);
+      }
+    }
   }
 };
 
