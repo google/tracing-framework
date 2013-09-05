@@ -15,6 +15,7 @@ colgroup{display:table-column-group}
 td,th{display:table-cell}
 caption{display:table-caption}
 button,textarea,input,select{display:inline-block}
+img{display:inline}
 article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}
 audio,canvas,video{display:inline-block}
 audio:not([controls]){display:none;height:0}
@@ -75,11 +76,12 @@ table{border-collapse:collapse;border-spacing:0}
 .k .kBodyLink{color:#15c}
 .k .kVisitedLink{color:#61c}
 .k .kRedLink{color:#dd4b39}
+.k .kSeparator{color:#ccc;background-color:#ccc;border:0;height:1px}
 .k .kAppBar{padding:10px 0;border-bottom:1px solid #ebebeb;height:29px;background:#fff}
 .k .kAppBarName{font-size:20px;line-height:29px;color:#dd4b39;width:160px;height:29px;margin:0 44px 0 16px;float:left;white-space:nowrap}
 .k .kButtonBar{height:29px;line-height:29px}
 .k .kButtonBar.kRight{float:right;margin-right:6px}
-.k .kButtonBarVertical{padding-left:2px;padding-top:2px}
+.k .kButtonBarVertical{padding-left:2px;padding-right:2px;padding-top:2px;width:100%}
 .k .kButton{text-decoration:none;display:inline-block;min-width:54px;border:1px solid #dcdcdc;border:1px solid rgba(0,0,0,0.1);text-align:center;color:#444;font-size:11px;font-weight:bold;height:27px;padding:0 8px;line-height:27px;cursor:default;-webkit-transition:all .218s ease;-moz-transition:all .218s ease;-ms-transition:all .218s ease;-o-transition:all .218s ease;transition:all .218s ease;-webkit-border-radius:2px;-moz-border-radius:2px;border-radius:2px;background-color:#f5f5f5;background-image:-webkit-linear-gradient(top, #f5f5f5, #f1f1f1);background-image:-moz-linear-gradient(top, #f5f5f5, #f1f1f1);background-image:-o-linear-gradient(top, #f5f5f5, #f1f1f1);background-image:linear-gradient(top, #f5f5f5, #f1f1f1);-ms-filter:"progid:DXImageTransform.Microsoft.gradient(startColorstr=#f5f5f5, endColorstr=#f1f1f1)";background-image:-ms-linear-gradient(top, #f5f5f5, #f1f1f1);-moz-user-select:none;-ms-user-select:none;-webkit-user-select:none}.k .kButton:hover{text-decoration:none;border:1px solid #c6c6c6;color:#222;-webkit-transition:all 0 ease;-moz-transition:all 0 ease;-ms-transition:all 0 ease;-o-transition:all 0 ease;transition:all 0 ease;background-color:#f8f8f8;background-image:-webkit-linear-gradient(top, #f8f8f8, #f1f1f1);background-image:-moz-linear-gradient(top, #f8f8f8, #f1f1f1);background-image:-o-linear-gradient(top, #f8f8f8, #f1f1f1);background-image:linear-gradient(top, #f8f8f8, #f1f1f1);-ms-filter:"progid:DXImageTransform.Microsoft.gradient(startColorstr=#f8f8f8, endColorstr=#f1f1f1)";background-image:-ms-linear-gradient(top, #f8f8f8, #f1f1f1);-webkit-box-shadow:0 1px 1px rgba(0,0,0,0.1);box-shadow:0 1px 1px rgba(0,0,0,0.1)}.k .kButton:hover img{opacity:.72}
 .k .kButton:active{text-decoration:none;background-color:#f6f6f6;background-image:-webkit-linear-gradient(top, #f6f6f6, #f1f1f1);background-image:-moz-linear-gradient(top, #f6f6f6, #f1f1f1);background-image:-o-linear-gradient(top, #f6f6f6, #f1f1f1);background-image:linear-gradient(top, #f6f6f6, #f1f1f1);-ms-filter:"progid:DXImageTransform.Microsoft.gradient(startColorstr=#f6f6f6, endColorstr=#f1f1f1)";background-image:-ms-linear-gradient(top, #f6f6f6, #f1f1f1);-webkit-box-shadow:inset 0 1px 2px rgba(0,0,0,0.1);box-shadow:inset 0 1px 2px rgba(0,0,0,0.1)}.k .kButton:active img{opacity:1}
 .k .kButton:visited{text-decoration:none;color:#666}
@@ -96,7 +98,7 @@ table{border-collapse:collapse;border-spacing:0}
 .k .kButtonBar .kButton,.k .kButtonBar .kComboButton,.k .kButtonBar .kExpandButton{float:left;margin:0;margin-left:6px;position:relative;z-index:1}.k .kButtonBar .kButton:hover,.k .kButtonBar .kComboButton:hover,.k .kButtonBar .kExpandButton:hover{z-index:2}
 .k .kButtonBar .kButton:first-child,.k .kButtonBar .kComboButton:first-child,.k .kButtonBar .kExpandButton:first-child{margin-left:0}
 .k .kButtonBarSmall .kButton{min-width:33px}
-.k .kButtonBarVertical .kButton{left:0;margin-left:0;margin-bottom:2px}
+.k .kButtonBarVertical .kButton{left:0;margin-left:0;margin-bottom:2px;padding:0;width:100%}
 .k .kMenuButton .kButtonDisclosure{float:right;margin-top:10px;margin-left:5px;opacity:.8}
 .k .kMenuButton img+.kButtonLabel{margin-left:5px}
 .k .kMenuButton img{display:inline-block}
