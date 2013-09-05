@@ -6,6 +6,9 @@
 # This will build everything, check out the latest tracing-framework gh-pages
 # branch, update the bin/ path, and prepare a commit.
 
+# Break on error.
+set -e
+
 # This must currently run from the root of the repo
 # TODO(benvanik): make this runnable from anywhere (find git directory?)
 if [ ! -d ".git" ]; then
@@ -21,8 +24,7 @@ GIT_USEREMAIL=`git config user.email`
 # =============================================================================
 echo "Building everything..."
 
-./third_party/anvil-build/anvil-local.sh build :fast :debug :release
-./third_party/anvil-build/anvil-local.sh deploy -o build-bin/gh-pages/ :release
+./scripts/prepare-publish.sh
 SRC_PATH=$PWD/build-bin/gh-pages/
 
 echo ""
