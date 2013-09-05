@@ -65,6 +65,11 @@ wtf.trace.providers.WebWorkerProvider = function(traceManager, options) {
    */
   this.childWorkers_ = [];
 
+  // MessageChannel/MessagePort.
+  if (typeof goog.global['MessagePort'] == 'function') {
+    this.injectMessagePort_();
+  }
+
   // Since workers will eventually be available within workers we test for them.
   if (typeof goog.global['Worker'] == 'function') {
     this.injectBrowserShim_();
@@ -145,6 +150,74 @@ wtf.trace.providers.WebWorkerProvider.prototype.requestSnapshots = function(
     });
   });
   return this.childWorkers_.length;
+};
+
+
+/**
+ * Injects MessagePort/MessageChannel.
+ * @private
+ */
+wtf.trace.providers.WebWorkerProvider.prototype.injectMessagePort_ =
+    function() {
+  var proto = goog.global['MessagePort'].prototype;
+
+  var postMessageEvent = wtf.trace.events.createScope(
+      'MessagePort#postMessage()');
+  var originalPostMessage = proto.postMessage;
+  this.injectFunction(proto, 'postMessage',
+      function postMessage(message, opt_transfer) {
+        var result;
+        try {
+          var scope = postMessageEvent();
+          result = originalPostMessage.apply(this, arguments);
+        } finally {
+          return wtf.trace.leaveScope(scope, result);
+        }
+      });
+
+  var startEvent = wtf.trace.events.createScope(
+      'MessagePort#start()');
+  var originalStart = proto.start;
+  this.injectFunction(proto, 'start',
+      function start() {
+        var result;
+        try {
+          var scope = startEvent();
+          result = originalStart.apply(this, arguments);
+        } finally {
+          return wtf.trace.leaveScope(scope, result);
+        }
+      });
+
+  var closeEvent = wtf.trace.events.createScope(
+      'MessagePort#close()');
+  var originalClose = proto.close;
+  this.injectFunction(proto, 'close',
+      function close() {
+        var result;
+        try {
+          var scope = closeEvent();
+          result = originalClose.apply(this, arguments);
+        } finally {
+          return wtf.trace.leaveScope(scope, result);
+        }
+      });
+
+  var descriptor = wtf.trace.eventtarget.createDescriptor(
+      'MessagePort', wtf.data.webidl.getAllEvents('MessagePort'));
+  wtf.trace.eventtarget.mixin(descriptor, proto);
+  wtf.trace.eventtarget.setDescriptor(proto, descriptor);
+  wtf.trace.eventtarget.setEventProperties(descriptor, proto);
+
+  var originalMessageChannel = goog.global['MessageChannel'];
+  if (originalMessageChannel) {
+    goog.global['MessageChannel'] = function MessageChannel() {
+      var channel = new originalMessageChannel();
+      wtf.trace.eventtarget.initializeEventProperties(channel.port1);
+      wtf.trace.eventtarget.initializeEventProperties(channel.port2);
+      return channel;
+    };
+  }
 };
 
 

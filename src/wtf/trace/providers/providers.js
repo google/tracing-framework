@@ -61,11 +61,11 @@ wtf.trace.providers.setup = function(traceManager) {
     traceManager.addProvider(
         new wtf.trace.providers.ImageProvider(options));
     traceManager.addProvider(
-        new wtf.trace.providers.XhrProvider(options));
-    traceManager.addProvider(
         new wtf.trace.providers.WebGLProvider(traceManager, options));
     traceManager.addProvider(
         new wtf.trace.providers.WebWorkerProvider(traceManager, options));
+    traceManager.addProvider(
+        new wtf.trace.providers.XhrProvider(options));
   }
 
   // Node only:

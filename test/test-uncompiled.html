@@ -106,6 +106,16 @@
         console.log('scroll!');
       }, false);
 
+      if (window.MessageChannel) {
+        var channel = new MessageChannel();
+        channel.port1.onmessage = function() {
+          wtf.trace.timeStamp('port_onmessage');
+        };
+        wtf.trace.timeStamp('port_send_message');
+        channel.port2.postMessage(0);
+        window.cc = channel;
+      }
+
       var el = document.createElement('a');
       el.innerText = 'aaa';
       document.body.appendChild(el);

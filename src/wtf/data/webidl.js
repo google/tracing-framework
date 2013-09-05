@@ -145,6 +145,13 @@ wtf.data.webidl.EVENT_TYPES = {
       'position': 'uint32',
       'totalSize': 'uint32'
     }
+  },
+
+  // https://chromium.googlesource.com/chromium/blink/+/master/Source/core/dom/MessageEvent.idl
+  'MessageEvent': {
+    inherits: 'Event',
+    attributes: {
+    }
   }
 };
 
@@ -272,6 +279,13 @@ wtf.data.webidl.OBJECTS = {
       'progress': 'XMLHttpRequestProgressEvent',
       'timeout': 'XMLHttpRequestProgressEvent',
       'readystatechange': 'XMLHttpRequestProgressEvent'
+    }
+  },
+
+  // https://chromium.googlesource.com/chromium/blink/+/master/Source/core/dom/MessagePort.idl
+  'MessagePort': {
+    events: {
+      'message': 'MessageEvent'
     }
   }
 };
