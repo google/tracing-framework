@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 1378368E6
+  return 13784544E5
 };
 wtf.version.getCommit = function() {
-  return"06d57bec802b8a6b4df346e0c8fe84261b738f7a"
+  return"29c803ffef7d12beae2d16f0b19d6852ae9fc075"
 };
 wtf.version.toString = function() {
-  return"2013.9.5-1"
+  return"2013.9.6-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -6740,18 +6740,18 @@ wtf.db.FilterParser = function() {
       return a
     }
     function n() {
-      var a, d, h, l, m, n, u, r, B;
+      var a, d, h, l, m, u, n, r, B;
       p++;
-      u = e(k);
+      n = e(k);
       r = e(k);
       a = q();
       if(null !== a) {
         d = [];
         B = e(k);
         h = w();
-        null !== h ? (44 === b.charCodeAt(k.offset) ? (l = ",", f(k, 1)) : (l = null, 0 === p && g('","')), null !== l ? (m = w(), null !== m ? (n = q(), null !== n ? h = [h, l, m, n] : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B));
+        null !== h ? (44 === b.charCodeAt(k.offset) ? (l = ",", f(k, 1)) : (l = null, 0 === p && g('","')), null !== l ? (m = w(), null !== m ? (u = q(), null !== u ? h = [h, l, m, u] : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B));
         for(;null !== h;) {
-          d.push(h), B = e(k), h = w(), null !== h ? (44 === b.charCodeAt(k.offset) ? (l = ",", f(k, 1)) : (l = null, 0 === p && g('","')), null !== l ? (m = w(), null !== m ? (n = q(), null !== n ? h = [h, l, m, n] : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B))
+          d.push(h), B = e(k), h = w(), null !== h ? (44 === b.charCodeAt(k.offset) ? (l = ",", f(k, 1)) : (l = null, 0 === p && g('","')), null !== l ? (m = w(), null !== m ? (u = q(), null !== u ? h = [h, l, m, u] : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B))) : (h = null, k = e(B))
         }
         null !== d ? a = [a, d] : (a = null, k = e(r))
       }else {
@@ -6762,7 +6762,7 @@ wtf.db.FilterParser = function() {
           a.push(d[h][3])
         }
       }
-      null === a && (k = e(u));
+      null === a && (k = e(n));
       p--;
       0 === p && null === a && g("arguments");
       return a
@@ -6805,7 +6805,7 @@ wtf.db.FilterParser = function() {
       return a
     }
     function y() {
-      var a, d, h, l, m, n, u, r, B, y, t, q;
+      var a, d, h, l, m, u, n, r, B, y, t, q;
       p++;
       B = e(k);
       y = e(k);
@@ -6815,13 +6815,13 @@ wtf.db.FilterParser = function() {
         t = e(k);
         q = e(k);
         h = w();
-        null !== h ? (91 === b.charCodeAt(k.offset) ? (l = "[", f(k, 1)) : (l = null, 0 === p && g('"["')), null !== l ? (m = w(), null !== m ? (n = C(), null !== n ? (u = w(), null !== u ? (93 === b.charCodeAt(k.offset) ? (r = "]", f(k, 1)) : (r = null, 0 === p && g('"]"')), null !== r ? h = [h, l, m, n, u, r] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q));
+        null !== h ? (91 === b.charCodeAt(k.offset) ? (l = "[", f(k, 1)) : (l = null, 0 === p && g('"["')), null !== l ? (m = w(), null !== m ? (u = C(), null !== u ? (n = w(), null !== n ? (93 === b.charCodeAt(k.offset) ? (r = "]", f(k, 1)) : (r = null, 0 === p && g('"]"')), null !== r ? h = [h, l, m, u, n, r] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q));
         null !== h && (h = h[3]);
         null === h && (k = e(t));
-        null === h && (t = e(k), q = e(k), h = w(), null !== h ? (46 === b.charCodeAt(k.offset) ? (l = ".", f(k, 1)) : (l = null, 0 === p && g('"."')), null !== l ? (m = w(), null !== m ? (n = M(), null !== n ? h = [h, l, m, n] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q)), null !== h && (h = h[3]), null === h && (k = e(t)));
+        null === h && (t = e(k), q = e(k), h = w(), null !== h ? (46 === b.charCodeAt(k.offset) ? (l = ".", f(k, 1)) : (l = null, 0 === p && g('"."')), null !== l ? (m = w(), null !== m ? (u = M(), null !== u ? h = [h, l, m, u] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q)), null !== h && (h = h[3]), null === h && (k = e(t)));
         for(;null !== h;) {
-          d.push(h), t = e(k), q = e(k), h = w(), null !== h ? (91 === b.charCodeAt(k.offset) ? (l = "[", f(k, 1)) : (l = null, 0 === p && g('"["')), null !== l ? (m = w(), null !== m ? (n = C(), null !== n ? (u = w(), null !== u ? (93 === b.charCodeAt(k.offset) ? (r = "]", f(k, 1)) : (r = null, 0 === p && g('"]"')), null !== r ? h = [h, l, m, n, u, r] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q)), null !== 
-          h && (h = h[3]), null === h && (k = e(t)), null === h && (t = e(k), q = e(k), h = w(), null !== h ? (46 === b.charCodeAt(k.offset) ? (l = ".", f(k, 1)) : (l = null, 0 === p && g('"."')), null !== l ? (m = w(), null !== m ? (n = M(), null !== n ? h = [h, l, m, n] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q)), null !== h && (h = h[3]), null === h && (k = e(t)))
+          d.push(h), t = e(k), q = e(k), h = w(), null !== h ? (91 === b.charCodeAt(k.offset) ? (l = "[", f(k, 1)) : (l = null, 0 === p && g('"["')), null !== l ? (m = w(), null !== m ? (u = C(), null !== u ? (n = w(), null !== n ? (93 === b.charCodeAt(k.offset) ? (r = "]", f(k, 1)) : (r = null, 0 === p && g('"]"')), null !== r ? h = [h, l, m, u, n, r] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q)), null !== 
+          h && (h = h[3]), null === h && (k = e(t)), null === h && (t = e(k), q = e(k), h = w(), null !== h ? (46 === b.charCodeAt(k.offset) ? (l = ".", f(k, 1)) : (l = null, 0 === p && g('"."')), null !== l ? (m = w(), null !== m ? (u = M(), null !== u ? h = [h, l, m, u] : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q))) : (h = null, k = e(q)), null !== h && (h = h[3]), null === h && (k = e(t)))
         }
         null !== d ? a = [a, d] : (a = null, k = e(y))
       }else {
@@ -6838,23 +6838,23 @@ wtf.db.FilterParser = function() {
       return a
     }
     function t() {
-      var a, d, h, l, m, n, u;
+      var a, d, h, l, m, u, n;
       p++;
-      n = e(k);
       u = e(k);
+      n = e(k);
       123 === b.charCodeAt(k.offset) ? (a = "{", f(k, 1)) : (a = null, 0 === p && g('"{"'));
-      null !== a ? (d = w(), null !== d ? (125 === b.charCodeAt(k.offset) ? (h = "}", f(k, 1)) : (h = null, 0 === p && g('"}"')), null !== h ? (l = w(), null !== l ? a = [a, d, h, l] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u));
+      null !== a ? (d = w(), null !== d ? (125 === b.charCodeAt(k.offset) ? (h = "}", f(k, 1)) : (h = null, 0 === p && g('"}"')), null !== h ? (l = w(), null !== l ? a = [a, d, h, l] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n));
       null !== a && (a = {});
-      null === a && (k = e(n));
-      null === a && (n = e(k), u = e(k), 123 === b.charCodeAt(k.offset) ? (a = "{", f(k, 1)) : (a = null, 0 === p && g('"{"')), null !== a ? (d = w(), null !== d ? (h = v(), null !== h ? (125 === b.charCodeAt(k.offset) ? (l = "}", f(k, 1)) : (l = null, 0 === p && g('"}"')), null !== l ? (m = w(), null !== m ? a = [a, d, h, l, m] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u)), null !== a && (a = a[2]), null === a && (k = e(n)));
+      null === a && (k = e(u));
+      null === a && (u = e(k), n = e(k), 123 === b.charCodeAt(k.offset) ? (a = "{", f(k, 1)) : (a = null, 0 === p && g('"{"')), null !== a ? (d = w(), null !== d ? (h = v(), null !== h ? (125 === b.charCodeAt(k.offset) ? (l = "}", f(k, 1)) : (l = null, 0 === p && g('"}"')), null !== l ? (m = w(), null !== m ? a = [a, d, h, l, m] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n)), null !== a && (a = a[2]), null === a && (k = e(u)));
       p--;
       0 === p && null === a && g("object");
       return a
     }
     function v() {
-      var a, d, h, l, m, n, u, r;
-      n = e(k);
+      var a, d, h, l, m, u, n, r;
       u = e(k);
+      n = e(k);
       a = s();
       if(null !== a) {
         d = [];
@@ -6864,9 +6864,9 @@ wtf.db.FilterParser = function() {
         for(;null !== h;) {
           d.push(h), r = e(k), 44 === b.charCodeAt(k.offset) ? (h = ",", f(k, 1)) : (h = null, 0 === p && g('","')), null !== h ? (l = w(), null !== l ? (m = s(), null !== m ? h = [h, l, m] : (h = null, k = e(r))) : (h = null, k = e(r))) : (h = null, k = e(r))
         }
-        null !== d ? a = [a, d] : (a = null, k = e(u))
+        null !== d ? a = [a, d] : (a = null, k = e(n))
       }else {
-        a = null, k = e(u)
+        a = null, k = e(n)
       }
       if(null !== a) {
         d = a[0];
@@ -6878,37 +6878,37 @@ wtf.db.FilterParser = function() {
         }
         a = h
       }
-      null === a && (k = e(n));
+      null === a && (k = e(u));
       return a
     }
     function s() {
-      var a, d, h, l, m, n;
+      var a, d, h, l, m, u;
       m = e(k);
-      n = e(k);
+      u = e(k);
       a = F();
-      null !== a ? (58 === b.charCodeAt(k.offset) ? (d = ":", f(k, 1)) : (d = null, 0 === p && g('":"')), null !== d ? (h = w(), null !== h ? (l = C(), null !== l ? a = [a, d, h, l] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n));
+      null !== a ? (58 === b.charCodeAt(k.offset) ? (d = ":", f(k, 1)) : (d = null, 0 === p && g('":"')), null !== d ? (h = w(), null !== h ? (l = C(), null !== l ? a = [a, d, h, l] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u));
       null !== a && (a = [a[0], a[3]]);
       null === a && (k = e(m));
       return a
     }
     function A() {
-      var a, d, h, l, m, n, u;
+      var a, d, h, l, m, u, n;
       p++;
-      n = e(k);
       u = e(k);
+      n = e(k);
       91 === b.charCodeAt(k.offset) ? (a = "[", f(k, 1)) : (a = null, 0 === p && g('"["'));
-      null !== a ? (d = w(), null !== d ? (93 === b.charCodeAt(k.offset) ? (h = "]", f(k, 1)) : (h = null, 0 === p && g('"]"')), null !== h ? (l = w(), null !== l ? a = [a, d, h, l] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u));
+      null !== a ? (d = w(), null !== d ? (93 === b.charCodeAt(k.offset) ? (h = "]", f(k, 1)) : (h = null, 0 === p && g('"]"')), null !== h ? (l = w(), null !== l ? a = [a, d, h, l] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n));
       null !== a && (a = []);
-      null === a && (k = e(n));
-      null === a && (n = e(k), u = e(k), 91 === b.charCodeAt(k.offset) ? (a = "[", f(k, 1)) : (a = null, 0 === p && g('"["')), null !== a ? (d = w(), null !== d ? (h = z(), null !== h ? (93 === b.charCodeAt(k.offset) ? (l = "]", f(k, 1)) : (l = null, 0 === p && g('"]"')), null !== l ? (m = w(), null !== m ? a = [a, d, h, l, m] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u)), null !== a && (a = a[2]), null === a && (k = e(n)));
+      null === a && (k = e(u));
+      null === a && (u = e(k), n = e(k), 91 === b.charCodeAt(k.offset) ? (a = "[", f(k, 1)) : (a = null, 0 === p && g('"["')), null !== a ? (d = w(), null !== d ? (h = z(), null !== h ? (93 === b.charCodeAt(k.offset) ? (l = "]", f(k, 1)) : (l = null, 0 === p && g('"]"')), null !== l ? (m = w(), null !== m ? a = [a, d, h, l, m] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n)), null !== a && (a = a[2]), null === a && (k = e(u)));
       p--;
       0 === p && null === a && g("array");
       return a
     }
     function z() {
-      var a, d, h, l, m, n, u, r;
-      n = e(k);
+      var a, d, h, l, m, u, n, r;
       u = e(k);
+      n = e(k);
       a = C();
       if(null !== a) {
         d = [];
@@ -6918,16 +6918,16 @@ wtf.db.FilterParser = function() {
         for(;null !== h;) {
           d.push(h), r = e(k), 44 === b.charCodeAt(k.offset) ? (h = ",", f(k, 1)) : (h = null, 0 === p && g('","')), null !== h ? (l = w(), null !== l ? (m = C(), null !== m ? h = [h, l, m] : (h = null, k = e(r))) : (h = null, k = e(r))) : (h = null, k = e(r))
         }
-        null !== d ? a = [a, d] : (a = null, k = e(u))
+        null !== d ? a = [a, d] : (a = null, k = e(n))
       }else {
-        a = null, k = e(u)
+        a = null, k = e(n)
       }
       if(null !== a) {
         for(d = a[1], a = [a[0]], h = 0;h < d.length;h++) {
           a.push(d[h][2])
         }
       }
-      null === a && (k = e(n));
+      null === a && (k = e(u));
       return a
     }
     function C() {
@@ -6941,15 +6941,15 @@ wtf.db.FilterParser = function() {
       return a
     }
     function F() {
-      var a, d, h, l, m, n;
+      var a, d, h, l, m, u;
       p++;
       m = e(k);
-      n = e(k);
+      u = e(k);
       34 === b.charCodeAt(k.offset) ? (a = '"', f(k, 1)) : (a = null, 0 === p && g('"\\""'));
-      null !== a ? (34 === b.charCodeAt(k.offset) ? (d = '"', f(k, 1)) : (d = null, 0 === p && g('"\\""')), null !== d ? (h = w(), null !== h ? a = [a, d, h] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n));
+      null !== a ? (34 === b.charCodeAt(k.offset) ? (d = '"', f(k, 1)) : (d = null, 0 === p && g('"\\""')), null !== d ? (h = w(), null !== h ? a = [a, d, h] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u));
       null !== a && (a = "");
       null === a && (k = e(m));
-      null === a && (m = e(k), n = e(k), 34 === b.charCodeAt(k.offset) ? (a = '"', f(k, 1)) : (a = null, 0 === p && g('"\\""')), null !== a ? (d = G(), null !== d ? (34 === b.charCodeAt(k.offset) ? (h = '"', f(k, 1)) : (h = null, 0 === p && g('"\\""')), null !== h ? (l = w(), null !== l ? a = [a, d, h, l] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n)), null !== a && (a = a[1]), null === a && (k = e(m)));
+      null === a && (m = e(k), u = e(k), 34 === b.charCodeAt(k.offset) ? (a = '"', f(k, 1)) : (a = null, 0 === p && g('"\\""')), null !== a ? (d = G(), null !== d ? (34 === b.charCodeAt(k.offset) ? (h = '"', f(k, 1)) : (h = null, 0 === p && g('"\\""')), null !== h ? (l = w(), null !== l ? a = [a, d, h, l] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u)), null !== a && (a = a[1]), null === a && (k = e(m)));
       p--;
       0 === p && null === a && g("string");
       return a
@@ -6970,12 +6970,12 @@ wtf.db.FilterParser = function() {
       return a
     }
     function u() {
-      var a, d, h, l, m, n, u, r;
+      var a, d, h, l, m, u, n, r;
       /^[^"\\\0-\x1F\u007f]/.test(b.charAt(k.offset)) ? (a = b.charAt(k.offset), f(k, 1)) : (a = null, 0 === p && g('[^"\\\\\\0-\\x1F\u007f]'));
-      null === a && (n = e(k), '\\"' === b.substr(k.offset, 2) ? (a = '\\"', f(k, 2)) : (a = null, 0 === p && g('"\\\\\\""')), null !== a && (a = '"'), null === a && (k = e(n)), null === a && (n = e(k), "\\\\" === b.substr(k.offset, 2) ? (a = "\\\\", f(k, 2)) : (a = null, 0 === p && g('"\\\\\\\\"')), null !== a && (a = "\\"), null === a && (k = e(n)), null === a && (n = e(k), "\\/" === b.substr(k.offset, 2) ? (a = "\\/", f(k, 2)) : (a = null, 0 === p && g('"\\\\/"')), null !== a && (a = "/"), null === 
-      a && (k = e(n)), null === a && (n = e(k), "\\b" === b.substr(k.offset, 2) ? (a = "\\b", f(k, 2)) : (a = null, 0 === p && g('"\\\\b"')), null !== a && (a = "\b"), null === a && (k = e(n)), null === a && (n = e(k), "\\f" === b.substr(k.offset, 2) ? (a = "\\f", f(k, 2)) : (a = null, 0 === p && g('"\\\\f"')), null !== a && (a = "\f"), null === a && (k = e(n)), null === a && (n = e(k), "\\n" === b.substr(k.offset, 2) ? (a = "\\n", f(k, 2)) : (a = null, 0 === p && g('"\\\\n"')), null !== a && (a = 
-      "\n"), null === a && (k = e(n)), null === a && (n = e(k), "\\r" === b.substr(k.offset, 2) ? (a = "\\r", f(k, 2)) : (a = null, 0 === p && g('"\\\\r"')), null !== a && (a = "\r"), null === a && (k = e(n)), null === a && (n = e(k), "\\t" === b.substr(k.offset, 2) ? (a = "\\t", f(k, 2)) : (a = null, 0 === p && g('"\\\\t"')), null !== a && (a = "\t"), null === a && (k = e(n)), null === a && (n = e(k), u = e(k), "\\u" === b.substr(k.offset, 2) ? (a = "\\u", f(k, 2)) : (a = null, 0 === p && g('"\\\\u"')), 
-      null !== a ? (r = e(k), d = J(), null !== d ? (h = J(), null !== h ? (l = J(), null !== l ? (m = J(), null !== m ? d = [d, h, l, m] : (d = null, k = e(r))) : (d = null, k = e(r))) : (d = null, k = e(r))) : (d = null, k = e(r)), null !== d ? a = [a, d] : (a = null, k = e(u))) : (a = null, k = e(u)), null !== a && (a = String.fromCharCode(parseInt("0x" + a[1], 16))), null === a && (k = e(n)))))))))));
+      null === a && (u = e(k), '\\"' === b.substr(k.offset, 2) ? (a = '\\"', f(k, 2)) : (a = null, 0 === p && g('"\\\\\\""')), null !== a && (a = '"'), null === a && (k = e(u)), null === a && (u = e(k), "\\\\" === b.substr(k.offset, 2) ? (a = "\\\\", f(k, 2)) : (a = null, 0 === p && g('"\\\\\\\\"')), null !== a && (a = "\\"), null === a && (k = e(u)), null === a && (u = e(k), "\\/" === b.substr(k.offset, 2) ? (a = "\\/", f(k, 2)) : (a = null, 0 === p && g('"\\\\/"')), null !== a && (a = "/"), null === 
+      a && (k = e(u)), null === a && (u = e(k), "\\b" === b.substr(k.offset, 2) ? (a = "\\b", f(k, 2)) : (a = null, 0 === p && g('"\\\\b"')), null !== a && (a = "\b"), null === a && (k = e(u)), null === a && (u = e(k), "\\f" === b.substr(k.offset, 2) ? (a = "\\f", f(k, 2)) : (a = null, 0 === p && g('"\\\\f"')), null !== a && (a = "\f"), null === a && (k = e(u)), null === a && (u = e(k), "\\n" === b.substr(k.offset, 2) ? (a = "\\n", f(k, 2)) : (a = null, 0 === p && g('"\\\\n"')), null !== a && (a = 
+      "\n"), null === a && (k = e(u)), null === a && (u = e(k), "\\r" === b.substr(k.offset, 2) ? (a = "\\r", f(k, 2)) : (a = null, 0 === p && g('"\\\\r"')), null !== a && (a = "\r"), null === a && (k = e(u)), null === a && (u = e(k), "\\t" === b.substr(k.offset, 2) ? (a = "\\t", f(k, 2)) : (a = null, 0 === p && g('"\\\\t"')), null !== a && (a = "\t"), null === a && (k = e(u)), null === a && (u = e(k), n = e(k), "\\u" === b.substr(k.offset, 2) ? (a = "\\u", f(k, 2)) : (a = null, 0 === p && g('"\\\\u"')), 
+      null !== a ? (r = e(k), d = J(), null !== d ? (h = J(), null !== h ? (l = J(), null !== l ? (m = J(), null !== m ? d = [d, h, l, m] : (d = null, k = e(r))) : (d = null, k = e(r))) : (d = null, k = e(r))) : (d = null, k = e(r)), null !== d ? a = [a, d] : (a = null, k = e(n))) : (a = null, k = e(n)), null !== a && (a = String.fromCharCode(parseInt("0x" + a[1], 16))), null === a && (k = e(u)))))))))));
       return a
     }
     function P() {
@@ -7161,12 +7161,12 @@ wtf.db.FilterParser = function() {
       return a
     }
     function Z() {
-      var a, d, h, l, m, n;
+      var a, d, h, l, m, u;
       p++;
       m = e(k);
-      n = e(k);
+      u = e(k);
       47 === b.charCodeAt(k.offset) ? (a = "/", f(k, 1)) : (a = null, 0 === p && g('"/"'));
-      null !== a ? (d = ea(), null !== d ? (47 === b.charCodeAt(k.offset) ? (h = "/", f(k, 1)) : (h = null, 0 === p && g('"/"')), null !== h ? (l = fa(), null !== l ? a = [a, d, h, l] : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n))) : (a = null, k = e(n));
+      null !== a ? (d = ea(), null !== d ? (47 === b.charCodeAt(k.offset) ? (h = "/", f(k, 1)) : (h = null, 0 === p && g('"/"')), null !== h ? (l = fa(), null !== l ? a = [a, d, h, l] : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u))) : (a = null, k = e(u));
       null !== a && (a = {type:"regex", value:a[1], flags:a[3]});
       null === a && (k = e(m));
       p--;
@@ -15061,7 +15061,9 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ = func
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ = function() {
   var a = 0;
-  goog.userAgent.isVersionOrHigher(29) || (a = wtf.timebase());
+  if(!goog.userAgent.isVersionOrHigher(29) || goog.userAgent.isVersionOrHigher(31)) {
+    a = wtf.timebase()
+  }
   var b = wtf.trace.events.createScope("javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_.GCEvent = function(c) {
     var d = c[2] - a;
@@ -16735,13 +16737,14 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
     var g = e;
     c && (g = a(e, this.workerId_));
     e = l(e, this.workerId_);
-    var h;
+    goog.global.Worker = d;
+    var h = goog.global.Worker, n;
     try {
-      h = new d(g)
+      n = new d(g)
     }finally {
-      wtf.trace.leaveScope(e)
+      goog.global.Worker = h, wtf.trace.leaveScope(e)
     }
-    this.handle_ = h;
+    this.handle_ = n;
     this.trackers_ = {};
     this.setEventHook("error", function(a) {
       wtf.trace.appendScopeData("id", this.workerId_)
@@ -16749,7 +16752,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
     this.setEventHook("message", function(a) {
       wtf.trace.appendScopeData("id", this.workerId_)
     }, this);
-    var n = this;
+    var q = this;
     this.handle_.addEventListener("message", function(a) {
       if(a.data.__wtf_worker_msg__) {
         a.__wtf_ignore__ = !0;
@@ -16761,7 +16764,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
             a.getError() || a.setValue(c.data);
             break;
           case "close":
-            goog.array.remove(b.childWorkers_, n)
+            goog.array.remove(b.childWorkers_, q)
         }
       }
     }, !1);
