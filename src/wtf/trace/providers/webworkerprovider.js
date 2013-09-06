@@ -320,10 +320,13 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
       newScriptUrl = createInjectionShim(scriptUrl, this.workerId_);
     }
     var scope = workerCtorEvent(scriptUrl, this.workerId_);
+    goog.global['Worker'] = originalWorker;
+    var previousGlobalWorker = goog.global['Worker'];
     var handle;
     try {
       handle = new originalWorker(newScriptUrl);
     } finally {
+      goog.global['Worker'] = previousGlobalWorker;
       wtf.trace.leaveScope(scope);
     }
 
