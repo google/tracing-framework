@@ -65,7 +65,9 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
    * @private
    */
   this.timelineDispatch_ = {};
-  this.setupTimelineDispatch_();
+  this.setupTimelineDispatch_(
+      options.getBoolean(
+          'wtf.trace.provider.chromeDebug.adjustTimebase', true));
 
   /**
    * The next ID used when making an async data request to the extension.
@@ -193,6 +195,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.getSettingsSectionConfigs =
           'title': 'GCs/paints/layouts/etc',
           'default': true
         },
+        {
+          'type': 'checkbox',
+          'key': 'wtf.trace.provider.chromeDebug.adjustTimebase',
+          'title': 'Adjust debug event timebase',
+          'default': true
+        },
         // {
         //   'type': 'checkbox',
         //   'key': 'wtf.trace.provider.chromeDebug.memoryInfo',
@@ -286,15 +294,15 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ =
 
 /**
  * Sets up the record dispatch table.
+ * @param {boolean} adjustTimebase Whether to adjust timebase by the walltime.
  * @private
  */
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
-    function() {
+    function(adjustTimebase) {
   // This table should match the one in
   // extensions/wtf-injector-chrome/debugger.js
   var timebase = 0;
-  if (!goog.userAgent.isVersionOrHigher(29) ||
-      goog.userAgent.isVersionOrHigher(31)) {
+  if (adjustTimebase) {
     // Chrome 29+ started using page-load relative times.
     // Older versions need to add the timebase.
     // Then they changed it back, just to mess with me, I'm sure.
