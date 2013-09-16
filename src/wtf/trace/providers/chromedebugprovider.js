@@ -17,7 +17,6 @@ goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
-goog.require('goog.userAgent');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ZoneType');
