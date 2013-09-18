@@ -83,7 +83,7 @@ wtf.app.tracks.TracksPanel = function(documentView) {
   this.viewport_ = new wtf.ui.zoom.Viewport();
   this.registerDisposable(this.viewport_);
   this.viewport_.setAllowedScales(
-      1000 / wtf.app.tracks.TracksPanel.MIN_GRANULARITY_,
+      1000 / wtf.app.tracks.TracksPanel.MIN_GRANULARITY_ / 100,
       1000 / wtf.app.tracks.TracksPanel.MAX_GRANULARITY_);
   var reentry = 0;
   this.viewport_.addListener(wtf.events.EventType.INVALIDATED, function() {

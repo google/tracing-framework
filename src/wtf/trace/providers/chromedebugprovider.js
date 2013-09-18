@@ -19,6 +19,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.style');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
+goog.require('wtf.data.Variable');
 goog.require('wtf.data.ZoneType');
 goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
@@ -553,9 +554,10 @@ wtf.trace.providers.ChromeDebugProvider.prototype.toggleCapture_ = function() {
   // We do the tracing scope so that the user won't get confused when they
   // see the setInterval dispatch in the native zone.
   function emitTraceTracker() {
-    var tracingScope = wtf.trace.enterTracingScope();
+    var now = wtf.now();
+    var tracingScope = wtf.trace.enterTracingScope(now);
 
-    var syncName = '$WTFTRACE:' + Math.floor(wtf.now() * 1000);
+    var syncName = '$WTFTRACE:' + Math.floor(now * 1000);
     // TODO(benvanik): use timestamp instead
     consoleTime.call(goog.global.console, syncName);
     consoleTimeEnd.call(goog.global.console, syncName);
@@ -576,10 +578,6 @@ wtf.trace.providers.ChromeDebugProvider.prototype.toggleCapture_ = function() {
     emitTraceTracker();
 
     this.updateTracingProgress_('tracing...');
-
-    // Mark the region tracing is active.
-    // This is cleared when the data comes back.
-    wtf.trace.mark('tracing');
   } else {
     // Stop the tracker interval.
     clearInterval.call(goog.global, this.tracingTrackerIntervalId_);
@@ -633,30 +631,41 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processChromeTracingData_ =
     };
   }
 
+  var timebase = 0;
+
+  // Mark the region tracing is active.
+  if (eventList.length) {
+    var firstTime = eventList[0][2] / 1000 - timebase;
+    wtf.trace.mark('tracing', undefined, firstTime);
+  }
+
   // Record events.
   for (var n = 0; n < eventList.length; n++) {
     var e = eventList[n];
+    var t = e[2] / 1000 - timebase;
     var traceZone = traceZones[e[1]];
     wtf.trace.pushZone(traceZone.zone);
     switch (e[0]) {
       case 0: // enter scope
         {
-          var scope = wtf.trace.enterScope(e[3], e[2]);
+          var scope = wtf.trace.enterScope(e[3], t);
           traceZone.openScopes.push(scope);
           for (var m = 4; m < e.length; m += 2) {
-            wtf.trace.appendScopeData(e[m], e[m + 1], e[2]);
+            t = e[2] / 1000 - timebase;
+            var name = wtf.data.Variable.santizeName(e[m]);
+            wtf.trace.appendScopeData(name, e[m + 1], t);
           }
           break;
         }
       case 1: // leave scope
         {
           var scope = traceZone.openScopes.pop();
-          wtf.trace.leaveScope(scope, undefined, e[2]);
+          wtf.trace.leaveScope(scope, undefined, t);
           break;
         }
       case 2: // timestamp
         {
-          wtf.trace.timeStamp(e[3], e[2]);
+          wtf.trace.timeStamp(e[3], t);
           break;
         }
     }
@@ -669,5 +678,11 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processChromeTracingData_ =
     while (traceZone.openScopes.length) {
       wtf.trace.leaveScope(traceZone.openScopes.pop());
     }
+  }
+
+  // Mark the end of tracing.
+  if (eventList.length) {
+    var lastTime = eventList[eventList.length - 1][2] / 1000 - timebase;
+    wtf.trace.mark('', undefined, lastTime);
   }
 };

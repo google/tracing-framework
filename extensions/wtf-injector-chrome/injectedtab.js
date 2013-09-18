@@ -257,8 +257,6 @@ InjectedTab.prototype.stopChromeTracing_ = function(trackerId, includeThreads) {
     // in the page can run a bit faster. It also hides a lot of the details of
     // the chrome:tracing format from the provider code, keeping it simpler.
 
-    data = JSON.parse('[' + data.join(',') + ']');
-
     // First we need to walk the data to find the threads by __metadata.
     // Unfortunately these come out of order.
     // We also search for sync events and assume they all come from us.
@@ -266,46 +264,49 @@ InjectedTab.prototype.stopChromeTracing_ = function(trackerId, includeThreads) {
     var nextZoneId = 0;
     var threads = {};
     var timeDelta = 0;
-    for (var n = 0; n < data.length; n++) {
-      var e = data[n];
-      if (!e) {
-        continue;
-      }
-
-      var threadKey = e.pid + ':' + e.tid;
-      var thread = threads[threadKey];
-      if (!thread) {
-        thread = threads[threadKey] = {
-          pid: e.pid,
-          tid: e.tid,
-          name: null,
-          included: false,
-          zoneId: nextZoneId++
-        };
-      }
-
-      if (e.cat == '__metadata') {
-        if (e.name == 'thread_name') {
-          thread.name = e.args.name;
-          if (includeThreads && includeThreads.indexOf(thread.name) != -1) {
-            thread.included = true;
-          }
+    for (var i = 0; i < data.length; i++) {
+      var innerList = data[i];
+      for (var j = 0; j < innerList.length; j++) {
+        var e = innerList[j];
+        if (!e) {
+          continue;
         }
-        data[n] = null;
-      }
 
-      // Sniff out our sync interval events.
-      if (e.ph == 'S' &&
-          e.name[0] == '$' &&
-          e.name.lastIndexOf('$WTFTRACE') == 0) {
-        var time = parseFloat(e.name.substr(e.name.lastIndexOf(':') + 1));
-        timeDelta = e.ts - time;
-        data[n] = null;
+        var threadKey = e.pid + ':' + e.tid;
+        var thread = threads[threadKey];
+        if (!thread) {
+          thread = threads[threadKey] = {
+            pid: e.pid,
+            tid: e.tid,
+            name: null,
+            included: false,
+            zoneId: nextZoneId++
+          };
+        }
 
-        // TODO(benvanik): match on trackerId
+        if (e.cat == '__metadata') {
+          if (e.name == 'thread_name') {
+            thread.name = e.args.name;
+            if (includeThreads && includeThreads.indexOf(thread.name) != -1) {
+              thread.included = true;
+            }
+          }
+          innerList[j] = null;
+        }
 
-        // Assume this thread is us.
-        thread.included = true;
+        // Sniff out our sync interval events.
+        if (e.ph == 'S' &&
+            e.name[0] == '$' &&
+            e.name.lastIndexOf('$WTFTRACE') == 0) {
+          var time = parseFloat(e.name.substr(e.name.lastIndexOf(':') + 1));
+          timeDelta = e.ts - time;
+          innerList[j] = null;
+
+          // TODO(benvanik): match on trackerId
+
+          // Assume this thread is us.
+          thread.included = true;
+        }
       }
     }
 
@@ -323,49 +324,52 @@ InjectedTab.prototype.stopChromeTracing_ = function(trackerId, includeThreads) {
 
     // Filter and modify the data.
     var filteredData = [];
-    for (var n = 0; n < data.length; n++) {
-      var e = data[n];
-      if (!e) {
-        continue;
-      }
-      var threadKey = e.pid + ':' + e.tid;
-      var thread = threads[threadKey];
-      if (!thread.included || !e.ts) {
-        continue;
-      }
-
-      // Only send along B/E/I events.
-      var ts = (e.ts - timeDelta) / 1000;
-      switch (e.ph) {
-        case 'B':
-        {
-          var ed = [0, thread.zoneId, ts, e.name];
-          if (e.args['name'] == e.name) {
-            // Ignore args.
-          } else {
-            // Append args as key, value. This prevents the need for another
-            // list/object.
-            for (var key in e.args) {
-              ed.push(key);
-              ed.push(e.args[key]);
-            }
-          }
-          filteredData.push(ed);
-          break;
-        }
-        case 'E':
-          filteredData.push([
-            1, thread.zoneId, ts
-          ]);
-          break;
-        case 'I':
-          filteredData.push([
-            2, thread.zoneId, ts, e.name
-          ]);
-          break;
-        default:
-          // Ignore unsupported types.
+    for (var i = 0; i < data.length; i++) {
+      var innerList = data[i];
+      for (var j = 0; j < innerList.length; j++) {
+        var e = innerList[j];
+        if (!e) {
           continue;
+        }
+        var threadKey = e.pid + ':' + e.tid;
+        var thread = threads[threadKey];
+        if (!thread.included || !e.ts) {
+          continue;
+        }
+
+        // Only send along B/E/I events.
+        var ts = e.ts - timeDelta;
+        switch (e.ph) {
+          case 'B':
+          {
+            var ed = [0, thread.zoneId, ts, e.name];
+            if (e.args['name'] == e.name) {
+              // Ignore args.
+            } else {
+              // Append args as key, value. This prevents the need for another
+              // list/object.
+              for (var key in e.args) {
+                ed.push(key);
+                ed.push(e.args[key]);
+              }
+            }
+            filteredData.push(ed);
+            break;
+          }
+          case 'E':
+            filteredData.push([
+              1, thread.zoneId, ts
+            ]);
+            break;
+          case 'I':
+            filteredData.push([
+              2, thread.zoneId, ts, e.name
+            ]);
+            break;
+          default:
+            // Ignore unsupported types.
+            continue;
+        }
       }
     }
 

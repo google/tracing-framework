@@ -242,3 +242,14 @@ wtf.data.Variable.parseSignature = function(signature) {
     argMap: argMap
   };
 };
+
+
+/**
+ * Sanitizes a name into something that can be used as a variable name.
+ * @param {string} source Source name.
+ * @return {string} Santized name.
+ */
+wtf.data.Variable.santizeName = function(source) {
+  // TODO(benvanik): clever things.
+  return source.replace(/ /g, '_');
+};
