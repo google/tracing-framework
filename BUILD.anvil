@@ -94,7 +94,6 @@ SHARED_JS_FLAGS=[
 
 RELEASE_JS_FLAGS=[
     '--use_types_for_optimization',
-    '--language_in=ECMASCRIPT5_STRICT',
     #'--collapse_variable_declarations',
     #'--collapse_anonymous_functions',
     #'--collapse_properties',
@@ -186,6 +185,7 @@ WTF_TRACE_WEB_ENTRY_POINTS=[
     ]
 
 WTF_TRACE_WEB_JS_FLAGS=[
+    '--language_in=ECMASCRIPT5_STRICT',
     '--define=wtf.hud.exports.ENABLE_EXPORTS=true',
     '--define=wtf.remote.exports.ENABLE_EXPORTS=true',
     '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
@@ -201,7 +201,7 @@ closure_js_library(
     srcs=':all_trace_web_uncompiled_js',
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
-    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS +
+    compiler_flags=SHARED_JS_FLAGS +
         WTF_TRACE_WEB_JS_FLAGS + [
             '--debug',
             '--create_name_map_files',
@@ -297,6 +297,7 @@ closure_js_library(
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
     compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
+        '--language_in=ECMASCRIPT5_STRICT',
         '--define=goog.DEBUG=false',
         '--define=goog.asserts.ENABLE_ASSERTS=false',
         '--define=wtf.NODE=true',
@@ -350,6 +351,11 @@ WTF_UI_ENTRY_POINTS=[
     'wtf.replay.timeTravel.exports',
     ]
 
+WTF_UI_JS_FLAGS=[
+    # Safari has issues with 'use strict'.
+    '--language_in=ECMASCRIPT5',
+    ]
+
 # wtf_ui_js_uncompiled
 closure_js_library(
     name='wtf_ui_js_uncompiled',
@@ -359,6 +365,8 @@ closure_js_library(
     srcs=':all_ui_uncompiled_js',
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
+    compiler_flags=SHARED_JS_FLAGS + WTF_UI_JS_FLAGS + [
+        ],
     wrap_with_global='this',
     file_list_out='wtf_ui_js.list')
 
@@ -372,7 +380,7 @@ closure_js_library(
     srcs=':all_ui_compiled_js',
     externs=[':all_externs'],
     compiler_jar=JS_COMPILER_JAR,
-    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + [
+    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS + WTF_UI_JS_FLAGS + [
         #'--debug',
         '--define=wtf.app.exports.ENABLE_EXPORTS=true',
         '--define=wtf.db.exports.ENABLE_EXPORTS=true',
