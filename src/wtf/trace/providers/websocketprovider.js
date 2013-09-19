@@ -1,10 +1,17 @@
 /**
+ * Copyright 2013 Google, Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+/**
  * @fileoverview WebSocket event provider.
  *
  * @author henridf@sessionbox.com (Henri Dubois-Ferriere, Sessionbox)
  */
 
-goog.provide('wtf.trace.providers.WsProvider');
+goog.provide('wtf.trace.providers.WebSocketProvider');
 
 goog.require('wtf.trace.Provider');
 goog.require('wtf.trace.Scope');
@@ -21,37 +28,37 @@ goog.require('wtf.trace.eventtarget.BaseEventTarget');
  * @constructor
  * @extends {wtf.trace.Provider}
  */
-wtf.trace.providers.WsProvider = function(options) {
+wtf.trace.providers.WebSocketProvider = function(options) {
   goog.base(this, options);
 
   if (!goog.global['WebSocket']) {
     return;
   }
 
-  var level = options.getNumber('wtf.trace.provider.ws', 1);
+  var level = options.getNumber('wtf.trace.provider.websocket', 1);
   if (!level) {
     return;
   }
 
   this.injectWs_();
 };
-goog.inherits(wtf.trace.providers.WsProvider, wtf.trace.Provider);
+goog.inherits(wtf.trace.providers.WebSocketProvider, wtf.trace.Provider);
 
 
 /**
  * @override
  */
-wtf.trace.providers.WsProvider.prototype.getSettingsSectionConfigs =
+wtf.trace.providers.WebSocketProvider.prototype.getSettingsSectionConfigs =
     function() {
   return [
     {
-      'title': 'WebSocket',
+      'title': 'WebSockets',
       'widgets': [
         {
           'type': 'checkbox',
-          'key': 'wtf.trace.provider.ws',
+          'key': 'wtf.trace.provider.websocket',
           'title': 'Enabled',
-          'default': false
+          'default': true
         }
       ]
     }
@@ -63,7 +70,7 @@ wtf.trace.providers.WsProvider.prototype.getSettingsSectionConfigs =
  * Injects the WebSocket shim.
  * @private
  */
-wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
+wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
   var originalWs = goog.global['WebSocket'];
 
   // Get all event types from the IDL store.
@@ -80,6 +87,8 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
   var descriptor = wtf.trace.eventtarget.createDescriptor(
       'WebSocket', eventTypes);
 
+  var ctorEvent = wtf.trace.events.createScope('WebSocket()');
+
   /**
    * Proxy WebSocket.
    * @constructor
@@ -88,6 +97,7 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
    * @extends {wtf.trace.eventtarget.BaseEventTarget}
    */
   var ProxyWebSocket = function WebSocket(url, opt_protocols) {
+    var scope = ctorEvent();
     goog.base(this, descriptor);
 
     /**
@@ -116,6 +126,7 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
       'protocol': opt_protocols
     };
 
+    wtf.trace.Scope.leave(scope);
   };
   goog.inherits(ProxyWebSocket, wtf.trace.eventtarget.BaseEventTarget);
 
@@ -201,7 +212,6 @@ wtf.trace.providers.WsProvider.prototype.injectWs_ = function() {
 
   var closeEvent = wtf.trace.events.createScope(
       'WebSocket#close()');
-
   ProxyWebSocket.prototype['close'] = function() {
     var scope = closeEvent();
     try {

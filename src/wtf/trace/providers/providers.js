@@ -23,8 +23,8 @@ goog.require('wtf.trace.providers.ImageProvider');
 goog.require('wtf.trace.providers.ReplayProvider');
 goog.require('wtf.trace.providers.TimingProvider');
 goog.require('wtf.trace.providers.WebGLProvider');
+goog.require('wtf.trace.providers.WebSocketProvider');
 goog.require('wtf.trace.providers.WebWorkerProvider');
-goog.require('wtf.trace.providers.WsProvider');
 goog.require('wtf.trace.providers.XhrProvider');
 
 
@@ -64,11 +64,11 @@ wtf.trace.providers.setup = function(traceManager) {
     traceManager.addProvider(
         new wtf.trace.providers.WebGLProvider(traceManager, options));
     traceManager.addProvider(
+        new wtf.trace.providers.WebSocketProvider(options));
+    traceManager.addProvider(
         new wtf.trace.providers.WebWorkerProvider(traceManager, options));
     traceManager.addProvider(
         new wtf.trace.providers.XhrProvider(options));
-    traceManager.addProvider(
-        new wtf.trace.providers.WsProvider(options));
   }
 
   // Node only:
