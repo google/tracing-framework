@@ -93,12 +93,15 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   var descriptor = wtf.trace.eventtarget.createDescriptor(
       'XMLHttpRequest', eventTypes);
 
+  var ctorEvent = wtf.trace.events.createScope('XMLHttpRequest()');
+
   /**
    * Proxy XHR.
    * @constructor
    * @extends {wtf.trace.eventtarget.BaseEventTarget}
    */
   var ProxyXMLHttpRequest = function XMLHttpRequest() {
+    var scope = ctorEvent();
     goog.base(this, descriptor);
 
     /**
@@ -185,6 +188,8 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     this.setEventHook('load', function(e) {
       wtf.trace.appendScopeData('url', props['url']);
     });
+
+    wtf.trace.Scope.leave(scope);
   };
   goog.inherits(ProxyXMLHttpRequest, wtf.trace.eventtarget.BaseEventTarget);
 
