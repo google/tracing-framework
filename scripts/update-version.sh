@@ -94,4 +94,5 @@ echo "Committing changes..."
 git commit -o -m "Updating version to $ver_string." \
     package.json \
     extensions/wtf-injector-chrome/manifest.json \
+    extensions/wtf-injector-firefox/package.json \
     src/wtf/version.js
