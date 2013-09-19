@@ -257,9 +257,7 @@ Debugger.prototype.beginListening_ = function() {
     chrome.debugger.sendCommand(this.debugee_, 'Timeline.start', {
       // Limit call stack depth to keep messages small - if we ever need this
       // data this can be increased.
-      // BUG: values of 0 are ignored:
-      // https://code.google.com/p/chromium/issues/detail?id=232008
-      'maxCallStackDepth': 1
+      'maxCallStackDepth': 0
     });
   }
 
