@@ -27,6 +27,14 @@ var Extension = function() {
   this.options_ = new Options();
 
   /**
+   * Page options JSON strings mapped by UUID.
+   * These are used as a lookup for the HTTP header hack.
+   * @type {!Object.<string>}
+   * @private
+   */
+  this.pageOptionsBlobs_ = {};
+
+  /**
    * Injected tabs, mapped by tab ID.
    * @type {!Object.<!InjectedTab>}
    * @private
@@ -182,6 +190,26 @@ var Extension = function() {
       }).bind(this));
     }).bind(this));
   }
+
+  // This is a workaround for a regression in Chrome that prevents blob URIs
+  // from work in content scripts. Instead, we smuggle the options data
+  // synchronously via HTTP headers. Yeah, I know. FML.
+  // https://code.google.com/p/chromium/issues/detail?id=295829
+  chrome.webRequest.onHeadersReceived.addListener((function(details) {
+    var uuid = details.url.substr(details.url.lastIndexOf('/') + 1);
+    var headerValue = this.pageOptionsBlobs_[uuid];
+    return {
+      responseHeaders: [
+        {
+          name: 'X-WTF-Options',
+          value: headerValue
+        }
+      ]
+    };
+  }).bind(this), {
+    urls: ['http://tracing-framework.appspot.com/tab-options/*'],
+    types: ['xmlhttprequest']
+  }, ['blocking']);
 };
 
 
@@ -369,10 +397,14 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
 
   // Create an exported blob URL that the content script can access.
   // To save on cookie space send only the UUID.
-  var pageOptionsBlob = new Blob([JSON.stringify(pageOptions)]);
+  var pageOptionsString = JSON.stringify(pageOptions);
+  var pageOptionsBlob = new Blob([pageOptionsString]);
   var pageOptionsUuid = webkitURL.createObjectURL(pageOptionsBlob);
   pageOptionsUuid =
       pageOptionsUuid.substr(pageOptionsUuid.lastIndexOf('/') + 1);
+
+  // Stash options in our lookup for the HTTP header fallback.
+  this.pageOptionsBlobs_[pageOptionsUuid] = pageOptionsString;
 
   // Add or remove document cookie.
   // This tells the content script to inject stuff.

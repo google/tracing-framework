@@ -19,6 +19,8 @@
     "storage",
     "tabs",
     "unlimitedStorage",
+    "webRequest",
+    "webRequestBlocking",
     "http://*/*",
     "https://*/*",
     "*://*/*"

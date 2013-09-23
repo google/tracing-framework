@@ -86,30 +86,52 @@ function fetchOptions() {
   }
 
   // Fetch the options from the extension.
-  try {
-    // blob:chrome-extension%3A//[extension id]/[options uuid]
-    var optionsUrl = 'blob:' +
-        chrome.extension.getURL(optionsUuid).replace(':', '%3A');
+  // This is complicated by a regression in Chrome that prevents the blob trick
+  // from working in certain versions. We try that first (as it's the best) and
+  // if it fails we fallback to a nasty HTTP header trick.
+  // https://code.google.com/p/chromium/issues/detail?id=295829
 
+  // blob:chrome-extension%3A//[extension id]/[options uuid]
+  var blobUrl = 'blob:' +
+      chrome.extension.getURL(optionsUuid).replace(':', '%3A');
+  var headerUrl =
+      'http://tracing-framework.appspot.com/tab-options/' + optionsUuid;
+
+  try {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', optionsUrl, false);
+    xhr.open('GET', blobUrl, false);
     xhr.send(null);
     if (xhr.status != 200) {
       log('Failed to load WTF injection options:',
-          optionsUrl,
+          blobUrl,
           xhr.status, xhr.statusText);
       return null;
     }
     return JSON.parse(xhr.responseText);
   } catch(e) {
-    log('Failed to parse WTF injection options:', e, xhr.responseText);
+    log('Failed to parse WTF injection options (falling back to headers)...');
 
-    // Try again!
-    window.setTimeout(function() {
-      window.location.reload();
-    }, 100);
+    // Try the headers.
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', headerUrl, false);
+      xhr.send(null);
+      var optionsData = xhr.getResponseHeader('X-WTF-Options');
+      if (!optionsData) {
+        log('Failed to load WTF injection options from header:' + headerUrl);
+        return null;
+      }
+      return JSON.parse(optionsData);
+    } catch(e) {
+      log('Really failed to fetch WTF injection options, aborting', e);
 
-    return null;
+      // Try again!
+      window.setTimeout(function() {
+        window.location.reload();
+      }, 100);
+
+      return null;
+    }
   }
 
   return null;
