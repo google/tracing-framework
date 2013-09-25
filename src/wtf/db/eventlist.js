@@ -620,6 +620,11 @@ wtf.db.EventList.prototype.appendScopeData_ = function(
     scopeType, scopeId, argsId, isBuiltin) {
   // TODO(benvanik): optimize this to add data with no mixin.
 
+  if (!scopeType) {
+    goog.global.console.log('appendScopeData on root?');
+    return;
+  }
+
   var eventData = this.eventData;
   var o = scopeId * wtf.db.EventStruct.STRUCT_SIZE;
   var scopeArgsId = eventData[o + wtf.db.EventStruct.ARGUMENTS];
