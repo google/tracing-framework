@@ -2931,13 +2931,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 23
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13795776E5
+  return 13802688E5
 };
 wtf.version.getCommit = function() {
-  return"7b95aa60aff45c86124eac9a88cb0bc0b9dc47e7"
+  return"6524090297d27a3431e6599f7e9d6e8e5c277ec2"
 };
 wtf.version.toString = function() {
-  return"2013.9.19-1"
+  return"2013.9.27-1"
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -6430,11 +6430,15 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
   this.maximumScopeDepth_ = q
 };
 wtf.db.EventList.prototype.appendScopeData_ = function(a, b, c, d) {
-  var e = this.eventData, f = b * wtf.db.EventStruct.STRUCT_SIZE, g = e[f + wtf.db.EventStruct.ARGUMENTS];
-  b = null;
-  g ? b = this.argumentData_[g] : (b = {}, g = this.nextArgumentDataId_++, this.argumentData_[g] = b, e[f + wtf.db.EventStruct.ARGUMENTS] = g);
-  if(c = this.argumentData_[c]) {
-    d ? b[c.name] = c.value : goog.mixin(b, c), a.mayHaveAppendedArgs = !0
+  if(a) {
+    var e = this.eventData, f = b * wtf.db.EventStruct.STRUCT_SIZE, g = e[f + wtf.db.EventStruct.ARGUMENTS];
+    b = null;
+    g ? b = this.argumentData_[g] : (b = {}, g = this.nextArgumentDataId_++, this.argumentData_[g] = b, e[f + wtf.db.EventStruct.ARGUMENTS] = g);
+    if(c = this.argumentData_[c]) {
+      d ? b[c.name] = c.value : goog.mixin(b, c), a.mayHaveAppendedArgs = !0
+    }
+  }else {
+    goog.global.console.log("appendScopeData on root?")
   }
 };
 wtf.db.EventList.prototype.rebuildAncillaryLists_ = function(a) {
