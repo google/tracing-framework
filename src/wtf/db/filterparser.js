@@ -79,7 +79,10 @@ wtf.db.FilterParser = (function(){
         "Arguments": parse_Arguments,
         "ArgumentList": parse_ArgumentList,
         "BinaryExpression": parse_BinaryExpression,
+        "ComparativeExpression": parse_ComparativeExpression,
+        "RegularExpression": parse_RegularExpression,
         "Operator": parse_Operator,
+        "RegexOperator": parse_RegexOperator,
         "ExpressionValue": parse_ExpressionValue,
         "VariableReference": parse_VariableReference,
         "Object": parse_Object,
@@ -131,9 +134,9 @@ wtf.db.FilterParser = (function(){
         startRule = "FilterStatement";
       }
 
-      var pos = { offset: 0, line: 1, column: 1, seenCR: false };
+      var pos = 0;
       var reportFailures = 0;
-      var rightmostFailuresPos = { offset: 0, line: 1, column: 1, seenCR: false };
+      var rightmostFailuresPos = 0;
       var rightmostFailuresExpected = [];
 
       function padLeft(input, padding, length) {
@@ -163,43 +166,13 @@ wtf.db.FilterParser = (function(){
         return '\\' + escapeChar + padLeft(charCode.toString(16).toUpperCase(), '0', length);
       }
 
-      function clone(object) {
-        var result = {};
-        for (var key in object) {
-          result[key] = object[key];
-        }
-        return result;
-      }
-
-      function advance(pos, n) {
-        var endOffset = pos.offset + n;
-
-        for (var offset = pos.offset; offset < endOffset; offset++) {
-          var ch = input.charAt(offset);
-          if (ch === "\n") {
-            if (!pos.seenCR) { pos.line++; }
-            pos.column = 1;
-            pos.seenCR = false;
-          } else if (ch === "\r" || ch === "\u2028" || ch === "\u2029") {
-            pos.line++;
-            pos.column = 1;
-            pos.seenCR = true;
-          } else {
-            pos.column++;
-            pos.seenCR = false;
-          }
-        }
-
-        pos.offset += n;
-      }
-
       function matchFailed(failure) {
-        if (pos.offset < rightmostFailuresPos.offset) {
+        if (pos < rightmostFailuresPos) {
           return;
         }
 
-        if (pos.offset > rightmostFailuresPos.offset) {
-          rightmostFailuresPos = clone(pos);
+        if (pos > rightmostFailuresPos) {
+          rightmostFailuresPos = pos;
           rightmostFailuresExpected = [];
         }
 
@@ -211,8 +184,8 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_EventTypeExpression();
         if (result0 !== null) {
           result1 = parse__();
@@ -222,54 +195,54 @@ wtf.db.FilterParser = (function(){
               result0 = [result0, result1, result2];
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, type_query, arg_query) {
+          result0 = (function(offset, type_query, arg_query) {
             return {
               type_query: type_query,
               arg_query: arg_query
             };
-          })(pos0.offset, pos0.line, pos0.column, result0[0], result0[2]);
+          })(pos0, result0[0], result0[2]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
+          pos0 = pos;
           result0 = parse_EventTypeExpression();
           if (result0 !== null) {
-            result0 = (function(offset, line, column, type_query) {
+            result0 = (function(offset, type_query) {
               return {
                 type_query: type_query,
                 arg_query: null
               };
-            })(pos0.offset, pos0.line, pos0.column, result0);
+            })(pos0, result0);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
           if (result0 === null) {
-            pos0 = clone(pos);
+            pos0 = pos;
             result0 = parse_Arguments();
             if (result0 !== null) {
-              result0 = (function(offset, line, column, arg_query) {
+              result0 = (function(offset, arg_query) {
                 return {
                   type_query: null,
                   arg_query: arg_query
                 };
-              })(pos0.offset, pos0.line, pos0.column, result0);
+              })(pos0, result0);
             }
             if (result0 === null) {
-              pos = clone(pos0);
+              pos = pos0;
             }
           }
         }
@@ -299,10 +272,10 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
-        if (/^[a-zA-Z0-9_.#:$[\]"'\-]/.test(input.charAt(pos.offset))) {
-          result1 = input.charAt(pos.offset);
-          advance(pos, 1);
+        pos0 = pos;
+        if (/^[a-zA-Z0-9_.#:$[\]"'\-]/.test(input.charAt(pos))) {
+          result1 = input.charAt(pos);
+          pos++;
         } else {
           result1 = null;
           if (reportFailures === 0) {
@@ -313,9 +286,9 @@ wtf.db.FilterParser = (function(){
           result0 = [];
           while (result1 !== null) {
             result0.push(result1);
-            if (/^[a-zA-Z0-9_.#:$[\]"'\-]/.test(input.charAt(pos.offset))) {
-              result1 = input.charAt(pos.offset);
-              advance(pos, 1);
+            if (/^[a-zA-Z0-9_.#:$[\]"'\-]/.test(input.charAt(pos))) {
+              result1 = input.charAt(pos);
+              pos++;
             } else {
               result1 = null;
               if (reportFailures === 0) {
@@ -327,15 +300,15 @@ wtf.db.FilterParser = (function(){
           result0 = null;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, value) {
+          result0 = (function(offset, value) {
             return {
               type: 'substring',
               value: value.join('')
             };
-          })(pos0.offset, pos0.line, pos0.column, result0);
+          })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -345,11 +318,11 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 40) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 40) {
           result0 = "(";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -364,9 +337,9 @@ wtf.db.FilterParser = (function(){
             if (result2 !== null) {
               result3 = parse__();
               if (result3 !== null) {
-                if (input.charCodeAt(pos.offset) === 41) {
+                if (input.charCodeAt(pos) === 41) {
                   result4 = ")";
-                  advance(pos, 1);
+                  pos++;
                 } else {
                   result4 = null;
                   if (reportFailures === 0) {
@@ -377,31 +350,31 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1, result2, result3, result4];
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, args) {
+          result0 = (function(offset, args) {
             return args !== "" ? args : [];
-          })(pos0.offset, pos0.line, pos0.column, result0[2]);
+          })(pos0, result0[2]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -415,17 +388,17 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1, pos2;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_BinaryExpression();
         if (result0 !== null) {
           result1 = [];
-          pos2 = clone(pos);
+          pos2 = pos;
           result2 = parse__();
           if (result2 !== null) {
-            if (input.charCodeAt(pos.offset) === 44) {
+            if (input.charCodeAt(pos) === 44) {
               result3 = ",";
-              advance(pos, 1);
+              pos++;
             } else {
               result3 = null;
               if (reportFailures === 0) {
@@ -440,28 +413,28 @@ wtf.db.FilterParser = (function(){
                   result2 = [result2, result3, result4, result5];
                 } else {
                   result2 = null;
-                  pos = clone(pos2);
+                  pos = pos2;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result2 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           } else {
             result2 = null;
-            pos = clone(pos2);
+            pos = pos2;
           }
           while (result2 !== null) {
             result1.push(result2);
-            pos2 = clone(pos);
+            pos2 = pos;
             result2 = parse__();
             if (result2 !== null) {
-              if (input.charCodeAt(pos.offset) === 44) {
+              if (input.charCodeAt(pos) === 44) {
                 result3 = ",";
-                advance(pos, 1);
+                pos++;
               } else {
                 result3 = null;
                 if (reportFailures === 0) {
@@ -476,42 +449,42 @@ wtf.db.FilterParser = (function(){
                     result2 = [result2, result3, result4, result5];
                   } else {
                     result2 = null;
-                    pos = clone(pos2);
+                    pos = pos2;
                   }
                 } else {
                   result2 = null;
-                  pos = clone(pos2);
+                  pos = pos2;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result2 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           }
           if (result1 !== null) {
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, head, tail) {
+          result0 = (function(offset, head, tail) {
             var result = [head];
             for (var i = 0; i < tail.length; i++) {
               result.push(tail[i][3]);
             }
             return result;
-          })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+          })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -521,12 +494,41 @@ wtf.db.FilterParser = (function(){
       }
 
       function parse_BinaryExpression() {
+        var result0;
+        var pos0;
+
+        reportFailures++;
+        result0 = parse_ComparativeExpression();
+        if (result0 === null) {
+          pos0 = pos;
+          result0 = parse_RegularExpression();
+          if (result0 !== null) {
+            result0 = (function(offset, exp) {
+              return {
+                lhs: exp.lhs,
+                op: exp.op,
+                rhs: exp.rhs
+              };
+            })(pos0, result0);
+          }
+          if (result0 === null) {
+            pos = pos0;
+          }
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("binary expression");
+        }
+        return result0;
+      }
+
+      function parse_ComparativeExpression() {
         var result0, result1, result2, result3, result4;
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_ExpressionValue();
         if (result0 !== null) {
           result1 = parse__();
@@ -540,39 +542,96 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1, result2, result3, result4];
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, lhs, op, rhs) {
+          result0 = (function(offset, lhs, op, rhs) {
             return {
               lhs: lhs,
               op: op,
               rhs: rhs
             };
-          })(pos0.offset, pos0.line, pos0.column, result0[0], result0[2], result0[4]);
+          })(pos0, result0[0], result0[2], result0[4]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
-          matchFailed("binary expression");
+          matchFailed("comparison expression");
+        }
+        return result0;
+      }
+
+      function parse_RegularExpression() {
+        var result0, result1, result2, result3, result4;
+        var pos0, pos1;
+
+        reportFailures++;
+        pos0 = pos;
+        pos1 = pos;
+        result0 = parse_ExpressionValue();
+        if (result0 !== null) {
+          result1 = parse__();
+          if (result1 !== null) {
+            result2 = parse_RegexOperator();
+            if (result2 !== null) {
+              result3 = parse__();
+              if (result3 !== null) {
+                result4 = parse_RegularExpressionLiteral();
+                if (result4 !== null) {
+                  result0 = [result0, result1, result2, result3, result4];
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, lhs, op, regex) {
+            return {
+              lhs: lhs,
+              op: op,
+              rhs: regex
+            };
+          })(pos0, result0[0], result0[2], result0[4]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("regular expression");
         }
         return result0;
       }
@@ -581,9 +640,9 @@ wtf.db.FilterParser = (function(){
         var result0;
 
         reportFailures++;
-        if (input.substr(pos.offset, 2) === "==") {
+        if (input.substr(pos, 2) === "==") {
           result0 = "==";
-          advance(pos, 2);
+          pos += 2;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -591,9 +650,9 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 === null) {
-          if (input.substr(pos.offset, 2) === "!=") {
+          if (input.substr(pos, 2) === "!=") {
             result0 = "!=";
-            advance(pos, 2);
+            pos += 2;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -601,9 +660,9 @@ wtf.db.FilterParser = (function(){
             }
           }
           if (result0 === null) {
-            if (input.substr(pos.offset, 2) === "<=") {
+            if (input.substr(pos, 2) === "<=") {
               result0 = "<=";
-              advance(pos, 2);
+              pos += 2;
             } else {
               result0 = null;
               if (reportFailures === 0) {
@@ -611,9 +670,9 @@ wtf.db.FilterParser = (function(){
               }
             }
             if (result0 === null) {
-              if (input.substr(pos.offset, 2) === ">=") {
+              if (input.substr(pos, 2) === ">=") {
                 result0 = ">=";
-                advance(pos, 2);
+                pos += 2;
               } else {
                 result0 = null;
                 if (reportFailures === 0) {
@@ -621,9 +680,9 @@ wtf.db.FilterParser = (function(){
                 }
               }
               if (result0 === null) {
-                if (input.charCodeAt(pos.offset) === 60) {
+                if (input.charCodeAt(pos) === 60) {
                   result0 = "<";
-                  advance(pos, 1);
+                  pos++;
                 } else {
                   result0 = null;
                   if (reportFailures === 0) {
@@ -631,9 +690,9 @@ wtf.db.FilterParser = (function(){
                   }
                 }
                 if (result0 === null) {
-                  if (input.charCodeAt(pos.offset) === 62) {
+                  if (input.charCodeAt(pos) === 62) {
                     result0 = ">";
-                    advance(pos, 1);
+                    pos++;
                   } else {
                     result0 = null;
                     if (reportFailures === 0) {
@@ -641,9 +700,9 @@ wtf.db.FilterParser = (function(){
                     }
                   }
                   if (result0 === null) {
-                    if (input.substr(pos.offset, 2) === "in") {
+                    if (input.substr(pos, 2) === "in") {
                       result0 = "in";
-                      advance(pos, 2);
+                      pos += 2;
                     } else {
                       result0 = null;
                       if (reportFailures === 0) {
@@ -663,52 +722,83 @@ wtf.db.FilterParser = (function(){
         return result0;
       }
 
+      function parse_RegexOperator() {
+        var result0;
+
+        reportFailures++;
+        if (input.substr(pos, 2) === "=~") {
+          result0 = "=~";
+          pos += 2;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"=~\"");
+          }
+        }
+        if (result0 === null) {
+          if (input.substr(pos, 2) === "!~") {
+            result0 = "!~";
+            pos += 2;
+          } else {
+            result0 = null;
+            if (reportFailures === 0) {
+              matchFailed("\"!~\"");
+            }
+          }
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("regex operator");
+        }
+        return result0;
+      }
+
       function parse_ExpressionValue() {
         var result0, result1;
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
+        pos0 = pos;
         result0 = parse_String();
         if (result0 !== null) {
-          result0 = (function(offset, line, column, value) { return { type: "string", value: value }; })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, value) { return { type: "string", value: value }; })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
+          pos0 = pos;
           result0 = parse_AdjustedNumber();
           if (result0 !== null) {
-            result0 = (function(offset, line, column, value) { return { type: "number", value: value }; })(pos0.offset, pos0.line, pos0.column, result0);
+            result0 = (function(offset, value) { return { type: "number", value: value }; })(pos0, result0);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
           if (result0 === null) {
-            pos0 = clone(pos);
+            pos0 = pos;
             result0 = parse_Object();
             if (result0 !== null) {
-              result0 = (function(offset, line, column, value) { return { type: "object", value: value }; })(pos0.offset, pos0.line, pos0.column, result0);
+              result0 = (function(offset, value) { return { type: "object", value: value }; })(pos0, result0);
             }
             if (result0 === null) {
-              pos = clone(pos0);
+              pos = pos0;
             }
             if (result0 === null) {
-              pos0 = clone(pos);
+              pos0 = pos;
               result0 = parse_Array();
               if (result0 !== null) {
-                result0 = (function(offset, line, column, value) { return { type: "array",  value: value }; })(pos0.offset, pos0.line, pos0.column, result0);
+                result0 = (function(offset, value) { return { type: "array",  value: value }; })(pos0, result0);
               }
               if (result0 === null) {
-                pos = clone(pos0);
+                pos = pos0;
               }
               if (result0 === null) {
-                pos0 = clone(pos);
-                pos1 = clone(pos);
-                if (input.substr(pos.offset, 4) === "true") {
+                pos0 = pos;
+                pos1 = pos;
+                if (input.substr(pos, 4) === "true") {
                   result0 = "true";
-                  advance(pos, 4);
+                  pos += 4;
                 } else {
                   result0 = null;
                   if (reportFailures === 0) {
@@ -721,24 +811,24 @@ wtf.db.FilterParser = (function(){
                     result0 = [result0, result1];
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
                 if (result0 !== null) {
-                  result0 = (function(offset, line, column) { return { type: "boolean", value: true }; })(pos0.offset, pos0.line, pos0.column);
+                  result0 = (function(offset) { return { type: "boolean", value: true }; })(pos0);
                 }
                 if (result0 === null) {
-                  pos = clone(pos0);
+                  pos = pos0;
                 }
                 if (result0 === null) {
-                  pos0 = clone(pos);
-                  pos1 = clone(pos);
-                  if (input.substr(pos.offset, 5) === "false") {
+                  pos0 = pos;
+                  pos1 = pos;
+                  if (input.substr(pos, 5) === "false") {
                     result0 = "false";
-                    advance(pos, 5);
+                    pos += 5;
                   } else {
                     result0 = null;
                     if (reportFailures === 0) {
@@ -751,24 +841,24 @@ wtf.db.FilterParser = (function(){
                       result0 = [result0, result1];
                     } else {
                       result0 = null;
-                      pos = clone(pos1);
+                      pos = pos1;
                     }
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                   if (result0 !== null) {
-                    result0 = (function(offset, line, column) { return { type: "boolean", value: false }; })(pos0.offset, pos0.line, pos0.column);
+                    result0 = (function(offset) { return { type: "boolean", value: false }; })(pos0);
                   }
                   if (result0 === null) {
-                    pos = clone(pos0);
+                    pos = pos0;
                   }
                   if (result0 === null) {
-                    pos0 = clone(pos);
-                    pos1 = clone(pos);
-                    if (input.substr(pos.offset, 4) === "null") {
+                    pos0 = pos;
+                    pos1 = pos;
+                    if (input.substr(pos, 4) === "null") {
                       result0 = "null";
-                      advance(pos, 4);
+                      pos += 4;
                     } else {
                       result0 = null;
                       if (reportFailures === 0) {
@@ -781,26 +871,36 @@ wtf.db.FilterParser = (function(){
                         result0 = [result0, result1];
                       } else {
                         result0 = null;
-                        pos = clone(pos1);
+                        pos = pos1;
                       }
                     } else {
                       result0 = null;
-                      pos = clone(pos1);
+                      pos = pos1;
                     }
                     if (result0 !== null) {
-                      result0 = (function(offset, line, column) { return { type: "null", value: null }; })(pos0.offset, pos0.line, pos0.column);
+                      result0 = (function(offset) { return { type: "null", value: null }; })(pos0);
                     }
                     if (result0 === null) {
-                      pos = clone(pos0);
+                      pos = pos0;
                     }
                     if (result0 === null) {
-                      pos0 = clone(pos);
+                      pos0 = pos;
                       result0 = parse_VariableReference();
                       if (result0 !== null) {
-                        result0 = (function(offset, line, column, value) { return { type: "reference", value: value }; })(pos0.offset, pos0.line, pos0.column, result0);
+                        result0 = (function(offset, value) { return { type: "reference", value: value }; })(pos0, result0);
                       }
                       if (result0 === null) {
-                        pos = clone(pos0);
+                        pos = pos0;
+                      }
+                      if (result0 === null) {
+                        pos0 = pos;
+                        result0 = parse_RegularExpressionLiteral();
+                        if (result0 !== null) {
+                          result0 = (function(offset, value) { return { type: "regex", value: value }; })(pos0, result0);
+                        }
+                        if (result0 === null) {
+                          pos = pos0;
+                        }
                       }
                     }
                   }
@@ -821,18 +921,18 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1, pos2, pos3;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_Identifier();
         if (result0 !== null) {
           result1 = [];
-          pos2 = clone(pos);
-          pos3 = clone(pos);
+          pos2 = pos;
+          pos3 = pos;
           result2 = parse__();
           if (result2 !== null) {
-            if (input.charCodeAt(pos.offset) === 91) {
+            if (input.charCodeAt(pos) === 91) {
               result3 = "[";
-              advance(pos, 1);
+              pos++;
             } else {
               result3 = null;
               if (reportFailures === 0) {
@@ -846,9 +946,9 @@ wtf.db.FilterParser = (function(){
                 if (result5 !== null) {
                   result6 = parse__();
                   if (result6 !== null) {
-                    if (input.charCodeAt(pos.offset) === 93) {
+                    if (input.charCodeAt(pos) === 93) {
                       result7 = "]";
-                      advance(pos, 1);
+                      pos++;
                     } else {
                       result7 = null;
                       if (reportFailures === 0) {
@@ -859,42 +959,42 @@ wtf.db.FilterParser = (function(){
                       result2 = [result2, result3, result4, result5, result6, result7];
                     } else {
                       result2 = null;
-                      pos = clone(pos3);
+                      pos = pos3;
                     }
                   } else {
                     result2 = null;
-                    pos = clone(pos3);
+                    pos = pos3;
                   }
                 } else {
                   result2 = null;
-                  pos = clone(pos3);
+                  pos = pos3;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos3);
+                pos = pos3;
               }
             } else {
               result2 = null;
-              pos = clone(pos3);
+              pos = pos3;
             }
           } else {
             result2 = null;
-            pos = clone(pos3);
+            pos = pos3;
           }
           if (result2 !== null) {
-            result2 = (function(offset, line, column, name) { return name; })(pos2.offset, pos2.line, pos2.column, result2[3]);
+            result2 = (function(offset, name) { return name; })(pos2, result2[3]);
           }
           if (result2 === null) {
-            pos = clone(pos2);
+            pos = pos2;
           }
           if (result2 === null) {
-            pos2 = clone(pos);
-            pos3 = clone(pos);
+            pos2 = pos;
+            pos3 = pos;
             result2 = parse__();
             if (result2 !== null) {
-              if (input.charCodeAt(pos.offset) === 46) {
+              if (input.charCodeAt(pos) === 46) {
                 result3 = ".";
-                advance(pos, 1);
+                pos++;
               } else {
                 result3 = null;
                 if (reportFailures === 0) {
@@ -909,36 +1009,36 @@ wtf.db.FilterParser = (function(){
                     result2 = [result2, result3, result4, result5];
                   } else {
                     result2 = null;
-                    pos = clone(pos3);
+                    pos = pos3;
                   }
                 } else {
                   result2 = null;
-                  pos = clone(pos3);
+                  pos = pos3;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos3);
+                pos = pos3;
               }
             } else {
               result2 = null;
-              pos = clone(pos3);
+              pos = pos3;
             }
             if (result2 !== null) {
-              result2 = (function(offset, line, column, name) { return name; })(pos2.offset, pos2.line, pos2.column, result2[3]);
+              result2 = (function(offset, name) { return name; })(pos2, result2[3]);
             }
             if (result2 === null) {
-              pos = clone(pos2);
+              pos = pos2;
             }
           }
           while (result2 !== null) {
             result1.push(result2);
-            pos2 = clone(pos);
-            pos3 = clone(pos);
+            pos2 = pos;
+            pos3 = pos;
             result2 = parse__();
             if (result2 !== null) {
-              if (input.charCodeAt(pos.offset) === 91) {
+              if (input.charCodeAt(pos) === 91) {
                 result3 = "[";
-                advance(pos, 1);
+                pos++;
               } else {
                 result3 = null;
                 if (reportFailures === 0) {
@@ -952,9 +1052,9 @@ wtf.db.FilterParser = (function(){
                   if (result5 !== null) {
                     result6 = parse__();
                     if (result6 !== null) {
-                      if (input.charCodeAt(pos.offset) === 93) {
+                      if (input.charCodeAt(pos) === 93) {
                         result7 = "]";
-                        advance(pos, 1);
+                        pos++;
                       } else {
                         result7 = null;
                         if (reportFailures === 0) {
@@ -965,42 +1065,42 @@ wtf.db.FilterParser = (function(){
                         result2 = [result2, result3, result4, result5, result6, result7];
                       } else {
                         result2 = null;
-                        pos = clone(pos3);
+                        pos = pos3;
                       }
                     } else {
                       result2 = null;
-                      pos = clone(pos3);
+                      pos = pos3;
                     }
                   } else {
                     result2 = null;
-                    pos = clone(pos3);
+                    pos = pos3;
                   }
                 } else {
                   result2 = null;
-                  pos = clone(pos3);
+                  pos = pos3;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos3);
+                pos = pos3;
               }
             } else {
               result2 = null;
-              pos = clone(pos3);
+              pos = pos3;
             }
             if (result2 !== null) {
-              result2 = (function(offset, line, column, name) { return name; })(pos2.offset, pos2.line, pos2.column, result2[3]);
+              result2 = (function(offset, name) { return name; })(pos2, result2[3]);
             }
             if (result2 === null) {
-              pos = clone(pos2);
+              pos = pos2;
             }
             if (result2 === null) {
-              pos2 = clone(pos);
-              pos3 = clone(pos);
+              pos2 = pos;
+              pos3 = pos;
               result2 = parse__();
               if (result2 !== null) {
-                if (input.charCodeAt(pos.offset) === 46) {
+                if (input.charCodeAt(pos) === 46) {
                   result3 = ".";
-                  advance(pos, 1);
+                  pos++;
                 } else {
                   result3 = null;
                   if (reportFailures === 0) {
@@ -1015,25 +1115,25 @@ wtf.db.FilterParser = (function(){
                       result2 = [result2, result3, result4, result5];
                     } else {
                       result2 = null;
-                      pos = clone(pos3);
+                      pos = pos3;
                     }
                   } else {
                     result2 = null;
-                    pos = clone(pos3);
+                    pos = pos3;
                   }
                 } else {
                   result2 = null;
-                  pos = clone(pos3);
+                  pos = pos3;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos3);
+                pos = pos3;
               }
               if (result2 !== null) {
-                result2 = (function(offset, line, column, name) { return name; })(pos2.offset, pos2.line, pos2.column, result2[3]);
+                result2 = (function(offset, name) { return name; })(pos2, result2[3]);
               }
               if (result2 === null) {
-                pos = clone(pos2);
+                pos = pos2;
               }
             }
           }
@@ -1041,14 +1141,14 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, base, accessors) {
+          result0 = (function(offset, base, accessors) {
               var result = base;
               for (var n = 0; n < accessors.length; n++) {
                 result = {
@@ -1058,10 +1158,10 @@ wtf.db.FilterParser = (function(){
                 };
               }
               return result;
-            })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+            })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -1075,11 +1175,11 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 123) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 123) {
           result0 = "{";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -1089,9 +1189,9 @@ wtf.db.FilterParser = (function(){
         if (result0 !== null) {
           result1 = parse__();
           if (result1 !== null) {
-            if (input.charCodeAt(pos.offset) === 125) {
+            if (input.charCodeAt(pos) === 125) {
               result2 = "}";
-              advance(pos, 1);
+              pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
@@ -1104,32 +1204,32 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1, result2, result3];
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column) { return {};      })(pos0.offset, pos0.line, pos0.column);
+          result0 = (function(offset) { return {};      })(pos0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
-          pos1 = clone(pos);
-          if (input.charCodeAt(pos.offset) === 123) {
+          pos0 = pos;
+          pos1 = pos;
+          if (input.charCodeAt(pos) === 123) {
             result0 = "{";
-            advance(pos, 1);
+            pos++;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -1141,9 +1241,9 @@ wtf.db.FilterParser = (function(){
             if (result1 !== null) {
               result2 = parse_ObjectMembers();
               if (result2 !== null) {
-                if (input.charCodeAt(pos.offset) === 125) {
+                if (input.charCodeAt(pos) === 125) {
                   result3 = "}";
-                  advance(pos, 1);
+                  pos++;
                 } else {
                   result3 = null;
                   if (reportFailures === 0) {
@@ -1156,29 +1256,29 @@ wtf.db.FilterParser = (function(){
                     result0 = [result0, result1, result2, result3, result4];
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
           if (result0 !== null) {
-            result0 = (function(offset, line, column, members) { return members; })(pos0.offset, pos0.line, pos0.column, result0[2]);
+            result0 = (function(offset, members) { return members; })(pos0, result0[2]);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
         }
         reportFailures--;
@@ -1192,15 +1292,15 @@ wtf.db.FilterParser = (function(){
         var result0, result1, result2, result3, result4;
         var pos0, pos1, pos2;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_Pair();
         if (result0 !== null) {
           result1 = [];
-          pos2 = clone(pos);
-          if (input.charCodeAt(pos.offset) === 44) {
+          pos2 = pos;
+          if (input.charCodeAt(pos) === 44) {
             result2 = ",";
-            advance(pos, 1);
+            pos++;
           } else {
             result2 = null;
             if (reportFailures === 0) {
@@ -1215,22 +1315,22 @@ wtf.db.FilterParser = (function(){
                 result2 = [result2, result3, result4];
               } else {
                 result2 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result2 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           } else {
             result2 = null;
-            pos = clone(pos2);
+            pos = pos2;
           }
           while (result2 !== null) {
             result1.push(result2);
-            pos2 = clone(pos);
-            if (input.charCodeAt(pos.offset) === 44) {
+            pos2 = pos;
+            if (input.charCodeAt(pos) === 44) {
               result2 = ",";
-              advance(pos, 1);
+              pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
@@ -1245,39 +1345,39 @@ wtf.db.FilterParser = (function(){
                   result2 = [result2, result3, result4];
                 } else {
                   result2 = null;
-                  pos = clone(pos2);
+                  pos = pos2;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result2 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           }
           if (result1 !== null) {
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, head, tail) {
+          result0 = (function(offset, head, tail) {
               var result = {};
               result[head[0]] = head[1];
               for (var i = 0; i < tail.length; i++) {
                 result[tail[i][2][0]] = tail[i][2][1];
               }
               return result;
-            })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+            })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -1286,13 +1386,13 @@ wtf.db.FilterParser = (function(){
         var result0, result1, result2, result3;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_String();
         if (result0 !== null) {
-          if (input.charCodeAt(pos.offset) === 58) {
+          if (input.charCodeAt(pos) === 58) {
             result1 = ":";
-            advance(pos, 1);
+            pos++;
           } else {
             result1 = null;
             if (reportFailures === 0) {
@@ -1307,25 +1407,25 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1, result2, result3];
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, name, value) { return [name, value]; })(pos0.offset, pos0.line, pos0.column, result0[0], result0[3]);
+          result0 = (function(offset, name, value) { return [name, value]; })(pos0, result0[0], result0[3]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -1335,11 +1435,11 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 91) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 91) {
           result0 = "[";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -1349,9 +1449,9 @@ wtf.db.FilterParser = (function(){
         if (result0 !== null) {
           result1 = parse__();
           if (result1 !== null) {
-            if (input.charCodeAt(pos.offset) === 93) {
+            if (input.charCodeAt(pos) === 93) {
               result2 = "]";
-              advance(pos, 1);
+              pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
@@ -1364,32 +1464,32 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1, result2, result3];
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column) { return [];       })(pos0.offset, pos0.line, pos0.column);
+          result0 = (function(offset) { return [];       })(pos0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
-          pos1 = clone(pos);
-          if (input.charCodeAt(pos.offset) === 91) {
+          pos0 = pos;
+          pos1 = pos;
+          if (input.charCodeAt(pos) === 91) {
             result0 = "[";
-            advance(pos, 1);
+            pos++;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -1401,9 +1501,9 @@ wtf.db.FilterParser = (function(){
             if (result1 !== null) {
               result2 = parse_Elements();
               if (result2 !== null) {
-                if (input.charCodeAt(pos.offset) === 93) {
+                if (input.charCodeAt(pos) === 93) {
                   result3 = "]";
-                  advance(pos, 1);
+                  pos++;
                 } else {
                   result3 = null;
                   if (reportFailures === 0) {
@@ -1416,29 +1516,29 @@ wtf.db.FilterParser = (function(){
                     result0 = [result0, result1, result2, result3, result4];
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
           if (result0 !== null) {
-            result0 = (function(offset, line, column, elements) { return elements; })(pos0.offset, pos0.line, pos0.column, result0[2]);
+            result0 = (function(offset, elements) { return elements; })(pos0, result0[2]);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
         }
         reportFailures--;
@@ -1452,15 +1552,15 @@ wtf.db.FilterParser = (function(){
         var result0, result1, result2, result3, result4;
         var pos0, pos1, pos2;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_Value();
         if (result0 !== null) {
           result1 = [];
-          pos2 = clone(pos);
-          if (input.charCodeAt(pos.offset) === 44) {
+          pos2 = pos;
+          if (input.charCodeAt(pos) === 44) {
             result2 = ",";
-            advance(pos, 1);
+            pos++;
           } else {
             result2 = null;
             if (reportFailures === 0) {
@@ -1475,22 +1575,22 @@ wtf.db.FilterParser = (function(){
                 result2 = [result2, result3, result4];
               } else {
                 result2 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result2 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           } else {
             result2 = null;
-            pos = clone(pos2);
+            pos = pos2;
           }
           while (result2 !== null) {
             result1.push(result2);
-            pos2 = clone(pos);
-            if (input.charCodeAt(pos.offset) === 44) {
+            pos2 = pos;
+            if (input.charCodeAt(pos) === 44) {
               result2 = ",";
-              advance(pos, 1);
+              pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
@@ -1505,38 +1605,38 @@ wtf.db.FilterParser = (function(){
                   result2 = [result2, result3, result4];
                 } else {
                   result2 = null;
-                  pos = clone(pos2);
+                  pos = pos2;
                 }
               } else {
                 result2 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result2 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           }
           if (result1 !== null) {
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, head, tail) {
+          result0 = (function(offset, head, tail) {
               var result = [head];
               for (var i = 0; i < tail.length; i++) {
                 result.push(tail[i][2]);
               }
               return result;
-            })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+            })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -1554,11 +1654,11 @@ wtf.db.FilterParser = (function(){
             if (result0 === null) {
               result0 = parse_Array();
               if (result0 === null) {
-                pos0 = clone(pos);
-                pos1 = clone(pos);
-                if (input.substr(pos.offset, 4) === "true") {
+                pos0 = pos;
+                pos1 = pos;
+                if (input.substr(pos, 4) === "true") {
                   result0 = "true";
-                  advance(pos, 4);
+                  pos += 4;
                 } else {
                   result0 = null;
                   if (reportFailures === 0) {
@@ -1571,24 +1671,24 @@ wtf.db.FilterParser = (function(){
                     result0 = [result0, result1];
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
                 if (result0 !== null) {
-                  result0 = (function(offset, line, column) { return true; })(pos0.offset, pos0.line, pos0.column);
+                  result0 = (function(offset) { return true; })(pos0);
                 }
                 if (result0 === null) {
-                  pos = clone(pos0);
+                  pos = pos0;
                 }
                 if (result0 === null) {
-                  pos0 = clone(pos);
-                  pos1 = clone(pos);
-                  if (input.substr(pos.offset, 5) === "false") {
+                  pos0 = pos;
+                  pos1 = pos;
+                  if (input.substr(pos, 5) === "false") {
                     result0 = "false";
-                    advance(pos, 5);
+                    pos += 5;
                   } else {
                     result0 = null;
                     if (reportFailures === 0) {
@@ -1601,24 +1701,24 @@ wtf.db.FilterParser = (function(){
                       result0 = [result0, result1];
                     } else {
                       result0 = null;
-                      pos = clone(pos1);
+                      pos = pos1;
                     }
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                   if (result0 !== null) {
-                    result0 = (function(offset, line, column) { return false; })(pos0.offset, pos0.line, pos0.column);
+                    result0 = (function(offset) { return false; })(pos0);
                   }
                   if (result0 === null) {
-                    pos = clone(pos0);
+                    pos = pos0;
                   }
                   if (result0 === null) {
-                    pos0 = clone(pos);
-                    pos1 = clone(pos);
-                    if (input.substr(pos.offset, 4) === "null") {
+                    pos0 = pos;
+                    pos1 = pos;
+                    if (input.substr(pos, 4) === "null") {
                       result0 = "null";
-                      advance(pos, 4);
+                      pos += 4;
                     } else {
                       result0 = null;
                       if (reportFailures === 0) {
@@ -1631,17 +1731,17 @@ wtf.db.FilterParser = (function(){
                         result0 = [result0, result1];
                       } else {
                         result0 = null;
-                        pos = clone(pos1);
+                        pos = pos1;
                       }
                     } else {
                       result0 = null;
-                      pos = clone(pos1);
+                      pos = pos1;
                     }
                     if (result0 !== null) {
-                      result0 = (function(offset, line, column) { return "null"; })(pos0.offset, pos0.line, pos0.column);
+                      result0 = (function(offset) { return "null"; })(pos0);
                     }
                     if (result0 === null) {
-                      pos = clone(pos0);
+                      pos = pos0;
                     }
                   }
                 }
@@ -1661,11 +1761,11 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 34) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 34) {
           result0 = "\"";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -1673,9 +1773,9 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 !== null) {
-          if (input.charCodeAt(pos.offset) === 34) {
+          if (input.charCodeAt(pos) === 34) {
             result1 = "\"";
-            advance(pos, 1);
+            pos++;
           } else {
             result1 = null;
             if (reportFailures === 0) {
@@ -1688,28 +1788,28 @@ wtf.db.FilterParser = (function(){
               result0 = [result0, result1, result2];
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column) { return ""; })(pos0.offset, pos0.line, pos0.column);
+          result0 = (function(offset) { return ""; })(pos0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
-          pos1 = clone(pos);
-          if (input.charCodeAt(pos.offset) === 34) {
+          pos0 = pos;
+          pos1 = pos;
+          if (input.charCodeAt(pos) === 34) {
             result0 = "\"";
-            advance(pos, 1);
+            pos++;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -1719,9 +1819,9 @@ wtf.db.FilterParser = (function(){
           if (result0 !== null) {
             result1 = parse_Chars();
             if (result1 !== null) {
-              if (input.charCodeAt(pos.offset) === 34) {
+              if (input.charCodeAt(pos) === 34) {
                 result2 = "\"";
-                advance(pos, 1);
+                pos++;
               } else {
                 result2 = null;
                 if (reportFailures === 0) {
@@ -1734,25 +1834,25 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1, result2, result3];
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
           if (result0 !== null) {
-            result0 = (function(offset, line, column, chars) { return chars; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+            result0 = (function(offset, chars) { return chars; })(pos0, result0[1]);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
         }
         reportFailures--;
@@ -1766,7 +1866,7 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
+        pos0 = pos;
         result1 = parse_Char();
         if (result1 !== null) {
           result0 = [];
@@ -1778,10 +1878,10 @@ wtf.db.FilterParser = (function(){
           result0 = null;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, chars) { return chars.join(""); })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, chars) { return chars.join(""); })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -1790,9 +1890,9 @@ wtf.db.FilterParser = (function(){
         var result0, result1, result2, result3, result4;
         var pos0, pos1, pos2;
 
-        if (/^[^"\\\0-\x1F]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[^"\\\0-\x1F]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -1800,10 +1900,10 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 === null) {
-          pos0 = clone(pos);
-          if (input.substr(pos.offset, 2) === "\\\"") {
+          pos0 = pos;
+          if (input.substr(pos, 2) === "\\\"") {
             result0 = "\\\"";
-            advance(pos, 2);
+            pos += 2;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -1811,16 +1911,16 @@ wtf.db.FilterParser = (function(){
             }
           }
           if (result0 !== null) {
-            result0 = (function(offset, line, column) { return '"';  })(pos0.offset, pos0.line, pos0.column);
+            result0 = (function(offset) { return '"';  })(pos0);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
           if (result0 === null) {
-            pos0 = clone(pos);
-            if (input.substr(pos.offset, 2) === "\\\\") {
+            pos0 = pos;
+            if (input.substr(pos, 2) === "\\\\") {
               result0 = "\\\\";
-              advance(pos, 2);
+              pos += 2;
             } else {
               result0 = null;
               if (reportFailures === 0) {
@@ -1828,16 +1928,16 @@ wtf.db.FilterParser = (function(){
               }
             }
             if (result0 !== null) {
-              result0 = (function(offset, line, column) { return "\\"; })(pos0.offset, pos0.line, pos0.column);
+              result0 = (function(offset) { return "\\"; })(pos0);
             }
             if (result0 === null) {
-              pos = clone(pos0);
+              pos = pos0;
             }
             if (result0 === null) {
-              pos0 = clone(pos);
-              if (input.substr(pos.offset, 2) === "\\/") {
+              pos0 = pos;
+              if (input.substr(pos, 2) === "\\/") {
                 result0 = "\\/";
-                advance(pos, 2);
+                pos += 2;
               } else {
                 result0 = null;
                 if (reportFailures === 0) {
@@ -1845,16 +1945,16 @@ wtf.db.FilterParser = (function(){
                 }
               }
               if (result0 !== null) {
-                result0 = (function(offset, line, column) { return "/";  })(pos0.offset, pos0.line, pos0.column);
+                result0 = (function(offset) { return "/";  })(pos0);
               }
               if (result0 === null) {
-                pos = clone(pos0);
+                pos = pos0;
               }
               if (result0 === null) {
-                pos0 = clone(pos);
-                if (input.substr(pos.offset, 2) === "\\b") {
+                pos0 = pos;
+                if (input.substr(pos, 2) === "\\b") {
                   result0 = "\\b";
-                  advance(pos, 2);
+                  pos += 2;
                 } else {
                   result0 = null;
                   if (reportFailures === 0) {
@@ -1862,16 +1962,16 @@ wtf.db.FilterParser = (function(){
                   }
                 }
                 if (result0 !== null) {
-                  result0 = (function(offset, line, column) { return "\b"; })(pos0.offset, pos0.line, pos0.column);
+                  result0 = (function(offset) { return "\b"; })(pos0);
                 }
                 if (result0 === null) {
-                  pos = clone(pos0);
+                  pos = pos0;
                 }
                 if (result0 === null) {
-                  pos0 = clone(pos);
-                  if (input.substr(pos.offset, 2) === "\\f") {
+                  pos0 = pos;
+                  if (input.substr(pos, 2) === "\\f") {
                     result0 = "\\f";
-                    advance(pos, 2);
+                    pos += 2;
                   } else {
                     result0 = null;
                     if (reportFailures === 0) {
@@ -1879,16 +1979,16 @@ wtf.db.FilterParser = (function(){
                     }
                   }
                   if (result0 !== null) {
-                    result0 = (function(offset, line, column) { return "\f"; })(pos0.offset, pos0.line, pos0.column);
+                    result0 = (function(offset) { return "\f"; })(pos0);
                   }
                   if (result0 === null) {
-                    pos = clone(pos0);
+                    pos = pos0;
                   }
                   if (result0 === null) {
-                    pos0 = clone(pos);
-                    if (input.substr(pos.offset, 2) === "\\n") {
+                    pos0 = pos;
+                    if (input.substr(pos, 2) === "\\n") {
                       result0 = "\\n";
-                      advance(pos, 2);
+                      pos += 2;
                     } else {
                       result0 = null;
                       if (reportFailures === 0) {
@@ -1896,16 +1996,16 @@ wtf.db.FilterParser = (function(){
                       }
                     }
                     if (result0 !== null) {
-                      result0 = (function(offset, line, column) { return "\n"; })(pos0.offset, pos0.line, pos0.column);
+                      result0 = (function(offset) { return "\n"; })(pos0);
                     }
                     if (result0 === null) {
-                      pos = clone(pos0);
+                      pos = pos0;
                     }
                     if (result0 === null) {
-                      pos0 = clone(pos);
-                      if (input.substr(pos.offset, 2) === "\\r") {
+                      pos0 = pos;
+                      if (input.substr(pos, 2) === "\\r") {
                         result0 = "\\r";
-                        advance(pos, 2);
+                        pos += 2;
                       } else {
                         result0 = null;
                         if (reportFailures === 0) {
@@ -1913,16 +2013,16 @@ wtf.db.FilterParser = (function(){
                         }
                       }
                       if (result0 !== null) {
-                        result0 = (function(offset, line, column) { return "\r"; })(pos0.offset, pos0.line, pos0.column);
+                        result0 = (function(offset) { return "\r"; })(pos0);
                       }
                       if (result0 === null) {
-                        pos = clone(pos0);
+                        pos = pos0;
                       }
                       if (result0 === null) {
-                        pos0 = clone(pos);
-                        if (input.substr(pos.offset, 2) === "\\t") {
+                        pos0 = pos;
+                        if (input.substr(pos, 2) === "\\t") {
                           result0 = "\\t";
-                          advance(pos, 2);
+                          pos += 2;
                         } else {
                           result0 = null;
                           if (reportFailures === 0) {
@@ -1930,17 +2030,17 @@ wtf.db.FilterParser = (function(){
                           }
                         }
                         if (result0 !== null) {
-                          result0 = (function(offset, line, column) { return "\t"; })(pos0.offset, pos0.line, pos0.column);
+                          result0 = (function(offset) { return "\t"; })(pos0);
                         }
                         if (result0 === null) {
-                          pos = clone(pos0);
+                          pos = pos0;
                         }
                         if (result0 === null) {
-                          pos0 = clone(pos);
-                          pos1 = clone(pos);
-                          if (input.substr(pos.offset, 2) === "\\u") {
+                          pos0 = pos;
+                          pos1 = pos;
+                          if (input.substr(pos, 2) === "\\u") {
                             result0 = "\\u";
-                            advance(pos, 2);
+                            pos += 2;
                           } else {
                             result0 = null;
                             if (reportFailures === 0) {
@@ -1948,7 +2048,7 @@ wtf.db.FilterParser = (function(){
                             }
                           }
                           if (result0 !== null) {
-                            pos2 = clone(pos);
+                            pos2 = pos;
                             result1 = parse_HexDigit();
                             if (result1 !== null) {
                               result2 = parse_HexDigit();
@@ -1960,37 +2060,37 @@ wtf.db.FilterParser = (function(){
                                     result1 = [result1, result2, result3, result4];
                                   } else {
                                     result1 = null;
-                                    pos = clone(pos2);
+                                    pos = pos2;
                                   }
                                 } else {
                                   result1 = null;
-                                  pos = clone(pos2);
+                                  pos = pos2;
                                 }
                               } else {
                                 result1 = null;
-                                pos = clone(pos2);
+                                pos = pos2;
                               }
                             } else {
                               result1 = null;
-                              pos = clone(pos2);
+                              pos = pos2;
                             }
                             if (result1 !== null) {
                               result0 = [result0, result1];
                             } else {
                               result0 = null;
-                              pos = clone(pos1);
+                              pos = pos1;
                             }
                           } else {
                             result0 = null;
-                            pos = clone(pos1);
+                            pos = pos1;
                           }
                           if (result0 !== null) {
-                            result0 = (function(offset, line, column, digits) {
+                            result0 = (function(offset, digits) {
                                 return String.fromCharCode(parseInt("0x" + digits, 16));
-                              })(pos0.offset, pos0.line, pos0.column, result0[1]);
+                              })(pos0, result0[1]);
                           }
                           if (result0 === null) {
-                            pos = clone(pos0);
+                            pos = pos0;
                           }
                         }
                       }
@@ -2009,8 +2109,8 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_Number();
         if (result0 !== null) {
           result1 = parse_TimeUnit();
@@ -2018,17 +2118,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, parts) { return parts[0] * parts[1]; })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, parts) { return parts[0] * parts[1]; })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
           result0 = parse_Number();
@@ -2045,8 +2145,8 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1, pos2;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_HexInt();
         if (result0 !== null) {
           result1 = parse__();
@@ -2054,22 +2154,22 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, parts) { return parseInt(parts, 16); })(pos0.offset, pos0.line, pos0.column, result0[0]);
+          result0 = (function(offset, parts) { return parseInt(parts, 16); })(pos0, result0[0]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
-          pos1 = clone(pos);
-          pos2 = clone(pos);
+          pos0 = pos;
+          pos1 = pos;
+          pos2 = pos;
           result0 = parse_Int();
           if (result0 !== null) {
             result1 = parse_Frac();
@@ -2079,15 +2179,15 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1, result2];
               } else {
                 result0 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result0 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
           } else {
             result0 = null;
-            pos = clone(pos2);
+            pos = pos2;
           }
           if (result0 !== null) {
             result1 = parse__();
@@ -2095,22 +2195,22 @@ wtf.db.FilterParser = (function(){
               result0 = [result0, result1];
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
           if (result0 !== null) {
-            result0 = (function(offset, line, column, parts) { return parseFloat(parts.join('')); })(pos0.offset, pos0.line, pos0.column, result0[0]);
+            result0 = (function(offset, parts) { return parseFloat(parts.join('')); })(pos0, result0[0]);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
           if (result0 === null) {
-            pos0 = clone(pos);
-            pos1 = clone(pos);
-            pos2 = clone(pos);
+            pos0 = pos;
+            pos1 = pos;
+            pos2 = pos;
             result0 = parse_Int();
             if (result0 !== null) {
               result1 = parse_Frac();
@@ -2118,11 +2218,11 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1];
               } else {
                 result0 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
             } else {
               result0 = null;
-              pos = clone(pos2);
+              pos = pos2;
             }
             if (result0 !== null) {
               result1 = parse__();
@@ -2130,22 +2230,22 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1];
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
             if (result0 !== null) {
-              result0 = (function(offset, line, column, parts) { return parseFloat(parts.join('')); })(pos0.offset, pos0.line, pos0.column, result0[0]);
+              result0 = (function(offset, parts) { return parseFloat(parts.join('')); })(pos0, result0[0]);
             }
             if (result0 === null) {
-              pos = clone(pos0);
+              pos = pos0;
             }
             if (result0 === null) {
-              pos0 = clone(pos);
-              pos1 = clone(pos);
-              pos2 = clone(pos);
+              pos0 = pos;
+              pos1 = pos;
+              pos2 = pos;
               result0 = parse_Int();
               if (result0 !== null) {
                 result1 = parse_Exp();
@@ -2153,11 +2253,11 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1];
                 } else {
                   result0 = null;
-                  pos = clone(pos2);
+                  pos = pos2;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos2);
+                pos = pos2;
               }
               if (result0 !== null) {
                 result1 = parse__();
@@ -2165,21 +2265,21 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1];
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
               if (result0 !== null) {
-                result0 = (function(offset, line, column, parts) { return parseFloat(parts.join('')); })(pos0.offset, pos0.line, pos0.column, result0[0]);
+                result0 = (function(offset, parts) { return parseFloat(parts.join('')); })(pos0, result0[0]);
               }
               if (result0 === null) {
-                pos = clone(pos0);
+                pos = pos0;
               }
               if (result0 === null) {
-                pos0 = clone(pos);
-                pos1 = clone(pos);
+                pos0 = pos;
+                pos1 = pos;
                 result0 = parse_Int();
                 if (result0 !== null) {
                   result1 = parse__();
@@ -2187,17 +2287,17 @@ wtf.db.FilterParser = (function(){
                     result0 = [result0, result1];
                   } else {
                     result0 = null;
-                    pos = clone(pos1);
+                    pos = pos1;
                   }
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
                 if (result0 !== null) {
-                  result0 = (function(offset, line, column, parts) { return parseFloat(parts); })(pos0.offset, pos0.line, pos0.column, result0[0]);
+                  result0 = (function(offset, parts) { return parseFloat(parts); })(pos0, result0[0]);
                 }
                 if (result0 === null) {
-                  pos = clone(pos0);
+                  pos = pos0;
                 }
               }
             }
@@ -2214,8 +2314,8 @@ wtf.db.FilterParser = (function(){
         var result0, result1, result2;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_Digit19();
         if (result0 !== null) {
           result1 = parse_Digits();
@@ -2223,33 +2323,33 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, a, b) { return a + b; })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+          result0 = (function(offset, a, b) { return a + b; })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
+          pos0 = pos;
           result0 = parse_Digit();
           if (result0 !== null) {
-            result0 = (function(offset, line, column, a) { return a; })(pos0.offset, pos0.line, pos0.column, result0);
+            result0 = (function(offset, a) { return a; })(pos0, result0);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
           if (result0 === null) {
-            pos0 = clone(pos);
-            pos1 = clone(pos);
-            if (input.charCodeAt(pos.offset) === 45) {
+            pos0 = pos;
+            pos1 = pos;
+            if (input.charCodeAt(pos) === 45) {
               result0 = "-";
-              advance(pos, 1);
+              pos++;
             } else {
               result0 = null;
               if (reportFailures === 0) {
@@ -2264,28 +2364,28 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1, result2];
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
             if (result0 !== null) {
-              result0 = (function(offset, line, column, a, b) { return '-' + a + b; })(pos0.offset, pos0.line, pos0.column, result0[1], result0[2]);
+              result0 = (function(offset, a, b) { return '-' + a + b; })(pos0, result0[1], result0[2]);
             }
             if (result0 === null) {
-              pos = clone(pos0);
+              pos = pos0;
             }
             if (result0 === null) {
-              pos0 = clone(pos);
-              pos1 = clone(pos);
-              if (input.charCodeAt(pos.offset) === 45) {
+              pos0 = pos;
+              pos1 = pos;
+              if (input.charCodeAt(pos) === 45) {
                 result0 = "-";
-                advance(pos, 1);
+                pos++;
               } else {
                 result0 = null;
                 if (reportFailures === 0) {
@@ -2298,17 +2398,17 @@ wtf.db.FilterParser = (function(){
                   result0 = [result0, result1];
                 } else {
                   result0 = null;
-                  pos = clone(pos1);
+                  pos = pos1;
                 }
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
               if (result0 !== null) {
-                result0 = (function(offset, line, column, a) { return '-' + a; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+                result0 = (function(offset, a) { return '-' + a; })(pos0, result0[1]);
               }
               if (result0 === null) {
-                pos = clone(pos0);
+                pos = pos0;
               }
             }
           }
@@ -2320,11 +2420,11 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.substr(pos.offset, 2) === "0x") {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.substr(pos, 2) === "0x") {
           result0 = "0x";
-          advance(pos, 2);
+          pos += 2;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2337,17 +2437,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, value) { return "0x" + value; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, value) { return "0x" + value; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2356,11 +2456,11 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 46) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 46) {
           result0 = ".";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2373,17 +2473,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, value) { return "." + value; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, value) { return "." + value; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2392,8 +2492,8 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_E();
         if (result0 !== null) {
           result1 = parse_Digits();
@@ -2401,17 +2501,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, value) { return "e" + value; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, value) { return "e" + value; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2420,7 +2520,7 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
+        pos0 = pos;
         result1 = parse_Digit();
         if (result1 !== null) {
           result0 = [];
@@ -2432,10 +2532,10 @@ wtf.db.FilterParser = (function(){
           result0 = null;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, value) { return value.join(''); })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, value) { return value.join(''); })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2444,10 +2544,10 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
-        if (/^[eE]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        pos0 = pos;
+        if (/^[eE]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2455,9 +2555,9 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 !== null) {
-          if (/^[+\-]/.test(input.charAt(pos.offset))) {
-            result1 = input.charAt(pos.offset);
-            advance(pos, 1);
+          if (/^[+\-]/.test(input.charAt(pos))) {
+            result1 = input.charAt(pos);
+            pos++;
           } else {
             result1 = null;
             if (reportFailures === 0) {
@@ -2469,11 +2569,11 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos0);
+            pos = pos0;
           }
         } else {
           result0 = null;
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2481,9 +2581,9 @@ wtf.db.FilterParser = (function(){
       function parse_Digit() {
         var result0;
 
-        if (/^[0-9]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[0-9]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2496,9 +2596,9 @@ wtf.db.FilterParser = (function(){
       function parse_Digit19() {
         var result0;
 
-        if (/^[1-9]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[1-9]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2511,9 +2611,9 @@ wtf.db.FilterParser = (function(){
       function parse_HexDigit() {
         var result0;
 
-        if (/^[0-9a-fA-F]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[0-9a-fA-F]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2527,10 +2627,10 @@ wtf.db.FilterParser = (function(){
         var result0;
         var pos0;
 
-        pos0 = clone(pos);
-        if (input.substr(pos.offset, 2) === "ms") {
+        pos0 = pos;
+        if (input.substr(pos, 2) === "ms") {
           result0 = "ms";
-          advance(pos, 2);
+          pos += 2;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2538,16 +2638,16 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column) { return 1; })(pos0.offset, pos0.line, pos0.column);
+          result0 = (function(offset) { return 1; })(pos0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
-          pos0 = clone(pos);
-          if (input.charCodeAt(pos.offset) === 115) {
+          pos0 = pos;
+          if (input.charCodeAt(pos) === 115) {
             result0 = "s";
-            advance(pos, 1);
+            pos++;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -2555,16 +2655,16 @@ wtf.db.FilterParser = (function(){
             }
           }
           if (result0 !== null) {
-            result0 = (function(offset, line, column) { return 1000; })(pos0.offset, pos0.line, pos0.column);
+            result0 = (function(offset) { return 1000; })(pos0);
           }
           if (result0 === null) {
-            pos = clone(pos0);
+            pos = pos0;
           }
           if (result0 === null) {
-            pos0 = clone(pos);
-            if (input.substr(pos.offset, 2) === "us") {
+            pos0 = pos;
+            if (input.substr(pos, 2) === "us") {
               result0 = "us";
-              advance(pos, 2);
+              pos += 2;
             } else {
               result0 = null;
               if (reportFailures === 0) {
@@ -2572,10 +2672,10 @@ wtf.db.FilterParser = (function(){
               }
             }
             if (result0 !== null) {
-              result0 = (function(offset, line, column) { return 1 / 1000; })(pos0.offset, pos0.line, pos0.column);
+              result0 = (function(offset) { return 1 / 1000; })(pos0);
             }
             if (result0 === null) {
-              pos = clone(pos0);
+              pos = pos0;
             }
           }
         }
@@ -2586,9 +2686,9 @@ wtf.db.FilterParser = (function(){
         var result0;
 
         reportFailures++;
-        if (/^[ \t\n\r]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[ \t\n\r]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2619,13 +2719,13 @@ wtf.db.FilterParser = (function(){
         var pos0;
 
         reportFailures++;
-        pos0 = clone(pos);
+        pos0 = pos;
         result0 = parse_IdentifierName();
         if (result0 !== null) {
-          result0 = (function(offset, line, column, name) { return name; })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, name) { return name; })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -2639,8 +2739,8 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_IdentifierStart();
         if (result0 !== null) {
           result1 = [];
@@ -2653,19 +2753,19 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, start, parts) {
+          result0 = (function(offset, start, parts) {
               return start + parts.join("");
-            })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+            })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -2677,9 +2777,9 @@ wtf.db.FilterParser = (function(){
       function parse_IdentifierStart() {
         var result0;
 
-        if (/^[a-zA-Z]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[a-zA-Z]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2687,9 +2787,9 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 === null) {
-          if (input.charCodeAt(pos.offset) === 36) {
+          if (input.charCodeAt(pos) === 36) {
             result0 = "$";
-            advance(pos, 1);
+            pos++;
           } else {
             result0 = null;
             if (reportFailures === 0) {
@@ -2697,9 +2797,9 @@ wtf.db.FilterParser = (function(){
             }
           }
           if (result0 === null) {
-            if (input.charCodeAt(pos.offset) === 95) {
+            if (input.charCodeAt(pos) === 95) {
               result0 = "_";
-              advance(pos, 1);
+              pos++;
             } else {
               result0 = null;
               if (reportFailures === 0) {
@@ -2707,9 +2807,9 @@ wtf.db.FilterParser = (function(){
               }
             }
             if (result0 === null) {
-              if (input.charCodeAt(pos.offset) === 64) {
+              if (input.charCodeAt(pos) === 64) {
                 result0 = "@";
-                advance(pos, 1);
+                pos++;
               } else {
                 result0 = null;
                 if (reportFailures === 0) {
@@ -2732,10 +2832,10 @@ wtf.db.FilterParser = (function(){
           if (result0 === null) {
             result0 = parse_UnicodeConnectorPunctuation();
             if (result0 === null) {
-              pos0 = clone(pos);
-              if (input.charCodeAt(pos.offset) === 8204) {
+              pos0 = pos;
+              if (input.charCodeAt(pos) === 8204) {
                 result0 = "\u200C";
-                advance(pos, 1);
+                pos++;
               } else {
                 result0 = null;
                 if (reportFailures === 0) {
@@ -2743,16 +2843,16 @@ wtf.db.FilterParser = (function(){
                 }
               }
               if (result0 !== null) {
-                result0 = (function(offset, line, column) { return "\u200C"; })(pos0.offset, pos0.line, pos0.column);
+                result0 = (function(offset) { return "\u200C"; })(pos0);
               }
               if (result0 === null) {
-                pos = clone(pos0);
+                pos = pos0;
               }
               if (result0 === null) {
-                pos0 = clone(pos);
-                if (input.charCodeAt(pos.offset) === 8205) {
+                pos0 = pos;
+                if (input.charCodeAt(pos) === 8205) {
                   result0 = "\u200D";
-                  advance(pos, 1);
+                  pos++;
                 } else {
                   result0 = null;
                   if (reportFailures === 0) {
@@ -2760,10 +2860,10 @@ wtf.db.FilterParser = (function(){
                   }
                 }
                 if (result0 !== null) {
-                  result0 = (function(offset, line, column) { return "\u200D"; })(pos0.offset, pos0.line, pos0.column);
+                  result0 = (function(offset) { return "\u200D"; })(pos0);
                 }
                 if (result0 === null) {
-                  pos = clone(pos0);
+                  pos = pos0;
                 }
               }
             }
@@ -2775,9 +2875,9 @@ wtf.db.FilterParser = (function(){
       function parse_UnicodeConnectorPunctuation() {
         var result0;
 
-        if (/^[_\u203F\u2040\u2054\uFE33\uFE34\uFE4D\uFE4E\uFE4F\uFF3F]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[_\u203F\u2040\u2054\uFE33\uFE34\uFE4D\uFE4E\uFE4F\uFF3F]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2792,11 +2892,11 @@ wtf.db.FilterParser = (function(){
         var pos0, pos1;
 
         reportFailures++;
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 47) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 47) {
           result0 = "/";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2806,9 +2906,9 @@ wtf.db.FilterParser = (function(){
         if (result0 !== null) {
           result1 = parse_RegularExpressionBody();
           if (result1 !== null) {
-            if (input.charCodeAt(pos.offset) === 47) {
+            if (input.charCodeAt(pos) === 47) {
               result2 = "/";
-              advance(pos, 1);
+              pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
@@ -2821,31 +2921,31 @@ wtf.db.FilterParser = (function(){
                 result0 = [result0, result1, result2, result3];
               } else {
                 result0 = null;
-                pos = clone(pos1);
+                pos = pos1;
               }
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, body, flags) {
+          result0 = (function(offset, body, flags) {
               return {
                 type: 'regex',
                 value:  body,
                 flags: flags
               };
-            })(pos0.offset, pos0.line, pos0.column, result0[1], result0[3]);
+            })(pos0, result0[1], result0[3]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -2858,8 +2958,8 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
         result0 = parse_RegularExpressionFirstChar();
         if (result0 !== null) {
           result1 = parse_RegularExpressionChars();
@@ -2867,19 +2967,19 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, char_, chars) {
+          result0 = (function(offset, char_, chars) {
               return char_ + chars;
-            })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+            })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2888,7 +2988,7 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
+        pos0 = pos;
         result0 = [];
         result1 = parse_RegularExpressionChar();
         while (result1 !== null) {
@@ -2896,10 +2996,10 @@ wtf.db.FilterParser = (function(){
           result1 = parse_RegularExpressionChar();
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, chars) { return chars.join(""); })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, chars) { return chars.join(""); })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -2908,13 +3008,13 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1, pos2;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        pos2 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
+        pos2 = pos;
         reportFailures++;
-        if (/^[*\\\/[]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[*\\\/[]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2926,7 +3026,7 @@ wtf.db.FilterParser = (function(){
           result0 = "";
         } else {
           result0 = null;
-          pos = clone(pos2);
+          pos = pos2;
         }
         if (result0 !== null) {
           result1 = parse_RegularExpressionNonTerminator();
@@ -2934,17 +3034,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, char_) { return char_; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, char_) { return char_; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
           result0 = parse_RegularExpressionBackslashSequence();
@@ -2959,13 +3059,13 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1, pos2;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        pos2 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
+        pos2 = pos;
         reportFailures++;
-        if (/^[\\\/[]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[\\\/[]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -2977,7 +3077,7 @@ wtf.db.FilterParser = (function(){
           result0 = "";
         } else {
           result0 = null;
-          pos = clone(pos2);
+          pos = pos2;
         }
         if (result0 !== null) {
           result1 = parse_RegularExpressionNonTerminator();
@@ -2985,17 +3085,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, char_) { return char_; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, char_) { return char_; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
           result0 = parse_RegularExpressionBackslashSequence();
@@ -3010,11 +3110,11 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 92) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 92) {
           result0 = "\\";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -3027,17 +3127,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, char_) { return "\\" + char_; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, char_) { return "\\" + char_; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -3046,10 +3146,10 @@ wtf.db.FilterParser = (function(){
         var result0;
         var pos0;
 
-        pos0 = clone(pos);
-        if (input.length > pos.offset) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        pos0 = pos;
+        if (input.length > pos) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -3057,10 +3157,10 @@ wtf.db.FilterParser = (function(){
           }
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, char_) { return char_; })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, char_) { return char_; })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -3069,11 +3169,11 @@ wtf.db.FilterParser = (function(){
         var result0, result1, result2;
         var pos0, pos1;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        if (input.charCodeAt(pos.offset) === 91) {
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 91) {
           result0 = "[";
-          advance(pos, 1);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -3083,9 +3183,9 @@ wtf.db.FilterParser = (function(){
         if (result0 !== null) {
           result1 = parse_RegularExpressionClassChars();
           if (result1 !== null) {
-            if (input.charCodeAt(pos.offset) === 93) {
+            if (input.charCodeAt(pos) === 93) {
               result2 = "]";
-              advance(pos, 1);
+              pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
@@ -3096,21 +3196,21 @@ wtf.db.FilterParser = (function(){
               result0 = [result0, result1, result2];
             } else {
               result0 = null;
-              pos = clone(pos1);
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, chars) { return "[" + chars + "]"; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, chars) { return "[" + chars + "]"; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -3119,7 +3219,7 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
+        pos0 = pos;
         result0 = [];
         result1 = parse_RegularExpressionClassChar();
         while (result1 !== null) {
@@ -3127,10 +3227,10 @@ wtf.db.FilterParser = (function(){
           result1 = parse_RegularExpressionClassChar();
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, chars) { return chars.join(""); })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, chars) { return chars.join(""); })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -3139,13 +3239,13 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0, pos1, pos2;
 
-        pos0 = clone(pos);
-        pos1 = clone(pos);
-        pos2 = clone(pos);
+        pos0 = pos;
+        pos1 = pos;
+        pos2 = pos;
         reportFailures++;
-        if (/^[\]\\]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
-          advance(pos, 1);
+        if (/^[\]\\]/.test(input.charAt(pos))) {
+          result0 = input.charAt(pos);
+          pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
@@ -3157,7 +3257,7 @@ wtf.db.FilterParser = (function(){
           result0 = "";
         } else {
           result0 = null;
-          pos = clone(pos2);
+          pos = pos2;
         }
         if (result0 !== null) {
           result1 = parse_RegularExpressionNonTerminator();
@@ -3165,17 +3265,17 @@ wtf.db.FilterParser = (function(){
             result0 = [result0, result1];
           } else {
             result0 = null;
-            pos = clone(pos1);
+            pos = pos1;
           }
         } else {
           result0 = null;
-          pos = clone(pos1);
+          pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, char_) { return char_; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, char_) { return char_; })(pos0, result0[1]);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         if (result0 === null) {
           result0 = parse_RegularExpressionBackslashSequence();
@@ -3187,7 +3287,7 @@ wtf.db.FilterParser = (function(){
         var result0, result1;
         var pos0;
 
-        pos0 = clone(pos);
+        pos0 = pos;
         result0 = [];
         result1 = parse_IdentifierPart();
         while (result1 !== null) {
@@ -3195,10 +3295,10 @@ wtf.db.FilterParser = (function(){
           result1 = parse_IdentifierPart();
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, parts) { return parts.join(""); })(pos0.offset, pos0.line, pos0.column, result0);
+          result0 = (function(offset, parts) { return parts.join(""); })(pos0, result0);
         }
         if (result0 === null) {
-          pos = clone(pos0);
+          pos = pos0;
         }
         return result0;
       }
@@ -3218,6 +3318,36 @@ wtf.db.FilterParser = (function(){
         return cleanExpected;
       }
 
+      function computeErrorPosition() {
+        /*
+         * The first idea was to use |String.split| to break the input up to the
+         * error position along newlines and derive the line and column from
+         * there. However IE's |split| implementation is so broken that it was
+         * enough to prevent it.
+         */
+
+        var line = 1;
+        var column = 1;
+        var seenCR = false;
+
+        for (var i = 0; i < Math.max(pos, rightmostFailuresPos); i++) {
+          var ch = input.charAt(i);
+          if (ch === "\n") {
+            if (!seenCR) { line++; }
+            column = 1;
+            seenCR = false;
+          } else if (ch === "\r" || ch === "\u2028" || ch === "\u2029") {
+            line++;
+            column = 1;
+            seenCR = true;
+          } else {
+            column++;
+            seenCR = false;
+          }
+        }
+
+        return { line: line, column: column };
+      }
 
 
       var result = parseFunctions[startRule]();
@@ -3228,28 +3358,28 @@ wtf.db.FilterParser = (function(){
        * 1. The parser successfully parsed the whole input.
        *
        *    - |result !== null|
-       *    - |pos.offset === input.length|
+       *    - |pos === input.length|
        *    - |rightmostFailuresExpected| may or may not contain something
        *
        * 2. The parser successfully parsed only a part of the input.
        *
        *    - |result !== null|
-       *    - |pos.offset < input.length|
+       *    - |pos < input.length|
        *    - |rightmostFailuresExpected| may or may not contain something
        *
        * 3. The parser did not successfully parse any part of the input.
        *
        *   - |result === null|
-       *   - |pos.offset === 0|
+       *   - |pos === 0|
        *   - |rightmostFailuresExpected| contains at least one failure
        *
        * All code following this comment (including called functions) must
        * handle these states.
        */
-      if (result === null || pos.offset !== input.length) {
-        var offset = Math.max(pos.offset, rightmostFailuresPos.offset);
+      if (result === null || pos !== input.length) {
+        var offset = Math.max(pos, rightmostFailuresPos);
         var found = offset < input.length ? input.charAt(offset) : null;
-        var errorPosition = pos.offset > rightmostFailuresPos.offset ? pos : rightmostFailuresPos;
+        var errorPosition = computeErrorPosition();
 
         throw new this.SyntaxError(
           cleanupExpected(rightmostFailuresExpected),
@@ -3261,7 +3391,10 @@ wtf.db.FilterParser = (function(){
       }
 
       return result;
-    }
+    },
+
+    /* Returns the parser source code. */
+    toSource: function() { return this._source; }
   };
 
   /* Thrown when a parser encounters a syntax error. */

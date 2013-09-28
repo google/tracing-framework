@@ -64,6 +64,15 @@ ArgumentList "arguments"
     return result;
   }
 BinaryExpression "binary expression"
+  = exp:ComparativeExpression / exp:RegularExpression {
+    return {
+      lhs: exp.lhs,
+      op: exp.op,
+      rhs: exp.rhs
+    };
+  }
+
+ComparativeExpression "comparison expression"
   = lhs:ExpressionValue _ op:Operator _ rhs:ExpressionValue {
     return {
       lhs: lhs,
@@ -71,6 +80,16 @@ BinaryExpression "binary expression"
       rhs: rhs
     };
   }
+
+RegularExpression "regular expression"
+  = lhs:ExpressionValue _ op:RegexOperator _ regex:RegularExpressionLiteral {
+    return {
+      lhs: lhs,
+      op: op,
+      rhs: regex
+    };
+  }
+
 Operator "operator"
   = "=="
   / "!="
@@ -79,6 +98,10 @@ Operator "operator"
   / "<"
   / ">"
   / "in"
+
+RegexOperator "regex operator"
+  = "=~"
+  / "!~"
 
 ExpressionValue "value"
   = value:String            { return { type: "string", value: value }; }
@@ -89,6 +112,7 @@ ExpressionValue "value"
   / "false" _               { return { type: "boolean", value: false }; }
   / "null" _                { return { type: "null", value: null }; }
   / value:VariableReference { return { type: "reference", value: value }; }
+  / value:RegularExpressionLiteral { return { type: "regex", value: value }; }
 
 VariableReference "reference"
   = base:Identifier accessors:(
