@@ -182,6 +182,25 @@ wtf.db.FilterParser_test = suite('wtf.db.FilterParser', function() {
         ]);
   });
 
+  test('regexArguments', function() {
+    assert.deepEqual(
+        wtf.db.FilterParser.parse('a(foo =~ /.*/)').arg_query, [
+          {
+            lhs: { type: 'reference', value: 'foo' },
+            op: '=~',
+            rhs: { type: 'regex', value: '.*', 'flags': '' }
+          }
+        ]);
+    assert.deepEqual(
+        wtf.db.FilterParser.parse('a(foo !~ /blah/)').arg_query, [
+          {
+            lhs: { type: 'reference', value: 'foo' },
+            op: '!~',
+            rhs: { type: 'regex', value: 'blah', 'flags': '' }
+          }
+        ]);
+  });
+
   test('literalArguments', function() {
     assert.deepEqual(
         wtf.db.FilterParser.parse('a(foo<true)').arg_query, [

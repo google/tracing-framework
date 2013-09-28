@@ -3391,10 +3391,7 @@ wtf.db.FilterParser = (function(){
       }
 
       return result;
-    },
-
-    /* Returns the parser source code. */
-    toSource: function() { return this._source; }
+    }
   };
 
   /* Thrown when a parser encounters a syntax error. */
