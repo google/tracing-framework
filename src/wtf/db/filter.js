@@ -317,7 +317,12 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
     var rhs = stringifyExpressionValue(binaryExpression.rhs);
 
     // The real expression.
-    expressions.push('(' + lhs + ' ' + op + ' ' + rhs + ')');
+    if (binaryExpression.rhs.type == 'regex') {
+      var prefix = op == '!~' ? '!' : '';
+      expressions.push('( ' + prefix + rhs + '.test(' + lhs + ') )');
+    } else {
+      expressions.push('(' + lhs + ' ' + op + ' ' + rhs + ')');
+    }
   }
 
   // Only add arguments object if any expressions use it.
@@ -379,6 +384,13 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
         return '[' + String(exprValue.value) + ']';
       case 'object':
         return goog.global.JSON.stringify(exprValue.value);
+      case 'regex':
+        var regExpr = '(new RegExp("' + String(exprValue.value) + '"';
+        if (exprValue.value.flags) {
+          regExpr += ', "' + String(exprValue.flags) + '"';
+        }
+        regExpr += '))';
+        return regExpr;
       case 'reference':
         return stringifyReferenceAccess(exprValue.value);
       default:
