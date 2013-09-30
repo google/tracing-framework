@@ -333,6 +333,14 @@ function transformCode(moduleId, url, sourceCode, argv) {
     }
   }
 
+  // Compute ignore pattern.
+  var ignorePatternArg = argv['ignore-pattern'];
+  var ignorePattern = null;
+  if (ignorePatternArg) {
+    anyIgnores = true;
+    ignorePattern = new RegExp(ignorePatternArg);
+  }
+
   // Walk the entire document instrumenting functions.
   var nextFnId = (moduleId << 24) + 1;
   var nextAnonymousName = 0;
@@ -358,6 +366,10 @@ function transformCode(moduleId, url, sourceCode, argv) {
 
       // Check ignore list.
       if (ignores[name]) {
+        return;
+      }
+
+      if (ignorePattern.test(name)) {
         return;
       }
 
@@ -393,6 +405,9 @@ function transformCode(moduleId, url, sourceCode, argv) {
             if (isFunctionBlock(testNode)) {
               var testName = getFunctionName(testNode.parent);
               if (testName && ignores[testName]) {
+                return;
+              }
+              if (testName && ignorePattern && ignorePattern.test(testName)) {
                 return;
               }
               break;
@@ -691,6 +706,11 @@ main(optimist
     })
     .options('i', {
       alias: 'ignore',
+      type: 'string',
+      desc: 'Don\'t trace functions with this name.'
+    })
+    .options('ir', {
+      alias: 'ignore-regexp',
       type: 'string',
       desc: 'Don\'t trace functions with this name.'
     })
