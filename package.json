@@ -41,6 +41,7 @@
     "build-out/wtf_node_js_compiled.js",
     "bin/",
     "docs/",
+    "extensions/",
     "AUTHORS",
     "CONTRIBUTORS.md",
     "LICENSE"
