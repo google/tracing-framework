@@ -23,7 +23,8 @@
     "falafel": "0.1.4",
     "mkdirp": "0.3.5",
     "optimist": "0.3.5",
-    "ws": "0.4.25"
+    "ws": "0.4.25",
+    "string-hash": "~1.1.0"
   },
   "devDependencies": {
     "benchmark": "1.0.0",
