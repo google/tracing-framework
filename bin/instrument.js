@@ -23,8 +23,16 @@ var os = require('os');
 var path = require('path');
 var querystring = require('querystring');
 var url = require('url');
+var hash = require('string-hash');
 
 var falafel = require('falafel');
+
+/**
+ * Maps hash-keys to a mapping from source code to transformed code.
+ * @type {!Object.<string, !Object.<string, string>}
+ */
+var transformMap = {}
+
 
 
 /**
@@ -40,6 +48,18 @@ function transformCode(moduleId, url, sourceCode, argv) {
   var startTime = Date.now();
 
   var trackHeap = argv['track-heap'];
+  var key = hash(sourceCode);
+  if (key in transformMap) {
+    var transformBucket = transformMap[key];
+    if (sourceCode in transformBucket) {
+      var endTime = Date.now() - startTime;
+      console.log('  ' + endTime + 'ms (Cached)');
+      return transformBucket[sourceCode];
+    }
+  } else {
+    transformMap[key] = {};
+  }
+
 
   // This code is stringified and then embedded in each output file.
   // It's ok if multiple are present on the page.
@@ -402,14 +422,16 @@ function transformCode(moduleId, url, sourceCode, argv) {
   });
 
   var endTime = Date.now() - startTime;
-  console.log('  ' + endTime + 'ms');
-  return [
+  var transformedCode = [
     sharedInitCode,
     '__wtfm[' + moduleId + '] = {' +
         '"src": "' + url + '",' +
         '"fns": [' + fns.join(',\n') + ']};',
     targetCode.toString()
   ].join('');
+  transformMap[key][sourceCode] = transformedCode;
+  console.log('  ' + endTime + 'ms');
+  return transformedCode;
 };
 
 
