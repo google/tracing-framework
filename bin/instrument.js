@@ -369,7 +369,7 @@ function transformCode(moduleId, url, sourceCode, argv) {
         return;
       }
 
-      if (ignorePattern.test(name)) {
+      if (ignorePattern && ignorePattern.test(name)) {
         return;
       }
 
