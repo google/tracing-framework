@@ -27,6 +27,13 @@ var Tracer = function() {
   var url = 'ws://localhost:' + port + '/devtools/browser';
 
   /**
+   * Target remote debugging port URL.
+   * @type {string}
+   * @private
+   */
+  this.url_ = url;
+
+  /**
    * Whether tracing is available at all.
    * @type {boolean}
    * @private
@@ -74,7 +81,40 @@ var Tracer = function() {
    * @type {WebSocket}
    * @private
    */
-  this.socket_ = new WebSocket(url);
+  this.socket_ = null;
+
+  /**
+   * Current number of connection attempts.
+   * @type {number}
+   * @private
+   */
+  this.connectionAttempts_ = 0;
+
+  this.attemptConnection_();
+};
+
+
+/**
+ * Maximum number of connection attempts before giving up.
+ * @type {number}
+ * @const
+ * @private
+ */
+Tracer.MAX_CONNECTION_ATTEMPTS_ = 3;
+
+
+/**
+ * Attempts a connection to the local browser remote debugging socket.
+ * @private
+ */
+Tracer.prototype.attemptConnection_ = function() {
+  if (this.socket_) {
+    return;
+  }
+
+  this.connectionAttempts_++;
+
+  this.socket_ = new WebSocket(this.url_);
   this.socket_.onopen = (function(e) {
     // TODO(benvanik): query if tracing is available?
     this.available_ = true;
@@ -94,6 +134,14 @@ var Tracer = function() {
   this.socket_.onerror = (function(e) {
     console.log('Tracer: unable to connect');
     this.dispose();
+
+    // Try again, a few times.
+    if (this.connectionAttempts_ <= Tracer.MAX_CONNECTION_ATTEMPTS_) {
+      var self = this;
+      window.setTimeout(function() {
+        self.attemptConnection_();
+      }, 500);
+    }
   }).bind(this);
   this.socket_.onclose = (function(e) {
     this.dispose();
