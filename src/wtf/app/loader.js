@@ -29,6 +29,7 @@ goog.require('wtf.db.DriveDataSourceInfo');
 goog.require('wtf.db.UrlDataSourceInfo');
 goog.require('wtf.db.sources.CallsDataSource');
 goog.require('wtf.db.sources.ChunkedDataSource');
+goog.require('wtf.db.sources.CpuProfileDataSource');
 goog.require('wtf.doc.Document');
 goog.require('wtf.io');
 goog.require('wtf.io.Blob');
@@ -107,6 +108,8 @@ wtf.app.Loader.prototype.inferContentType_ = function(filename) {
     return 'application/x-extension-wtf-json';
   } else if (goog.string.endsWith(filename, '.wtf-calls')) {
     return 'application/x-extension-wtf-calls';
+  } else if (goog.string.endsWith(filename, '.cpuprofile')) {
+    return 'application/x-extension-cpuprofile';
   }
   // Default. Maybe we should just return null.
   return 'application/x-extension-wtf-trace';
@@ -178,6 +181,7 @@ wtf.app.Loader.prototype.requestLocalOpenDialog = function(
     '.wtf-trace,application/x-extension-wtf-trace',
     '.wtf-json,application/x-extension-wtf-json',
     '.wtf-calls,application/x-extension-wtf-calls',
+    '.cpuprofile,application/x-extension-cpuprofile',
     '.part,application/x-extension-part'
   ].join(',');
   inputElement.click();
@@ -543,6 +547,10 @@ wtf.app.Loader.Entry_.prototype.start = function(db) {
         break;
       case 'application/x-extension-wtf-calls':
         this.source = new wtf.db.sources.CallsDataSource(
+            db, this.sourceInfo, transport);
+        break;
+      case 'application/x-extension-cpuprofile':
+        this.source = new wtf.db.sources.CpuProfileDataSource(
             db, this.sourceInfo, transport);
         break;
     }

@@ -65,7 +65,7 @@ wtf.ui.ErrorDialog.prototype.createDom = function(dom) {
   return /** @type {!Element} */ (goog.soy.renderAsFragment(
       wtf.ui.errordialog.control, {
         'message': this.info_.message,
-        'detail': this.info_.detail.replace(/\n/g, '<br>')
+        'detail': (this.info_.detail || '').replace(/\n/g, '<br>')
       }, undefined, dom));
 };
 
