@@ -18,7 +18,8 @@
 var PageStatus = {
   UNKNOWN: 'unknown',
   WHITELISTED: 'whitelisted',
-  BLACKLISTED: 'blacklisted'
+  BLACKLISTED: 'blacklisted',
+  INSTRUMENTED: 'instrumented'
 };
 
 
@@ -55,6 +56,15 @@ var Options = function() {
    * @private
    */
   this.addons_ = {};
+
+  /**
+   * A map of instrumented tab IDs to their instrumentation options.
+   * If a tab has an entry in this map it is considered instrumented and
+   * that superceeds other whitelisting options.
+   * This is not saved (yet), as it's usually a one-off thing.
+   * @type {!Object.<number, Object>}
+   */
+  this.instrumentedTabs_ = {};
 
   /**
    * A list of page match patterns that will have tracing on.
@@ -207,9 +217,17 @@ Options.prototype.matchPagePattern_ = function(pattern, url) {
 /**
  * Checks to see if a page is enabled based on the blacklist/whitelist.
  * @param {string} url Canonicalized page URL.
+ * @param {number=} opt_tabId Tab ID.
  * @return {PageStatus} Page blacklist/whitelist status.
  */
-Options.prototype.getPageStatus = function(url) {
+Options.prototype.getPageStatus = function(url, opt_tabId) {
+  // Check instrumentation for the tab first, if given.
+  if (opt_tabId !== undefined) {
+    if (this.instrumentedTabs_[opt_tabId]) {
+      return PageStatus.INSTRUMENTED;
+    }
+  }
+
   // Check blacklist - if present, force disabled.
   for (var n = 0; n < this.pageBlacklist_.length; n++) {
     if (this.matchPagePattern_(this.pageBlacklist_[n], url)) {
@@ -277,6 +295,35 @@ Options.prototype.blacklistPage = function(url) {
   this.pageBlacklist_.push(url);
 
   this.save();
+};
+
+
+/**
+ * Instruments a tab.
+ * @param {number} tabId Tab ID.
+ * @param {!Object} options Instrumentation options.
+ */
+Options.prototype.instrumentTab = function(tabId, options) {
+  this.instrumentedTabs_[tabId] = options;
+};
+
+
+/**
+ * Gets the instrumentation options for the given tab.
+ * @param {number} tabId Tab ID.
+ * @return {Object} Options for the tab or null if not instrumented.
+ */
+Options.prototype.getInstrumentationOptions = function(tabId) {
+  return this.instrumentedTabs_[tabId] || null;
+};
+
+
+/**
+ * Uninstruments a tab.
+ * @param {number} tabId Tab ID.
+ */
+Options.prototype.uninstrumentTab = function(tabId) {
+  delete this.instrumentedTabs_[tabId];
 };
 
 
