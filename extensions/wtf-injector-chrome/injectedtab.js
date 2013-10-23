@@ -23,9 +23,10 @@
  * @param {!Tab} tab Injected tab.
  * @param {!Object} pageOptions Page options.
  * @param {!Port} port Message port to the content script.
+ * @param {PageStatus} pageStatus Page status.
  * @constructor
  */
-var InjectedTab = function(extension, tab, pageOptions, port) {
+var InjectedTab = function(extension, tab, pageStatus, pageOptions, port) {
   /**
    * Hosting extension.
    * @type {!Extension}
@@ -68,7 +69,8 @@ var InjectedTab = function(extension, tab, pageOptions, port) {
    */
   this.debugger_ = null;
 
-  if (pageOptions['wtf.trace.provider.chromeDebug'] !== false) {
+  if (pageStatus == PageStatus.WHITELISTED &&
+      pageOptions['wtf.trace.provider.chromeDebug'] !== false) {
     var timelineEnabled =
         pageOptions['wtf.trace.provider.chromeDebug.timeline'] !== false;
     var memoryInfoEnabled =

@@ -32,25 +32,38 @@ function main() {
     return;
   }
 
-  // Inject the tracing framework script and the prepare function.
-  var traceScriptUrl = chrome.extension.getURL('wtf_trace_web_js_compiled.js');
-  injectScriptFunction(function(traceScriptUrl) {
-    window.WTF_TRACE_SCRIPT_URL = traceScriptUrl;
-  }, [traceScriptUrl]);
-  injectScriptFile(traceScriptUrl);
-  injectScriptFunction(function(options) {
-    wtf.trace.prepare(options);
-  }, [
-    options
-  ]);
+  if (options['__instrumented__']) {
+    // Instrumentation mode.
+    injectScriptFile(chrome.extension.getURL('falafel.js'));
+    injectScriptFile(chrome.extension.getURL('wtf-call-tracing.js'));
+    injectScriptFunction(function(options) {
+      wtfi.prepare(options);
+    }, [
+      options
+    ]);
+  } else {
+    // Normal tracing mode.
+    // Inject the tracing framework script and the prepare function.
+    var traceScriptUrl =
+        chrome.extension.getURL('wtf_trace_web_js_compiled.js');
+    injectScriptFunction(function(traceScriptUrl) {
+      window.WTF_TRACE_SCRIPT_URL = traceScriptUrl;
+    }, [traceScriptUrl]);
+    injectScriptFile(traceScriptUrl);
+    injectScriptFunction(function(options) {
+      wtf.trace.prepare(options);
+    }, [
+      options
+    ]);
 
-  // Inject addons, if required.
-  var addons = injectAddons(options['wtf.addons'] || []);
+    // Inject addons, if required.
+    var addons = injectAddons(options['wtf.addons'] || []);
 
-  // Inject preparation code to start tracing with the desired options.
-  injectScriptFunction(startTracing, [
-    addons
-  ]);
+    // Inject preparation code to start tracing with the desired options.
+    injectScriptFunction(startTracing, [
+      addons
+    ]);
+  }
 
   setupCommunications();
 };
@@ -72,17 +85,35 @@ function fetchOptions() {
    */
   var WTF_OPTIONS_COOKIE = 'wtf';
 
+  /**
+   * Cookie used for instrumentation options.
+   * @const
+   * @type {string}
+   */
+  var WTF_INSTRUMENTATION_COOKIE = 'wtfi';
+
   // Check for the injection cookie.
   var optionsUuid = null;
+  var instrumentationOptions = null;
   var cookies = document.cookie.split('; ');
   for (var n = 0; n < cookies.length; n++) {
     if (cookies[n].lastIndexOf(WTF_OPTIONS_COOKIE + '=') == 0) {
       optionsUuid = cookies[n].substr(cookies[n].indexOf('=') + 1);
-      break;
+    }
+    if (cookies[n].lastIndexOf(WTF_INSTRUMENTATION_COOKIE + '=') == 0) {
+      instrumentationOptions = cookies[n].substr(cookies[n].indexOf('=') + 1);
     }
   }
-  if (!optionsUuid) {
+  if (!optionsUuid && !instrumentationOptions) {
     return null;
+  }
+
+  // If we have an instrumentation cookie we use that and go into
+  // instrumentation mode.
+  if (instrumentationOptions) {
+    instrumentationOptions = JSON.parse(instrumentationOptions);
+    instrumentationOptions['__instrumented__'] = true;
+    return instrumentationOptions;
   }
 
   // Fetch the options from the extension.
@@ -252,6 +283,7 @@ function setupCommunications() {
         packet['wtf_ipc_sender_token'] == localId) {
       return;
     }
+    var data = packet['data'];
 
     e.stopPropagation();
 
@@ -259,7 +291,6 @@ function setupCommunications() {
 
     // Pass through the messages.
     // We trust the Chrome security model and just send the data along.
-    var data = packet['data'];
     port.postMessage(data);
   }, false);
 

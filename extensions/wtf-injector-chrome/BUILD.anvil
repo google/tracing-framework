@@ -42,12 +42,14 @@ file_set(
         'background.js',
         'debugger.js',
         'extension.js',
+        'falafel.js',
         'injectedtab.js',
         'options.js',
         'popup.html',
         'popup.js',
         'tracer.js',
         'uri.js',
+        'wtf-call-tracing.js',
         'wtf-injector.js',
         ] +
         glob('assets/scripts/*.js') +

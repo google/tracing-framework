@@ -86,11 +86,13 @@ var Extension = function() {
         return;
       }
       var pageUrl = URI.canonicalize(tab.url);
+      var pageStatus = options.getPageStatus(pageUrl, tab.id);
       var pageOptions = options.getPageOptions(pageUrl);
 
       _gaq.push(['_trackEvent', 'extension', 'injected']);
 
-      var injectedTab = new InjectedTab(this, tab, pageOptions, port);
+      var injectedTab = new InjectedTab(
+          this, tab, pageStatus, pageOptions, port);
       this.injectedTabs_[tab.id] = injectedTab;
     } else if (port.name == 'popup') {
       // Get info about the selected tab and send back.
@@ -100,7 +102,7 @@ var Extension = function() {
         if (!pageUrl.length) {
           return;
         }
-        this.sendPopupInfo_(pageUrl, port);
+        this.sendPopupInfo_(pageUrl, tab.id, port);
 
         // Listen for messages from the popup.
         port.onMessage.addListener((function(data, port) {
@@ -361,6 +363,13 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
    */
   var WTF_OPTIONS_COOKIE = 'wtf';
 
+  /**
+   * Cookie used for instrumentation options.
+   * @const
+   * @type {string}
+   */
+  var WTF_INSTRUMENTATION_COOKIE = 'wtfi';
+
   var options = this.getOptions();
 
   // Get page URL.
@@ -389,38 +398,60 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
   }
 
   // Get tab toggle status.
-  var status = options.getPageStatus(pageUrl);
-  var pageOptions = options.getPageOptions(pageUrl);
-
-  // Set availablility overrides.
-  pageOptions['wtf.trace.provider.chromeDebug.tracing'] = !!this.getTracer();
-
-  // Create an exported blob URL that the content script can access.
-  // To save on cookie space send only the UUID.
-  var pageOptionsString = JSON.stringify(pageOptions);
-  var pageOptionsBlob = new Blob([pageOptionsString]);
-  var pageOptionsUuid = webkitURL.createObjectURL(pageOptionsBlob);
-  pageOptionsUuid =
-      pageOptionsUuid.substr(pageOptionsUuid.lastIndexOf('/') + 1);
-
-  // Stash options in our lookup for the HTTP header fallback.
-  this.pageOptionsBlobs_[pageOptionsUuid] = pageOptionsString;
+  var status = options.getPageStatus(pageUrl, tabId);
 
   // Add or remove document cookie.
   // This tells the content script to inject stuff.
-  if (status == PageStatus.WHITELISTED) {
-    var urlPath = parsedUrl.path;
-    chrome.cookies.set({
-      url: pageUrl,
-      name: WTF_OPTIONS_COOKIE,
-      value: pageOptionsUuid,
-      path: urlPath
-    });
-  } else {
-    chrome.cookies.remove({
-      url: pageUrl,
-      name: WTF_OPTIONS_COOKIE
-    });
+  switch (status) {
+    case PageStatus.WHITELISTED:
+      var pageOptions = options.getPageOptions(pageUrl);
+
+      // Set availablility overrides.
+      pageOptions['wtf.trace.provider.chromeDebug.tracing'] =
+          !!this.getTracer();
+
+      // Create an exported blob URL that the content script can access.
+      // To save on cookie space send only the UUID.
+      var pageOptionsString = JSON.stringify(pageOptions);
+      var pageOptionsBlob = new Blob([pageOptionsString]);
+      var pageOptionsUuid = webkitURL.createObjectURL(pageOptionsBlob);
+      pageOptionsUuid =
+          pageOptionsUuid.substr(pageOptionsUuid.lastIndexOf('/') + 1);
+
+      // Stash options in our lookup for the HTTP header fallback.
+      this.pageOptionsBlobs_[pageOptionsUuid] = pageOptionsString;
+
+      var urlPath = parsedUrl.path;
+      chrome.cookies.set({
+        url: pageUrl,
+        name: WTF_OPTIONS_COOKIE,
+        value: pageOptionsUuid,
+        path: urlPath
+      });
+      break;
+    case PageStatus.INSTRUMENTED:
+      var instrumentationOptions = options.getInstrumentationOptions(tabId);
+      // TODO(benvanik): clever serialization of this.
+      var urlPath = parsedUrl.path;
+      chrome.cookies.set({
+        url: pageUrl,
+        name: WTF_INSTRUMENTATION_COOKIE,
+        value: JSON.stringify(instrumentationOptions),
+        path: urlPath
+      });
+      break;
+    default:
+    case PageStatus.NONE:
+    case PageStatus.BLACKLISTED:
+      chrome.cookies.remove({
+        url: pageUrl,
+        name: WTF_OPTIONS_COOKIE
+      });
+      chrome.cookies.remove({
+        url: pageUrl,
+        name: WTF_INSTRUMENTATION_COOKIE
+      });
+      break;
   }
 
   if (options.showPageAction) {
@@ -435,6 +466,7 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
         icon = 'pageActionDisabled';
         break;
       case PageStatus.WHITELISTED:
+      case PageStatus.INSTRUMENTED:
         icon = 'pageActionEnabled';
         break;
     }
@@ -496,16 +528,17 @@ Extension.prototype.tabUpdated_ = function(tabId, changeInfo, tab) {
 /**
  * Sends the latest information to the popup.
  * @param {string} pageUrl Canonical page URL.
+ * @param {number} tabId Requesting tab ID.
  * @param {!Port} port Message port.
  * @private
  */
-Extension.prototype.sendPopupInfo_ = function(pageUrl, port) {
+Extension.prototype.sendPopupInfo_ = function(pageUrl, tabId, port) {
   var options = this.getOptions();
   port.postMessage({
     'command': 'info',
     'info': {
       'url': pageUrl,
-      'status': options.getPageStatus(pageUrl),
+      'status': options.getPageStatus(pageUrl, tabId),
       'options': options.getPageOptions(pageUrl),
       'all_addons': options.getAddons()
     }
@@ -528,7 +561,7 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
   switch (data.command) {
     case 'toggle':
       // Perform toggling.
-      var status = options.getPageStatus(pageUrl);
+      var status = options.getPageStatus(pageUrl, tab.id);
       switch (status) {
         case PageStatus.NONE:
         case PageStatus.BLACKLISTED:
@@ -538,6 +571,10 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
         case PageStatus.WHITELISTED:
           _gaq.push(['_trackEvent', 'extension', 'page_disabled']);
           options.blacklistPage(pageUrl);
+          break;
+        case PageStatus.INSTRUMENTED:
+          _gaq.push(['_trackEvent', 'extension', 'instrumentation_disabled']);
+          options.uninstrumentTab(tab.id);
           break;
       }
       // Force update the page action ASAP.
@@ -557,15 +594,33 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       });
       break;
 
+    case 'instrument':
+      if (data.needsHelp) {
+        _gaq.push(['_trackEvent', 'extension', 'instrumentation_help']);
+        chrome.tabs.create({
+          url: 'https://github.com/google/tracing-framework/blob/master/docs/memory_tracing.md',
+          active: true
+        });
+      } else {
+        _gaq.push(['_trackEvent', 'extension', 'instrumentation_enabled']);
+        options.instrumentTab(tab.id, {
+          'type': data.type
+        });
+        // Force update the page action ASAP.
+        this.updatePageState_(tab.id, tab.url);
+        needsReload = true;
+      }
+      break;
+
     case 'add_addon':
       _gaq.push(['_trackEvent', 'extension', 'addon_added']);
       options.addAddon(data.url, data.manifest);
-      this.sendPopupInfo_(pageUrl, port);
+      this.sendPopupInfo_(pageUrl, tab.id, port);
       break;
     case 'remove_addon':
       _gaq.push(['_trackEvent', 'extension', 'addon_removed']);
       options.removeAddon(data.url);
-      this.sendPopupInfo_(pageUrl, port);
+      this.sendPopupInfo_(pageUrl, tab.id, port);
       break;
     case 'toggle_addon':
       var pageOptions = options.getPageOptions(pageUrl);
@@ -580,8 +635,9 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
         _gaq.push(['_trackEvent', 'extension', 'page_addon_disabled']);
       }
       options.setPageOptions(pageUrl, pageOptions);
-      this.sendPopupInfo_(pageUrl, port);
-      needsReload = options.getPageStatus(pageUrl) == PageStatus.WHITELISTED;
+      this.sendPopupInfo_(pageUrl, tab.id, port);
+      needsReload =
+          options.getPageStatus(pageUrl, tab.id) == PageStatus.WHITELISTED;
       this.updatePageState_(tab.id, tab.url);
       break;
   }

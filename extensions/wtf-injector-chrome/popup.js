@@ -30,12 +30,16 @@ port.onMessage.addListener(function(data, port) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-  document.querySelector('.buttonToggleInjector').onclick =
-      toggleInjectorClicked;
-  document.querySelector('.buttonResetSettings').onclick =
-      resetSettingsClicked;
   document.querySelector('.buttonShowUi').onclick =
       showUiClicked;
+  document.querySelector('.buttonResetSettings').onclick =
+      resetSettingsClicked;
+  document.querySelector('.buttonInstrumentCalls').onclick =
+      instrumentCallsClicked;
+  document.querySelector('.buttonInstrumentMemory').onclick =
+      instrumentMemoryClicked;
+  document.querySelector('.buttonToggleInjector').onclick =
+      toggleInjectorClicked;
 
   setupAddBox();
 });
@@ -117,15 +121,38 @@ function setupAddBox() {
  */
 function updateWithInfo(info) {
   var toggleButton = document.querySelector('.buttonToggleInjector');
+  var buttonInstrumentCalls =
+      document.querySelector('.buttonInstrumentCalls');
+  var buttonInstrumentMemory =
+      document.querySelector('.buttonInstrumentMemory');
+
+  function toggleState(el, enabled) {
+    if (enabled) {
+      el.classList.remove('kDisabled');
+    } else {
+      el.classList.add('kDisabled');
+    }
+  };
+
   var status = info.status;
   switch (status) {
+    case 'instrumented':
+      // Instrumentation is enabled for the page.
+      toggleButton.innerText = 'Disable';
+      toggleState(buttonInstrumentCalls, false);
+      toggleState(buttonInstrumentMemory, false);
+      break;
     case 'whitelisted':
       // Tracing is enabled for the page.
       toggleButton.innerText = 'Disable';
+      toggleState(buttonInstrumentCalls, false);
+      toggleState(buttonInstrumentMemory, false);
       break;
     default:
       // Tracing is disabled for the page.
       toggleButton.innerText = 'Enable';
+      toggleState(buttonInstrumentCalls, true);
+      toggleState(buttonInstrumentMemory, true);
       break;
   }
 
@@ -223,13 +250,13 @@ function buildAddonTable(addons, enabledAddons) {
 
 
 /**
- * Toggles the injector content script on the given page.
+ * Shows the UI.
  */
-function toggleInjectorClicked() {
-  _gaq.push(['_trackEvent', 'popup', 'toggled']);
+function showUiClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'show_ui']);
 
   port.postMessage({
-    command: 'toggle'
+    command: 'show_ui'
   });
   window.close();
 };
@@ -249,13 +276,53 @@ function resetSettingsClicked() {
 
 
 /**
- * Shows the UI.
+ * Toggles instrumented call tracing.
  */
-function showUiClicked() {
-  _gaq.push(['_trackEvent', 'popup', 'show_ui']);
+function instrumentCallsClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'instrument_calls']);
 
   port.postMessage({
-    command: 'show_ui'
+    command: 'instrument',
+    type: 'calls'
+  });
+  window.close();
+};
+
+
+/**
+ * Toggles instrumented memory tracing.
+ */
+function instrumentMemoryClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'instrument_memory']);
+
+  try {
+    new Function('return %GetHeapUsage()');
+  } catch (e) {
+    // Pop open docs page.
+    port.postMessage({
+      command: 'instrument',
+      type: 'memory',
+      needsHelp: true
+    });
+    return;
+  }
+
+  port.postMessage({
+    command: 'instrument',
+    type: 'memory'
+  });
+  window.close();
+};
+
+
+/**
+ * Toggles the injector content script on the given page.
+ */
+function toggleInjectorClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'toggled']);
+
+  port.postMessage({
+    command: 'toggle'
   });
   window.close();
 };

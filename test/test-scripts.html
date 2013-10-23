@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Cool App</title>
+    <script src="test-scripts-head.js"></script>
+    <script>
+      console.log('head inline');
+    </script>
+  </head>
+  <body>
+    <script src="test-scripts-body-pre.js"></script>
+    <script>
+      console.log('body pre inline');
+    </script>
+    <div id="hello">
+      Your app here!
+    </div>
+    <script>
+      var inlineScript = document.createElement('script');
+      inlineScript.innerText = 'console.log("inline script");';
+      document.body.appendChild(inlineScript);
+
+      var remoteScript = document.createElement('script');
+      remoteScript.src = 'test-scripts-remote.js';
+      document.body.appendChild(remoteScript);
+    </script>
+    <script>
+      console.log('body post inline');
+    </script>
+    <script src="test-scripts-body-post.js"></script>
+  </body>
+</html>

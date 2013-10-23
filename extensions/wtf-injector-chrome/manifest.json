@@ -72,6 +72,9 @@
   "name": "Web Tracing Framework",
   "description": "Rich tools for instrumenting, analyzing, and visualizing web apps. Make your app jank-free at 60fps!",
   "web_accessible_resources": [
+    // Instrumentation script:
+    "falafel.js",
+    "wtf-call-tracing.js",
     // Injected tracing code:
     "wtf_trace_web_js_compiled.js"
   ],
