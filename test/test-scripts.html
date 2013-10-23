@@ -22,6 +22,9 @@
 
       var remoteScript = document.createElement('script');
       remoteScript.src = 'test-scripts-remote.js';
+      remoteScript.onload = function() {
+        console.log('remote script loaded!');
+      };
       document.body.appendChild(remoteScript);
     </script>
     <script>
