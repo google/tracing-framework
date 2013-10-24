@@ -73,12 +73,13 @@ function hideActivityIndicator(doc) {
  *      input element.
  */
 function processScript(el) {
+  var doc = el.ownerDocument;
   if (el.text || el.innerText) {
     // Synchronous block.
     // This happens inline in process so that we can preserve the synchronous
     // behavior.
     log('process of sync script', el);
-    showActivityIndicator(el.ownerDocument);
+    showActivityIndicator(doc);
     var resultText = global['wtfi']['process'](
         el.text || el.innerText,
         nextModuleId++,
@@ -88,22 +89,42 @@ function processScript(el) {
     } else if (el.innerText) {
       el.innerText = resultText;
     }
-    hideActivityIndicator(el.ownerDocument);
+    hideActivityIndicator(doc);
     return el;
   } else {
     // Async src.
     log('process of async script', el);
-    showActivityIndicator(el.ownerDocument);
+    showActivityIndicator(doc);
     // Don't actually add the element yet - wait. We fake the add here so that
     // we can replace it with the modified one later.
-    // var asyncScript = {
-    //   el: el
-    // };
+    var asyncScript = {
+      el: el,
+      replacementEl: doc.createElement('script'),
+      src: el.src
+    };
     // TODO(benvanik): dispatch to web worker.
-    //var replacementEl = el.ownerDocument.createElement('script');
-    //return replacementEl;
-    warn('script src not yet instrumented: ' + el.src);
-    return el;
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function(e) {
+      var responseText = xhr.responseText;
+      var resultText = global['wtfi']['process'](
+          xhr.responseText,
+          nextModuleId++,
+          global['wtfi']['options'],
+          asyncScript.src);
+      el['__wtfi__'] = true;
+      el.src = null;
+      el.text = resultText;
+      asyncScript.replacementEl.parentNode.replaceChild(
+          asyncScript.el, asyncScript.replacementEl);
+      var loadEvent = new Event('load');
+      loadEvent.target = el;
+      loadEvent.srcElement = el;
+      el.dispatchEvent(loadEvent);
+      hideActivityIndicator(doc);
+    };
+    xhr.open('GET', asyncScript.src, true);
+    xhr.send();
+    return asyncScript.replacementEl;
   }
 };
 
@@ -122,7 +143,7 @@ function injectScriptElement(doc) {
   // Replace appendChild/etc so that we can watch for script adds.
   var originalAppendChild = Node.prototype.appendChild;
   Node.prototype.appendChild = function appendChild(newChild) {
-    if (newChild instanceof HTMLScriptElement) {
+    if (newChild instanceof HTMLScriptElement && !newChild['__wtfi__']) {
       // appendChild(<script>)
       log('appendChild of script', newChild);
       var processedChild = processScript(newChild);
@@ -133,7 +154,7 @@ function injectScriptElement(doc) {
   };
   var originalInsertBefore = Node.prototype.insertBefore;
   Node.prototype.insertBefore = function insertBefore(newChild, refChild) {
-    if (newChild instanceof HTMLScriptElement) {
+    if (newChild instanceof HTMLScriptElement && !newChild['__wtfi__']) {
       // insertBefore(<script>, ...)
       log('insertBefore of script', newChild);
       var processedChild = processScript(newChild);
@@ -145,7 +166,7 @@ function injectScriptElement(doc) {
   var originalReplaceChild = Node.prototype.replaceChild;
   Node.prototype.replaceChild = function replaceChild(
       newChild, oldChild) {
-    if (newChild instanceof HTMLScriptElement) {
+    if (newChild instanceof HTMLScriptElement && !newChild['__wtfi__']) {
       // replaceChild(<script>, ...)
       log('insertBefore of script', newChild);
       var processedChild = processScript(newChild);
@@ -421,7 +442,7 @@ global['wtfi']['process'] = function(
         '"src": "' + url + '",' +
         '"fns": [' + fns.join(',\n') + ']};',
     targetCode.toString()
-  ].join('');
+  ].join('\n');
 
   // TODO(benvanik): cache the transformed result.
 
@@ -440,7 +461,7 @@ var sharedInitCode = null;
 function getSharedInitCode(options) {
   // Shouldn't be changing options, just return cached.
   if (sharedInitCode) {
-    return;
+    return sharedInitCode;
   }
   var trackHeap = options['type'] == 'memory';
   sharedInitCode = '(' + (function(global, trackHeap) {
