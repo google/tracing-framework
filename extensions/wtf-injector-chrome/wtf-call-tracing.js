@@ -15,8 +15,10 @@
 (function(global) {
 
 // console.log utility that doesn't explode when it's not present.
-var ENABLE_LOGGING = true;
+var ENABLE_LOGGING = false;
 var log = (ENABLE_LOGGING && window.console) ?
+    window.console.log.bind(window.console) : function() {};
+var info = window.console && window.console.log ?
     window.console.log.bind(window.console) : function() {};
 var warn = window.console && window.console.warn ?
     window.console.warn.bind(window.console) : function() {};
@@ -248,7 +250,7 @@ global['wtfi']['process'] = function(
 
   var url = opt_url || 'inline';
 
-  log('processing script ' + url + ' (' + sourceText.length + 'b)...');
+  info('processing script ' + url + ' (' + sourceText.length + 'b)...');
   var startTime = Date.now();
 
   // TODO(benvanik): hash and check local storage to see if the source has
@@ -448,7 +450,7 @@ global['wtfi']['process'] = function(
   // TODO(benvanik): cache the transformed result.
 
   var totalTime = Date.now() - startTime;
-  log('  completed in ' + totalTime + 'ms');
+  info('  completed in ' + totalTime + 'ms');
   return transformedText;
 };
 
