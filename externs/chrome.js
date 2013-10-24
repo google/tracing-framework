@@ -22,7 +22,7 @@
 var ChromeEvent;
 
 
-var chrome;
+// var chrome;
 
 
 chrome.runtime;
