@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
       resetSettingsClicked;
   document.querySelector('.buttonInstrumentCalls').onclick =
       instrumentCallsClicked;
+  document.querySelector('.buttonInstrumentTime').onclick =
+      instrumentTimeClicked;
   document.querySelector('.buttonInstrumentMemory').onclick =
       instrumentMemoryClicked;
   document.querySelector('.buttonToggleInjector').onclick =
@@ -123,6 +125,8 @@ function updateWithInfo(info) {
   var toggleButton = document.querySelector('.buttonToggleInjector');
   var buttonInstrumentCalls =
       document.querySelector('.buttonInstrumentCalls');
+  var buttonInstrumentTime =
+      document.querySelector('.buttonInstrumentTime');
   var buttonInstrumentMemory =
       document.querySelector('.buttonInstrumentMemory');
 
@@ -140,18 +144,21 @@ function updateWithInfo(info) {
       // Instrumentation is enabled for the page.
       toggleButton.innerText = 'Disable';
       toggleState(buttonInstrumentCalls, false);
+      toggleState(buttonInstrumentTime, false);
       toggleState(buttonInstrumentMemory, false);
       break;
     case 'whitelisted':
       // Tracing is enabled for the page.
       toggleButton.innerText = 'Disable';
       toggleState(buttonInstrumentCalls, false);
+      toggleState(buttonInstrumentTime, false);
       toggleState(buttonInstrumentMemory, false);
       break;
     default:
       // Tracing is disabled for the page.
       toggleButton.innerText = 'Enable';
       toggleState(buttonInstrumentCalls, true);
+      toggleState(buttonInstrumentTime, true);
       toggleState(buttonInstrumentMemory, true);
       break;
   }
@@ -284,6 +291,20 @@ function instrumentCallsClicked() {
   port.postMessage({
     command: 'instrument',
     type: 'calls'
+  });
+  window.close();
+};
+
+
+/**
+ * Toggles instrumented time tracing.
+ */
+function instrumentTimeClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'instrument_time']);
+
+  port.postMessage({
+    command: 'instrument',
+    type: 'time'
   });
   window.close();
 };

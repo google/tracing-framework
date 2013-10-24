@@ -212,7 +212,7 @@ global['wtfi']['prepare'] = function(options) {
   var doc = global.document;
   if (doc) {
     // Running in page.
-    runSharedInitCode(global, options);
+    runSharedInitCode(options);
 
     // Inject <script>.
     injectScriptElement(doc);
@@ -238,6 +238,7 @@ global['wtfi']['process'] = function(
     sourceText, moduleId, options, opt_url) {
   var instrumentationType = options['type'] || 'calls';
   var trackHeap = instrumentationType == 'memory';
+  var trackTime = instrumentationType == 'time';
 
   var falafel = global['wtfi']['falafel'];
   if (!falafel) {
@@ -350,7 +351,7 @@ global['wtfi']['process'] = function(
   // generally correct (since it means we'll always have an "exit" entry), but
   // can't be used in heap tracking mode because try/catch disables
   // optimization, which drammatically changes memory generation behavior.
-  var tryCatchMode = !trackHeap;
+  var tryCatchMode = !trackHeap && !trackTime;
   var targetCode = falafel(sourceText, function(node) {
     if (node.type == 'BlockStatement') {
       var parent = node.parent;
@@ -459,7 +460,7 @@ global['wtfi']['process'] = function(
  * @param {!Object} options Options.
  */
 function runSharedInitCode(options) {
-  var trackHeap = options['type'] == 'memory';
+  var instrumentationType = options['type'] || 'calls';
 
   // Add a global tag to let WTF know we are on the page. The extension can
   // then yell at the user for trying to use both at the same time.
@@ -521,7 +522,17 @@ function runSharedInitCode(options) {
   global.__wtfm = global.__wtfm || {};
   global.__wtfd = global.__wtfd || new Int32Array(1 << dataMagnitude);
   global.__wtfi = global.__wtfi || 0;
-  if (trackHeap) {
+  switch (instrumentationType) {
+  default:
+  case 'calls':
+    global.__wtfEnter = function(id) {
+      __wtfd[__wtfi++ & dataMask] = id;
+    };
+    global.__wtfExit = function(id) {
+      __wtfd[__wtfi++ & dataMask] = -id;
+    };
+    break;
+  case 'memory':
     var getHeapUsage = null;
     try {
       getHeapUsage = new Function('return %GetHeapUsage()');
@@ -536,13 +547,17 @@ function runSharedInitCode(options) {
       __wtfd[__wtfi++ & dataMask] = -id;
       __wtfd[__wtfi++ & dataMask] = getHeapUsage();
     };
-  } else {
+    break;
+  case 'time':
     global.__wtfEnter = function(id) {
       __wtfd[__wtfi++ & dataMask] = id;
+      __wtfd[__wtfi++ & dataMask] = global.performance.now() * 1000;
     };
     global.__wtfExit = function(id) {
       __wtfd[__wtfi++ & dataMask] = -id;
+      __wtfd[__wtfi++ & dataMask] = global.performance.now() * 1000;
     };
+    break;
   }
   global.__resetTrace = function() {
     global.__wtfi = 0;
@@ -551,7 +566,18 @@ function runSharedInitCode(options) {
     var euri = window.location.href;
     var etitle =
         window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
-    var attributes = trackHeap ? '[{"name": "heapSize", "units": "bytes"}]' : '[]';
+    var attributes = '[]';
+    switch (instrumentationType) {
+    default:
+    case 'calls':
+      break;
+    case 'memory':
+      attributes = '[{"name": "heapSize", "units": "bytes"}]';
+      break;
+    case 'time':
+      attributes = '[{"name": "time", "units": "us"}]';
+      break;
+    }
     var headerText = '{' +
         '"version": 1,' +
         '"context": {"uri": "' + euri + '", "title": "' + etitle + '"},' +
