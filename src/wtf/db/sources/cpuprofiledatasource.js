@@ -229,6 +229,11 @@ wtf.db.sources.CpuProfileDataSource.prototype.processData_ = function(buffer) {
   // current stack.
   var gcNode = null;
 
+  // "idle" is another child of root and it means nothing is happening. Store
+  // that off as well so we can ignore it later (better to show empty space in
+  // the trace).
+  var idleNode = null;
+
   var eventTypesByCallUID = {};
 
   function visit(node, parent, depth) {
@@ -242,6 +247,8 @@ wtf.db.sources.CpuProfileDataSource.prototype.processData_ = function(buffer) {
       // GCs are weird, see comment in the sample loop below.
       if (fnName == '(garbage collector)') {
         gcNode = node;
+      } else if (fnName == '(idle)') {
+        idleNode = node;
       }
       // fnName can be '(anonymous function)' and other special names, turn that
       // into a valid function name like '_anonymous_function_'.
@@ -293,12 +300,15 @@ wtf.db.sources.CpuProfileDataSource.prototype.processData_ = function(buffer) {
 
   // Insert event data.
   db.beginInsertingEvents(this);
-  var prev = profile['head'];
+  var root = profile['head'];
+  var prev = root;
   var samples = profile['samples'];
   for (var i = 0; i < samples.length; i++) {
     var sampleId = samples[i];
     var stack = reverseStacksById[sampleId];
-    if (stack == gcNode && prev != gcNode) {
+    if (stack == idleNode) {
+      stack = root;
+    } else if (stack == gcNode && prev != gcNode) {
       // SUPERHACK: Samples during gc don't have a stack, so we just kind of
       // hack it into the stack by assuming that the gc occurs within the
       // previous stack. So the gc node hops around the otherwise static tree
@@ -309,7 +319,7 @@ wtf.db.sources.CpuProfileDataSource.prototype.processData_ = function(buffer) {
     traverseStacks(prev, stack, i * timeDelta);
     prev = stack;
   }
-  traverseStacks(prev, profile.head, i * timeDelta);
+  traverseStacks(prev, root, i * timeDelta);
   eventList.insert(leaveEventType, i * timeDelta);
   db.endInsertingEvents();
 };
