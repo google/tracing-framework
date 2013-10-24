@@ -212,6 +212,7 @@ global['wtfi']['prepare'] = function(options) {
   var doc = global.document;
   if (doc) {
     // Running in page.
+    runSharedInitCode(global, options);
 
     // Inject <script>.
     injectScriptElement(doc);
@@ -437,7 +438,6 @@ global['wtfi']['process'] = function(
 
   // Add in the module map to the code.
   var transformedText = [
-    getSharedInitCode(options),
     '__wtfm[' + moduleId + '] = {' +
         '"src": "' + url + '",' +
         '"fns": [' + fns.join(',\n') + ']};',
@@ -452,205 +452,199 @@ global['wtfi']['process'] = function(
 };
 
 
-// This code is stringified and then embedded in each output file.
-// It's ok if multiple are present on the page.
-// It cannot capture any state.
 // TODO(benvanik): clean up, make support nodejs too.
 // TODO(benvanik): put in an external file, have a HUD, etc.
-var sharedInitCode = null;
-function getSharedInitCode(options) {
-  // Shouldn't be changing options, just return cached.
-  if (sharedInitCode) {
-    return sharedInitCode;
-  }
+/**
+ * Runs at prepare time to create global functions/UI/etc.
+ * @param {!Object} options Options.
+ */
+function runSharedInitCode(options) {
   var trackHeap = options['type'] == 'memory';
-  sharedInitCode = '(' + (function(global, trackHeap) {
-    // Add a global tag to let WTF know we are on the page. The extension can
-    // then yell at the user for trying to use both at the same time.
-    var firstBlock = !global.__wtfInstrumentationPresent;
-    global.__wtfInstrumentationPresent = true;
 
-    // Add a big warning div to let users know the proxy is active.
-    // This is useful for when the proxy is accidentally left enabled.
-    if (firstBlock) {
-      var div = document.createElement('div');
-      div.style.zIndex = 999999;
-      div.style.position = 'fixed';
-      div.style.left = '50%';
-      div.style.top = 0;
-      div.style.backgroundColor = 'red';
-      div.style.color = 'white';
-      div.style.font = '8pt monospace';
-      div.style.padding = '3px';
-      div.style.userSelect = 'none';
-      div.style.webkitUserSelect = 'none';
-      div.innerHTML = 'WTF INSTRUMENTATION ENABLED';
-      if (document.body) {
-        document.body.appendChild(div);
-      } else {
-        document.addEventListener('DOMContentLoaded', function() {
-          document.body.appendChild(div);
-        }, false);
-      }
+  // Add a global tag to let WTF know we are on the page. The extension can
+  // then yell at the user for trying to use both at the same time.
+  var firstBlock = !global.__wtfInstrumentationPresent;
+  global.__wtfInstrumentationPresent = true;
 
-      // Check to see if WTF is active on the page.
-      // The user shouldn't be trying to trace and instrument at the same time.
-      if (global['wtf']) {
-        div.innerHTML = 'You must disable WTF to run with instrumentation';
-        window.alert('The WTF tracing feature cannot be used on ' +
-            'instrumented code. Disable instrumentation and try again.');
-      }
-
-      // Add helper buttons.
-      var innerDiv = document.createElement('div');
-      div.appendChild(innerDiv);
-      function addButton(name, tip, code) {
-        var a = document.createElement('a');
-        a.innerHTML = name;
-        a.title = tip;
-        a.href = 'javascript:' + code;
-        a.style.marginRight = '5px';
-        a.style.color = 'white';
-        a.style.textDecoration = 'underline';
-        innerDiv.appendChild(a);
-      };
-      addButton('Clear', 'Clear current trace data.', '__resetTrace()');
-      addButton('Save', 'Save the trace to a file.', '__saveTrace()');
-      addButton('Show', 'Show the trace in the WTF UI.', '__showTrace()');
-    }
-
-    var dataMagnitude = 26; // 2^26 = 67 million records
-    var dataSize = 1 << dataMagnitude;
-    var dataMask = dataSize - 1;
-    global.__wtfm = global.__wtfm || {};
-    global.__wtfd = global.__wtfd || new Int32Array(1 << dataMagnitude);
-    global.__wtfi = global.__wtfi || 0;
-    if (trackHeap) {
-      var getHeapUsage = null;
-      try {
-        getHeapUsage = new Function('return %GetHeapUsage()');
-      } catch (e) {
-        window.alert('Launch Chrome with --js-flags=--allow-natives-syntax');
-      }
-      global.__wtfEnter = function(id) {
-        __wtfd[__wtfi++ & dataMask] = id;
-        __wtfd[__wtfi++ & dataMask] = getHeapUsage();
-      };
-      global.__wtfExit = function(id) {
-        __wtfd[__wtfi++ & dataMask] = -id;
-        __wtfd[__wtfi++ & dataMask] = getHeapUsage();
-      };
+  // Add a big warning div to let users know the proxy is active.
+  // This is useful for when the proxy is accidentally left enabled.
+  if (firstBlock) {
+    var div = document.createElement('div');
+    div.style.zIndex = 999999;
+    div.style.position = 'fixed';
+    div.style.left = '50%';
+    div.style.top = 0;
+    div.style.backgroundColor = 'red';
+    div.style.color = 'white';
+    div.style.font = '8pt monospace';
+    div.style.padding = '3px';
+    div.style.userSelect = 'none';
+    div.style.webkitUserSelect = 'none';
+    div.innerHTML = 'WTF INSTRUMENTATION ENABLED';
+    if (document.body) {
+      document.body.appendChild(div);
     } else {
-      global.__wtfEnter = function(id) {
-        __wtfd[__wtfi++ & dataMask] = id;
-      };
-      global.__wtfExit = function(id) {
-        __wtfd[__wtfi++ & dataMask] = -id;
-      };
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.appendChild(div);
+      }, false);
     }
-    global.__resetTrace = function() {
-      global.__wtfi = 0;
-    };
-    global.__grabTrace = function() {
-      var euri = window.location.href;
-      var etitle =
-          window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
-      var attributes = trackHeap ? '[{"name": "heapSize", "units": "bytes"}]' : '[]';
-      var headerText = '{' +
-          '"version": 1,' +
-          '"context": {"uri": "' + euri + '", "title": "' + etitle + '"},' +
-          '"metadata": {' +
-          '  "attributes": ' + attributes +
-          '},' +
-          '"modules": ' + JSON.stringify(global.__wtfm) + '}';
-      var headerLength = headerText.length;
-      var header = new Uint8Array(4 + headerLength);
-      header[0] = (headerLength) & 0xFF;
-      header[1] = (headerLength >>> 8) & 0xFF;
-      header[2] = (headerLength >>> 16) & 0xFF;
-      header[3] = (headerLength >>> 24) & 0xFF;
-      for (var n = 0; n < headerLength; n++) {
-        header[4 + n] = headerText.charCodeAt(n) & 0xFF;
-      }
 
-      var padLength = 0;
-      var i = 4 + headerLength;
-      if (i % 4) {
-        padLength = 4 - (i % 4);
-      }
-      var padBytes = new Uint8Array(padLength);
+    // Check to see if WTF is active on the page.
+    // The user shouldn't be trying to trace and instrument at the same time.
+    if (global['wtf']) {
+      div.innerHTML = 'You must disable WTF to run with instrumentation';
+      window.alert('The WTF tracing feature cannot be used on ' +
+          'instrumented code. Disable instrumentation and try again.');
+    }
 
-      var contents = new Uint8Array(global.__wtfd.buffer);
-      contents = contents.subarray(0, global.__wtfi * 4);
-
-      return [
-        header,
-        padBytes,
-        contents
-      ];
-    };
-    global.__showTrace = function() {
-      // Grab trace data and combine into a single buffer.
-      var buffers = global.__grabTrace();
-      var totalLength = 0;
-      for (var n = 0; n < buffers.length; n++) {
-        totalLength += buffers[n].length;
-      }
-      var buffer = new Uint8Array(totalLength);
-      for (var n = 0, o = 0; n < buffers.length; n++) {
-        var sourceBuffer = buffers[n];
-        for (var m = 0; m < sourceBuffer.length; m++) {
-          buffer[o + m] = sourceBuffer[m];
-        }
-        o += sourceBuffer.length;
-      }
-
-      var boundHandler = function(e) {
-        if (e.data && e.data['wtf_ipc_connect_token'] &&
-            e.data.data && e.data.data['hello'] == true) {
-          e.stopPropagation();
-          window.removeEventListener('message', boundHandler, true);
-
-          e.source.postMessage({
-            'wtf_ipc_connect_token': true,
-            'data': {
-              'command': 'snapshot',
-              'content_types': ['application/x-extension-wtf-calls'],
-              'content_sources': [Date.now() + '.wtf-calls'],
-              'content_buffers': [buffer],
-              'content_length': totalLength
-            }
-          }, '*');
-        }
-      };
-      window.addEventListener('message', boundHandler, true);
-      var uiUrl =
-          'http://google.github.com/tracing-framework/bin/app/maindisplay.html';
-          //'http://localhost:8080/app/maindisplay-debug.html';
-          //'http://localhost:8080/app/maindisplay.html';
-      window.open(uiUrl + '?expect_data', '_blank');
-    };
-    global.__saveTrace = function(opt_filename) {
-      // Grab trace blob URL.
-      var buffers = global.__grabTrace();
-      var blob = new Blob(buffers, {
-        type: 'application/octet-stream'
-      });
-      var url = URL.createObjectURL(blob);
-
-      // Fake a download.
+    // Add helper buttons.
+    var innerDiv = document.createElement('div');
+    div.appendChild(innerDiv);
+    function addButton(name, tip, code) {
       var a = document.createElement('a');
-      a.download = opt_filename || (Date.now() + '.wtf-calls');
-      a.href = url;
-      var e = document.createEvent('MouseEvents');
-      e.initMouseEvent(
-          'click',
-          true, false, window, 0, 0, 0, 0, 0,
-          false, false, false, false, 0, null);
-      a.dispatchEvent(e);
+      a.innerHTML = name;
+      a.title = tip;
+      a.href = 'javascript:' + code;
+      a.style.marginRight = '5px';
+      a.style.color = 'white';
+      a.style.textDecoration = 'underline';
+      innerDiv.appendChild(a);
     };
-  }).toString() + ')(window, ' + trackHeap + ');';
-  return sharedInitCode;
+    addButton('Clear', 'Clear current trace data.', '__resetTrace()');
+    addButton('Save', 'Save the trace to a file.', '__saveTrace()');
+    addButton('Show', 'Show the trace in the WTF UI.', '__showTrace()');
+  }
+
+  var dataMagnitude = 26; // 2^26 = 67 million records
+  var dataSize = 1 << dataMagnitude;
+  var dataMask = dataSize - 1;
+  global.__wtfm = global.__wtfm || {};
+  global.__wtfd = global.__wtfd || new Int32Array(1 << dataMagnitude);
+  global.__wtfi = global.__wtfi || 0;
+  if (trackHeap) {
+    var getHeapUsage = null;
+    try {
+      getHeapUsage = new Function('return %GetHeapUsage()');
+    } catch (e) {
+      window.alert('Launch Chrome with --js-flags=--allow-natives-syntax');
+    }
+    global.__wtfEnter = function(id) {
+      __wtfd[__wtfi++ & dataMask] = id;
+      __wtfd[__wtfi++ & dataMask] = getHeapUsage();
+    };
+    global.__wtfExit = function(id) {
+      __wtfd[__wtfi++ & dataMask] = -id;
+      __wtfd[__wtfi++ & dataMask] = getHeapUsage();
+    };
+  } else {
+    global.__wtfEnter = function(id) {
+      __wtfd[__wtfi++ & dataMask] = id;
+    };
+    global.__wtfExit = function(id) {
+      __wtfd[__wtfi++ & dataMask] = -id;
+    };
+  }
+  global.__resetTrace = function() {
+    global.__wtfi = 0;
+  };
+  global.__grabTrace = function() {
+    var euri = window.location.href;
+    var etitle =
+        window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
+    var attributes = trackHeap ? '[{"name": "heapSize", "units": "bytes"}]' : '[]';
+    var headerText = '{' +
+        '"version": 1,' +
+        '"context": {"uri": "' + euri + '", "title": "' + etitle + '"},' +
+        '"metadata": {' +
+        '  "attributes": ' + attributes +
+        '},' +
+        '"modules": ' + JSON.stringify(global.__wtfm) + '}';
+    var headerLength = headerText.length;
+    var header = new Uint8Array(4 + headerLength);
+    header[0] = (headerLength) & 0xFF;
+    header[1] = (headerLength >>> 8) & 0xFF;
+    header[2] = (headerLength >>> 16) & 0xFF;
+    header[3] = (headerLength >>> 24) & 0xFF;
+    for (var n = 0; n < headerLength; n++) {
+      header[4 + n] = headerText.charCodeAt(n) & 0xFF;
+    }
+
+    var padLength = 0;
+    var i = 4 + headerLength;
+    if (i % 4) {
+      padLength = 4 - (i % 4);
+    }
+    var padBytes = new Uint8Array(padLength);
+
+    var contents = new Uint8Array(global.__wtfd.buffer);
+    contents = contents.subarray(0, global.__wtfi * 4);
+
+    return [
+      header,
+      padBytes,
+      contents
+    ];
+  };
+  global.__showTrace = function() {
+    // Grab trace data and combine into a single buffer.
+    var buffers = global.__grabTrace();
+    var totalLength = 0;
+    for (var n = 0; n < buffers.length; n++) {
+      totalLength += buffers[n].length;
+    }
+    var buffer = new Uint8Array(totalLength);
+    for (var n = 0, o = 0; n < buffers.length; n++) {
+      var sourceBuffer = buffers[n];
+      for (var m = 0; m < sourceBuffer.length; m++) {
+        buffer[o + m] = sourceBuffer[m];
+      }
+      o += sourceBuffer.length;
+    }
+
+    var boundHandler = function(e) {
+      if (e.data && e.data['wtf_ipc_connect_token'] &&
+          e.data.data && e.data.data['hello'] == true) {
+        e.stopPropagation();
+        window.removeEventListener('message', boundHandler, true);
+
+        e.source.postMessage({
+          'wtf_ipc_connect_token': true,
+          'data': {
+            'command': 'snapshot',
+            'content_types': ['application/x-extension-wtf-calls'],
+            'content_sources': [Date.now() + '.wtf-calls'],
+            'content_buffers': [buffer],
+            'content_length': totalLength
+          }
+        }, '*');
+      }
+    };
+    window.addEventListener('message', boundHandler, true);
+    var uiUrl =
+        'http://google.github.com/tracing-framework/bin/app/maindisplay.html';
+        //'http://localhost:8080/app/maindisplay-debug.html';
+        //'http://localhost:8080/app/maindisplay.html';
+    window.open(uiUrl + '?expect_data', '_blank');
+  };
+  global.__saveTrace = function(opt_filename) {
+    // Grab trace blob URL.
+    var buffers = global.__grabTrace();
+    var blob = new Blob(buffers, {
+      type: 'application/octet-stream'
+    });
+    var url = URL.createObjectURL(blob);
+
+    // Fake a download.
+    var a = document.createElement('a');
+    a.download = opt_filename || (Date.now() + '.wtf-calls');
+    a.href = url;
+    var e = document.createEvent('MouseEvents');
+    e.initMouseEvent(
+        'click',
+        true, false, window, 0, 0, 0, 0, 0,
+        false, false, false, false, 0, null);
+    a.dispatchEvent(e);
+  };
 };
 
 
