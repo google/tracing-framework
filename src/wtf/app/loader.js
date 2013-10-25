@@ -184,7 +184,6 @@ wtf.app.Loader.prototype.requestLocalOpenDialog = function(
     '.cpuprofile,application/x-extension-cpuprofile',
     '.part,application/x-extension-part'
   ].join(',');
-  inputElement.click();
   goog.events.listenOnce(inputElement, goog.events.EventType.CHANGE,
       function(e) {
         if (opt_selectCallback) {
@@ -193,6 +192,7 @@ wtf.app.Loader.prototype.requestLocalOpenDialog = function(
         _gaq.push(['_trackEvent', 'app', 'open_local_files']);
         this.loadFiles(inputElement.files);
       }, false, this);
+  inputElement.click();
 };
 
 
