@@ -49,7 +49,7 @@ wtf.db.EventTypeTable = function() {
    * @type {!Object.<!wtf.db.EventType>}
    * @private
    */
-  this.eventsByName_ = {};
+  this.eventsByName_ = Object.create(null);
 };
 
 

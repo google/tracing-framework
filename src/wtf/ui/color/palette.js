@@ -49,7 +49,7 @@ wtf.ui.color.Palette = function(colors) {
    * @type {!Object.<!wtf.ui.color.RgbColor>}
    * @private
    */
-  this.stringCache_ = {};
+  this.stringCache_ = Object.create(null);
 
   for (var n = 0; n < colors.length; n++) {
     var sourceColor = colors[n];
