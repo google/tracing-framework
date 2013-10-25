@@ -17,6 +17,7 @@ goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
+goog.require('goog.userAgent');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.Variable');
@@ -59,15 +60,21 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
     return;
   }
 
+  var adjustTimebase = options.getBoolean(
+      'wtf.trace.provider.chromeDebug.adjustTimebase', true);
+  if (!goog.userAgent.isVersionOrHigher(31)) {
+    // Chrome 30 needs no adjustment. I'm not changing the default here so that
+    // when users get upgraded they aren't stuck with unadjusted times.
+    adjustTimebase = false;
+  }
+
   /**
    * Dispatch table for each event type that comes from the extension.
    * @type {!Object.<function(!Array)>}
    * @private
    */
   this.timelineDispatch_ = {};
-  this.setupTimelineDispatch_(
-      options.getBoolean(
-          'wtf.trace.provider.chromeDebug.adjustTimebase', true));
+  this.setupTimelineDispatch_(adjustTimebase);
 
   /**
    * The next ID used when making an async data request to the extension.
