@@ -3930,22 +3930,23 @@ global['wtfi']['falafel'] = function (src, opts, fn) {
     (function walk (node, parent) {
         insertHelpers(node, parent, result.chunks);
 
-        Object.keys(node).forEach(function (key) {
+        for (var key in node) {
             if (key === 'parent') return;
 
             var child = node[key];
             if (Array.isArray(child)) {
-                child.forEach(function (c) {
+                for (var n = 0; n < child.length; n++) {
+                    var c = child[n];
                     if (c && typeof c.type === 'string') {
                         walk(c, node);
                     }
-                });
+                }
             }
             else if (child && typeof child.type === 'string') {
                 insertHelpers(child, node, result.chunks);
                 walk(child, node);
             }
-        });
+        };
         fn(node);
     })(ast, undefined);
 
@@ -3965,9 +3966,9 @@ function insertHelpers (node, parent, chunks) {
 
     if (node.update && typeof node.update === 'object') {
         var prev = node.update;
-        Object.keys(prev).forEach(function (key) {
+        for (var key in prev) {
             update[key] = prev[key];
-        });
+        };
         node.update = update;
     }
     else {

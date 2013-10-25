@@ -443,7 +443,7 @@ global['wtfi']['process'] = function(
   var transformedText = [
     '__wtfm[' + moduleId + '] = {' +
         '"src": "' + url + '",' +
-        '"fns": [' + fns.join(',\n') + ']};',
+        '"fns": [' + fns.join(',') + ']};',
     targetCode.toString()
   ].join('\n');
 
@@ -451,6 +451,7 @@ global['wtfi']['process'] = function(
 
   var totalTime = Date.now() - startTime;
   info('  completed in ' + totalTime + 'ms');
+
   return transformedText;
 };
 

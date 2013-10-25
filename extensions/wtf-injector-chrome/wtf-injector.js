@@ -34,7 +34,7 @@ function main() {
 
   if (options['__instrumented__']) {
     // Instrumentation mode.
-    injectScriptFile(chrome.extension.getURL('falafel.js'));
+    injectScriptFile(chrome.extension.getURL('third_party/falafel.js'));
     injectScriptFile(chrome.extension.getURL('wtf-call-tracing.js'));
     injectScriptFunction(function(options) {
       wtfi.prepare(options);
