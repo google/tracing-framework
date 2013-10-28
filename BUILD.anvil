@@ -286,6 +286,7 @@ closure_js_library(
     entry_points=[
         'wtf.db.exports',
         'wtf.db.node',
+        'wtf.replay.graphics.Step',
         'wtf.trace.exports',
         'wtf.trace.node',
         ],

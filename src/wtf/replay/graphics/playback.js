@@ -62,7 +62,8 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
    * @type {!Array.<!wtf.replay.graphics.Step>}
    * @private
    */
-  this.steps_ = this.constructStepsList_(eventList, frameList);
+  this.steps_ = wtf.replay.graphics.Step.constructStepsList(
+      eventList, frameList);
 
   /**
    * Set of event type IDs of draw calls.
@@ -355,143 +356,6 @@ wtf.replay.graphics.Playback.prototype.getDrawCallIds_ = function() {
     }
   }
   return drawCallIds;
-};
-
-
-/**
- * Constructs a list of steps.
- * @param {!wtf.db.EventList} eventList A list of events.
- * @param {!wtf.db.FrameList} frameList A list of frames.
- * @return {!Array.<!wtf.replay.graphics.Step>} A list of steps.
- * @private
- */
-wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
-    eventList, frameList) {
-  var steps = [];
-  if (!eventList.getCount()) {
-    return steps;
-  }
-
-  // Get the set of IDs of events that should be displayed.
-  // TODO(benvanik): make this list easier to add to.
-  var visibleEventsRegex =
-      /^((WebGLRenderingContext#)|(wtf.webgl#)|(ANGLEInstancedArrays#)|(OESVertexArrayObject#)|(WebGLLoseContext#))/;
-  var displayedEventsIds =
-      this.eventList_.eventTypeTable.getSetMatching(visibleEventsRegex);
-
-  // Get the IDs for start/end frame events if those IDs exist.
-  var frameStartEventId =
-      eventList.getEventTypeId('wtf.timing#frameStart');
-  var frameEndEventId =
-      eventList.getEventTypeId('wtf.timing#frameEnd');
-  var contextCreatedEventId =
-      eventList.getEventTypeId('wtf.webgl#createContext');
-  var contextSetEventId =
-      eventList.getEventTypeId('wtf.webgl#setContext');
-
-  var it = eventList.begin();
-  var currentStartId = it.getId();
-  var currentEndId = currentStartId;
-  var currentFrame = (frameList.getCount()) ?
-      frameList.getAllFrames()[0] : null;
-
-  // Ensure no empty steps are made.
-  var noEventsForPreviousStep = true;
-
-  // Keep track of the context that is current at the beginning of each step.
-  var currentContext = -1;
-  var stepBeginContext = currentContext;
-
-  // Whether there is at least 1 visible event in the step just made.
-  var visibleEventExists = false;
-
-  // Keep track of the handles of contexts that are made.
-  var contextAdded = false;
-  var contexts = {};
-  var contextsMadeSoFar = {};
-  while (!it.done()) {
-    var currentEventTypeId = it.getTypeId();
-    if (currentEventTypeId == frameStartEventId) {
-      // Only store previous step if it has at least 1 event.
-      if (!noEventsForPreviousStep) {
-
-        // Only include this step if it has visible events.
-        if (visibleEventExists) {
-          // Clone only if a context was added during the last step.
-          if (contextAdded) {
-            contexts = goog.object.clone(contextsMadeSoFar);
-          }
-
-          var newStep = new wtf.replay.graphics.Step(
-              eventList, currentStartId, currentEndId, null, contexts,
-              displayedEventsIds, stepBeginContext);
-          steps.push(newStep);
-          contextAdded = false;
-        }
-
-        visibleEventExists = false;
-        stepBeginContext = currentContext;
-      }
-      currentStartId = it.getId();
-      it.next();
-    } else if (currentEventTypeId == frameEndEventId) {
-      // Only include this step if it has visible events.
-      if (visibleEventExists) {
-        // Clone only if a context was added during the last step.
-        if (contextAdded) {
-          contexts = goog.object.clone(contextsMadeSoFar);
-        }
-
-        var newStep = new wtf.replay.graphics.Step(
-            eventList, currentStartId, it.getId(), currentFrame, contexts,
-            displayedEventsIds, stepBeginContext);
-        steps.push(newStep);
-        contextAdded = false;
-      }
-
-      visibleEventExists = false;
-      stepBeginContext = currentContext;
-      noEventsForPreviousStep = true;
-      if (currentFrame) {
-        currentFrame = frameList.getNextFrame(currentFrame);
-      }
-      it.next();
-      if (!it.done()) {
-        currentStartId = it.getId();
-      }
-    } else if (currentEventTypeId == contextCreatedEventId) {
-      // A new context was made. Include it in the current step.
-      var handleValue = /** @type {number} */ (it.getArgument('handle'));
-      contextsMadeSoFar[handleValue] = true;
-      currentContext = handleValue;
-      visibleEventExists = true;
-      contextAdded = true;
-      it.next();
-    } else if (currentEventTypeId == contextSetEventId) {
-      currentContext = /** @type {number} */ (it.getArgument('handle'));
-      visibleEventExists = true;
-      it.next();
-    } else {
-      currentEndId = it.getId();
-
-      // This step has at least 1 event.
-      noEventsForPreviousStep = false;
-      if (displayedEventsIds[currentEventTypeId]) {
-        visibleEventExists = true;
-      }
-
-      it.next();
-    }
-  }
-
-  // Store any events still left if there are any.
-  if (!noEventsForPreviousStep && visibleEventExists) {
-    var newStep = new wtf.replay.graphics.Step(
-        eventList, currentStartId, currentEndId, null, contexts,
-        displayedEventsIds, stepBeginContext);
-    steps.push(newStep);
-  }
-  return steps;
 };
 
 

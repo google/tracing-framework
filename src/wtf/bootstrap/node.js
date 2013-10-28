@@ -31,10 +31,17 @@ var vm = require('vm');
  * @return {!Object} {@code goog} namespace object.
  */
 exports.importClosureLibrary = function(depsFiles, opt_basePath, opt_baseDeps) {
+  var basePath = opt_basePath || 'third_party/closure-library/closure/goog/';
+
   // Stash settings on global. base.js looks for these to change behavior.
-  global.CLOSURE_BASE_PATH =
-      opt_basePath || 'third_party/closure-library/closure/goog/';
   global.CLOSURE_NO_DEPS = !(opt_baseDeps || false);
+  global.CLOSURE_BASE_PATH = basePath;
+
+  // Windows is not a fan of the base path.
+  // TODO(benvanik): check if this is an anvil issue.
+  if (process.platform == 'win32') {
+    global.CLOSURE_BASE_PATH = '';
+  }
 
   // Override the goog.importScript_ function with our own.
   global.CLOSURE_IMPORT_SCRIPT = importScript;
@@ -57,7 +64,7 @@ exports.importClosureLibrary = function(depsFiles, opt_basePath, opt_baseDeps) {
   };
 
   // Load the library base.js file. It will merge itself into global.goog.
-  importScript(path.join(global.CLOSURE_BASE_PATH, 'base.js'));
+  importScript(path.join(basePath, 'base.js'));
 
   // Load any deps given.
   for (var n = 0; n < depsFiles.length; n++) {

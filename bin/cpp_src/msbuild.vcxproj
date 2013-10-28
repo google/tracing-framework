@@ -1,0 +1,121 @@
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<ItemGroup>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{37A07BC2-4C6C-4884-8297-D5962C7C0864}</ProjectGuid>
+    <Keyword>%%APPNAME%%</Keyword>
+    <RootNamespace>%%APPNAME%%</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.default.props" />
+  <PropertyGroup>
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\angleproject\include;%%DEPS%%\SDL2-2.0.0\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>%%DEPS%%\glew-1.10.0\lib\Release\Win32\;%%DEPS%%\angleproject\lib\x86;%%DEPS%%\SDL2-2.0.0\lib\x86</AdditionalLibraryDirectories>
+      <OutputFile>%%EXEOUTPUTPATH%%</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\angleproject\include;%%DEPS%%\SDL2-2.0.0\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>%%DEPS%%\glew-1.10.0\lib\Release\x64\;%%DEPS%%\angleproject\lib\x64;%%DEPS%%\SDL2-2.0.0\lib\x64</AdditionalLibraryDirectories>
+      <OutputFile>%%EXEOUTPUTPATH%%</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\SDL2-2.0.0\include;%%DEPS%%\angleproject\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <Profile>true</Profile>
+      <AdditionalLibraryDirectories>%%DEPS%%\glew-1.10.0\lib\Release\Win32\;%%DEPS%%\angleproject\lib\x86;%%DEPS%%\SDL2-2.0.0\lib\x86</AdditionalLibraryDirectories>
+      <OutputFile>%%EXEOUTPUTPATH%%</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\SDL2-2.0.0\include;%%DEPS%%\angleproject\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <Profile>true</Profile>
+      <AdditionalLibraryDirectories>%%DEPS%%\glew-1.10.0\lib\Release\x64\;%%DEPS%%\angleproject\lib\x64;%%DEPS%%\SDL2-2.0.0\lib\x64</AdditionalLibraryDirectories>
+      <OutputFile>%%EXEOUTPUTPATH%%</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="%%WTFPATH%%\bin\cpp_src\webgl-main.cc" />
+    %%CCFILES%%
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="%%WTFPATH%%\bin\cpp_src\webgl-shared.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Targets" />
+</Project>
