@@ -30,12 +30,14 @@ script will look in `C:\Dev\tf-deps\`, but this can be changed with the
 
 ### Installing on Linux
 
-	# Install libgles2
-    sudo apt-get install libgles2-mesa-dev
-    # Get/make/install SDL
-    hg clone http://hg.libsdl.org/SDL
-	cd SDL/ && ./configure && make && sudo make install && cd ..
-	# ?
+```
+# Install libgles2
+sudo apt-get install libgles2-mesa-dev
+# Get/make/install SDL
+hg clone http://hg.libsdl.org/SDL
+cd SDL/ && ./configure && make && sudo make install && cd ..
+# ?
+```
 
 ## Usage
 
@@ -55,22 +57,25 @@ display the extension options.
 
 * Open a 'Developer Command Prompt for Visual Studio 2012' prompt.
 * Execute the script:
-
-	# Optionally add --use_angle to enable ANGLE support.
-	# Build with x64 with --vs_platform=x64.
-    wtf-generate-webgl-app --output=test\some_test-x86\ some_test.wtf-trace
+```
+# Optionally add --use_angle to enable ANGLE support.
+# Build with x64 with --vs_platform=x64.
+wtf-generate-webgl-app --output=test\some_test-x86\ some_test.wtf-trace
+```
 
 * Build and run with the Visual Studio that opens.
 
 #### Linux
 
 * Execute the script:
-
-    wtf-generate-webgl-app --output=test/ some_test.wtf-trace
+```
+wtf-generate-webgl-app --output=test/ some_test.wtf-trace
+```
 
 * Run the output:
-
-    ./test/some_test
+```
+./test/some_test
+```
 
 #### Options
 
