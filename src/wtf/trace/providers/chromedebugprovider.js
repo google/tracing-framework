@@ -17,7 +17,7 @@ goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
-goog.require('goog.userAgent');
+goog.require('goog.userAgent.product.isVersion');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.Variable');
@@ -60,12 +60,17 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
     return;
   }
 
-  var adjustTimebase = options.getBoolean(
-      'wtf.trace.provider.chromeDebug.adjustTimebase', true);
-  if (!goog.userAgent.isVersionOrHigher(31)) {
-    // Chrome 30 needs no adjustment. I'm not changing the default here so that
-    // when users get upgraded they aren't stuck with unadjusted times.
-    adjustTimebase = false;
+  // Chrome 29-30 started using page-load relative times. Unfortunately they
+  // are broken and don't match navigation start, so there's no way to line them
+  // up. Chrome 31+ uses wall-times again, so we can line them up right.
+  // Since 29-30 are just broken, we shift them off so that aggregate times
+  // are still understandable.
+  var timebase = wtf.timebase();
+  if (!goog.userAgent.product.isVersion(31)) {
+    // Chrome 31+ needs adjustment. Chrome 30- is hosed.
+    timebase = -(30) * 10 * 1000;
+    goog.global.console.log(
+        'WARNING: upgrade to Chrome 31+ to get synced debug events!');
   }
 
   /**
@@ -74,7 +79,7 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
    * @private
    */
   this.timelineDispatch_ = {};
-  this.setupTimelineDispatch_(adjustTimebase);
+  this.setupTimelineDispatch_(timebase);
 
   /**
    * The next ID used when making an async data request to the extension.
@@ -202,12 +207,6 @@ wtf.trace.providers.ChromeDebugProvider.prototype.getSettingsSectionConfigs =
           'title': 'GCs/paints/layouts/etc',
           'default': true
         },
-        {
-          'type': 'checkbox',
-          'key': 'wtf.trace.provider.chromeDebug.adjustTimebase',
-          'title': 'Adjust debug event timebase',
-          'default': true
-        },
         // {
         //   'type': 'checkbox',
         //   'key': 'wtf.trace.provider.chromeDebug.memoryInfo',
@@ -301,20 +300,13 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ =
 
 /**
  * Sets up the record dispatch table.
- * @param {boolean} adjustTimebase Whether to adjust timebase by the walltime.
+ * @param {number} timebase Timebase for events.
  * @private
  */
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
-    function(adjustTimebase) {
+    function(timebase) {
   // This table should match the one in
   // extensions/wtf-injector-chrome/debugger.js
-  var timebase = 0;
-  if (adjustTimebase) {
-    // Chrome 29+ started using page-load relative times.
-    // Older versions need to add the timebase.
-    // Then they changed it back, just to mess with me, I'm sure.
-    timebase = wtf.timebase();
-  }
 
   // GCEvent: garbage collections.
   var gcEvent = wtf.trace.events.createScope(
