@@ -23,8 +23,8 @@ MacOS is currently untested but could likely be made to work.
 
 ### Installing on Windows
 
-[https://drive.google.com/file/d/0Bxv84C6yIt2IQVkzRUVVNk1aTlk/edit](Download
-the packaged dependencies) (File->Download) and extract them. By default the
+[Download
+the packaged dependencies](https://drive.google.com/file/d/0Bxv84C6yIt2IQVkzRUVVNk1aTlk/edit) (File->Download) and extract them. By default the
 script will look in `C:\Dev\tf-deps\`, but this can be changed with the
 `--vs_deps=` option.
 
