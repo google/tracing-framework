@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 138312E7;
+  return 13831236E5;
 };
 wtf.version.getCommit = function() {
-  return "4d8b060ab1d7178e22ad782c6d80816f1e853669";
+  return "2d07149e7e77b98203fe6fb5e01bc254c90468fb";
 };
 wtf.version.toString = function() {
-  return "2013.10.30-1";
+  return "2013.10.30-2";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
