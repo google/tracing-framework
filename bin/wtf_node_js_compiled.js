@@ -710,13 +710,13 @@ goog.string.getRandomString = function() {
 };
 goog.string.compareVersions = function(a, b) {
   for (var c = 0, d = goog.string.trim(String(a)).split("."), e = goog.string.trim(String(b)).split("."), f = Math.max(d.length, e.length), g = 0;0 == c && g < f;g++) {
-    var k = d[g] || "", m = e[g] || "", l = /(\d*)(\D*)/g, q = /(\d*)(\D*)/g;
+    var k = d[g] || "", m = e[g] || "", l = /(\d*)(\D*)/g, p = /(\d*)(\D*)/g;
     do {
-      var s = l.exec(k) || ["", "", ""], t = q.exec(m) || ["", "", ""];
+      var s = l.exec(k) || ["", "", ""], t = p.exec(m) || ["", "", ""];
       if (0 == s[0].length && 0 == t[0].length) {
         break;
       }
-      var c = 0 == s[1].length ? 0 : parseInt(s[1], 10), w = 0 == t[1].length ? 0 : parseInt(t[1], 10), c = goog.string.compareElements_(c, w) || goog.string.compareElements_(0 == s[2].length, 0 == t[2].length) || goog.string.compareElements_(s[2], t[2]);
+      var c = 0 == s[1].length ? 0 : parseInt(s[1], 10), x = 0 == t[1].length ? 0 : parseInt(t[1], 10), c = goog.string.compareElements_(c, x) || goog.string.compareElements_(0 == s[2].length, 0 == t[2].length) || goog.string.compareElements_(s[2], t[2]);
     } while (0 == c);
   }
   return c;
@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13826016E5;
+  return 138312E7;
 };
 wtf.version.getCommit = function() {
-  return "a4af560cf00f8f4dcb32107be6cf74e350dde688";
+  return "4d8b060ab1d7178e22ad782c6d80816f1e853669";
 };
 wtf.version.toString = function() {
-  return "2013.10.24-1";
+  return "2013.10.30-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -4067,7 +4067,7 @@ wtf.db.EventTypeTable = function() {
   this.nextTypeId_ = 1;
   this.list_ = [];
   this.eventsById_ = [];
-  this.eventsByName_ = {};
+  this.eventsByName_ = Object.create(null);
 };
 wtf.db.EventTypeTable.prototype.defineType = function(a) {
   var b = this.eventsByName_[a.name];
@@ -6677,29 +6677,29 @@ wtf.db.EventList.prototype.resortEvents_ = function() {
   this.eventData = d;
 };
 wtf.db.EventList.prototype.rescopeEvents_ = function() {
-  var a = this.eventTypeTable.getByName("wtf.scope#enter"), a = a ? a.id : -1, b = this.eventTypeTable.getByName("wtf.scope#leave"), b = b ? b.id : -1, c = this.eventTypeTable.getByName("wtf.scope#appendData"), c = c ? c.id : -1, d = this.eventTypeTable.getByName("wtf.trace#timeStamp"), d = d ? d.id : -1, e = new Uint32Array(1024), f = Array(1024), g = new Uint32Array(1024), k = new Uint32Array(1024), m = new Uint32Array(1024), l = 0, q = 0;
+  var a = this.eventTypeTable.getByName("wtf.scope#enter"), a = a ? a.id : -1, b = this.eventTypeTable.getByName("wtf.scope#leave"), b = b ? b.id : -1, c = this.eventTypeTable.getByName("wtf.scope#appendData"), c = c ? c.id : -1, d = this.eventTypeTable.getByName("wtf.trace#timeStamp"), d = d ? d.id : -1, e = new Uint32Array(1024), f = Array(1024), g = new Uint32Array(1024), k = new Uint32Array(1024), m = new Uint32Array(1024), l = 0, p = 0;
   e[0] = -1;
   f[0] = null;
-  for (var s = 0, t = this.statistics_, w = this.eventData, x = 0, p = 0;x < this.count;x++, p += wtf.db.EventStruct.STRUCT_SIZE) {
+  for (var s = 0, t = this.statistics_, x = this.eventData, y = 0, r = 0;y < this.count;y++, r += wtf.db.EventStruct.STRUCT_SIZE) {
     var u = e[l];
-    w[p + wtf.db.EventStruct.PARENT] = u;
-    w[p + wtf.db.EventStruct.DEPTH] = l | l << 16;
-    var r = 0;
-    x < this.count - 1 && (r = w[p + wtf.db.EventStruct.STRUCT_SIZE + wtf.db.EventStruct.ID]);
-    w[p + wtf.db.EventStruct.NEXT_SIBLING] = r;
-    var A = w[p + wtf.db.EventStruct.TYPE] & 65535, z = !1;
-    A == a ? (z = this.argumentData_[w[p + wtf.db.EventStruct.ARGUMENTS]], z = z.name || "unnamed.scope", (u = this.eventTypeTable.getByName(z)) || (u = this.eventTypeTable.defineType(wtf.db.EventType.createScope(z))), w[p + wtf.db.EventStruct.TYPE] = u.id | u.flags << 16, e[++l] = w[p + wtf.db.EventStruct.ID], f[l] = u, g[l] = l - 1, q = Math.max(q, l), z = !0, t.genericEnterScope++) : A == b ? (w[p + wtf.db.EventStruct.NEXT_SIBLING] = 0, l && (l--, u *= wtf.db.EventStruct.STRUCT_SIZE, w[u + wtf.db.EventStruct.NEXT_SIBLING] = 
-    r, A = w[p + wtf.db.EventStruct.TIME], r = A - w[u + wtf.db.EventStruct.TIME], w[u + wtf.db.EventStruct.END_TIME] = A, g[l] < g[l + 1] && (g[l] = g[l + 1]), w[u + wtf.db.EventStruct.DEPTH] = w[u + wtf.db.EventStruct.DEPTH] & 65535 | g[l + 1] << 16, A = m[l], w[u + wtf.db.EventStruct.CHILD_TIME] = k[l], w[u + wtf.db.EventStruct.SYSTEM_TIME] = A, k[l] = 0, m[l] = 0, l && (k[l - 1] += r, f[l].flags & wtf.data.EventFlag.SYSTEM_TIME && (m[l - 1] += r))), s++) : A == c ? (this.appendScopeData_(f[l], 
-    e[l], w[p + wtf.db.EventStruct.ARGUMENTS], !0), s++, z = !0, t.appendScopeData++) : A == d ? (z = this.argumentData_[w[p + wtf.db.EventStruct.ARGUMENTS]], z = z.name || "unnamed.instance", (u = this.eventTypeTable.getByName(z)) || (u = this.eventTypeTable.defineType(wtf.db.EventType.createInstance(z))), w[p + wtf.db.EventStruct.TYPE] = u.id | u.flags << 16, z = !0, t.genericTimeStamp++) : (u = this.eventTypeTable.getById(A), u.eventClass == wtf.data.EventClass.SCOPE && (e[++l] = w[p + wtf.db.EventStruct.ID], 
-    f[l] = u, g[l] = l - 1, l > q && (q = l)), u.flags & (wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.BUILTIN) && s++, u.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA && (this.appendScopeData_(f[l], e[l], w[p + wtf.db.EventStruct.ARGUMENTS], !1), s++, z = !0, t.appendScopeData++));
-    z && (this.argumentData_[w[p + wtf.db.EventStruct.ARGUMENTS]] = null, w[p + wtf.db.EventStruct.ARGUMENTS] = 0);
+    x[r + wtf.db.EventStruct.PARENT] = u;
+    x[r + wtf.db.EventStruct.DEPTH] = l | l << 16;
+    var q = 0;
+    y < this.count - 1 && (q = x[r + wtf.db.EventStruct.STRUCT_SIZE + wtf.db.EventStruct.ID]);
+    x[r + wtf.db.EventStruct.NEXT_SIBLING] = q;
+    var B = x[r + wtf.db.EventStruct.TYPE] & 65535, A = !1;
+    B == a ? (A = this.argumentData_[x[r + wtf.db.EventStruct.ARGUMENTS]], A = A.name || "unnamed.scope", (u = this.eventTypeTable.getByName(A)) || (u = this.eventTypeTable.defineType(wtf.db.EventType.createScope(A))), x[r + wtf.db.EventStruct.TYPE] = u.id | u.flags << 16, e[++l] = x[r + wtf.db.EventStruct.ID], f[l] = u, g[l] = l - 1, p = Math.max(p, l), A = !0, t.genericEnterScope++) : B == b ? (x[r + wtf.db.EventStruct.NEXT_SIBLING] = 0, l && (l--, u *= wtf.db.EventStruct.STRUCT_SIZE, x[u + wtf.db.EventStruct.NEXT_SIBLING] = 
+    q, B = x[r + wtf.db.EventStruct.TIME], q = B - x[u + wtf.db.EventStruct.TIME], x[u + wtf.db.EventStruct.END_TIME] = B, g[l] < g[l + 1] && (g[l] = g[l + 1]), x[u + wtf.db.EventStruct.DEPTH] = x[u + wtf.db.EventStruct.DEPTH] & 65535 | g[l + 1] << 16, B = m[l], x[u + wtf.db.EventStruct.CHILD_TIME] = k[l], x[u + wtf.db.EventStruct.SYSTEM_TIME] = B, k[l] = 0, m[l] = 0, l && (k[l - 1] += q, f[l].flags & wtf.data.EventFlag.SYSTEM_TIME && (m[l - 1] += q))), s++) : B == c ? (this.appendScopeData_(f[l], 
+    e[l], x[r + wtf.db.EventStruct.ARGUMENTS], !0), s++, A = !0, t.appendScopeData++) : B == d ? (A = this.argumentData_[x[r + wtf.db.EventStruct.ARGUMENTS]], A = A.name || "unnamed.instance", (u = this.eventTypeTable.getByName(A)) || (u = this.eventTypeTable.defineType(wtf.db.EventType.createInstance(A))), x[r + wtf.db.EventStruct.TYPE] = u.id | u.flags << 16, A = !0, t.genericTimeStamp++) : (u = this.eventTypeTable.getById(B), u.eventClass == wtf.data.EventClass.SCOPE && (e[++l] = x[r + wtf.db.EventStruct.ID], 
+    f[l] = u, g[l] = l - 1, l > p && (p = l)), u.flags & (wtf.data.EventFlag.INTERNAL | wtf.data.EventFlag.BUILTIN) && s++, u.flags & wtf.data.EventFlag.APPEND_SCOPE_DATA && (this.appendScopeData_(f[l], e[l], x[r + wtf.db.EventStruct.ARGUMENTS], !1), s++, A = !0, t.appendScopeData++));
+    A && (this.argumentData_[x[r + wtf.db.EventStruct.ARGUMENTS]] = null, x[r + wtf.db.EventStruct.ARGUMENTS] = 0);
     if (1024 <= l) {
       goog.global.console.log("Max scope depth exceeded, aborting!");
       break;
     }
   }
   this.hiddenCount_ = s;
-  this.maximumScopeDepth_ = q;
+  this.maximumScopeDepth_ = p;
 };
 wtf.db.EventList.prototype.appendScopeData_ = function(a, b, c, d) {
   if (a) {
@@ -6992,11 +6992,11 @@ wtf.db.FilterParser = function() {
       return a;
     }
     function k() {
-      var a, d, f, g, k, l, p;
+      var a, d, f, g, k, l, w;
       n++;
-      p = l = h;
+      w = l = h;
       40 === b.charCodeAt(h) ? (a = "(", h++) : (a = null, 0 === n && e('"("'));
-      null !== a ? (d = v(), null !== d ? (f = m(), f = null !== f ? f : "", null !== f ? (g = v(), null !== g ? (41 === b.charCodeAt(h) ? (k = ")", h++) : (k = null, 0 === n && e('")"')), null !== k ? a = [a, d, f, g, k] : (a = null, h = p)) : (a = null, h = p)) : (a = null, h = p)) : (a = null, h = p)) : (a = null, h = p);
+      null !== a ? (d = v(), null !== d ? (f = m(), f = null !== f ? f : "", null !== f ? (g = v(), null !== g ? (41 === b.charCodeAt(h) ? (k = ")", h++) : (k = null, 0 === n && e('")"')), null !== k ? a = [a, d, f, g, k] : (a = null, h = w)) : (a = null, h = w)) : (a = null, h = w)) : (a = null, h = w)) : (a = null, h = w);
       null !== a && (a = "" !== a[2] ? a[2] : []);
       null === a && (h = l);
       n--;
@@ -7004,28 +7004,28 @@ wtf.db.FilterParser = function() {
       return a;
     }
     function m() {
-      var a, d, f, g, k, m, p, B, t;
+      var a, d, f, g, k, m, w, t, p;
       n++;
-      B = p = h;
+      t = w = h;
       a = l();
       if (null !== a) {
         d = [];
-        t = h;
+        p = h;
         f = v();
-        null !== f ? (44 === b.charCodeAt(h) ? (g = ",", h++) : (g = null, 0 === n && e('","')), null !== g ? (k = v(), null !== k ? (m = l(), null !== m ? f = [f, g, k, m] : (f = null, h = t)) : (f = null, h = t)) : (f = null, h = t)) : (f = null, h = t);
+        null !== f ? (44 === b.charCodeAt(h) ? (g = ",", h++) : (g = null, 0 === n && e('","')), null !== g ? (k = v(), null !== k ? (m = l(), null !== m ? f = [f, g, k, m] : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p);
         for (;null !== f;) {
-          d.push(f), t = h, f = v(), null !== f ? (44 === b.charCodeAt(h) ? (g = ",", h++) : (g = null, 0 === n && e('","')), null !== g ? (k = v(), null !== k ? (m = l(), null !== m ? f = [f, g, k, m] : (f = null, h = t)) : (f = null, h = t)) : (f = null, h = t)) : (f = null, h = t);
+          d.push(f), p = h, f = v(), null !== f ? (44 === b.charCodeAt(h) ? (g = ",", h++) : (g = null, 0 === n && e('","')), null !== g ? (k = v(), null !== k ? (m = l(), null !== m ? f = [f, g, k, m] : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p);
         }
-        null !== d ? a = [a, d] : (a = null, h = B);
+        null !== d ? a = [a, d] : (a = null, h = t);
       } else {
-        a = null, h = B;
+        a = null, h = t;
       }
       if (null !== a) {
         for (d = a[1], a = [a[0]], f = 0;f < d.length;f++) {
           a.push(d[f][3]);
         }
       }
-      null === a && (h = p);
+      null === a && (h = w);
       n--;
       0 === n && null === a && e("arguments");
       return a;
@@ -7033,18 +7033,18 @@ wtf.db.FilterParser = function() {
     function l() {
       var a, b;
       n++;
-      a = q();
+      a = p();
       null === a && (b = h, a = s(), null !== a && (a = {lhs:a.lhs, op:a.op, rhs:a.rhs}), null === a && (h = b));
       n--;
       0 === n && null === a && e("binary expression");
       return a;
     }
-    function q() {
+    function p() {
       var a, b, c, d, f, g, k;
       n++;
       k = g = h;
-      a = x();
-      null !== a ? (b = v(), null !== b ? (c = t(), null !== c ? (d = v(), null !== d ? (f = x(), null !== f ? a = [a, b, c, d, f] : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k);
+      a = y();
+      null !== a ? (b = v(), null !== b ? (c = t(), null !== c ? (d = v(), null !== d ? (f = y(), null !== f ? a = [a, b, c, d, f] : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k);
       null !== a && (a = {lhs:a[0], op:a[2], rhs:a[4]});
       null === a && (h = g);
       n--;
@@ -7055,8 +7055,8 @@ wtf.db.FilterParser = function() {
       var a, b, c, d, f, g, k;
       n++;
       k = g = h;
-      a = x();
-      null !== a ? (b = v(), null !== b ? (c = w(), null !== c ? (d = v(), null !== d ? (f = N(), null !== f ? a = [a, b, c, d, f] : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k);
+      a = y();
+      null !== a ? (b = v(), null !== b ? (c = x(), null !== c ? (d = v(), null !== d ? (f = N(), null !== f ? a = [a, b, c, d, f] : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k)) : (a = null, h = k);
       null !== a && (a = {lhs:a[0], op:a[2], rhs:a[4]});
       null === a && (h = g);
       n--;
@@ -7073,7 +7073,7 @@ wtf.db.FilterParser = function() {
       0 === n && null === a && e("operator");
       return a;
     }
-    function w() {
+    function x() {
       var a;
       n++;
       "=~" === b.substr(h, 2) ? (a = "=~", h += 2) : (a = null, 0 === n && e('"=~"'));
@@ -7082,47 +7082,47 @@ wtf.db.FilterParser = function() {
       0 === n && null === a && e("regex operator");
       return a;
     }
-    function x() {
+    function y() {
       var a, d, f, g;
       n++;
       f = h;
       a = E();
       null !== a && (a = {type:"string", value:a});
       null === a && (h = f);
-      null === a && (f = h, a = R(), null !== a && (a = {type:"number", value:a}), null === a && (h = f), null === a && (f = h, a = u(), null !== a && (a = {type:"object", value:a}), null === a && (h = f), null === a && (f = h, a = z(), null !== a && (a = {type:"array", value:a}), null === a && (h = f), null === a && (g = f = h, "true" === b.substr(h, 4) ? (a = "true", h += 4) : (a = null, 0 === n && e('"true"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, h = g)) : (a = null, h = 
+      null === a && (f = h, a = R(), null !== a && (a = {type:"number", value:a}), null === a && (h = f), null === a && (f = h, a = u(), null !== a && (a = {type:"object", value:a}), null === a && (h = f), null === a && (f = h, a = A(), null !== a && (a = {type:"array", value:a}), null === a && (h = f), null === a && (g = f = h, "true" === b.substr(h, 4) ? (a = "true", h += 4) : (a = null, 0 === n && e('"true"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, h = g)) : (a = null, h = 
       g), null !== a && (a = {type:"boolean", value:!0}), null === a && (h = f), null === a && (g = f = h, "false" === b.substr(h, 5) ? (a = "false", h += 5) : (a = null, 0 === n && e('"false"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, h = g)) : (a = null, h = g), null !== a && (a = {type:"boolean", value:!1}), null === a && (h = f), null === a && (g = f = h, "null" === b.substr(h, 4) ? (a = "null", h += 4) : (a = null, 0 === n && e('"null"')), null !== a ? (d = v(), null !== 
-      d ? a = [a, d] : (a = null, h = g)) : (a = null, h = g), null !== a && (a = {type:"null", value:null}), null === a && (h = f), null === a && (f = h, a = p(), null !== a && (a = {type:"reference", value:a}), null === a && (h = f), null === a && (f = h, a = N(), null !== a && (a = {type:"regex", value:a}), null === a && (h = f)))))))));
+      d ? a = [a, d] : (a = null, h = g)) : (a = null, h = g), null !== a && (a = {type:"null", value:null}), null === a && (h = f), null === a && (f = h, a = r(), null !== a && (a = {type:"reference", value:a}), null === a && (h = f), null === a && (f = h, a = N(), null !== a && (a = {type:"regex", value:a}), null === a && (h = f)))))))));
       n--;
       0 === n && null === a && e("value");
       return a;
     }
-    function p() {
-      var a, d, f, g, k, l, m, p, t, B, q, y;
+    function r() {
+      var a, d, f, g, k, l, m, w, p, t, y, z;
       n++;
-      B = t = h;
+      t = p = h;
       a = O();
       if (null !== a) {
         d = [];
-        y = q = h;
+        z = y = h;
         f = v();
-        null !== f ? (91 === b.charCodeAt(h) ? (g = "[", h++) : (g = null, 0 === n && e('"["')), null !== g ? (k = v(), null !== k ? (l = C(), null !== l ? (m = v(), null !== m ? (93 === b.charCodeAt(h) ? (p = "]", h++) : (p = null, 0 === n && e('"]"')), null !== p ? f = [f, g, k, l, m, p] : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y);
+        null !== f ? (91 === b.charCodeAt(h) ? (g = "[", h++) : (g = null, 0 === n && e('"["')), null !== g ? (k = v(), null !== k ? (l = C(), null !== l ? (m = v(), null !== m ? (93 === b.charCodeAt(h) ? (w = "]", h++) : (w = null, 0 === n && e('"]"')), null !== w ? f = [f, g, k, l, m, w] : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z);
         null !== f && (f = f[3]);
-        null === f && (h = q);
-        null === f && (y = q = h, f = v(), null !== f ? (46 === b.charCodeAt(h) ? (g = ".", h++) : (g = null, 0 === n && e('"."')), null !== g ? (k = v(), null !== k ? (l = O(), null !== l ? f = [f, g, k, l] : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y), null !== f && (f = f[3]), null === f && (h = q));
+        null === f && (h = y);
+        null === f && (z = y = h, f = v(), null !== f ? (46 === b.charCodeAt(h) ? (g = ".", h++) : (g = null, 0 === n && e('"."')), null !== g ? (k = v(), null !== k ? (l = O(), null !== l ? f = [f, g, k, l] : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z), null !== f && (f = f[3]), null === f && (h = y));
         for (;null !== f;) {
-          d.push(f), y = q = h, f = v(), null !== f ? (91 === b.charCodeAt(h) ? (g = "[", h++) : (g = null, 0 === n && e('"["')), null !== g ? (k = v(), null !== k ? (l = C(), null !== l ? (m = v(), null !== m ? (93 === b.charCodeAt(h) ? (p = "]", h++) : (p = null, 0 === n && e('"]"')), null !== p ? f = [f, g, k, l, m, p] : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y), null !== f && (f = f[3]), null === f && (h = q), null === 
-          f && (y = q = h, f = v(), null !== f ? (46 === b.charCodeAt(h) ? (g = ".", h++) : (g = null, 0 === n && e('"."')), null !== g ? (k = v(), null !== k ? (l = O(), null !== l ? f = [f, g, k, l] : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y)) : (f = null, h = y), null !== f && (f = f[3]), null === f && (h = q));
+          d.push(f), z = y = h, f = v(), null !== f ? (91 === b.charCodeAt(h) ? (g = "[", h++) : (g = null, 0 === n && e('"["')), null !== g ? (k = v(), null !== k ? (l = C(), null !== l ? (m = v(), null !== m ? (93 === b.charCodeAt(h) ? (w = "]", h++) : (w = null, 0 === n && e('"]"')), null !== w ? f = [f, g, k, l, m, w] : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z), null !== f && (f = f[3]), null === f && (h = y), null === 
+          f && (z = y = h, f = v(), null !== f ? (46 === b.charCodeAt(h) ? (g = ".", h++) : (g = null, 0 === n && e('"."')), null !== g ? (k = v(), null !== k ? (l = O(), null !== l ? f = [f, g, k, l] : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z)) : (f = null, h = z), null !== f && (f = f[3]), null === f && (h = y));
         }
-        null !== d ? a = [a, d] : (a = null, h = B);
+        null !== d ? a = [a, d] : (a = null, h = t);
       } else {
-        a = null, h = B;
+        a = null, h = t;
       }
       if (null !== a) {
         for (d = a[1], a = a[0], f = 0;f < d.length;f++) {
           a = {type:"access", base:a, name:d[f]};
         }
       }
-      null === a && (h = t);
+      null === a && (h = p);
       n--;
       0 === n && null === a && e("reference");
       return a;
@@ -7135,22 +7135,22 @@ wtf.db.FilterParser = function() {
       null !== a ? (d = v(), null !== d ? (125 === b.charCodeAt(h) ? (f = "}", h++) : (f = null, 0 === n && e('"}"')), null !== f ? (g = v(), null !== g ? a = [a, d, f, g] : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m);
       null !== a && (a = {});
       null === a && (h = l);
-      null === a && (m = l = h, 123 === b.charCodeAt(h) ? (a = "{", h++) : (a = null, 0 === n && e('"{"')), null !== a ? (d = v(), null !== d ? (f = r(), null !== f ? (125 === b.charCodeAt(h) ? (g = "}", h++) : (g = null, 0 === n && e('"}"')), null !== g ? (k = v(), null !== k ? a = [a, d, f, g, k] : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m), null !== a && (a = a[2]), null === a && (h = l));
+      null === a && (m = l = h, 123 === b.charCodeAt(h) ? (a = "{", h++) : (a = null, 0 === n && e('"{"')), null !== a ? (d = v(), null !== d ? (f = q(), null !== f ? (125 === b.charCodeAt(h) ? (g = "}", h++) : (g = null, 0 === n && e('"}"')), null !== g ? (k = v(), null !== k ? a = [a, d, f, g, k] : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m)) : (a = null, h = m), null !== a && (a = a[2]), null === a && (h = l));
       n--;
       0 === n && null === a && e("object");
       return a;
     }
-    function r() {
-      var a, d, f, g, k, l, m, p;
+    function q() {
+      var a, d, f, g, k, l, m, w;
       m = l = h;
-      a = A();
+      a = B();
       if (null !== a) {
         d = [];
-        p = h;
+        w = h;
         44 === b.charCodeAt(h) ? (f = ",", h++) : (f = null, 0 === n && e('","'));
-        null !== f ? (g = v(), null !== g ? (k = A(), null !== k ? f = [f, g, k] : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p);
+        null !== f ? (g = v(), null !== g ? (k = B(), null !== k ? f = [f, g, k] : (f = null, h = w)) : (f = null, h = w)) : (f = null, h = w);
         for (;null !== f;) {
-          d.push(f), p = h, 44 === b.charCodeAt(h) ? (f = ",", h++) : (f = null, 0 === n && e('","')), null !== f ? (g = v(), null !== g ? (k = A(), null !== k ? f = [f, g, k] : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p);
+          d.push(f), w = h, 44 === b.charCodeAt(h) ? (f = ",", h++) : (f = null, 0 === n && e('","')), null !== f ? (g = v(), null !== g ? (k = B(), null !== k ? f = [f, g, k] : (f = null, h = w)) : (f = null, h = w)) : (f = null, h = w);
         }
         null !== d ? a = [a, d] : (a = null, h = m);
       } else {
@@ -7169,7 +7169,7 @@ wtf.db.FilterParser = function() {
       null === a && (h = l);
       return a;
     }
-    function A() {
+    function B() {
       var a, d, f, g, k, l;
       l = k = h;
       a = E();
@@ -7178,7 +7178,7 @@ wtf.db.FilterParser = function() {
       null === a && (h = k);
       return a;
     }
-    function z() {
+    function A() {
       var a, d, f, g, k, l, m;
       n++;
       m = l = h;
@@ -7192,16 +7192,16 @@ wtf.db.FilterParser = function() {
       return a;
     }
     function I() {
-      var a, d, f, g, k, l, m, p;
+      var a, d, f, g, k, l, m, w;
       m = l = h;
       a = C();
       if (null !== a) {
         d = [];
-        p = h;
+        w = h;
         44 === b.charCodeAt(h) ? (f = ",", h++) : (f = null, 0 === n && e('","'));
-        null !== f ? (g = v(), null !== g ? (k = C(), null !== k ? f = [f, g, k] : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p);
+        null !== f ? (g = v(), null !== g ? (k = C(), null !== k ? f = [f, g, k] : (f = null, h = w)) : (f = null, h = w)) : (f = null, h = w);
         for (;null !== f;) {
-          d.push(f), p = h, 44 === b.charCodeAt(h) ? (f = ",", h++) : (f = null, 0 === n && e('","')), null !== f ? (g = v(), null !== g ? (k = C(), null !== k ? f = [f, g, k] : (f = null, h = p)) : (f = null, h = p)) : (f = null, h = p);
+          d.push(f), w = h, 44 === b.charCodeAt(h) ? (f = ",", h++) : (f = null, 0 === n && e('","')), null !== f ? (g = v(), null !== g ? (k = C(), null !== k ? f = [f, g, k] : (f = null, h = w)) : (f = null, h = w)) : (f = null, h = w);
         }
         null !== d ? a = [a, d] : (a = null, h = m);
       } else {
@@ -7219,7 +7219,7 @@ wtf.db.FilterParser = function() {
       var a, d, f, g;
       n++;
       a = E();
-      null === a && (a = R(), null === a && (a = u(), null === a && (a = z(), null === a && (g = f = h, "true" === b.substr(h, 4) ? (a = "true", h += 4) : (a = null, 0 === n && e('"true"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, h = g)) : (a = null, h = g), null !== a && (a = !0), null === a && (h = f), null === a && (g = f = h, "false" === b.substr(h, 5) ? (a = "false", h += 5) : (a = null, 0 === n && e('"false"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, 
+      null === a && (a = R(), null === a && (a = u(), null === a && (a = A(), null === a && (g = f = h, "true" === b.substr(h, 4) ? (a = "true", h += 4) : (a = null, 0 === n && e('"true"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, h = g)) : (a = null, h = g), null !== a && (a = !0), null === a && (h = f), null === a && (g = f = h, "false" === b.substr(h, 5) ? (a = "false", h += 5) : (a = null, 0 === n && e('"false"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, 
       h = g)) : (a = null, h = g), null !== a && (a = !1), null === a && (h = f), null === a && (g = f = h, "null" === b.substr(h, 4) ? (a = "null", h += 4) : (a = null, 0 === n && e('"null"')), null !== a ? (d = v(), null !== d ? a = [a, d] : (a = null, h = g)) : (a = null, h = g), null !== a && (a = "null"), null === a && (h = f)))))));
       n--;
       0 === n && null === a && e("value");
@@ -7233,12 +7233,12 @@ wtf.db.FilterParser = function() {
       null !== a ? (34 === b.charCodeAt(h) ? (d = '"', h++) : (d = null, 0 === n && e('"\\""')), null !== d ? (f = v(), null !== f ? a = [a, d, f] : (a = null, h = l)) : (a = null, h = l)) : (a = null, h = l);
       null !== a && (a = "");
       null === a && (h = k);
-      null === a && (l = k = h, 34 === b.charCodeAt(h) ? (a = '"', h++) : (a = null, 0 === n && e('"\\""')), null !== a ? (d = B(), null !== d ? (34 === b.charCodeAt(h) ? (f = '"', h++) : (f = null, 0 === n && e('"\\""')), null !== f ? (g = v(), null !== g ? a = [a, d, f, g] : (a = null, h = l)) : (a = null, h = l)) : (a = null, h = l)) : (a = null, h = l), null !== a && (a = a[1]), null === a && (h = k));
+      null === a && (l = k = h, 34 === b.charCodeAt(h) ? (a = '"', h++) : (a = null, 0 === n && e('"\\""')), null !== a ? (d = w(), null !== d ? (34 === b.charCodeAt(h) ? (f = '"', h++) : (f = null, 0 === n && e('"\\""')), null !== f ? (g = v(), null !== g ? a = [a, d, f, g] : (a = null, h = l)) : (a = null, h = l)) : (a = null, h = l)) : (a = null, h = l), null !== a && (a = a[1]), null === a && (h = k));
       n--;
       0 === n && null === a && e("string");
       return a;
     }
-    function B() {
+    function w() {
       var a, b, c;
       c = h;
       b = S();
@@ -7254,28 +7254,28 @@ wtf.db.FilterParser = function() {
       return a;
     }
     function S() {
-      var a, d, f, g, k, l, m, p;
+      var a, d, f, g, k, l, m, w;
       /^[^"\\\0-\x1F\u007f]/.test(b.charAt(h)) ? (a = b.charAt(h), h++) : (a = null, 0 === n && e('[^"\\\\\\0-\\x1F\u007f]'));
       null === a && (l = h, '\\"' === b.substr(h, 2) ? (a = '\\"', h += 2) : (a = null, 0 === n && e('"\\\\\\""')), null !== a && (a = '"'), null === a && (h = l), null === a && (l = h, "\\\\" === b.substr(h, 2) ? (a = "\\\\", h += 2) : (a = null, 0 === n && e('"\\\\\\\\"')), null !== a && (a = "\\"), null === a && (h = l), null === a && (l = h, "\\/" === b.substr(h, 2) ? (a = "\\/", h += 2) : (a = null, 0 === n && e('"\\\\/"')), null !== a && (a = "/"), null === a && (h = l), null === a && (l = 
       h, "\\b" === b.substr(h, 2) ? (a = "\\b", h += 2) : (a = null, 0 === n && e('"\\\\b"')), null !== a && (a = "\b"), null === a && (h = l), null === a && (l = h, "\\f" === b.substr(h, 2) ? (a = "\\f", h += 2) : (a = null, 0 === n && e('"\\\\f"')), null !== a && (a = "\f"), null === a && (h = l), null === a && (l = h, "\\n" === b.substr(h, 2) ? (a = "\\n", h += 2) : (a = null, 0 === n && e('"\\\\n"')), null !== a && (a = "\n"), null === a && (h = l), null === a && (l = h, "\\r" === b.substr(h, 
-      2) ? (a = "\\r", h += 2) : (a = null, 0 === n && e('"\\\\r"')), null !== a && (a = "\r"), null === a && (h = l), null === a && (l = h, "\\t" === b.substr(h, 2) ? (a = "\\t", h += 2) : (a = null, 0 === n && e('"\\\\t"')), null !== a && (a = "\t"), null === a && (h = l), null === a && (m = l = h, "\\u" === b.substr(h, 2) ? (a = "\\u", h += 2) : (a = null, 0 === n && e('"\\\\u"')), null !== a ? (p = h, d = J(), null !== d ? (f = J(), null !== f ? (g = J(), null !== g ? (k = J(), null !== k ? d = 
-      [d, f, g, k] : (d = null, h = p)) : (d = null, h = p)) : (d = null, h = p)) : (d = null, h = p), null !== d ? a = [a, d] : (a = null, h = m)) : (a = null, h = m), null !== a && (a = String.fromCharCode(parseInt("0x" + a[1], 16))), null === a && (h = l))))))))));
+      2) ? (a = "\\r", h += 2) : (a = null, 0 === n && e('"\\\\r"')), null !== a && (a = "\r"), null === a && (h = l), null === a && (l = h, "\\t" === b.substr(h, 2) ? (a = "\\t", h += 2) : (a = null, 0 === n && e('"\\\\t"')), null !== a && (a = "\t"), null === a && (h = l), null === a && (m = l = h, "\\u" === b.substr(h, 2) ? (a = "\\u", h += 2) : (a = null, 0 === n && e('"\\\\u"')), null !== a ? (w = h, d = J(), null !== d ? (f = J(), null !== f ? (g = J(), null !== g ? (k = J(), null !== k ? d = 
+      [d, f, g, k] : (d = null, h = w)) : (d = null, h = w)) : (d = null, h = w)) : (d = null, h = w), null !== d ? a = [a, d] : (a = null, h = m)) : (a = null, h = m), null !== a && (a = String.fromCharCode(parseInt("0x" + a[1], 16))), null === a && (h = l))))))))));
       return a;
     }
     function R() {
       var a, b, c, d;
       n++;
       d = c = h;
-      a = y();
+      a = z();
       null !== a ? (b = aa(), null !== b ? a = [a, b] : (a = null, h = d)) : (a = null, h = d);
       null !== a && (a = a[0] * a[1]);
       null === a && (h = c);
-      null === a && (a = y());
+      null === a && (a = z());
       n--;
       0 === n && null === a && e("number");
       return a;
     }
-    function y() {
+    function z() {
       var a, b, c, d, f, g;
       n++;
       f = d = h;
@@ -7581,7 +7581,7 @@ wtf.db.FilterParser = function() {
       n--;
       0 === n && null === a && e("filter statement");
       return a;
-    }, EventTypeExpression:f, SubstringEventTypeLiteral:g, Arguments:k, ArgumentList:m, BinaryExpression:l, ComparativeExpression:q, RegularExpression:s, Operator:t, RegexOperator:w, ExpressionValue:x, VariableReference:p, Object:u, ObjectMembers:r, Pair:A, Array:z, Elements:I, Value:C, String:E, Chars:B, Char:S, AdjustedNumber:R, Number:y, Int:K, HexInt:ba, Frac:T, Exp:U, Digits:F, E:ca, Digit:G, Digit19:V, HexDigit:J, TimeUnit:aa, WhiteSpace:W, _:v, Identifier:O, IdentifierName:da, IdentifierStart:X, 
+    }, EventTypeExpression:f, SubstringEventTypeLiteral:g, Arguments:k, ArgumentList:m, BinaryExpression:l, ComparativeExpression:p, RegularExpression:s, Operator:t, RegexOperator:x, ExpressionValue:y, VariableReference:r, Object:u, ObjectMembers:q, Pair:B, Array:A, Elements:I, Value:C, String:E, Chars:w, Char:S, AdjustedNumber:R, Number:z, Int:K, HexInt:ba, Frac:T, Exp:U, Digits:F, E:ca, Digit:G, Digit19:V, HexDigit:J, TimeUnit:aa, WhiteSpace:W, _:v, Identifier:O, IdentifierName:da, IdentifierStart:X, 
     IdentifierPart:L, UnicodeConnectorPunctuation:ea, RegularExpressionLiteral:N, RegularExpressionBody:fa, RegularExpressionChars:ia, RegularExpressionFirstChar:ha, RegularExpressionChar:Y, RegularExpressionBackslashSequence:P, RegularExpressionNonTerminator:M, RegularExpressionClass:Z, RegularExpressionClassChars:ja, RegularExpressionClassChar:$, RegularExpressionFlags:ga};
     if (void 0 !== d) {
       if (void 0 === D[d]) {
@@ -7775,8 +7775,8 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(a) {
   e.begin();
   e.addArgument("it");
   for (var f = [], g = !1, k = 0;k < a.arg_query.length;k++) {
-    for (var m = a.arg_query[k], l = [b(m.lhs), b(m.rhs)], q = 0;q < l.length;q++) {
-      var s = l[q];
+    for (var m = a.arg_query[k], l = [b(m.lhs), b(m.rhs)], p = 0;p < l.length;p++) {
+      var s = l[p];
       s && (s.name && (f.push('args["' + s.name + '"] !== undefined'), g = !0), s.requiresScope && f.push("it.isScope()"));
     }
     l = m.op;
@@ -7787,9 +7787,9 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(a) {
       case "!=":
         l = "!==";
     }
-    q = c(m.lhs);
+    p = c(m.lhs);
     s = c(m.rhs);
-    "regex" == m.rhs.type ? f.push("( " + ("!~" == l ? "!" : "") + s + ".test(" + q + ") )") : f.push("(" + q + " " + l + " " + s + ")");
+    "regex" == m.rhs.type ? f.push("( " + ("!~" == l ? "!" : "") + s + ".test(" + p + ") )") : f.push("(" + p + " " + l + " " + s + ")");
   }
   g && (e.append("var args = it.getArguments();"), e.append("if (!args) return false;"));
   f.length ? e.append("return " + f.join(" && ") + ";") : e.append("return true;");
@@ -8679,9 +8679,9 @@ goog.crypt.base64.encodeByteArray = function(a, b) {
   }
   goog.crypt.base64.init_();
   for (var c = b ? goog.crypt.base64.byteToCharMapWebSafe_ : goog.crypt.base64.byteToCharMap_, d = [], e = 0;e < a.length;e += 3) {
-    var f = a[e], g = e + 1 < a.length, k = g ? a[e + 1] : 0, m = e + 2 < a.length, l = m ? a[e + 2] : 0, q = f >> 2, f = (f & 3) << 4 | k >> 4, k = (k & 15) << 2 | l >> 6, l = l & 63;
+    var f = a[e], g = e + 1 < a.length, k = g ? a[e + 1] : 0, m = e + 2 < a.length, l = m ? a[e + 2] : 0, p = f >> 2, f = (f & 3) << 4 | k >> 4, k = (k & 15) << 2 | l >> 6, l = l & 63;
     m || (l = 64, g || (k = 64));
-    d.push(c[q], c[f], c[k], c[l]);
+    d.push(c[p], c[f], c[k], c[l]);
   }
   return d.join("");
 };
@@ -11131,14 +11131,14 @@ goog.math.Long.prototype.multiply = function(a) {
   }
   var b = this.high_ >>> 16, c = this.high_ & 65535, d = this.low_ >>> 16, e = this.low_ & 65535, f = a.high_ >>> 16, g = a.high_ & 65535, k = a.low_ >>> 16;
   a = a.low_ & 65535;
-  var m, l, q, s;
+  var m, l, p, s;
   s = 0 + e * a;
-  q = 0 + (s >>> 16);
-  q += d * a;
-  l = 0 + (q >>> 16);
-  q = (q & 65535) + e * k;
-  l += q >>> 16;
-  q &= 65535;
+  p = 0 + (s >>> 16);
+  p += d * a;
+  l = 0 + (p >>> 16);
+  p = (p & 65535) + e * k;
+  l += p >>> 16;
+  p &= 65535;
   l += c * a;
   m = 0 + (l >>> 16);
   l = (l & 65535) + d * k;
@@ -11148,7 +11148,7 @@ goog.math.Long.prototype.multiply = function(a) {
   m += l >>> 16;
   l &= 65535;
   m = m + (b * a + c * k + d * g + e * f) & 65535;
-  return goog.math.Long.fromBits(q << 16 | s & 65535, m << 16 | l);
+  return goog.math.Long.fromBits(p << 16 | s & 65535, m << 16 | l);
 };
 goog.math.Long.prototype.div = function(a) {
   if (a.isZero()) {
@@ -11342,7 +11342,7 @@ wtf.io.cff.BinaryStreamSource.prototype.parseChunk_ = function(a, b) {
     throw Error("Chunk type unrecognized: " + e);
   }
   d.setTimeRange(g, k);
-  for (var e = [], g = [], k = 6, q = 0;q < m;q++, k += 3) {
+  for (var e = [], g = [], k = 6, p = 0;p < m;p++, k += 3) {
     var s = c[k + 0], t = new Uint8Array(a, b + l + c[k + 1], c[k + 2]);
     (s = this.parsePart_(s, t, e)) && g.push(s);
   }
@@ -12542,42 +12542,42 @@ wtf.db.HealthInfo.prototype.getWarnings = function() {
   return this.warnings_;
 };
 wtf.db.HealthInfo.prototype.analyzeStatistics_ = function(a, b) {
-  for (var c = 0, d = 0, e = 0, f = 0, g = 0, k = 0, m = 0, l = 0, q = 0, s = 0, t = 0, w = 0, x = a.getZones(), p = 0;p < x.length;p++) {
-    var u = x[p], r = u.getEventList().getStatistics(), c = c + r.totalCount, g = g + r.genericEnterScope, k = k + r.genericTimeStamp, m = m + r.appendScopeData, u = u.getFrameList(), d = d + u.getCount()
+  for (var c = 0, d = 0, e = 0, f = 0, g = 0, k = 0, m = 0, l = 0, p = 0, s = 0, t = 0, x = 0, y = a.getZones(), r = 0;r < y.length;r++) {
+    var u = y[r], q = u.getEventList().getStatistics(), c = c + q.totalCount, g = g + q.genericEnterScope, k = k + q.genericTimeStamp, m = m + q.appendScopeData, u = u.getFrameList(), d = d + u.getCount()
   }
-  x = b.getEntries();
-  for (p = 0;p < x.length;p++) {
-    u = x[p];
-    r = u.getEventType();
-    switch(r.getClass()) {
+  y = b.getEntries();
+  for (r = 0;r < y.length;r++) {
+    u = y[r];
+    q = u.getEventType();
+    switch(q.getClass()) {
       case wtf.data.EventClass.SCOPE:
         e += u.getCount();
         break;
       case wtf.data.EventClass.INSTANCE:
         f += u.getCount();
     }
-    for (var r = r.getArguments(), A = 0;A < r.length;A++) {
-      var z = r[A].typeName;
-      if ("any" == z) {
+    for (var q = q.getArguments(), B = 0;B < q.length;B++) {
+      var A = q[B].typeName;
+      if ("any" == A) {
         l += u.getCount();
       } else {
-        if ("ascii" == z || "utf8" == z) {
-          q += u.getCount();
+        if ("ascii" == A || "utf8" == A) {
+          p += u.getCount();
         }
       }
     }
-    u instanceof wtf.db.ScopeEventDataEntry && (r = u.getMeanTime(), 2 >= r ? s += u.getCount() : 5 >= r ? t += u.getCount() : 10 >= r && (w += u.getCount()));
+    u instanceof wtf.db.ScopeEventDataEntry && (q = u.getMeanTime(), 2 >= q ? s += u.getCount() : 5 >= q ? t += u.getCount() : 10 >= q && (x += u.getCount()));
   }
   this.totalOverheadPercent_ = this.totalOverheadMs_ = this.overheadPerScopeNs_ = 0;
-  p = a.getSources();
-  x = 0;
-  p.length && (x = p[0].getMetadata().nowTimeNs || 0);
-  x && (this.overheadPerScopeNs_ = 2 * x + x, this.totalOverheadMs_ = e * this.overheadPerScopeNs_ + f * (x + x), this.totalOverheadMs_ /= 1E6, e = a.getLastEventTime() - a.getFirstEventTime(), this.totalOverheadPercent_ = this.totalOverheadMs_ / e);
+  r = a.getSources();
+  y = 0;
+  r.length && (y = r[0].getMetadata().nowTimeNs || 0);
+  y && (this.overheadPerScopeNs_ = 2 * y + y, this.totalOverheadMs_ = e * this.overheadPerScopeNs_ + f * (y + y), this.totalOverheadMs_ /= 1E6, e = a.getLastEventTime() - a.getFirstEventTime(), this.totalOverheadPercent_ = this.totalOverheadMs_ / e);
   1E3 > c || (e = [], d && (d = c / d, 1E4 <= d && e.push(new wtf.db.HealthWarning("Too many events per frame.", "Keep the count under 10000 to avoid too much skew.", "~" + Math.round(d) + " events/frame", "warn_too_many_events_per_frame"))), 0.3 < f / c && e.push(new wtf.db.HealthWarning("A lot of instance events (>30%).", "Instance events are easy to miss. Try not to use so many.", Math.floor(f / c * 100) + "% of all events")), 0.1 < g / c && e.push(new wtf.db.HealthWarning("Using enterScope too much (>10%).", 
   "enterScope writes strings. Using a custom event type will result in less overhead per event.", Math.floor(g / c * 100) + "% of all events")), 0.1 < k / c && e.push(new wtf.db.HealthWarning("Using timeStamp too much (>10%).", "timeStamp writes strings. Using a custom event type will result in less overhead per event.", Math.floor(k / c * 100) + "% of all events")), 0.1 < m / c && e.push(new wtf.db.HealthWarning("Using appendScopeData too much (>10%).", "appendScopeData writes strings and JSON. Use a custom event type with simple argument types instead.", 
-  Math.floor(m / c * 100) + "% of all events")), 0.1 < l / c && e.push(new wtf.db.HealthWarning('Using a lot of "any" arguments (>10%).', "Use either simple numeric types (fastest) or strings instead.", Math.floor(l / c * 100) + "% of all events")), 0.1 < q / c && e.push(new wtf.db.HealthWarning('Using a lot of "ascii"/"utf8" arguments (>10%).', "Use simple numeric types instead. Prefer ascii to utf8.", Math.floor(q / c * 100) + "% of all events")), 0.05 < s / c && e.push(new wtf.db.HealthWarning("Too many \u22642\u00b5s scopes.", 
-  "Very short scopes are not representative of their actual time and just add overhead. Remove them or change them to instance events.", Math.floor(s / c * 100) + "% of all events")), 0.1 < t / c && e.push(new wtf.db.HealthWarning("Too many \u22645\u00b5s scopes.", "Very short scopes are not representative of their actual time and just add overhead. Remove them or change them to instance events.", Math.floor(t / c * 100) + "% of all events")), 0.15 < w / c && e.push(new wtf.db.HealthWarning("Too many \u226410\u00b5s scopes.", 
-  "Very short scopes are not representative of their actual time and just add overhead. Remove them or change them to instance events.", Math.floor(w / c * 100) + "% of all events")), this.warnings_ = e, e.length && (this.isBad_ = !0));
+  Math.floor(m / c * 100) + "% of all events")), 0.1 < l / c && e.push(new wtf.db.HealthWarning('Using a lot of "any" arguments (>10%).', "Use either simple numeric types (fastest) or strings instead.", Math.floor(l / c * 100) + "% of all events")), 0.1 < p / c && e.push(new wtf.db.HealthWarning('Using a lot of "ascii"/"utf8" arguments (>10%).', "Use simple numeric types instead. Prefer ascii to utf8.", Math.floor(p / c * 100) + "% of all events")), 0.05 < s / c && e.push(new wtf.db.HealthWarning("Too many \u22642\u00b5s scopes.", 
+  "Very short scopes are not representative of their actual time and just add overhead. Remove them or change them to instance events.", Math.floor(s / c * 100) + "% of all events")), 0.1 < t / c && e.push(new wtf.db.HealthWarning("Too many \u22645\u00b5s scopes.", "Very short scopes are not representative of their actual time and just add overhead. Remove them or change them to instance events.", Math.floor(t / c * 100) + "% of all events")), 0.15 < x / c && e.push(new wtf.db.HealthWarning("Too many \u226410\u00b5s scopes.", 
+  "Very short scopes are not representative of their actual time and just add overhead. Remove them or change them to instance events.", Math.floor(x / c * 100) + "% of all events")), this.warnings_ = e, e.length && (this.isBad_ = !0));
 };
 goog.exportSymbol("wtf.db.HealthInfo", wtf.db.HealthInfo);
 goog.exportProperty(wtf.db.HealthInfo.prototype, "isBad", wtf.db.HealthInfo.prototype.isBad);
@@ -12755,15 +12755,15 @@ wtf.io.cff.BinaryStreamTarget.prototype.writeChunk = function(a) {
   }
   m = 4 * (6 + 3 * e.length);
   l = new Uint32Array(m / 4);
-  var q = 0;
-  l[q++] = a.getId();
-  l[q++] = wtf.io.cff.ChunkType.toInteger(a.getType());
-  l[q++] = m + d;
-  l[q++] = a.getStartTime();
-  l[q++] = a.getEndTime();
-  l[q++] = e.length;
+  var p = 0;
+  l[p++] = a.getId();
+  l[p++] = wtf.io.cff.ChunkType.toInteger(a.getType());
+  l[p++] = m + d;
+  l[p++] = a.getStartTime();
+  l[p++] = a.getEndTime();
+  l[p++] = e.length;
   for (k = 0;k < e.length;k++) {
-    a = e[k], l[q++] = wtf.io.cff.PartType.toInteger(a.getType()), l[q++] = f[k], l[q++] = g[k];
+    a = e[k], l[p++] = wtf.io.cff.PartType.toInteger(a.getType()), l[p++] = f[k], l[p++] = g[k];
   }
   c.unshift(l.buffer);
   d += m;
@@ -13099,8 +13099,8 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(a, b) {
     this.addArgument(m.name + "_");
     var l = c[m.typeName];
     goog.asserts.assert(l);
-    for (var q = 0;q < l.uses.length;q++) {
-      d[l.uses[q]] = !0;
+    for (var p = 0;p < l.uses.length;p++) {
+      d[l.uses[p]] = !0;
     }
     l.size && (e += 4 > l.size ? l.size + (4 - l.size % 4) : 4);
     l.computeSize && f.push("(" + l.computeSize(m.name + "_") + ")");
@@ -13732,8 +13732,8 @@ wtf.trace.TraceManager.prototype.requestSnapshots = function(a, b) {
     var k = new wtf.io.cff.BinaryStreamTarget(g);
     e.snapshot(k);
     for (var m = 0, l = 0;l < this.listeners_.length;l++) {
-      var q = this.listeners_[l].requestSnapshots(e, d);
-      void 0 !== q && (m += q);
+      var p = this.listeners_[l].requestSnapshots(e, d);
+      void 0 !== p && (m += p);
     }
     m || wtf.timing.setImmediate(function() {
       c();
@@ -15121,13 +15121,52 @@ goog.style.getCssTranslation = function(a) {
   return c ? (a = c.match(goog.style.MATRIX_TRANSLATION_REGEX_)) ? new goog.math.Coordinate(parseFloat(a[1]), parseFloat(a[2])) : new goog.math.Coordinate(0, 0) : new goog.math.Coordinate(0, 0);
 };
 // Input 175
+goog.userAgent.product.determineVersion_ = function() {
+  if (goog.userAgent.product.FIREFOX) {
+    return goog.userAgent.product.getFirstRegExpGroup_(/Firefox\/([0-9.]+)/);
+  }
+  if (goog.userAgent.product.IE || goog.userAgent.product.OPERA) {
+    return goog.userAgent.VERSION;
+  }
+  if (goog.userAgent.product.CHROME) {
+    return goog.userAgent.product.getFirstRegExpGroup_(/Chrome\/([0-9.]+)/);
+  }
+  if (goog.userAgent.product.SAFARI) {
+    return goog.userAgent.product.getFirstRegExpGroup_(/Version\/([0-9.]+)/);
+  }
+  if (goog.userAgent.product.IPHONE || goog.userAgent.product.IPAD) {
+    var a = goog.userAgent.product.execRegExp_(/Version\/(\S+).*Mobile\/(\S+)/);
+    if (a) {
+      return a[1] + "." + a[2];
+    }
+  } else {
+    if (goog.userAgent.product.ANDROID) {
+      return(a = goog.userAgent.product.getFirstRegExpGroup_(/Android\s+([0-9.]+)/)) ? a : goog.userAgent.product.getFirstRegExpGroup_(/Version\/([0-9.]+)/);
+    }
+    if (goog.userAgent.product.CAMINO) {
+      return goog.userAgent.product.getFirstRegExpGroup_(/Camino\/([0-9.]+)/);
+    }
+  }
+  return "";
+};
+goog.userAgent.product.getFirstRegExpGroup_ = function(a) {
+  return(a = goog.userAgent.product.execRegExp_(a)) ? a[1] : "";
+};
+goog.userAgent.product.execRegExp_ = function(a) {
+  return a.exec(goog.userAgent.getUserAgentString());
+};
+goog.userAgent.product.VERSION = goog.userAgent.product.determineVersion_();
+goog.userAgent.product.isVersion = function(a) {
+  return 0 <= goog.string.compareVersions(goog.userAgent.product.VERSION, a);
+};
+// Input 176
 wtf.ipc = {};
 wtf.ipc.Channel = function() {
   wtf.events.EventEmitter.call(this);
 };
 goog.inherits(wtf.ipc.Channel, wtf.events.EventEmitter);
 wtf.ipc.Channel.EventType = {MESSAGE:goog.events.getUniqueId("message")};
-// Input 176
+// Input 177
 wtf.ipc.MessageChannel = function(a, b) {
   wtf.ipc.Channel.call(this);
   var c = this;
@@ -15175,7 +15214,7 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(a, b) {
     }
   }
 };
-// Input 177
+// Input 178
 wtf.ipc.connectToParentWindow = function(a, b) {
   var c = goog.global.chrome;
   if (c && c.runtime && c.runtime.getBackgroundPage) {
@@ -15219,7 +15258,7 @@ wtf.ipc.getWindowMessageChannel = function(a) {
   b = new wtf.ipc.MessageChannel(b, b);
   return a.messageChannel = b;
 };
-// Input 178
+// Input 179
 wtf.trace.Provider = function(a) {
   goog.Disposable.call(this);
   this.options = a;
@@ -15245,16 +15284,28 @@ wtf.trace.Provider.prototype.getHudButtons = function() {
 wtf.trace.Provider.prototype.getSettingsSectionConfigs = function() {
   return[];
 };
-// Input 179
+// Input 180
 wtf.trace.providers = {};
 wtf.trace.providers.ChromeDebugProvider = function(a, b) {
   wtf.trace.Provider.call(this, b);
   this.hudButtons_ = [];
   this.available_ = !1;
-  b.getNumber("wtf.trace.provider.chromeDebug", 1) && b.getBoolean("wtf.trace.provider.chromeDebug.present", !1) && (this.timelineDispatch_ = {}, this.setupTimelineDispatch_(b.getBoolean("wtf.trace.provider.chromeDebug.adjustTimebase", !0)), this.nextRequestId_ = 0, this.pendingRequests_ = {}, this.awaitingTracingData_ = this.isCapturingTracing_ = !1, this.tracingTrackerId_ = String(goog.now()), this.tracingTrackerIntervalId_ = -1, this.tracingProgressEl_ = this.createTracingProgressElement_(), (this.extensionChannel_ = 
-  wtf.ipc.getWindowMessageChannel(window)) && this.extensionChannel_.addListener(wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this), (this.available_ = !!this.extensionChannel_) && b.getBoolean("wtf.trace.provider.chromeDebug.tracing", !1) && this.hudButtons_.push({title:"Toggle chrome:tracing Capture", icon:"/assets/icons/chrometracing.png", shortcut:"f3", callback:function() {
-    this.toggleCapture_();
-  }, scope:this}));
+  if (b.getNumber("wtf.trace.provider.chromeDebug", 1) && b.getBoolean("wtf.trace.provider.chromeDebug.present", !1)) {
+    var c = wtf.timebase();
+    goog.userAgent.product.isVersion(31) || (c = -3E5, goog.global.console.log("WARNING: upgrade to Chrome 31+ to get synced debug events!"));
+    this.timelineDispatch_ = {};
+    this.setupTimelineDispatch_(c);
+    this.nextRequestId_ = 0;
+    this.pendingRequests_ = {};
+    this.awaitingTracingData_ = this.isCapturingTracing_ = !1;
+    this.tracingTrackerId_ = String(goog.now());
+    this.tracingTrackerIntervalId_ = -1;
+    this.tracingProgressEl_ = this.createTracingProgressElement_();
+    (this.extensionChannel_ = wtf.ipc.getWindowMessageChannel(window)) && this.extensionChannel_.addListener(wtf.ipc.Channel.EventType.MESSAGE, this.extensionMessage_, this);
+    (this.available_ = !!this.extensionChannel_) && b.getBoolean("wtf.trace.provider.chromeDebug.tracing", !1) && this.hudButtons_.push({title:"Toggle chrome:tracing Capture", icon:"/assets/icons/chrometracing.png", shortcut:"f3", callback:function() {
+      this.toggleCapture_();
+    }, scope:this});
+  }
 };
 goog.inherits(wtf.trace.providers.ChromeDebugProvider, wtf.trace.Provider);
 wtf.trace.providers.ChromeDebugProvider.prototype.isAvailable = function() {
@@ -15264,7 +15315,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.getHudButtons = function() {
   return this.hudButtons_;
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.getSettingsSectionConfigs = function() {
-  return[{title:"Chrome Debugging", widgets:[{type:"checkbox", key:"wtf.trace.provider.chromeDebug", title:"Enabled", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.chromeDebug.timeline", title:"GCs/paints/layouts/etc", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.chromeDebug.adjustTimebase", title:"Adjust debug event timebase", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.chromeDebug.tracing", title:"chrome:tracing", "default":!1}, {type:"label", title:"", value:"Launch Chrome with --remote-debugging-port=9222 to use chrome:tracing."}]}];
+  return[{title:"Chrome Debugging", widgets:[{type:"checkbox", key:"wtf.trace.provider.chromeDebug", title:"Enabled", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.chromeDebug.timeline", title:"GCs/paints/layouts/etc", "default":!0}, {type:"checkbox", key:"wtf.trace.provider.chromeDebug.tracing", title:"chrome:tracing", "default":!1}, {type:"label", title:"", value:"Launch Chrome with --remote-debugging-port=9222 to use chrome:tracing."}]}];
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.sendMessage_ = function(a) {
   this.extensionChannel_ && this.extensionChannel_.postMessage(a);
@@ -15290,79 +15341,77 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ = func
   }
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ = function(a) {
-  var b = 0;
-  a && (b = wtf.timebase());
-  var c = wtf.trace.events.createScope("javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.GCEvent = function(a) {
-    var d = a[2] - b;
-    a = c(a[3], a[4], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, d);
+  var b = wtf.trace.events.createScope("javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.GCEvent = function(c) {
+    var d = c[2] - a;
+    c = b(c[3], c[4], c[1] - a);
+    wtf.trace.leaveScope(c, void 0, d);
   };
-  var d = wtf.trace.events.createScope("javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta, ascii url, uint32 lineNumber)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.EvaluateScript = function(a) {
-    var c = a[2] - b;
-    a = d(a[3], a[4], a[5], a[6], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var c = wtf.trace.events.createScope("javascript#evalscript(uint32 usedHeapSize, uint32 usedHeapSizeDelta, ascii url, uint32 lineNumber)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.EvaluateScript = function(b) {
+    var d = b[2] - a;
+    b = c(b[3], b[4], b[5], b[6], b[1] - a);
+    wtf.trace.leaveScope(b, void 0, d);
   };
-  var e = wtf.trace.events.createScope("browser#parseHtml()", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.ParseHTML = function(a) {
-    var c = a[2] - b;
-    a = e(a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var d = wtf.trace.events.createScope("browser#parseHtml()", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.ParseHTML = function(b) {
+    var c = b[2] - a;
+    b = d(b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
-  var f = wtf.trace.events.createInstance("browser#domContentReady(bool isMainFrame)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.MarkDOMContent = function(a) {
-    f(a[2], a[1] - b);
+  var e = wtf.trace.events.createInstance("browser#domContentReady(bool isMainFrame)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.MarkDOMContent = function(b) {
+    e(b[2], b[1] - a);
   };
-  var g = wtf.trace.events.createInstance("browser#invalidateStyles()");
-  this.timelineDispatch_.ScheduleStyleRecalculation = function(a) {
-    g(a[1] - b);
+  var f = wtf.trace.events.createInstance("browser#invalidateStyles()");
+  this.timelineDispatch_.ScheduleStyleRecalculation = function(b) {
+    f(b[1] - a);
   };
-  var k = wtf.trace.events.createScope("browser#recalculateStyles(uint32 elementCount)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.RecalculateStyles = function(a) {
-    var c = a[2] - b;
-    a = k(a[3], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var g = wtf.trace.events.createScope("browser#recalculateStyles(uint32 elementCount)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.RecalculateStyles = function(b) {
+    var c = b[2] - a;
+    b = g(b[3], b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
-  var m = wtf.trace.events.createInstance("browser#invalidateLayout()");
-  this.timelineDispatch_.InvalidateLayout = function(a) {
-    m(a[1] - b);
+  var k = wtf.trace.events.createInstance("browser#invalidateLayout()");
+  this.timelineDispatch_.InvalidateLayout = function(b) {
+    k(b[1] - a);
   };
-  var l = wtf.trace.events.createScope("browser#layout(uint32 totalObjects, uint32 dirtyObjects, bool partialLayout, int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.Layout = function(a) {
-    var c = a[2] - b;
-    a = l(a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var m = wtf.trace.events.createScope("browser#layout(uint32 totalObjects, uint32 dirtyObjects, bool partialLayout, int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.Layout = function(b) {
+    var c = b[2] - a;
+    b = m(b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
-  var q = wtf.trace.events.createScope("browser#paintSetup()", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.PaintSetup = function(a) {
-    var c = a[2] - b;
-    a = q(a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var l = wtf.trace.events.createScope("browser#paintSetup()", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.PaintSetup = function(b) {
+    var c = b[2] - a;
+    b = l(b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
-  var s = wtf.trace.events.createScope("browser#paint(int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.Paint = function(a) {
-    var c = a[2] - b;
-    a = s(a[3], a[4], a[5], a[6], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var p = wtf.trace.events.createScope("browser#paint(int32 x, int32 y, int32 width, int32 height)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.Paint = function(b) {
+    var c = b[2] - a;
+    b = p(b[3], b[4], b[5], b[6], b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
-  var t = wtf.trace.events.createScope("browser#compositeLayers()", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.CompositeLayers = function(a) {
-    var c = a[2] - b;
-    a = t(a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var s = wtf.trace.events.createScope("browser#compositeLayers()", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.CompositeLayers = function(b) {
+    var c = b[2] - a;
+    b = s(b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
-  var w = wtf.trace.events.createScope("browser#decodeImage(ascii imageType)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.DecodeImage = function(a) {
-    var c = a[2] - b;
-    a = w(a[3], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  var t = wtf.trace.events.createScope("browser#decodeImage(ascii imageType)", wtf.data.EventFlag.SYSTEM_TIME);
+  this.timelineDispatch_.DecodeImage = function(b) {
+    var c = b[2] - a;
+    b = t(b[3], b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
   var x = wtf.trace.events.createScope("browser#resizeImage(bool cached)", wtf.data.EventFlag.SYSTEM_TIME);
-  this.timelineDispatch_.ResizeImage = function(a) {
-    var c = a[2] - b;
-    a = x(a[3], a[1] - b);
-    wtf.trace.leaveScope(a, void 0, c);
+  this.timelineDispatch_.ResizeImage = function(b) {
+    var c = b[2] - a;
+    b = x(b[3], b[1] - a);
+    wtf.trace.leaveScope(b, void 0, c);
   };
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.gatherData = function() {
@@ -15443,7 +15492,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processChromeTracingData_ = fu
   }
   b.length && wtf.trace.mark("", void 0, b[b.length - 1][2] / 1E3 - 0);
 };
-// Input 180
+// Input 181
 wtf.trace.providers.ConsoleProvider = function(a) {
   wtf.trace.Provider.call(this, a);
   this.injectConsoleProfiling_();
@@ -15466,7 +15515,7 @@ wtf.trace.providers.ConsoleProvider.prototype.injectConsoleProfiling_ = function
     });
   }
 };
-// Input 181
+// Input 182
 wtf.trace.providers.DomProvider = function(a) {
   wtf.trace.Provider.call(this, a);
   if (goog.global.document && a.getNumber("wtf.trace.provider.dom", 1)) {
@@ -15529,7 +15578,7 @@ wtf.trace.providers.DomProvider.prototype.injectElement_ = function(a, b, c) {
   wtf.trace.eventtarget.mixin(a, b);
   wtf.trace.eventtarget.setEventProperties(a, b);
 };
-// Input 182
+// Input 183
 wtf.trace.providers.FirefoxDebugProvider = function(a, b) {
   wtf.trace.Provider.call(this, b);
   this.available_ = !1;
@@ -15584,7 +15633,7 @@ wtf.trace.providers.FirefoxDebugProvider.prototype.gatherData = function() {
 wtf.trace.providers.FirefoxDebugProvider.prototype.resetData = function() {
   this.sendMessage_({command:"clear_debugger_data"});
 };
-// Input 183
+// Input 184
 wtf.trace.providers.ImageProvider = function(a) {
   wtf.trace.Provider.call(this, a);
   goog.global.Image && a.getNumber("wtf.trace.provider.image", 1) && this.injectImage_();
@@ -15604,7 +15653,7 @@ wtf.trace.providers.ImageProvider.prototype.injectImage_ = function() {
   wtf.trace.eventtarget.mixin(b, a);
   wtf.trace.eventtarget.setEventProperties(b, a);
 };
-// Input 184
+// Input 185
 wtf.math = {};
 wtf.math.MersenneTwister = function(a) {
   this.mt_ = new Int32Array(wtf.math.MersenneTwister.N_);
@@ -15647,7 +15696,7 @@ wtf.math.MersenneTwister.prototype.randomInt32 = function() {
 wtf.math.MersenneTwister.prototype.random = function() {
   return this.randomInt32() * (1 / 4294967296);
 };
-// Input 185
+// Input 186
 wtf.trace.providers.ReplayProvider = function(a, b) {
   wtf.trace.Provider.call(this, b);
   goog.asserts.assert(b.getBoolean("wtf.trace.replayable", !1));
@@ -15729,7 +15778,7 @@ wtf.trace.providers.ReplayProvider.prototype.buildListener_ = function(a, b) {
   c.append("    );");
   return c.end("wtf.replay.dispatch#" + a + ":capture");
 };
-// Input 186
+// Input 187
 wtf.trace.providers.TimingProvider = function(a) {
   wtf.trace.Provider.call(this, a);
   this.injectTimeouts_();
@@ -15779,12 +15828,12 @@ wtf.trace.providers.TimingProvider.prototype.injectTimeouts_ = function() {
     l[f] = e;
     return f;
   });
-  var q = wtf.trace.events.createInstance("window#clearInterval(uint32 intervalId)"), s = goog.global.clearInterval;
+  var p = wtf.trace.events.createInstance("window#clearInterval(uint32 intervalId)"), s = goog.global.clearInterval;
   this.injectFunction(goog.global, "clearInterval", function(a) {
     s.call(goog.global, a);
     var b = l[a];
     b && (wtf.trace.terminateFlow(b), delete l[a]);
-    q(a);
+    p(a);
   });
 };
 wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
@@ -15792,7 +15841,7 @@ wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
   if (a) {
     var b = wtf.trace.events.createInstance("window#setImmediate(uint32 immediateId)"), c = wtf.trace.events.createScope("window#setImmediate:callback(uint32 immediateId)"), d = {};
     this.injectFunction(goog.global, "msSetImmediate", function(e) {
-      var f = Array.prototype.slice.call(arguments, 2), m = [-1], l, q = a.call(goog.global, function() {
+      var f = Array.prototype.slice.call(arguments, 2), m = [-1], l, p = a.call(goog.global, function() {
         var a = c(m[0]);
         wtf.trace.extendFlow(l, "callback");
         try {
@@ -15801,11 +15850,11 @@ wtf.trace.providers.TimingProvider.prototype.injectSetImmediate_ = function() {
           delete d[m[0]], wtf.trace.terminateFlow(l), wtf.trace.leaveScope(a);
         }
       });
-      m[0] = q;
-      b(q);
+      m[0] = p;
+      b(p);
       l = wtf.trace.branchFlow("window#setImmediate");
-      d[q] = l;
-      return q;
+      d[p] = l;
+      return p;
     });
     var e = wtf.trace.events.createInstance("window#clearImmediate(uint32 immediateId)"), f = goog.global.msClearInterval;
     this.injectFunction(goog.global, "msClearImmediate", function(a) {
@@ -15855,7 +15904,7 @@ wtf.trace.providers.TimingProvider.prototype.injectRequestAnimationFrameFn_ = fu
   };
   m && this.injectFunction(goog.global, b, a);
 };
-// Input 187
+// Input 188
 goog.webgl = {};
 goog.webgl.DEPTH_BUFFER_BIT = 256;
 goog.webgl.STENCIL_BUFFER_BIT = 1024;
@@ -16163,7 +16212,7 @@ goog.webgl.COMPRESSED_RGBA_S3TC_DXT3_EXT = 33778;
 goog.webgl.COMPRESSED_RGBA_S3TC_DXT5_EXT = 33779;
 goog.webgl.TEXTURE_MAX_ANISOTROPY_EXT = 34046;
 goog.webgl.MAX_TEXTURE_MAX_ANISOTROPY_EXT = 34047;
-// Input 188
+// Input 189
 wtf.trace.providers.WebGLProvider = function(a, b) {
   wtf.trace.Provider.call(this, b);
   this.nextObjectId_ = this.nextContextId_ = 1;
@@ -16197,14 +16246,14 @@ wtf.trace.providers.WebGLProvider.prototype.injectCanvas_ = function() {
       return f = f.substr(4), d.call(this, f, g);
     }
     if ("webgl" == f || "experimental-webgl" == f) {
-      var l = a(f, g), q = d.apply(this, arguments);
-      if (q && !wtf.trace.providers.WebGLProvider.getHandle(q)) {
+      var l = a(f, g), p = d.apply(this, arguments);
+      if (p && !wtf.trace.providers.WebGLProvider.getHandle(p)) {
         var s = e.nextContextId_++;
-        wtf.trace.providers.WebGLProvider.setHandle(q, s);
-        e.createdContexts_.push(q);
+        wtf.trace.providers.WebGLProvider.setHandle(p, s);
+        e.createdContexts_.push(p);
         b(s, g);
       }
-      return wtf.trace.leaveScope(l, q);
+      return wtf.trace.leaveScope(l, p);
     }
     return c.apply(this, arguments);
   });
@@ -16236,8 +16285,8 @@ wtf.trace.providers.WebGLProvider.prototype.toggleCapture_ = function() {
 };
 wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   function a(a) {
-    if (a != A || a.drawingBufferWidth != z || a.drawingBufferHeight != I) {
-      A = a, z = a.drawingBufferWidth, I = a.drawingBufferHeight, C(p(a), a.drawingBufferWidth, a.drawingBufferHeight);
+    if (a != B || a.drawingBufferWidth != A || a.drawingBufferHeight != I) {
+      B = a, A = a.drawingBufferWidth, I = a.drawingBufferHeight, C(r(a), a.drawingBufferWidth, a.drawingBufferHeight);
     }
   }
   function b(b, c, d, e) {
@@ -16247,7 +16296,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     k ? (c = e ? e(k, g) : function() {
       a(this);
       var b = g.apply(null, arguments), c = k.apply(this, arguments);
-      return r(b, c);
+      return q(b, c);
     }, c.raw = k, b[f] = c, E.push(function() {
       b[f] = k;
     })) : goog.global.console.log(c + " is missing " + f);
@@ -16266,21 +16315,21 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       return function() {
         a(c);
         var e = d.apply(this, arguments);
-        return r(e, b.apply(this, arguments));
+        return q(e, b.apply(this, arguments));
       };
     });
     e("drawElementsInstancedANGLE(uint32 mode, int32 count, uint32 type, uint32 offset, int32 primcount)", function(b, d) {
       return function() {
         a(c);
         var e = d.apply(this, arguments);
-        return r(e, b.apply(this, arguments));
+        return q(e, b.apply(this, arguments));
       };
     });
     e("vertexAttribDivisorANGLE(uint32 index, uint32 divisor)", function(b, d) {
       return function() {
         a(c);
         var e = d.apply(this, arguments);
-        return r(e, b.apply(this, arguments));
+        return q(e, b.apply(this, arguments));
       };
     });
   }
@@ -16305,8 +16354,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c(b + "(" + (e ? e + ", " : "") + "uint32 " + d + ")", function(b, c) {
       return function(d) {
         a(this);
-        var f = x.nextObjectId_++;
-        e ? r(c(d, f)) : r(c(f));
+        var f = y.nextObjectId_++;
+        e ? q(c(d, f)) : q(c(f));
         var g = b.apply(this, arguments);
         g && u(g, f);
         return g;
@@ -16317,8 +16366,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c(b + "(uint32 " + d + ")", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
   }
@@ -16326,8 +16375,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c(b + "(uint32 type)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
   }
@@ -16342,8 +16391,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         c(b, function(b, c) {
           return function(d, e) {
             a(this);
-            var f = c(p(d), e);
-            return r(f, b.apply(this, arguments));
+            var f = c(r(d), e);
+            return q(f, b.apply(this, arguments));
           };
         });
         break;
@@ -16351,8 +16400,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         c(b, function(b, c) {
           return function(d, e, f) {
             a(this);
-            var g = c(p(d), e, f);
-            return r(g, b.apply(this, arguments));
+            var g = c(r(d), e, f);
+            return q(g, b.apply(this, arguments));
           };
         });
         break;
@@ -16360,8 +16409,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         c(b, function(b, c) {
           return function(d, e, f, g) {
             a(this);
-            var k = c(p(d), e, f, g);
-            return r(k, b.apply(this, arguments));
+            var k = c(r(d), e, f, g);
+            return q(k, b.apply(this, arguments));
           };
         });
         break;
@@ -16369,18 +16418,18 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         c(b, function(b, c) {
           return function(d, e, f, g, k) {
             a(this);
-            var l = c(p(d), e, f, g, k);
-            return r(l, b.apply(this, arguments));
+            var l = c(r(d), e, f, g, k);
+            return q(l, b.apply(this, arguments));
           };
         });
     }
   }
-  function q(b, d, e) {
+  function p(b, d, e) {
     c(b + "(uint32 location, " + d + "[] v)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
   }
@@ -16388,15 +16437,15 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c(b + "(uint32 location, uint8 transpose, " + d + "[] value)", function(b, c) {
       return function(d, e, f) {
         a(this);
-        var g = c(p(d), e, f);
-        return r(g, b.apply(this, arguments));
+        var g = c(r(d), e, f);
+        return q(g, b.apply(this, arguments));
       };
     });
   }
   if (!this.contextRestoreFns_.length) {
-    var t = this.options.getBoolean("wtf.trace.provider.webgl.replayable", !0), w = this.options.getBoolean("wtf.trace.provider.webgl.embedRemoteImages", !0);
-    wtf.trace.events.createInstance("wtf.webgl#init(any options)")({replayable:t, embedRemoteImages:w});
-    var x = this, p = wtf.trace.providers.WebGLProvider.getHandle, u = wtf.trace.providers.WebGLProvider.setHandle, r = wtf.trace.leaveScope, A = null, z = 0, I = 0, C = wtf.trace.events.createInstance("wtf.webgl#setContext(uint32 handle, uint32 width, uint32 height)", wtf.data.EventFlag.INTERNAL), E = this.contextRestoreFns_;
+    var t = this.options.getBoolean("wtf.trace.provider.webgl.replayable", !0), x = this.options.getBoolean("wtf.trace.provider.webgl.embedRemoteImages", !0);
+    wtf.trace.events.createInstance("wtf.webgl#init(any options)")({replayable:t, embedRemoteImages:x});
+    var y = this, r = wtf.trace.providers.WebGLProvider.getHandle, u = wtf.trace.providers.WebGLProvider.setHandle, q = wtf.trace.leaveScope, B = null, A = 0, I = 0, C = wtf.trace.events.createInstance("wtf.webgl#setContext(uint32 handle, uint32 width, uint32 height)", wtf.data.EventFlag.INTERNAL), E = this.contextRestoreFns_;
     goog.asserts.assert(!E.length);
     c("getContextAttributes()");
     c("isContextLost()");
@@ -16405,7 +16454,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         a(this);
         var e = c(), f = b.apply(this, arguments);
         wtf.trace.appendScopeData("result", f);
-        return r(e, f);
+        return q(e, f);
       };
     });
     c("getExtension(ascii name, bool result)", function(b, c) {
@@ -16413,50 +16462,50 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         a(this);
         var e = c(d, !0), g = b.apply(this, arguments);
         g ? f(this, d, g) : wtf.trace.appendScopeData("result", !1);
-        return r(e, g);
+        return q(e, g);
       };
     });
     c("activeTexture(uint32 texture)");
     c("attachShader(uint32 program, uint32 shader)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("bindAttribLocation(uint32 program, uint32 index, utf8 name)", function(b, c) {
       return function(d, e, f) {
         a(this);
-        var g = c(p(d), e, f);
-        return r(g, b.apply(this, arguments));
+        var g = c(r(d), e, f);
+        return q(g, b.apply(this, arguments));
       };
     });
     c("bindBuffer(uint32 target, uint32 buffer)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(d, p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(d, r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("bindFramebuffer(uint32 target, uint32 framebuffer)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(d, p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(d, r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("bindRenderbuffer(uint32 target, uint32 renderbuffer)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(d, p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(d, r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("bindTexture(uint32 target, uint32 texture)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(d, p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(d, r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("blendColor(float red, float green, float blue, float alpha)");
@@ -16472,7 +16521,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         } else {
           g = e.byteLength, t ? e instanceof ArrayBuffer ? e = new Uint8Array(e) : e instanceof Uint8Array || (e = new Uint8Array(e.buffer)) : e = [], g = c(d, g, f, e);
         }
-        return r(g, b.apply(this, arguments));
+        return q(g, b.apply(this, arguments));
       };
     });
     c("bufferSubData(uint32 target, uint32 offset, uint8[] data)", function(b, c) {
@@ -16480,7 +16529,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         a(this);
         t ? f instanceof ArrayBuffer ? f = new Uint8Array(f) : f instanceof Uint8Array || (f = new Uint8Array(f.buffer)) : f = [];
         var g = c(d, e, f);
-        return r(g, b.apply(this, arguments));
+        return q(g, b.apply(this, arguments));
       };
     });
     c("checkFramebufferStatus(uint32 target)");
@@ -16492,22 +16541,22 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("compileShader(uint32 shader)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("compressedTexImage2D(uint32 target, int32 level, uint32 internalformat, int32 width, int32 height, int32 border, uint8[] data)", function(b, c) {
       return function() {
         a(this);
         var e = c(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], t ? d(arguments[6]) : null);
-        return r(e, b.apply(this, arguments));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("compressedTexSubImage2D(uint32 target, int32 level, int32 xoffset, int32 yoffset, int32 width, int32 height, uint32 format, uint8[] data)", function(b, c) {
       return function() {
         a(this);
         var e = c(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], t ? d(arguments[7]) : null);
-        return r(e, b.apply(this, arguments));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("copyTexImage2D(uint32 target, int32 level, uint32 internalformat, int32 x, int32 y, int32 width, int32 height, int32 border)");
@@ -16531,8 +16580,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("detachShader(uint32 program, uint32 shader)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("disable(uint32 cap)");
@@ -16546,15 +16595,15 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("framebufferRenderbuffer(uint32 target, uint32 attachment, uint32 renderbuffertarget, uint32 renderbuffer)", function(b, c) {
       return function(d, e, f, g) {
         a(this);
-        var k = c(d, e, f, p(g));
-        return r(k, b.apply(this, arguments));
+        var k = c(d, e, f, r(g));
+        return q(k, b.apply(this, arguments));
       };
     });
     c("framebufferTexture2D(uint32 target, uint32 attachment, uint32 textarget, uint32 texture, int32 level)", function(b, c) {
       return function(d, e, f, g, k) {
         a(this);
-        var l = c(d, e, f, p(g), k);
-        return r(l, b.apply(this, arguments));
+        var l = c(d, e, f, r(g), k);
+        return q(l, b.apply(this, arguments));
       };
     });
     c("frontFace(uint32 mode)");
@@ -16562,29 +16611,29 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("getActiveAttrib(uint32 program, uint32 index)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
     c("getActiveUniform(uint32 program, uint32 index)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
     c("getAttachedShaders(uint32 program)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("getAttribLocation(uint32 program, utf8 name)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
     c("getBufferParameter(uint32 target, uint32 pname)");
@@ -16594,54 +16643,54 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("getProgramParameter(uint32 program, uint32 pname)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
     c("getProgramInfoLog(uint32 program)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("getRenderbufferParameter(uint32 target, uint32 pname)");
     c("getShaderParameter(uint32 shader, uint32 pname)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
     c("getShaderPrecisionFormat(uint32 shadertype, uint32 precisiontype)");
     c("getShaderInfoLog(uint32 shader)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("getShaderSource(uint32 shader)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("getTexParameter(uint32 target, uint32 pname)");
     c("getUniform(uint32 program, uint32 location)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), p(e));
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), r(e));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("getUniformLocation(uint32 program, utf8 name, uint32 value)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = x.nextObjectId_++, g = c(p(d), e, f), k = b.apply(this, arguments);
+        var f = y.nextObjectId_++, g = c(r(d), e, f), k = b.apply(this, arguments);
         k && u(k, f);
-        return r(g, k);
+        return q(g, k);
       };
     });
     c("getVertexAttrib(uint32 index, uint32 pname)");
@@ -16658,20 +16707,20 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("linkProgram(uint32 program)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d)), f = b.apply(this, arguments);
+        var e = c(r(d)), f = b.apply(this, arguments);
         if (t) {
-          for (var g = wtf.trace.enterTracingScope(), k = {}, l = this.getProgramParameter.raw.call(this, d, goog.webgl.ACTIVE_ATTRIBUTES), m = 0, q = 0;q < l;++m) {
+          for (var g = wtf.trace.enterTracingScope(), k = {}, l = this.getProgramParameter.raw.call(this, d, goog.webgl.ACTIVE_ATTRIBUTES), m = 0, p = 0;p < l;++m) {
             var s = this.getActiveAttrib.raw.call(this, d, m);
             if (s) {
-              var s = s.name, w = this.getAttribLocation.raw.call(this, d, s);
-              k[s] = w;
-              ++q;
+              var s = s.name, x = this.getAttribLocation.raw.call(this, d, s);
+              k[s] = x;
+              ++p;
             }
           }
-          r(g);
+          q(g);
           wtf.trace.appendScopeData("attributes", k);
         }
-        return r(e, f);
+        return q(e, f);
       };
     });
     c("pixelStorei(uint32 pname, int32 param)");
@@ -16679,8 +16728,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("readPixels(int32 x, int32 y, int32 width, int32 height, uint32 format, uint32 type, uint32 size)", function(b, c) {
       return function(d, e, f, g, k, l, m) {
         a(this);
-        var q = c(d, e, f, g, k, l, m.byteLength);
-        return r(q, b.apply(this, arguments));
+        var p = c(d, e, f, g, k, l, m.byteLength);
+        return q(p, b.apply(this, arguments));
       };
     });
     c("renderbufferStorage(uint32 target, uint32 internalformat, int32 width, int32 height)");
@@ -16689,8 +16738,8 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     c("shaderSource(uint32 shader, utf8 source)", function(b, c) {
       return function(d, e) {
         a(this);
-        var f = c(p(d), e);
-        return r(f, b.apply(this, arguments));
+        var f = c(r(d), e);
+        return q(f, b.apply(this, arguments));
       };
     });
     c("stencilFunc(uint32 func, int32 ref, uint32 mask)");
@@ -16709,15 +16758,15 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           k = null;
           if (t) {
             var l = wtf.trace.enterTracingScope();
-            k = wtf.trace.providers.WebGLProvider.extractImageData(arguments[5], g, w);
-            r(l);
+            k = wtf.trace.providers.WebGLProvider.extractImageData(arguments[5], g, x);
+            q(l);
           }
           k = c(e, f, g, arguments[5].width, arguments[5].height, 0, arguments[3], arguments[4], k ? k.pixels : null, k ? k.dataType : "ignored");
         }
         try {
           b.apply(this, arguments);
         } finally {
-          r(k);
+          q(k);
         }
       };
     });
@@ -16733,15 +16782,15 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           l = null;
           if (t) {
             var m = wtf.trace.enterTracingScope();
-            l = wtf.trace.providers.WebGLProvider.extractImageData(arguments[6], arguments[4], w);
-            r(m);
+            l = wtf.trace.providers.WebGLProvider.extractImageData(arguments[6], arguments[4], x);
+            q(m);
           }
           l = c(e, f, g, k, arguments[6].width, arguments[6].height, arguments[4], arguments[5], l ? l.pixels : [], l ? l.dataType : "ignored");
         }
         try {
           b.apply(this, arguments);
         } finally {
-          r(l);
+          q(l);
         }
       };
     });
@@ -16753,29 +16802,29 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     l("uniform3i", "int32", 3);
     l("uniform4f", "float", 4);
     l("uniform4i", "int32", 4);
-    q("uniform1fv", "float", 1);
-    q("uniform1iv", "int32", 1);
-    q("uniform2fv", "float", 2);
-    q("uniform2iv", "int32", 2);
-    q("uniform3fv", "float", 3);
-    q("uniform3iv", "int32", 3);
-    q("uniform4fv", "float", 4);
-    q("uniform4iv", "int32", 4);
+    p("uniform1fv", "float", 1);
+    p("uniform1iv", "int32", 1);
+    p("uniform2fv", "float", 2);
+    p("uniform2iv", "int32", 2);
+    p("uniform3fv", "float", 3);
+    p("uniform3iv", "int32", 3);
+    p("uniform4fv", "float", 4);
+    p("uniform4iv", "int32", 4);
     s("uniformMatrix2fv", "float", 4);
     s("uniformMatrix3fv", "float", 9);
     s("uniformMatrix4fv", "float", 16);
     c("useProgram(uint32 program)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("validateProgram(uint32 program)", function(b, c) {
       return function(d) {
         a(this);
-        var e = c(p(d));
-        return r(e, b.apply(this, arguments));
+        var e = c(r(d));
+        return q(e, b.apply(this, arguments));
       };
     });
     c("vertexAttrib1f(uint8 indx, float x)");
@@ -16783,7 +16832,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       return function(d, e) {
         a(this);
         var f = c(d, e[0]);
-        return r(f, b.apply(this, arguments));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("vertexAttrib2f(uint8 indx, float x, float y)");
@@ -16791,7 +16840,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       return function(d, e) {
         a(this);
         var f = c(d, e[0], e[1]);
-        return r(f, b.apply(this, arguments));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("vertexAttrib3f(uint8 indx, float x, float y, float z)");
@@ -16799,7 +16848,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       return function(d, e) {
         a(this);
         var f = c(d, e[0], e[1], e[2]);
-        return r(f, b.apply(this, arguments));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("vertexAttrib4f(uint8 indx, float x, float y, float z, float w)");
@@ -16807,7 +16856,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       return function(d, e) {
         a(this);
         var f = c(d, e[0], e[1], e[2], e[3]);
-        return r(f, b.apply(this, arguments));
+        return q(f, b.apply(this, arguments));
       };
     });
     c("vertexAttribPointer(uint8 indx, int32 size, uint32 type, uint8 normalized, int32 stride, uint32 offset)");
@@ -16889,7 +16938,7 @@ wtf.trace.providers.WebGLProvider.extractImageData = function(a, b, c) {
   a = wtf.trace.providers.WebGLProvider.getPixelsFromImageData(e, f, b, a);
   return{pixels:a, dataType:"canvas"};
 };
-// Input 189
+// Input 190
 wtf.trace.providers.WebSocketProvider = function(a) {
   wtf.trace.Provider.call(this, a);
   goog.global.WebSocket && a.getNumber("wtf.trace.provider.websocket", 1) && this.injectWs_();
@@ -16968,7 +17017,7 @@ wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
   e.raw = b;
   this.injectFunction(goog.global, "WebSocket", e);
 };
-// Input 190
+// Input 191
 wtf.trace.providers.WebWorkerProvider = function(a, b) {
   wtf.trace.Provider.call(this, b);
   b.getNumber("wtf.trace.provider.webworker", 1) && (this.injecting_ = b.getBoolean("wtf.trace.provider.webworker.inject", !1), this.childWorkers_ = [], "function" == typeof goog.global.MessagePort && this.injectMessagePort_(), "function" == typeof goog.global.Worker && this.injectBrowserShim_(), goog.global.HTMLDivElement || this.injectProxyWorker_(), a.addListener(this));
@@ -17062,7 +17111,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
     this.setEventHook("message", function(a) {
       wtf.trace.appendScopeData("id", this.workerId_);
     }, this);
-    var q = this;
+    var s = this;
     this.handle_.addEventListener("message", function(a) {
       if (a.data.__wtf_worker_msg__) {
         a.__wtf_ignore__ = !0;
@@ -17074,7 +17123,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
             a.getError() || a.setValue(c.data);
             break;
           case "close":
-            goog.array.remove(b.childWorkers_, q);
+            goog.array.remove(b.childWorkers_, s);
         }
       }
     }, !1);
@@ -17092,16 +17141,16 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
     this.handle_.removeEventListener(a, this.trackers_[a], !1);
     delete this.trackers_[a];
   };
-  for (var q = f.eventInfos, s = 0;s < q.length;s++) {
-    var t = q[s];
+  for (var p = f.eventInfos, s = 0;s < p.length;s++) {
+    var t = p[s];
     Object.defineProperty(e.prototype, "on" + t.name, {configurable:!1, enumerable:!1, get:t.getter, set:t.setter});
   }
   e.prototype.sendMessage = function(a, b) {
     this.handle_.postMessage({__wtf_worker_msg__:!0, command:a, value:b || null});
   };
-  var w = wtf.trace.events.createScope("Worker#postMessage(uint32 id)");
+  var x = wtf.trace.events.createScope("Worker#postMessage(uint32 id)");
   e.prototype.postMessage = function(a, b) {
-    var c = w(this.workerId_);
+    var c = x(this.workerId_);
     try {
       return this.handle_.postMessage.apply(this.handle_, arguments);
     } finally {
@@ -17109,9 +17158,9 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
     }
   };
   if (d.webkitPostMessage) {
-    var x = wtf.trace.events.createScope("Worker#webkitPostMessage(uint32 id)");
+    var y = wtf.trace.events.createScope("Worker#webkitPostMessage(uint32 id)");
     e.prototype.webkitPostMessage = function(a, b) {
-      var c = x(this.workerId_);
+      var c = y(this.workerId_);
       try {
         return this.handle_.webkitPostMessage.apply(this.handle_, arguments);
       } finally {
@@ -17119,15 +17168,15 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ = function() 
       }
     };
   }
-  var p = wtf.trace.events.createInstance("Worker#terminate(uint32 id)");
+  var r = wtf.trace.events.createInstance("Worker#terminate(uint32 id)");
   e.prototype.terminate = function() {
     goog.array.remove(b.childWorkers_, this);
-    p(this.workerId_);
+    r(this.workerId_);
     return this.handle_.terminate.apply(this.handle_, arguments);
   };
-  var u = {}, r = 0;
+  var u = {}, q = 0;
   e.prototype.requestSnapshot = function() {
-    var a = new goog.result.SimpleResult, b = r++;
+    var a = new goog.result.SimpleResult, b = q++;
     u[b] = a;
     this.sendMessage("snapshot", {id:b});
     return a;
@@ -17170,9 +17219,9 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ = function() 
   });
   var l = goog.global.webkitPostMessage;
   if (l) {
-    var q = wtf.trace.events.createScope("DedicatedWorkerGlobalScope#webkitPostMessage()");
+    var p = wtf.trace.events.createScope("DedicatedWorkerGlobalScope#webkitPostMessage()");
     this.injectFunction(goog.global, "webkitPostMessage", function(a, b) {
-      var c = q();
+      var c = p();
       try {
         return l.apply(goog.global, arguments);
       } finally {
@@ -17195,7 +17244,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ = function() 
     }
   }, !1);
 };
-// Input 191
+// Input 192
 wtf.trace.providers.XhrProvider = function(a) {
   wtf.trace.Provider.call(this, a);
   goog.global.XMLHttpRequest && a.getNumber("wtf.trace.provider.xhr", 1) && this.injectXhr_();
@@ -17311,9 +17360,9 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
       wtf.trace.Scope.leave(b);
     }
   };
-  var q = wtf.trace.events.createScope("XMLHttpRequest#abort()");
+  var p = wtf.trace.events.createScope("XMLHttpRequest#abort()");
   e.prototype.abort = function() {
-    var a = q(), b = this.flow_;
+    var a = p(), b = this.flow_;
     this.flow_ = null;
     b && wtf.trace.Flow.terminate(b, "aborted");
     try {
@@ -17337,7 +17386,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   e.raw = b;
   this.injectFunction(goog.global, "XMLHttpRequest", e);
 };
-// Input 192
+// Input 193
 wtf.trace.providers.setup = function(a) {
   var b = a.getOptions();
   !wtf.NODE && b.getBoolean("wtf.trace.replayable", !1) && a.addProvider(new wtf.trace.providers.ReplayProvider(a, b));
@@ -17346,7 +17395,7 @@ wtf.trace.providers.setup = function(a) {
   wtf.NODE || (goog.userAgent.product.CHROME && a.addProvider(new wtf.trace.providers.ChromeDebugProvider(a, b)), goog.userAgent.product.FIREFOX && a.addProvider(new wtf.trace.providers.FirefoxDebugProvider(a, b)), a.addProvider(new wtf.trace.providers.DomProvider(b)), a.addProvider(new wtf.trace.providers.ImageProvider(b)), a.addProvider(new wtf.trace.providers.WebGLProvider(a, b)), a.addProvider(new wtf.trace.providers.WebSocketProvider(b)), a.addProvider(new wtf.trace.providers.WebWorkerProvider(a, 
   b)), a.addProvider(new wtf.trace.providers.XhrProvider(b)));
 };
-// Input 193
+// Input 194
 wtf.trace.prepare = function(a) {
   var b = wtf.trace.TraceManager.getSharedInstance();
   if (b) {
@@ -17357,7 +17406,7 @@ wtf.trace.prepare = function(a) {
   wtf.trace.TraceManager.setSharedInstance(a);
   return a;
 };
-// Input 194
+// Input 195
 wtf.trace.exports = {};
 wtf.trace.exports.ENABLE_EXPORTS = !0;
 wtf.trace.exports.ENABLE_EXPORTS && (goog.exportSymbol("wtf.trace.API_VERSION", wtf.trace.API_VERSION), goog.exportSymbol("wtf.trace.prepare", wtf.trace.prepare), goog.exportSymbol("wtf.trace.shutdown", wtf.trace.shutdown), goog.exportSymbol("wtf.trace.start", wtf.trace.start), goog.exportSymbol("wtf.trace.snapshot", wtf.trace.snapshot), goog.exportSymbol("wtf.trace.snapshotAll", wtf.trace.snapshotAll), goog.exportSymbol("wtf.trace.reset", wtf.trace.reset), goog.exportSymbol("wtf.trace.stop", wtf.trace.stop), 
@@ -17365,7 +17414,7 @@ goog.exportSymbol("wtf.trace.events.createInstance", wtf.trace.events.createInst
 wtf.trace.enterTracingScope), goog.exportSymbol("wtf.trace.leaveScope", wtf.trace.leaveScope), goog.exportSymbol("wtf.trace.appendScopeData", wtf.trace.appendScopeData), goog.exportSymbol("wtf.trace.branchFlow", wtf.trace.branchFlow), goog.exportSymbol("wtf.trace.extendFlow", wtf.trace.extendFlow), goog.exportSymbol("wtf.trace.terminateFlow", wtf.trace.terminateFlow), goog.exportSymbol("wtf.trace.appendFlowData", wtf.trace.appendFlowData), goog.exportSymbol("wtf.trace.clearFlow", wtf.trace.clearFlow), 
 goog.exportSymbol("wtf.trace.spanFlow", wtf.trace.spanFlow), goog.exportSymbol("wtf.trace.mark", wtf.trace.mark), goog.exportSymbol("wtf.trace.timeStamp", wtf.trace.timeStamp), goog.exportSymbol("wtf.trace.beginTimeRange", wtf.trace.beginTimeRange), goog.exportSymbol("wtf.trace.endTimeRange", wtf.trace.endTimeRange), goog.exportSymbol("wtf.trace.ignoreListener", wtf.trace.ignoreListener), goog.exportSymbol("wtf.trace.ignoreDomTree", wtf.trace.ignoreDomTree), goog.exportSymbol("wtf.trace.initializeDomEventProperties", 
 wtf.trace.initializeDomEventProperties), goog.exportSymbol("wtf.trace.instrument", wtf.trace.instrument), goog.exportSymbol("wtf.trace.instrumentType", wtf.trace.instrumentType), goog.exportSymbol("wtf.trace.instrumentTypeSimple", wtf.trace.instrumentTypeSimple));
-// Input 195
+// Input 196
 wtf.trace.node = {};
 wtf.NODE && (wtf.trace.node.start = function(a) {
   wtf.trace.prepare(a);
