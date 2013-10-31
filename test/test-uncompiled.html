@@ -51,6 +51,8 @@
         e.preventDefault();
         wtf.trace.mark('click');
 
+        console.timeStamp('CSI/5');
+
         var rangeA = wtf.trace.beginTimeRange('a');
         var rangeB = wtf.trace.beginTimeRange('b', 'some value');
 

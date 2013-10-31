@@ -182,6 +182,14 @@ wtf.data.Variable.parseSignatureArguments = function(argsString) {
 
 
 /**
+ * Counter of invalid event signature types.
+ * @type {number}
+ * @private
+ */
+wtf.data.Variable.invalidCount_ = 0;
+
+
+/**
  * Parses a signature string and returns the parts.
  * The signature can be of any one of the given forms:
  * {@code namespace.someMethod}, {@code someMethod(uint8 a)},
@@ -209,15 +217,22 @@ wtf.data.Variable.parseSignature = function(signature) {
   // Split signature.
   // 'a.b.c(<params>)'
   // ["a.b.c(t1 x, t1 y, t3 z@3)", "a.b.c", "(<params>)", "<params>"]
+  var invalid = false;
   var signatureParts =
       /^([a-zA-Z0-9_\.#:\$\[\]\"\'\-]+)(\((.*)\)$)?/.exec(signature);
   if (!signatureParts || !signatureParts.length) {
-    throw new Error(
+    goog.global.console.log(
         'Invalid event signature: ' + signature + ' - unable to parse');
+    invalid = true;
   }
-  if (signatureParts[0] != signature) {
-    throw new Error(
+  if (!invalid && signatureParts[0] != signature) {
+    goog.global.console.log(
         'Invalid event signature: ' + signature + ' - not all characters used');
+    invalid = true;
+  }
+  if (invalid) {
+    signatureParts = [
+        null, 'invalid_' + wtf.data.Variable.invalidCount_++, null, null];
   }
 
   var signatureName = signatureParts[1]; // entire name before ()
