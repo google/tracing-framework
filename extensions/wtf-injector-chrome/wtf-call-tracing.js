@@ -134,8 +134,12 @@ function processScript(el) {
 /**
  * Replaces the <script> tag with our own instrumented version.
  * @param {!Document} doc Target document object.
+ * @param {!Window} targetWindow Window.
  */
-function injectScriptElement(doc) {
+function injectScriptElement(targetWindow, doc) {
+  var Node = targetWindow.Node;
+  var HTMLDocument = targetWindow.HTMLDocument;
+  var HTMLScriptElement = targetWindow.HTMLScriptElement;
   var proto = HTMLScriptElement.prototype;
 
   // Listen for sets on innerText.
@@ -195,9 +199,10 @@ function injectScriptElement(doc) {
 
 /**
  * Scans the current page DOM for <script> elements and swaps them out.
+ * @param {!Window} targetWindow Window.
  * @param {!Document} doc Target document object.
  */
-function scanPageScripts(doc) {
+function scanPageScripts(targetWindow, doc) {
   // TODO(benvanik): figure out how to do this reliably. Right now we only get
   //     our options block. Boo.
   // var scripts = doc.querySelectorAll('script');
@@ -207,20 +212,25 @@ function scanPageScripts(doc) {
 /**
  * Prepares and instruments the page with the given options.
  * @param {!Object} options Options.
+ * @param {Window=} opt_window Target window.
  */
-global['wtfi']['prepare'] = function(options) {
+global['wtfi']['prepare'] = function(options, opt_window) {
   global['wtfi']['options'] = options;
 
-  var doc = global.document;
+  // Only do the shared code init on the top window.
+  var targetWindow = opt_window || global;
+  var isTop = opt_window ? opt_window === global.top : true;
+
+  var doc = targetWindow.document;
   if (doc) {
     // Running in page.
-    runSharedInitCode(options);
+    runSharedInitCode(targetWindow, options);
 
     // Inject <script>.
-    injectScriptElement(doc);
+    injectScriptElement(targetWindow, doc);
 
     // Replace any already-existing DOM scripts.
-    scanPageScripts(doc);
+    scanPageScripts(targetWindow, doc);
   } else {
     // Running in worker.
     log('Workers aren\'t supported yet!');
@@ -460,15 +470,18 @@ global['wtfi']['process'] = function(
 // TODO(benvanik): put in an external file, have a HUD, etc.
 /**
  * Runs at prepare time to create global functions/UI/etc.
+ * @param {!Window} targetWindow Window.
  * @param {!Object} options Options.
  */
-function runSharedInitCode(options) {
+function runSharedInitCode(targetWindow, options) {
   var instrumentationType = options['type'] || 'calls';
+  var topWindow = window.top;
+  var isTop = targetWindow === topWindow;
 
   // Add a global tag to let WTF know we are on the page. The extension can
   // then yell at the user for trying to use both at the same time.
-  var firstBlock = !global.__wtfInstrumentationPresent;
-  global.__wtfInstrumentationPresent = true;
+  var firstBlock = !targetWindow.__wtfInstrumentationPresent;
+  targetWindow.__wtfInstrumentationPresent = true;
 
   // Add a big warning div to let users know the proxy is active.
   // This is useful for when the proxy is accidentally left enabled.
@@ -522,16 +535,16 @@ function runSharedInitCode(options) {
   var dataMagnitude = 26; // 2^26 = 67 million records
   var dataSize = 1 << dataMagnitude;
   var dataMask = dataSize - 1;
-  global.__wtfm = global.__wtfm || {};
-  global.__wtfd = global.__wtfd || new Int32Array(1 << dataMagnitude);
-  global.__wtfi = global.__wtfi || 0;
+  targetWindow.__wtfm = topWindow.__wtfm || {};
+  targetWindow.__wtfd = topWindow.__wtfd || new Int32Array(1 << dataMagnitude);
+  targetWindow.__wtfi = topWindow.__wtfi || 0;
   switch (instrumentationType) {
   default:
   case 'calls':
-    global.__wtfEnter = function(id) {
+    targetWindow.__wtfEnter = function(id) {
       __wtfd[__wtfi++ & dataMask] = id;
     };
-    global.__wtfExit = function(id) {
+    targetWindow.__wtfExit = function(id) {
       __wtfd[__wtfi++ & dataMask] = -id;
     };
     break;
@@ -542,30 +555,30 @@ function runSharedInitCode(options) {
     } catch (e) {
       window.alert('Launch Chrome with --js-flags=--allow-natives-syntax');
     }
-    global.__wtfEnter = function(id) {
+    targetWindow.__wtfEnter = function(id) {
       __wtfd[__wtfi++ & dataMask] = id;
       __wtfd[__wtfi++ & dataMask] = getHeapUsage();
     };
-    global.__wtfExit = function(id) {
+    targetWindow.__wtfExit = function(id) {
       __wtfd[__wtfi++ & dataMask] = -id;
       __wtfd[__wtfi++ & dataMask] = getHeapUsage();
     };
     break;
   case 'time':
-    global.__wtfEnter = function(id) {
+    targetWindow.__wtfEnter = function(id) {
       __wtfd[__wtfi++ & dataMask] = id;
-      __wtfd[__wtfi++ & dataMask] = global.performance.now() * 1000;
+      __wtfd[__wtfi++ & dataMask] = targetWindow.performance.now() * 1000;
     };
-    global.__wtfExit = function(id) {
+    targetWindow.__wtfExit = function(id) {
       __wtfd[__wtfi++ & dataMask] = -id;
-      __wtfd[__wtfi++ & dataMask] = global.performance.now() * 1000;
+      __wtfd[__wtfi++ & dataMask] = targetWindow.performance.now() * 1000;
     };
     break;
   }
-  global.__resetTrace = function() {
-    global.__wtfi = 0;
+  targetWindow.__resetTrace = function() {
+    targetWindow.__wtfi = 0;
   };
-  global.__grabTrace = function() {
+  targetWindow.__grabTrace = function() {
     var euri = window.location.href;
     var etitle =
         window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
@@ -587,7 +600,7 @@ function runSharedInitCode(options) {
         '"metadata": {' +
         '  "attributes": ' + attributes +
         '},' +
-        '"modules": ' + JSON.stringify(global.__wtfm) + '}';
+        '"modules": ' + JSON.stringify(targetWindow.__wtfm) + '}';
     var headerLength = headerText.length;
     var header = new Uint8Array(4 + headerLength);
     header[0] = (headerLength) & 0xFF;
@@ -605,8 +618,8 @@ function runSharedInitCode(options) {
     }
     var padBytes = new Uint8Array(padLength);
 
-    var contents = new Uint8Array(global.__wtfd.buffer);
-    contents = contents.subarray(0, global.__wtfi * 4);
+    var contents = new Uint8Array(targetWindow.__wtfd.buffer);
+    contents = contents.subarray(0, targetWindow.__wtfi * 4);
 
     return [
       header,
@@ -614,9 +627,9 @@ function runSharedInitCode(options) {
       contents
     ];
   };
-  global.__showTrace = function() {
+  targetWindow.__showTrace = function() {
     // Grab trace data and combine into a single buffer.
-    var buffers = global.__grabTrace();
+    var buffers = targetWindow.__grabTrace();
     var totalLength = 0;
     for (var n = 0; n < buffers.length; n++) {
       totalLength += buffers[n].length;
@@ -655,9 +668,9 @@ function runSharedInitCode(options) {
         //'http://localhost:8080/app/maindisplay.html';
     window.open(uiUrl + '?expect_data', '_blank');
   };
-  global.__saveTrace = function(opt_filename) {
+  targetWindow.__saveTrace = function(opt_filename) {
     // Grab trace blob URL.
-    var buffers = global.__grabTrace();
+    var buffers = targetWindow.__grabTrace();
     var blob = new Blob(buffers, {
       type: 'application/octet-stream'
     });

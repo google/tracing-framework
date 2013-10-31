@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Cool App</title>
+  </head>
+  <body>
+    <div id="hello">
+      Your app here!
+      <a id="someLink" href="">Click!</a>
+      <script>
+        var remoteScript = document.createElement('script');
+        remoteScript.src = 'test-scripts-remote.js';
+        remoteScript.onload = function() {
+          console.log('remote script loaded!');
+        };
+        document.body.appendChild(remoteScript);
+      </script>
+      <iframe src="test-iframe-child.html"></iframe>
+    </div>
+  </body>
+</html>

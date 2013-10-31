@@ -26,46 +26,75 @@ var log = window.console ?
  * This is called on startup in the content-script context.
  */
 function main() {
+  var topWindow = window.top;
+  var isTop = window.top === window;
+
+  // Check the top window for options.
+  var options = null;
+  var optionsEl = topWindow.document.querySelector('x-wtf-options');
+  if (optionsEl) {
+    // Options exist in the DOM, use those.
+    options = JSON.parse(optionsEl.text);
+  }
+
   // Grab options - if not found, not injected.
-  var options = fetchOptions();
+  if (!options) {
+    options = fetchOptions(topWindow);
+  }
   if (!options) {
     return;
   }
 
+  // Add options to the document for other frames/etc to find.
+  if (!optionsEl) {
+    optionsEl = document.createElement('x-wtf-options');
+    optionsEl.text = JSON.stringify(options);
+    topWindow.document.documentElement.appendChild(optionsEl);
+    //topWindow.document.writeln(
+    //    '<x-wtf-options>' + JSON.stringify(options) + '</x-wtf-options>');
+  }
+
   if (options['__instrumented__']) {
     // Instrumentation mode.
-    injectScriptFile(chrome.extension.getURL('third_party/falafel.js'));
-    injectScriptFile(chrome.extension.getURL('wtf-call-tracing.js'));
+    if (isTop) {
+      injectScriptFile(chrome.extension.getURL('third_party/falafel.js'));
+      injectScriptFile(chrome.extension.getURL('wtf-call-tracing.js'));
+    }
     injectScriptFunction(function(options) {
-      wtfi.prepare(options);
+      window.top.wtfi.prepare(options, window);
     }, [
       options
     ]);
   } else {
     // Normal tracing mode.
     // Inject the tracing framework script and the prepare function.
-    var traceScriptUrl =
+    if (isTop) {
+      var traceScriptUrl =
         chrome.extension.getURL('wtf_trace_web_js_compiled.js');
-    injectScriptFunction(function(traceScriptUrl) {
-      window.WTF_TRACE_SCRIPT_URL = traceScriptUrl;
-    }, [traceScriptUrl]);
-    injectScriptFile(traceScriptUrl);
+      injectScriptFunction(function(traceScriptUrl) {
+        window.WTF_TRACE_SCRIPT_URL = traceScriptUrl;
+      }, [traceScriptUrl]);
+      injectScriptFile(traceScriptUrl);
+    }
     injectScriptFunction(function(options) {
-      wtf.trace.prepare(options);
+      window.top.wtf.trace.prepare(options, window);
     }, [
       options
     ]);
 
-    // Inject addons, if required.
-    var addons = injectAddons(options['wtf.addons'] || []);
-
-    // Inject preparation code to start tracing with the desired options.
-    injectScriptFunction(startTracing, [
-      addons
-    ]);
+    if (isTop) {
+      // Inject addons, if required.
+      var addons = injectAddons(options['wtf.addons'] || []);
+      // Inject preparation code to start tracing with the desired options.
+      injectScriptFunction(startTracing, [
+        addons
+      ]);
+    }
   }
 
-  setupCommunications();
+  if (isTop) {
+    setupCommunications();
+  }
 };
 
 
