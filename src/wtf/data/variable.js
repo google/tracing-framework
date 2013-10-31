@@ -232,7 +232,7 @@ wtf.data.Variable.parseSignature = function(signature) {
   }
   if (invalid) {
     signatureParts = [
-        null, 'invalid_' + wtf.data.Variable.invalidCount_++, null, null];
+      null, 'invalid_' + wtf.data.Variable.invalidCount_++, null, null];
   }
 
   var signatureName = signatureParts[1]; // entire name before ()
