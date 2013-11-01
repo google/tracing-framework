@@ -82,6 +82,13 @@ wtf.io.Blob.prototype.readAsText = goog.nullFunction;
 
 
 /**
+ * Returns the native object wrapped by this blob.
+ * @return {Object} Blob object.
+ */
+wtf.io.Blob.prototype.toNative = goog.nullFunction;
+
+
+/**
  * Creates a blob from the given blob parts.
  * @param {!Array.<ArrayBuffer|ArrayBufferView|wtf.io.Blob|Blob|string>} parts
  *     Blob parts that will be concatenated into the new blob.
@@ -290,6 +297,19 @@ wtf.io.BrowserBlob_.prototype.readAsText = function(callback, opt_scope) {
 };
 
 
+/**
+ * @override
+ */
+wtf.io.BrowserBlob_.prototype.toNative = function() {
+  return this.blob_;
+};
+
+
+goog.exportProperty(
+    wtf.io.BrowserBlob_.prototype, 'toNative',
+    wtf.io.BrowserBlob_.prototype.toNative);
+
+
 
 /**
  * A blob implementation for node.js based on buffers.
@@ -460,3 +480,16 @@ wtf.io.NodeBlob_.prototype.readAsText = function(callback, opt_scope) {
   // TODO(benvanik): make this async?
   callback.call(opt_scope, result);
 };
+
+
+/**
+ * @override
+ */
+wtf.io.NodeBlob_.prototype.toNative = function() {
+  return this.buffer_;
+};
+
+
+goog.exportProperty(
+    wtf.io.NodeBlob_.prototype, 'toNative',
+    wtf.io.NodeBlob_.prototype.toNative);
