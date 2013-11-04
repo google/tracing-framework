@@ -4,13 +4,17 @@
     <title>Cool App</title>
     <script src="test-scripts-head.js"></script>
     <script>
-      console.log('head inline');
+      (function headInline() {
+        console.log('head inline');
+      })();
     </script>
   </head>
   <body>
     <script src="test-scripts-body-pre.js"></script>
     <script>
-      console.log('body pre inline');
+      (function bodyPreInline() {
+        console.log('body pre inline');
+      })();
     </script>
     <div id="hello">
       Your app here!
@@ -29,7 +33,9 @@
       document.body.appendChild(remoteScript);
     </script>
     <script>
-      console.log('body post inline');
+      (function bodyPostInline() {
+        console.log('body post inline');
+      })();
     </script>
     <script src="test-scripts-body-post.js"></script>
   </body>

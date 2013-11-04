@@ -1,1 +1,3 @@
-console.log('body pre');
+(function bodyPre() {
+  console.log('body pre');
+})();

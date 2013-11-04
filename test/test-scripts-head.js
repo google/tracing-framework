@@ -1,1 +1,3 @@
-console.log('head');
+(function head() {
+  console.log('head');
+})();
