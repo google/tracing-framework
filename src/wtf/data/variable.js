@@ -221,12 +221,12 @@ wtf.data.Variable.parseSignature = function(signature) {
   var signatureParts =
       /^([a-zA-Z0-9_\.#:\$\[\]\"\'\-]+)(\((.*)\)$)?/.exec(signature);
   if (!signatureParts || !signatureParts.length) {
-    goog.global.console.log(
+    goog.global.console.warn(
         'Invalid event signature: ' + signature + ' - unable to parse');
     invalid = true;
   }
   if (!invalid && signatureParts[0] != signature) {
-    goog.global.console.log(
+    goog.global.console.warn(
         'Invalid event signature: ' + signature + ' - not all characters used');
     invalid = true;
   }
