@@ -255,7 +255,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.extensionMessage_ =
     function(rawData) {
   var tracingScope = wtf.trace.enterTracingScope();
 
-  var data = goog.global.JSON.parse(rawData);
+  var data = goog.isString(rawData) ? goog.global.JSON.parse(rawData) : rawData;
   switch (data['command']) {
     case 'debugger_data':
       this.processDebuggerRecords_(data['records']);

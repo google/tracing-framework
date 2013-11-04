@@ -114,6 +114,11 @@ wtf.ui.Dialog.EventType = {
 wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   var dom = this.getDom();
 
+  // Create wrapper DOM.
+  var wrapper = dom.createElement(goog.dom.TagName.DIV);
+  goog.dom.classes.add(wrapper, goog.getCssName('wtfReset'));
+  goog.style.setStyle(wrapper, 'display', 'block');
+
   // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(el, goog.getCssName('k'));
@@ -124,7 +129,8 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   dom.appendChild(el, rootElement);
 
   // Add dialog DOM to parent element instead of root user element.
-  dom.appendChild(parentElement, el);
+  dom.appendChild(wrapper, el);
+  dom.appendChild(parentElement, wrapper);
   this.center();
 
   // Add after layout to prevent sliding.

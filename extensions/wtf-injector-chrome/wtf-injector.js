@@ -31,10 +31,14 @@ function main() {
 
   // Check the top window for options.
   var options = null;
-  var optionsEl = topWindow.document.querySelector('x-wtf-options');
-  if (optionsEl) {
-    // Options exist in the DOM, use those.
-    options = JSON.parse(optionsEl.text);
+  try {
+    var optionsEl = topWindow.document.querySelector('x-wtf-options');
+    if (optionsEl) {
+      // Options exist in the DOM, use those.
+      options = JSON.parse(optionsEl.text);
+    }
+  } catch (e) {
+    // Failed, likely because of cross-domain iframe issues.
   }
 
   // Grab options - if not found, not injected.
@@ -47,11 +51,13 @@ function main() {
 
   // Add options to the document for other frames/etc to find.
   if (!optionsEl) {
-    optionsEl = document.createElement('x-wtf-options');
-    optionsEl.text = JSON.stringify(options);
-    topWindow.document.documentElement.appendChild(optionsEl);
-    //topWindow.document.writeln(
-    //    '<x-wtf-options>' + JSON.stringify(options) + '</x-wtf-options>');
+    try {
+      optionsEl = document.createElement('x-wtf-options');
+      optionsEl.text = JSON.stringify(options);
+      topWindow.document.documentElement.appendChild(optionsEl);
+    } catch (e) {
+      // Failed, likely because of cross-domain iframe issues.
+    }
   }
 
   if (options['__instrumented__']) {
@@ -169,7 +175,8 @@ function fetchOptions() {
     }
     return JSON.parse(xhr.responseText);
   } catch(e) {
-    log('Failed to parse WTF injection options (falling back to headers)...');
+    log('Failed to parse WTF injection options (falling back to headers)... ' +
+        'See https://code.google.com/p/chromium/issues/detail?id=295829');
 
     // Try the headers.
     try {
@@ -179,7 +186,15 @@ function fetchOptions() {
       var optionsData = xhr.getResponseHeader('X-WTF-Options');
       if (!optionsData) {
         log('Failed to load WTF injection options from header:' + headerUrl);
-        return null;
+        log('Using defaults for settings :(');
+        return {
+          'wtf.injector': true,
+          'wtf.injector.failed': true,
+          'wtf.trace.session.bufferSize': 6 * 1024 * 1024,
+          'wtf.trace.session.maximumMemoryUsage': 512 * 1024 * 1024,
+          'wtf.trace.provider.chromeDebug.present': true,
+          'wtf.trace.provider.chromeDebug.tracing': false
+        };
       }
       return JSON.parse(optionsData);
     } catch(e) {

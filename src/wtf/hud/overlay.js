@@ -36,6 +36,7 @@ goog.require('wtf.ipc');
 goog.require('wtf.ipc.Channel');
 goog.require('wtf.trace');
 goog.require('wtf.trace.util');
+goog.require('wtf.ui.ErrorDialog');
 goog.require('wtf.ui.ResizableControl');
 goog.require('wtf.ui.SettingsDialog');
 goog.require('wtf.ui.icons');
@@ -515,6 +516,19 @@ wtf.hud.Overlay.prototype.saveSnapshotClicked_ = function(opt_e) {
  * @private
  */
 wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
+  // If we failed to load settings from the injector, just yell at the user.
+  if (this.options_.getBoolean('wtf.injector.failed', false)) {
+    wtf.ui.ErrorDialog.show(
+        'Unable to retrieve settings',
+        'The extension could not load/store your settings due to <a ' +
+        'target="_blank" ' +
+        'href="https://code.google.com/p/chromium/issues/detail?id=295829">' +
+        'Chrome bug 295829</a>. You won\'t be able to change them until it ' +
+        'is fixed. Boo.',
+        this.getDom());
+    return;
+  }
+
   // Show settings dialog.
   var dom = this.getDom();
   var body = dom.getDocument().body;
