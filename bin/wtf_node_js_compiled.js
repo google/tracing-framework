@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13832064E5;
+  return 13835556E5;
 };
 wtf.version.getCommit = function() {
-  return "94273c0e36ccd8b7addc79e1e5134332a576745d";
+  return "dd9c6db03959931f4feac6720a72e674c36cac61";
 };
 wtf.version.toString = function() {
-  return "2013.10.31-1";
+  return "2013.11.4-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -8857,6 +8857,7 @@ wtf.io.Blob.prototype.slice = goog.nullFunction;
 wtf.io.Blob.prototype.close = goog.nullFunction;
 wtf.io.Blob.prototype.readAsArrayBuffer = goog.nullFunction;
 wtf.io.Blob.prototype.readAsText = goog.nullFunction;
+wtf.io.Blob.prototype.toNative = goog.nullFunction;
 wtf.io.Blob.create = function(a, b) {
   var c = wtf.NODE ? new wtf.io.NodeBlob_ : new wtf.io.BrowserBlob_;
   c.init(a, b);
@@ -8941,6 +8942,10 @@ wtf.io.BrowserBlob_.prototype.readAsText = function(a, b) {
     a.call(b, "");
   }
 };
+wtf.io.BrowserBlob_.prototype.toNative = function() {
+  return this.blob_;
+};
+goog.exportProperty(wtf.io.BrowserBlob_.prototype, "toNative", wtf.io.BrowserBlob_.prototype.toNative);
 wtf.io.NodeBlob_ = function(a) {
   this.buffer_ = null;
   this.contentType_ = "";
@@ -9004,6 +9009,10 @@ wtf.io.NodeBlob_.prototype.readAsArrayBuffer = function(a, b) {
 wtf.io.NodeBlob_.prototype.readAsText = function(a, b) {
   a.call(b, this.buffer_.toString());
 };
+wtf.io.NodeBlob_.prototype.toNative = function() {
+  return this.buffer_;
+};
+goog.exportProperty(wtf.io.NodeBlob_.prototype, "toNative", wtf.io.NodeBlob_.prototype.toNative);
 // Input 91
 wtf.io.StringTable = function() {
   this.values_ = [];
@@ -15320,7 +15329,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.sendMessage_ = function(a) {
 };
 wtf.trace.providers.ChromeDebugProvider.prototype.extensionMessage_ = function(a) {
   var b = wtf.trace.enterTracingScope();
-  a = goog.global.JSON.parse(a);
+  a = goog.isString(a) ? goog.global.JSON.parse(a) : a;
   switch(a.command) {
     case "debugger_data":
       this.processDebuggerRecords_(a.records);
