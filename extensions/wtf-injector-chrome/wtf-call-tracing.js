@@ -71,10 +71,11 @@ function hideActivityIndicator(doc) {
 /**
  * Processes a script element.
  * @param {!HTMLScriptElement} el Input script element.
+ * @param {boolean=} opt_synchronous Whether to do fetches synchronously.
  * @return {!HTMLScriptElement} Processed script element. Likely the same as the
  *      input element.
  */
-function processScript(el) {
+function processScript(el, opt_synchronous) {
   var doc = el.ownerDocument;
   if (el.text || el.innerText) {
     // Synchronous block.
@@ -93,8 +94,34 @@ function processScript(el) {
     }
     hideActivityIndicator(doc);
     return el;
-  } else {
-    // Async src.
+  } else if (el.src && el.src.length && opt_synchronous) {
+    // Synchornous src.
+    log('process of sync script', el);
+    showActivityIndicator(doc);
+    // Don't actually add the element yet - wait. We fake the add here so that
+    // we can replace it with the modified one later.
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', el.src, false);
+    xhr.send();
+
+    var responseText = xhr.responseText;
+    var resultText = global['wtfi']['process'](
+        xhr.responseText,
+        nextModuleId++,
+        global['wtfi']['options'],
+        el.src);
+    el['__wtfi__'] = true;
+    el.src = null;
+    el.text = resultText;
+    var loadEvent = new Event('load');
+    loadEvent.target = el;
+    loadEvent.srcElement = el;
+    el.dispatchEvent(loadEvent);
+    hideActivityIndicator(doc);
+
+    return el;
+  } else if (el.src && el.src.length && !opt_synchronous) {
+    // Asynchronous src.
     log('process of async script', el);
     showActivityIndicator(doc);
     // Don't actually add the element yet - wait. We fake the add here so that
@@ -104,6 +131,7 @@ function processScript(el) {
       replacementEl: doc.createElement('script'),
       src: el.src
     };
+
     // TODO(benvanik): dispatch to web worker.
     var xhr = new XMLHttpRequest();
     xhr.onload = function(e) {
@@ -124,9 +152,15 @@ function processScript(el) {
       el.dispatchEvent(loadEvent);
       hideActivityIndicator(doc);
     };
-    xhr.open('GET', asyncScript.src, true);
+    xhr.open('GET', asyncScript.src, !opt_synchronous);
     xhr.send();
+
+    // Return replacement <script> - we'll swap it later.
+    asyncScript.replacementEl['__wtfi__'] = true;
     return asyncScript.replacementEl;
+  } else {
+    log('unknown script type', el);
+    return el;
   }
 };
 
@@ -183,15 +217,72 @@ function injectScriptElement(targetWindow, doc) {
   };
 
   // Replace document.createElement so we can hook new script elements.
-  var originalCreateElement = HTMLDocument.prototype.createElement;
-  HTMLDocument.prototype.createElement = function createElement(tagName) {
-    if (tagName.toLowerCase() == 'script') {
-      // <script>.
-      var result = originalCreateElement.apply(this, arguments);
-      log('could instrument <script>', result);
-      return result;
+  // var originalCreateElement = HTMLDocument.prototype.createElement;
+  // HTMLDocument.prototype.createElement = function createElement(tagName) {
+  //   if (tagName.toLowerCase() == 'script') {
+  //     // <script>.
+  //     var result = originalCreateElement.apply(this, arguments);
+  //     log('could instrument <script>', result);
+  //     return result;
+  //   } else {
+  //     return originalCreateElement.apply(this, arguments);
+  //   }
+  // };
+};
+
+
+/**
+ * Instruments document.write* to look for script additions.
+ * @param {!Document} doc Target document object.
+ * @param {!Window} targetWindow Window.
+ */
+function injectDocumentWrite(targetWindow, doc) {
+  function processMarkup(markup) {
+    if (markup.indexOf('<script ') == -1) {
+      // Probably not a script tag. Ignore.
+      return false;
+    }
+
+    // We hackily do this by creating the DOM inside of a non-document-rooted
+    // div and query all scripts. This lets us find multiple scripts/etc and
+    // not have to worry about parsing HTML ourselves.
+    var div = doc.createElement('div');
+    div.innerHTML = markup;
+    var scripts = div.querySelectorAll('script');
+    if (!scripts || !scripts.length) {
+      return false;
+    }
+
+    log('document.write* of scripts', scripts);
+
+    // Process each script.
+    // Since document.write* is synchronous, we must fetch and process inline.
+    for (var n = 0; n < scripts.length; n++) {
+      var script = scripts[n];
+      var processedScript = processScript(script, true);
+      originalDocWrite.call(doc, processedScript.outerHTML);
+    }
+
+    // TODO(benvanik): ensure we aren't eating other stuff that needs to go
+    // into the DOM.
+    return true;
+  };
+
+  var originalDocWrite = doc.write;
+  doc.write = function write(markup) {
+    if (processMarkup(markup)) {
+      return;
     } else {
-      return originalCreateElement.apply(this, arguments);
+      return originalDocWrite.apply(this, arguments);
+    }
+  };
+
+  var originalDocWriteLn = doc.writeln;
+  doc.writeln = function writeln(line) {
+    if (processMarkup(line)) {
+      return;
+    } else {
+      return originalDocWriteLn.apply(this, arguments);
     }
   };
 };
@@ -228,6 +319,9 @@ global['wtfi']['prepare'] = function(options, opt_window) {
 
     // Inject <script>.
     injectScriptElement(targetWindow, doc);
+
+    // Inject document.write*.
+    injectDocumentWrite(targetWindow, doc);
 
     // Replace any already-existing DOM scripts.
     scanPageScripts(targetWindow, doc);
