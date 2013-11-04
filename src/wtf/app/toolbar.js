@@ -78,6 +78,10 @@ wtf.app.Toolbar = function(documentView, parentElement) {
       goog.getCssName('buttonOpen'),
       goog.getCssName('buttonOpenDisclosure'), [
         {
+          name: 'Open from File',
+          command: 'open_local_trace'
+        },
+        {
           name: 'Open from Drive',
           command: 'open_drive_trace'
         }
@@ -85,6 +89,10 @@ wtf.app.Toolbar = function(documentView, parentElement) {
   this.setupDropDownButton(
       goog.getCssName('buttonSave'),
       goog.getCssName('buttonSaveDisclosure'), [
+        {
+          name: 'Save to File',
+          command: 'save_local_trace'
+        },
         {
           name: 'Save to Drive',
           command: 'save_drive_trace'
