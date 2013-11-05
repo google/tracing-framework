@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13835556E5;
+  return 1383642E6;
 };
 wtf.version.getCommit = function() {
-  return "dd9c6db03959931f4feac6720a72e674c36cac61";
+  return "3a41b47f033ff13d47021a30806fc18eaffe5b21";
 };
 wtf.version.toString = function() {
-  return "2013.11.4-1";
+  return "2013.11.5-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -6293,8 +6293,8 @@ wtf.data.Variable.parseSignature = function(a) {
   var b = a.indexOf("(");
   a = -1 != b ? a.substr(0, b).replace(/ /g, "") + a.substr(b) : a.replace(/ /g, "");
   var b = !1, c = /^([a-zA-Z0-9_\.#:\$\[\]\"\'\-]+)(\((.*)\)$)?/.exec(a);
-  c && c.length || (goog.global.console.log("Invalid event signature: " + a + " - unable to parse"), b = !0);
-  b || c[0] == a || (goog.global.console.log("Invalid event signature: " + a + " - not all characters used"), b = !0);
+  c && c.length || (goog.global.console.warn("Invalid event signature: " + a + " - unable to parse"), b = !0);
+  b || c[0] == a || (goog.global.console.warn("Invalid event signature: " + a + " - not all characters used"), b = !0);
   b && (c = [null, "invalid_" + wtf.data.Variable.invalidCount_++, null, null]);
   b = c[1];
   c = c[3];
