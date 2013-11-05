@@ -68,14 +68,43 @@ function hideActivityIndicator(doc) {
 };
 
 
+var resolveCache = null;
+/**
+ * Resolves a URL to an absolute path.
+ * @param {string} baseUrl Base URL.
+ * @param {string} url Target URL.
+ */
+var resolveUrl = function(baseUrl, url) {
+  if (!resolveCache) {
+    var iframe = document.createElement('iframe');
+    document.documentElement.appendChild(iframe);
+    var doc = iframe.contentWindow.document;
+    var base = doc.createElement('base');
+    doc.documentElement.appendChild(base);
+    var a = doc.createElement('a');
+    doc.documentElement.appendChild(a);
+    iframe.parentNode.removeChild(iframe);
+    resolveCache = {
+      iframe: iframe,
+      base: base,
+      a: a
+    };
+  }
+  resolveCache.base.href = baseUrl;
+  resolveCache.a.href = url;
+  return resolveCache.a.href;
+};
+
+
 /**
  * Processes a script element.
  * @param {!HTMLScriptElement} el Input script element.
  * @param {boolean=} opt_synchronous Whether to do fetches synchronously.
+ * @param {string=} opt_baseUrl Base URL override.
  * @return {!HTMLScriptElement} Processed script element. Likely the same as the
  *      input element.
  */
-function processScript(el, opt_synchronous) {
+function processScript(el, opt_synchronous, opt_baseUrl) {
   var doc = el.ownerDocument;
   if (el.text || el.innerText) {
     // Synchronous block.
@@ -93,31 +122,35 @@ function processScript(el, opt_synchronous) {
       el.innerText = resultText;
     }
     hideActivityIndicator(doc);
+    el['__wtfi__'] = true;
     return el;
   } else if (el.src && el.src.length && opt_synchronous) {
-    // Synchornous src.
+    // Synchronous src.
     log('process of sync script', el);
     showActivityIndicator(doc);
-    // Don't actually add the element yet - wait. We fake the add here so that
-    // we can replace it with the modified one later.
+    var src = opt_baseUrl ? resolveUrl(opt_baseUrl, el.getAttribute('src')) : el.src;
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', el.src, false);
+    xhr.onload = function(e) {
+      if (xhr.status != 200) {
+        return;
+      }
+      var responseText = xhr.responseText;
+      var resultText = global['wtfi']['process'](
+          xhr.responseText,
+          nextModuleId++,
+          global['wtfi']['options'],
+          src);
+      el['__wtfi__'] = true;
+      el.src = null;
+      el.text = resultText;
+      var loadEvent = new Event('load');
+      loadEvent.target = el;
+      loadEvent.srcElement = el;
+      el.dispatchEvent(loadEvent);
+      hideActivityIndicator(doc);
+    };
+    xhr.open('GET', src, false);
     xhr.send();
-
-    var responseText = xhr.responseText;
-    var resultText = global['wtfi']['process'](
-        xhr.responseText,
-        nextModuleId++,
-        global['wtfi']['options'],
-        el.src);
-    el['__wtfi__'] = true;
-    el.src = null;
-    el.text = resultText;
-    var loadEvent = new Event('load');
-    loadEvent.target = el;
-    loadEvent.srcElement = el;
-    el.dispatchEvent(loadEvent);
-    hideActivityIndicator(doc);
 
     return el;
   } else if (el.src && el.src.length && !opt_synchronous) {
@@ -129,12 +162,15 @@ function processScript(el, opt_synchronous) {
     var asyncScript = {
       el: el,
       replacementEl: doc.createElement('script'),
-      src: el.src
+      src: opt_baseUrl ? resolveUrl(opt_baseUrl, el.getAttribute('src')) : el.src
     };
 
     // TODO(benvanik): dispatch to web worker.
     var xhr = new XMLHttpRequest();
     xhr.onload = function(e) {
+      if (xhr.status != 200) {
+        return;
+      }
       var responseText = xhr.responseText;
       var resultText = global['wtfi']['process'](
           xhr.responseText,
@@ -237,10 +273,24 @@ function injectScriptElement(targetWindow, doc) {
  * @param {!Window} targetWindow Window.
  */
 function injectDocumentWrite(targetWindow, doc) {
+  var stackContainer = new Error();
   function processMarkup(markup) {
     if (markup.indexOf('<script ') == -1) {
       // Probably not a script tag. Ignore.
       return false;
+    }
+
+    // Try really hard to get base URLs.
+    var baseUrl = arguments.callee.caller.caller['__src'];
+    if (!baseUrl) {
+      var originalPrepare = Error.prepareStackTrace;
+      Error.prepareStackTrace = function(e, callSites) {
+        return callSites;
+      };
+      Error.captureStackTrace(stackContainer);
+      var stack = stackContainer.stack;
+      Error.prepareStackTrace = originalPrepare;
+      baseUrl = stack[2].getFileName();
     }
 
     // We hackily do this by creating the DOM inside of a non-document-rooted
@@ -259,8 +309,10 @@ function injectDocumentWrite(targetWindow, doc) {
     // Since document.write* is synchronous, we must fetch and process inline.
     for (var n = 0; n < scripts.length; n++) {
       var script = scripts[n];
-      var processedScript = processScript(script, true);
-      originalDocWrite.call(doc, processedScript.outerHTML);
+      var processedScript = processScript(script, true, baseUrl);
+      // Eval in window context - with our sourceURL tag this lets the code
+      // show in the dev tools correctly.
+      eval.call(targetWindow, processedScript.text);
     }
 
     // TODO(benvanik): ensure we aren't eating other stuff that needs to go
@@ -276,6 +328,7 @@ function injectDocumentWrite(targetWindow, doc) {
       return originalDocWrite.apply(this, arguments);
     }
   };
+  doc.write['raw'] = originalDocWrite;
 
   var originalDocWriteLn = doc.writeln;
   doc.writeln = function writeln(line) {
@@ -285,6 +338,7 @@ function injectDocumentWrite(targetWindow, doc) {
       return originalDocWriteLn.apply(this, arguments);
     }
   };
+  doc.writeln['raw'] = originalDocWriteLn;
 };
 
 
@@ -294,9 +348,41 @@ function injectDocumentWrite(targetWindow, doc) {
  * @param {!Document} doc Target document object.
  */
 function scanPageScripts(targetWindow, doc) {
-  // TODO(benvanik): figure out how to do this reliably. Right now we only get
-  //     our options block. Boo.
-  // var scripts = doc.querySelectorAll('script');
+  // In Firefox we could use this:
+  // https://developer.mozilla.org/en-US/docs/Web/API/element.onbeforescriptexecute
+  // doc.addEventListener('beforescriptexecute', function(e) {
+  //   console.log('before', e);
+  // }, true);
+
+  // It's possible to get in the crazy situation where we actually have access
+  // to the <script> *before it's done loading*. In that case, we are kind of
+  // hosed.
+
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      for (var n = 0; n < mutation.addedNodes.length; n++) {
+        var node = mutation.addedNodes[n];
+        if (node instanceof HTMLScriptElement && !node['__wtfi__'] &&
+            !node.getAttribute('__wtfi__')) {
+          var processedScript = processScript(node, true);
+          if (processedScript != node) {
+            node.parentNode.replaceChild(node, processedScript);
+          }
+        }
+      }
+    });
+  });
+  var target = doc.documentElement;
+  observer.observe(target, {
+    childList: true,
+    subtree: true
+  });
+
+  // Kill the observer when the document loads so that we don't keep listening
+  // for all DOM mutations. The other hooks should catch everything else.
+  doc.addEventListener('DOMContentLoaded', function() {
+    observer.disconnect();
+  }, false);
 };
 
 
@@ -459,7 +545,13 @@ global['wtfi']['process'] = function(
   // optimization, which drammatically changes memory generation behavior.
   var tryCatchMode = !trackHeap && !trackTime;
   var targetCode = falafel(sourceText, function(node) {
-    if (node.type == 'BlockStatement') {
+    if (node.type == 'FunctionDeclaration') {
+      // TODO(benvanik): find a way to instrument this with the wrapper.
+    } else if (node.type == 'FunctionExpression') {
+      // Wrap with our wrapper to pass in source info.
+      // TODO(benvanik): find a way to remove this.
+      node.update('__wtfw(__wtfb, ' + node.source() + ')');
+    } else if (node.type == 'BlockStatement') {
       var parent = node.parent;
       if (!isFunctionBlock(node)) {
         return;
@@ -535,16 +627,19 @@ global['wtfi']['process'] = function(
         node.update('{__wtfExit(__wtfId); return;}');
       }
     } else if (node.type == 'Program') {
-      node.update([
-        node.source(),
-        //'\n//@ sourceMappingURL=' + url
-        //'\n//@ sourceURL=' + url
-      ].join(''))
+      // node.update([
+      //   node.source(),
+      //   //'\n//@ sourceMappingURL=' + url
+      //   //'\n//@ sourceURL=' + url
+      // ].join(''))
     }
   });
 
   // Add in the module map to the code.
+  var sourceUrl = url == 'inline' ? url + moduleId : url;
   var transformedText = [
+    '//# sourceURL=' + sourceUrl,
+    'var __wtfb = "' + url + '"',
     '__wtfm[' + moduleId + '] = {' +
         '"src": "' + url + '",' +
         '"fns": [' + fns.join(',') + ']};',
@@ -669,6 +764,10 @@ function runSharedInitCode(targetWindow, options) {
     };
     break;
   }
+  targetWindow.__wtfw = function(__wtfb, f) {
+    f['__src'] = __wtfb;
+    return f;
+  };
   targetWindow.__resetTrace = function() {
     targetWindow.__wtfi = 0;
   };
