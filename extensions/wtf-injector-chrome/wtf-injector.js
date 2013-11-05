@@ -67,7 +67,11 @@ function main() {
       injectScriptFile(chrome.extension.getURL('wtf-call-tracing.js'));
     }
     injectScriptFunction(function(options) {
-      window.top.wtfi.prepare(options, window);
+      // If we are nested in an iframe, protect against cross-origin errors.
+      try {
+        window.top.wtfi.prepare(options, window);
+      } catch (e) {
+      }
     }, [
       options
     ]);
@@ -83,7 +87,11 @@ function main() {
       injectScriptFile(traceScriptUrl);
     }
     injectScriptFunction(function(options) {
-      window.top.wtf.trace.prepare(options, window);
+      // If we are nested in an iframe, protect against cross-origin errors.
+      try {
+        window.top.wtf.trace.prepare(options, window);
+      } catch (e) {
+      }
     }, [
       options
     ]);
