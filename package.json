@@ -1,6 +1,6 @@
 {
   "name": "tracing-framework",
-  "version": "2013.11.4-1",
+  "version": "2013.11.5-1",
   "description": "Web Tracing Framework instrumentation and analysis library.",
   "keywords": [
     "javascript",
