@@ -458,43 +458,39 @@ Extension.prototype.updatePageState_ = function(tabId, tabUrl) {
     // Determine UI title/icon.
     var title = '';// 'Toggle Web Tracing Framework on this page';
     var icon;
+    var badgeText = '';
     switch (status) {
       case PageStatus.NONE:
         icon = 'pageAction';
+        badgeText = '';
         break;
       case PageStatus.BLACKLISTED:
         icon = 'pageActionDisabled';
+        badgeText = '';
         break;
       case PageStatus.WHITELISTED:
       case PageStatus.INSTRUMENTED:
         icon = 'pageActionEnabled';
+        badgeText = 'REC';
         break;
     }
 
     // Setup page action.
-    chrome.pageAction.setTitle({
-      tabId: tabId,
-      title: title
-    });
-    chrome.pageAction.setIcon({
+    chrome.browserAction.setIcon({
       tabId: tabId,
       path: {
         '19': '/assets/icons/' + icon + '19.png',
         '38': '/assets/icons/' + icon + '38.png'
       }
     });
-    chrome.pageAction.setPopup({
+    chrome.browserAction.setBadgeText({
       tabId: tabId,
-      popup: 'popup.html'
+      text: badgeText
     });
-    chrome.pageAction.show(tabId);
 
     if (reloadUrl) {
       chrome.tabs.update(tabId, {url: reloadUrl});
     }
-  } else {
-    // Hide page action.
-    chrome.pageAction.hide(tabId);
   }
 };
 

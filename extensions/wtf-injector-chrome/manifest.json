@@ -32,9 +32,13 @@
   // angry at us, but is worth it for the speed bump in parsing.
   "content_security_policy": "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com https://apis.google.com https://www.google.com https://docs.google.com https://www-onepick-opensocial.googleusercontent.com https://www.googleapis.com; object-src 'self'",
 
-  "page_action": {
-    // Required due to a chrome bug, even though we do everything in code.
-    "workaround": "https://code.google.com/p/chromium/issues/detail?id=86449"
+  "browser_action": {
+    "default_icon": {
+      "19": "assets/icons/pageAction19.png",
+      "38": "assets/icons/pageAction38.png"
+    },
+    "default_title": "Web Tracing Framework",
+    "default_popup": "popup.html"
   },
 
   // Support wtf omnibox queries for showing the UI or loading URLs.
