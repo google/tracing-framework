@@ -71,5 +71,12 @@ URI.canonicalize = function(value) {
   if (lastIndex != -1) {
     value = value.substring(0, lastIndex);
   }
+  // Strip off anything after a @. This is risky, but required for maps.
+  // Worst case we include too much (if you did foo.com/@abc/unique), but
+  // whatever.
+  lastIndex = value.indexOf('@');
+  if (lastIndex != -1) {
+    value = value.substring(0, lastIndex);
+  }
   return value;
 };
