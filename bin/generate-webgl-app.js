@@ -366,7 +366,7 @@ function build(argv, tempDir, outputBaseFile, ccFiles, done) {
     var vcxproj = templates.vcxproj;
     vcxproj = vcxproj.replace(/%%APPNAME%%/g, appName);
     vcxproj = vcxproj.replace(/%%DEPS%%/g, depsPath);
-    vcxproj = vcxproj.replace(/%%WTFPATH%%/g, process.cwd());
+    vcxproj = vcxproj.replace(/%%TEMPLATEPATH%%/g, path.resolve(templatePath));
     vcxproj = vcxproj.replace(/%%CCFILES%%/g, ccFileIncludes.join('\n'));
     vcxproj = vcxproj.replace(/%%USEANGLE%%/g, useAngle ? 1 : 0);
     vcxproj = vcxproj.replace(/%%EXEOUTPUTPATH%%/g, outputBaseFile + '.exe');
@@ -399,6 +399,7 @@ function build(argv, tempDir, outputBaseFile, ccFiles, done) {
 
     // Invoke msbuild.
     // TODO(benvanik): build with msbuild - right now it just dies.
+    console.log('Launching VS because msbuild crashes...');
     var commandLine = [
       'devenv',
       vcxprojPath

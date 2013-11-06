@@ -36,7 +36,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\angleproject\include;%%DEPS%%\SDL2-2.0.0\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\angleproject\include;%%DEPS%%\SDL2-2.0.0\include;%%TEMPLATEPATH%%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -55,7 +55,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\angleproject\include;%%DEPS%%\SDL2-2.0.0\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\angleproject\include;%%DEPS%%\SDL2-2.0.0\include;%%TEMPLATEPATH%%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -76,7 +76,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\SDL2-2.0.0\include;%%DEPS%%\angleproject\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\SDL2-2.0.0\include;%%DEPS%%\angleproject\include;%%TEMPLATEPATH%%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -97,7 +97,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_ANGLE=%%USEANGLE%%;SDL_VIDEO_OPENGL_ES2=1;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\SDL2-2.0.0\include;%%DEPS%%\angleproject\include;%%WTFPATH%%\bin\cpp_src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%%DEPS%%\glew-1.10.0\include\;%%DEPS%%\SDL2-2.0.0\include;%%DEPS%%\angleproject\include;%%TEMPLATEPATH%%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -111,11 +111,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="%%WTFPATH%%\bin\cpp_src\webgl-main.cc" />
+    <ClCompile Include="%%TEMPLATEPATH%%\webgl-main.cc" />
     %%CCFILES%%
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="%%WTFPATH%%\bin\cpp_src\webgl-shared.h" />
+    <ClInclude Include="%%TEMPLATEPATH%%\webgl-shared.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Targets" />
 </Project>
