@@ -673,13 +673,27 @@ wtf.hud.Overlay.prototype.getMainDisplayUrl_ = function() {
  */
 wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
     opt_endpoint, opt_newWindow) {
+  // Get the page URL.
+  var endpoint = opt_endpoint || this.getMainDisplayUrl_();
+  var targetIsExtension =
+      goog.string.startsWith(endpoint, 'chrome-extension://');
+
+  // Open the target window now (if not an extension), so that we avoid the
+  // popup blocker.
+  if (!targetIsExtension) {
+    // Create window and show.
+    var windowName = this.lastWindowName_;
+    if (opt_newWindow) {
+      windowName = 'wtf_ui' + Date.now();
+    }
+    this.lastWindowName_ = windowName;
+    window.open(endpoint + '?expect_data', windowName);
+  }
+
   // Capture snapshot into memory buffers.
   // Sending may take a bit, so doing this now ensures we get the snapshot
   // immediately when requested.
   wtf.trace.snapshotAll(function(blobs) {
-    // Get the page URL.
-    var endpoint = opt_endpoint || this.getMainDisplayUrl_();
-
     var contentLength = 0;
     for (var n = 0; n < blobs.length; n++) {
       contentLength += blobs[n].getSize();
@@ -699,7 +713,7 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
 
     // TODO(benvanik): if the extension is attached always show snapshot through
     // it - this would ensure the UI runs in a different process.
-    if (goog.string.startsWith(endpoint, 'chrome-extension://')) {
+    if (targetIsExtension) {
       // Opening in an extension window, need to marshal through the content
       // script to get it open.
 
@@ -723,14 +737,6 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
         'content_length': contentLength
       });
     } else {
-      // Create window and show.
-      var windowName = this.lastWindowName_;
-      if (opt_newWindow) {
-        windowName = 'wtf_ui' + Date.now();
-      }
-      this.lastWindowName_ = windowName;
-      window.open(endpoint + '?expect_data', windowName);
-
       // Regular pages don't support cross-domain reading. So we go the slow
       // path and read back our blobs as typed arrays and hope that the channel
       // supports transferrable arrays.
