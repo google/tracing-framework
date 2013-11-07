@@ -458,6 +458,11 @@ global['wtfi']['process'] = function(
       return cleanupName(node.id.name);
     }
 
+    // get foo() {};
+    if (node.parent.kind == 'get' || node.parent.kind == 'set') {
+      return cleanupName(node.parent.key.name);
+    }
+
     // var foo = function() {};
     if (node.parent.type == 'VariableDeclarator') {
       if (node.parent.id) {
@@ -506,8 +511,11 @@ global['wtfi']['process'] = function(
     var isDecl = parent.type == 'FunctionDeclaration';
     // = function [optional]() {}
     var isExpr = parent.type == 'FunctionExpression';
+    // get foo() {} / set foo() {}
+    var isProperty = parent && parent.parent &&
+        parent.parent.kind == 'get' || parent.parent.kind == 'set';
 
-    return isDecl || isExpr;
+    return isDecl || isExpr || isProperty;
   }
 
   // Compute an ignore map for fast checks.
@@ -544,96 +552,104 @@ global['wtfi']['process'] = function(
   // can't be used in heap tracking mode because try/catch disables
   // optimization, which drammatically changes memory generation behavior.
   var tryCatchMode = !trackHeap && !trackTime;
-  var targetCode = falafel(sourceText, function(node) {
-    if (node.type == 'FunctionDeclaration') {
-      // TODO(benvanik): find a way to instrument this with the wrapper.
-    } else if (node.type == 'FunctionExpression') {
-      // Wrap with our wrapper to pass in source info.
-      // TODO(benvanik): find a way to remove this.
-      node.update('__wtfw(__wtfb, ' + node.source() + ')');
-    } else if (node.type == 'BlockStatement') {
-      var parent = node.parent;
-      if (!isFunctionBlock(node)) {
-        return;
-      }
+  try {
+    var targetCode = falafel(sourceText, function(node) {
+      if (node.type == 'FunctionDeclaration') {
+        // TODO(benvanik): find a way to instrument this with the wrapper.
+      } else if (
+          node.type == 'FunctionExpression' && node.parent.type != 'Property') {
+        // Wrap with our wrapper to pass in source info.
+        // TODO(benvanik): find a way to remove this.
+        node.update('__wtfw(__wtfb, ' + node.source() + ')');
+      } else if (node.type == 'BlockStatement') {
+        var parent = node.parent;
 
-      // Guess function name or set to some random one.
-      var name = getFunctionName(parent);
-      if (!name || !name.length) {
-        name = 'anon' + moduleId + '$' + nextAnonymousName++;
-      }
-
-      // Check ignore list.
-      if (ignores[name]) {
-        return;
-      }
-
-      if (ignorePattern && ignorePattern.test(name)) {
-        return;
-      }
-
-      var fnId = nextFnId++;
-      fns.push(fnId);
-      fns.push('"' + name.replace(/\"/g, '\\"') + '"');
-      fns.push(node.range[0]);
-      fns.push(node.range[1]);
-
-      if (tryCatchMode) {
-        node.update([
-          '{',
-          '__wtfEnter(' + fnId + ');',
-          'try{' + node.source() + '}finally{',
-          '__wtfExit(' + fnId + ');',
-          '}}'
-        ].join(''));
-      } else {
-        node.update([
-          '{',
-          'var __wtfId=' + fnId + ',__wtfRet;__wtfEnter(__wtfId);',
-          node.source(),
-          '__wtfExit(__wtfId);',
-          '}'
-        ].join(''));
-      }
-    } else if (!tryCatchMode && node.type == 'ReturnStatement') {
-      // Walk up to see if this function is ignored.
-      if (anyIgnores) {
-        var testNode = node.parent;
-        while (testNode) {
-          if (testNode.type == 'BlockStatement') {
-            if (isFunctionBlock(testNode)) {
-              var testName = getFunctionName(testNode.parent);
-              if (testName && ignores[testName]) {
-                return;
-              }
-              if (testName && ignorePattern && ignorePattern.test(testName)) {
-                return;
-              }
-              break;
-            }
-          }
-          testNode = testNode.parent;
+        // This may be a property - need to check:
+        if (!isFunctionBlock(node)) {
+          return;
         }
-      }
 
-      if (node.argument) {
-        node.update([
-          '{__wtfRet=(',
-          node.argument.source(),
-          '); __wtfExit(__wtfId);',
-          'return __wtfRet;}'
-        ].join(''));
-      } else {
-        node.update('{__wtfExit(__wtfId); return;}');
+        // Guess function name or set to some random one.
+        var name = getFunctionName(parent);
+        if (!name || !name.length) {
+          name = 'anon' + moduleId + '$' + nextAnonymousName++;
+        }
+
+        // Check ignore list.
+        if (ignores[name]) {
+          return;
+        }
+
+        if (ignorePattern && ignorePattern.test(name)) {
+          return;
+        }
+
+        var fnId = nextFnId++;
+        fns.push(fnId);
+        fns.push('"' + name.replace(/\"/g, '\\"') + '"');
+        fns.push(node.range[0]);
+        fns.push(node.range[1]);
+
+        if (tryCatchMode) {
+          node.update([
+            '{',
+            '__wtfEnter(' + fnId + ');',
+            'try{' + node.source() + '}finally{',
+            '__wtfExit(' + fnId + ');',
+            '}}'
+          ].join(''));
+        } else {
+          node.update([
+            '{',
+            'var __wtfId=' + fnId + ',__wtfRet;__wtfEnter(__wtfId);',
+            node.source(),
+            '__wtfExit(__wtfId);',
+            '}'
+          ].join(''));
+        }
+      } else if (!tryCatchMode && node.type == 'ReturnStatement') {
+        // Walk up to see if this function is ignored.
+        if (anyIgnores) {
+          var testNode = node.parent;
+          while (testNode) {
+            if (testNode.type == 'BlockStatement') {
+              if (isFunctionBlock(testNode)) {
+                var testName = getFunctionName(testNode.parent);
+                if (testName && ignores[testName]) {
+                  return;
+                }
+                if (testName && ignorePattern && ignorePattern.test(testName)) {
+                  return;
+                }
+                break;
+              }
+            }
+            testNode = testNode.parent;
+          }
+        }
+
+        if (node.argument) {
+          node.update([
+            '{__wtfRet=(',
+            node.argument.source(),
+            '); __wtfExit(__wtfId);',
+            'return __wtfRet;}'
+          ].join(''));
+        } else {
+          node.update('{__wtfExit(__wtfId); return;}');
+        }
+      } else if (node.type == 'Program') {
+        // node.update([
+        //   node.source(),
+        //   //'\n//@ sourceMappingURL=' + url
+        //   //'\n//@ sourceURL=' + url
+        // ].join(''))
       }
-    } else if (node.type == 'Program') {
-      // node.update([
-      //   node.source(),
-      //   //'\n//@ sourceMappingURL=' + url
-      //   //'\n//@ sourceURL=' + url
-      // ].join(''))
-    }
-  });
+    });
+  } catch(e) {
+    warn('Error rewriting code!', e);
+    return sourceText;
+  }
 
   // Add in the module map to the code.
   var sourceUrl = url == 'inline' ? url + moduleId : url;
