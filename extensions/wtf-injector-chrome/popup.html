@@ -14,21 +14,12 @@
       </div>
       <div class="contents">
         <div class="featureGroup">
-          <table class="buttons"><tr><td align="center">
-            <div class="kButtonBar">
-              <a class="kButton kButtonLeft buttonShowUi" title="Shows the trace visualization UI.">Show UI</a>
-              <a class="kButton kButtonRight buttonOpenFile" title="Opens a file in the visualization UI.">Open Trace File</a>
-            </div>
-          </td></tr></table>
-        </div>
-        <br/>
-        <div class="featureGroup">
           <div class="featureTitle">Tracing</div>
-          <div class="kSecondaryText">Low-overhead tracing via the WTF API. <a href="http://google.github.io/tracing-framework/instrumenting-code.html" target="_blank">Learn more</a>.</div>
+          <div class="kSecondaryText">Rich, low-overhead tracing via the WTF API. <a href="http://google.github.io/tracing-framework/instrumenting-code.html" target="_blank">Learn more</a>.</div>
           <br/>
           <table class="buttons"><tr><td align="center">
             <div class="kButtonBar">
-              <a class="kButton kButtonAction buttonToggleInjector">Starting Recording</a>
+              <a class="kButton kButtonAction buttonToggleInjector" title="Turns on tracing mode recording for this URL.">Enable Recording for this URL</a>
             </div>
           </td></tr></table>
         </div>
@@ -69,6 +60,12 @@
         </div>
       </div>
       <div class="footer">
+        <!--<div class="labelButton">
+          <a class="buttonShowUi" title="Shows the trace visualization UI.">Show UI</a>
+        </div>-->
+        <div class="labelButton">
+          <a class="buttonOpenFile" title="Opens a file in the visualization UI.">Open Trace File</a>
+        </div>
         <div class="labelButton">
           <a class="buttonResetSettings" title="Resets all extension settings for the current page.">Reset Page Settings</a>
         </div>

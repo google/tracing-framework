@@ -35,10 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
   var version = manifest['version'];
   document.querySelector('.versionString').innerText = version;
 
-  document.querySelector('.buttonShowUi').onclick =
-      showUiClicked;
+  // document.querySelector('.buttonShowUi').onclick =
+  //     showUiClicked;
   document.querySelector('.buttonOpenFile').onclick =
-      openFileClicked;
+      showUiClicked; //openFileClicked;
   document.querySelector('.buttonResetSettings').onclick =
       resetSettingsClicked;
   document.querySelector('.buttonInstrumentCalls').onclick =
@@ -132,20 +132,24 @@ function setupAddBox() {
  */
 function updateWithInfo(info) {
   var disableOverlay = document.querySelector('.disableOverlay');
+  var stopRecordingButton = document.querySelector('.buttonStopRecording');
 
   var status = info.status;
   switch (status) {
     case 'instrumented':
       // Instrumentation is enabled for the page.
       disableOverlay.style.display = '';
+      stopRecordingButton.innerText = 'Stop Recording';
       break;
     case 'whitelisted':
       // Tracing is enabled for the page.
       disableOverlay.style.display = '';
+      stopRecordingButton.innerText = 'Stop Recording For This URL';
       break;
     default:
       // Tracing is disabled for the page.
       disableOverlay.style.display = 'none';
+      stopRecordingButton.innerText = '';
       break;
   }
 
