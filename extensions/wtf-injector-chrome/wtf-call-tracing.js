@@ -701,6 +701,15 @@ function runSharedInitCode(targetWindow, options) {
       div.innerHTML = 'You must disable WTF to run with instrumentation';
       window.alert('The WTF tracing feature cannot be used on ' +
           'instrumented code. Disable instrumentation and try again.');
+      return;
+    }
+
+    // Check to see if we are in a mode that this won't work in.
+    if (topWindow.location.search.indexOf('deb=0j1t1') != -1) {
+      div.innerHTML = 'Run in 0j1t0!';
+      window.alert(
+          'You must run in 0j1t0 mode (*not* t1!) to use this feature.');
+      return;
     }
 
     // Add helper buttons.
