@@ -15,29 +15,140 @@
 @import "wtf/ui/styles/kennedy.less";
 
 body {
-  margin: 10px;
+  margin: 0;
   overflow: hidden;
   white-space: nowrap;
 }
 
-.buttonBar {
-  min-width: 612px;
-  white-space: nowrap;
+.popup {
+  cursor: default;
+  text-align: left;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  color: black;
+
+  min-width: 350px;
+
+  .noSelect();
+
+  & .header {
+    position: relative;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    margin: 5px;
+
+    height: 36px;
+
+    table {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      td {
+        vertical-align: middle;
+      }
+    }
+
+    h1 {
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: normal;
+      color: #222;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: default;
+      outline: none;
+    }
+    a:focus {
+      outline: none;
+    }
+    span {
+      vertical-align: bottom;
+    }
+  }
+
+  & .contents {
+    margin: 5px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    position: relative;
+
+    & .featureGroup {
+      margin: 5px;
+      width: 100%;
+
+      & .featureTitle {
+        font-size: 16px;
+        display: block;
+        color: #333;
+        cursor: default;
+        text-decoration: none;
+        margin-bottom: 5px;
+      }
+
+      & .buttons {
+        width: 100%;
+        .kButtonBar {
+          display: table-cell;
+        }
+      }
+    }
+
+    & .disableOverlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+
+      & .mask {
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background-color: white;
+        opacity: 1;
+      }
+      & .buttons {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        td {
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+
+  & .footer {
+    margin: 5px;
+
+    .labelButton {
+      display: block;
+      padding: 5px;
+      border-top: 1px solid #ebebeb;
+      a {
+      }
+      a:visited {
+        color: #1155CC;
+      }
+    }
+  }
 }
 
-.buttonShowUi {}
-.buttonResetSettings {}
-.buttonInstrumentCalls {}
-.buttonInstrumentTime {}
-.buttonInstrumentMemory {}
-.buttonToggleInjector {}
+.buttonBar {
+  min-width: 12px;
+  white-space: nowrap;
+}
 
 .addonPicker {
   .noSelect();
   cursor: default;
-
-  /* Disabled until useful. It's just confusing right now. */
-  display: none;
 
   margin-top: 15px;
   width: 100%;

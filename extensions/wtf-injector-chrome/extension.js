@@ -585,9 +585,16 @@ Extension.prototype.popupMessageReceived_ = function(tab, data, port) {
       this.updatePageState_(tab.id, tab.url);
       needsReload = true;
       break;
+
     case 'show_ui':
       this.showUi_({
+        newWindow: true
       });
+      break;
+    case 'show_files':
+      this.showFileBlobsInUi_({
+        newWindow: true
+      }, data.files);
       break;
 
     case 'instrument':
@@ -809,6 +816,54 @@ Extension.prototype.showFileInUi_ = function(options, url) {
 
 
 /**
+ * Shows file blobs in the UI.
+ * @param {Extension.ShowOptions?} options Options.
+ * @param {!Array} files File blob infos.
+ * @private
+ */
+Extension.prototype.showFileBlobsInUi_ = function(options, files) {
+  if (!files.length) {
+    return;
+  }
+
+  var contentTypes = [];
+  var contentSources = [];
+  var contentUrls = [];
+  var contentLength = 0;
+  for (var n = 0; n < files.length; n++) {
+    var file = files[n];
+    var contentType = 'application/x-extension-wtf-trace';
+    var fileName = file.name;
+    var dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex != -1) {
+      extension = fileName.substring(dotIndex + 1);
+      contentType = 'application/x-extension-' + extension;
+    }
+    contentTypes.push(contentType);
+
+    contentSources.push(fileName);
+    contentUrls.push(file.url);
+    contentLength += file.size;
+  }
+
+  this.showUi_(options, function(port) {
+    // NOTE: postMessage doesn't support transferrables here.
+    port.postMessage({
+      'wtf_ipc_connect_token': true,
+      'data': {
+        'command': 'snapshot',
+        'content_types': contentTypes,
+        'content_sources': contentSources,
+        'content_urls': contentUrls,
+        'content_length': contentLength,
+        'revoke_blob_urls': true
+      }
+    }, '*');
+  });
+};
+
+
+/**
  * Shows a file at the given URL in the UI.
  * @param {Extension.ShowOptions?} options Options.
  * @param {!Array.<!FileEntry>} fileEntries List of HTML File System entries.
@@ -826,7 +881,7 @@ Extension.prototype.showFileEntriesInUi_ = function(options, fileEntries) {
     var contentLength = 0;
     for (var n = 0; n < files.length; n++) {
       var contentType = 'application/x-extension-wtf-trace';
-      var fileName = files[0].name;
+      var fileName = files[n].name;
       var dotIndex = fileName.lastIndexOf('.');
       if (dotIndex != -1) {
         extension = fileName.substring(dotIndex + 1);

@@ -30,8 +30,15 @@ port.onMessage.addListener(function(data, port) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Get version string from the manifest.
+  var manifest = chrome.runtime.getManifest();
+  var version = manifest['version'];
+  document.querySelector('.versionString').innerText = version;
+
   document.querySelector('.buttonShowUi').onclick =
       showUiClicked;
+  document.querySelector('.buttonOpenFile').onclick =
+      openFileClicked;
   document.querySelector('.buttonResetSettings').onclick =
       resetSettingsClicked;
   document.querySelector('.buttonInstrumentCalls').onclick =
@@ -42,6 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
       instrumentMemoryClicked;
   document.querySelector('.buttonToggleInjector').onclick =
       toggleInjectorClicked;
+  document.querySelector('.buttonStopRecording').onclick =
+      stopRecordingClicked;
 
   setupAddBox();
 });
@@ -122,44 +131,21 @@ function setupAddBox() {
  * @param {!Object} info Page information.
  */
 function updateWithInfo(info) {
-  var toggleButton = document.querySelector('.buttonToggleInjector');
-  var buttonInstrumentCalls =
-      document.querySelector('.buttonInstrumentCalls');
-  var buttonInstrumentTime =
-      document.querySelector('.buttonInstrumentTime');
-  var buttonInstrumentMemory =
-      document.querySelector('.buttonInstrumentMemory');
-
-  function toggleState(el, enabled) {
-    if (enabled) {
-      el.classList.remove('kDisabled');
-    } else {
-      el.classList.add('kDisabled');
-    }
-  };
+  var disableOverlay = document.querySelector('.disableOverlay');
 
   var status = info.status;
   switch (status) {
     case 'instrumented':
       // Instrumentation is enabled for the page.
-      toggleButton.innerText = 'Disable';
-      toggleState(buttonInstrumentCalls, false);
-      toggleState(buttonInstrumentTime, false);
-      toggleState(buttonInstrumentMemory, false);
+      disableOverlay.style.display = '';
       break;
     case 'whitelisted':
       // Tracing is enabled for the page.
-      toggleButton.innerText = 'Disable';
-      toggleState(buttonInstrumentCalls, false);
-      toggleState(buttonInstrumentTime, false);
-      toggleState(buttonInstrumentMemory, false);
+      disableOverlay.style.display = '';
       break;
     default:
       // Tracing is disabled for the page.
-      toggleButton.innerText = 'Enable';
-      toggleState(buttonInstrumentCalls, true);
-      toggleState(buttonInstrumentTime, true);
-      toggleState(buttonInstrumentMemory, true);
+      disableOverlay.style.display = 'none';
       break;
   }
 
@@ -270,6 +256,47 @@ function showUiClicked() {
 
 
 /**
+ * Shows the UI and brings up the open file dialog.
+ */
+function openFileClicked() {
+  var inputElement = document.createElement('input');
+  inputElement['type'] = 'file';
+  inputElement['multiple'] = true;
+  inputElement['accept'] = [
+    '.wtf-trace,application/x-extension-wtf-trace',
+    '.wtf-json,application/x-extension-wtf-json',
+    '.wtf-calls,application/x-extension-wtf-calls',
+    '.cpuprofile,application/x-extension-cpuprofile',
+    '.part,application/x-extension-part'
+  ].join(',');
+  inputElement.onchange = function(e) {
+    _gaq.push(['_trackEvent', 'popup', 'open_file']);
+
+    var fileEntries = [];
+    for (var n = 0; n < inputElement.files.length; n++) {
+      var file = inputElement.files[n];
+      var blob = new Blob([file], {
+        type: 'application/octet-stream'
+      });
+      var blobUrl = URL.createObjectURL(blob);
+      fileEntries.push({
+        name: file.name,
+        url: blobUrl,
+        size: blob.size
+      });
+    }
+
+    port.postMessage({
+      command: 'show_files',
+      files: fileEntries
+    });
+    window.close();
+  };
+  inputElement.click();
+};
+
+
+/**
  * Resets the pages settings to their defaults.
  */
 function resetSettingsClicked() {
@@ -340,7 +367,20 @@ function instrumentMemoryClicked() {
  * Toggles the injector content script on the given page.
  */
 function toggleInjectorClicked() {
-  _gaq.push(['_trackEvent', 'popup', 'toggled']);
+  _gaq.push(['_trackEvent', 'popup', 'start_recording']);
+
+  port.postMessage({
+    command: 'toggle'
+  });
+  window.close();
+};
+
+
+/**
+ * Stops recording on the given page.
+ */
+function stopRecordingClicked() {
+  _gaq.push(['_trackEvent', 'popup', 'stop_recording']);
 
   port.postMessage({
     command: 'toggle'

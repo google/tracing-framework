@@ -6,24 +6,75 @@
     <script src="popup.js"></script>
   </head>
   <body class="k">
-    <div class="kButtonBar buttonBar">
-      <a class="kButton buttonShowUi">Show UI</a>
-      <a class="kButton buttonResetSettings">Reset Page Settings</a>
-      <a class="kButton kButtonLeft buttonInstrumentCalls">Instrument Calls</a>
-      <a class="kButton kButtonMid buttonInstrumentTime">Instrument Time</a>
-      <a class="kButton kButtonMid buttonInstrumentMemory">Instrument Memory</a>
-      <a class="kButton kButtonRight kButtonAction buttonToggleInjector">Enable</a>
-    </div>
-    <div class="addonPicker">
-      <strong>Active Addons:</strong><br/>
-      <table cellspacing="0">
-        <tbody>
-        </tbody>
-        <tfoot class="addRow">
-          <td colspan="2">
-            <input class="kTextField" type="text" placeholder="Add an addon by URL">
-          </td>
-        </tfoot>
+    <div class="popup">
+      <div class="header">
+        <table><tr><td align="center">
+          <h1><a href="http://google.github.io/tracing-framework/" target="_blank">Web Tracing Framework</a> <span class="kSecondaryText">/ version <span class="versionString allowSelect">$version</span></span></h1>
+        </td></tr></table>
+      </div>
+      <div class="contents">
+        <div class="featureGroup">
+          <table class="buttons"><tr><td align="center">
+            <div class="kButtonBar">
+              <a class="kButton kButtonLeft buttonShowUi" title="Shows the trace visualization UI.">Show UI</a>
+              <a class="kButton kButtonRight buttonOpenFile" title="Opens a file in the visualization UI.">Open Trace File</a>
+            </div>
+          </td></tr></table>
+        </div>
+        <br/>
+        <div class="featureGroup">
+          <div class="featureTitle">Tracing</div>
+          <div class="kSecondaryText">Low-overhead tracing via the WTF API. <a href="http://google.github.io/tracing-framework/instrumenting-code.html" target="_blank">Learn more</a>.</div>
+          <br/>
+          <table class="buttons"><tr><td align="center">
+            <div class="kButtonBar">
+              <a class="kButton kButtonAction buttonToggleInjector">Starting Recording</a>
+            </div>
+          </td></tr></table>
+        </div>
+        <br/>
+        <div class="featureGroup">
+          <div class="featureTitle">Auto-instrumentation (experimental)</div>
+          <div class="kSecondaryText">Automatically wraps all functions to show a complete picture<br/>(with significant overhead).</div>
+          <br/>
+          <table class="buttons"><tr><td align="center">
+            <div class="kButtonBar">
+              <a class="kButton kButtonLeft buttonInstrumentCalls" title="Starts recording all function calls.">Record Calls</a>
+              <a class="kButton kButtonMid buttonInstrumentTime" title="Starts recording all function calls with timing.">Record Timing</a>
+              <a class="kButton kButtonRight buttonInstrumentMemory" title="Starts recording number of bytes allocated per function call.">Record Allocations</a>
+            </div>
+          </td></tr></table>
+        </div>
+        <br/>
+        <div class="featureGroup" style="display: none;">
+          <div class="featureTitle">Add-ons</div>
+          <div class="addonPicker">
+            <strong>Active Addons:</strong><br/>
+            <table cellspacing="0">
+              <tbody>
+              </tbody>
+              <tfoot class="addRow">
+                <td colspan="2">
+                  <input class="kTextField" type="text" placeholder="Add an addon by URL">
+                </td>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="disableOverlay" style="display: none;">
+          <div class="mask"></div>
+          <table class="buttons"><tr><td align="center">
+            <a class="kButton kButtonAction buttonStopRecording">Stop Recording</a>
+          </td></tr></table>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="labelButton">
+          <a class="buttonResetSettings" title="Resets all extension settings for the current page.">Reset Page Settings</a>
+        </div>
+        <div class="labelButton">
+          <a href="https://github.com/google/tracing-framework/issues?labels=incoming" target="_blank">Found a Bug?</a>
+        </div>
       </div>
     </div>
   </body>
