@@ -365,9 +365,11 @@ function scanPageScripts(targetWindow, doc) {
         if (node instanceof HTMLScriptElement && !node['__wtfi__'] &&
             !node.getAttribute('__wtfi__')) {
           var processedScript = processScript(node, true);
-          if (processedScript != node) {
-            node.parentNode.replaceChild(node, processedScript);
+          if (processedScript === node) {
+            processedScript = processedScript.cloneNode(true);
+            processedScript['__wtfi__'] = true;
           }
+          node.parentNode.replaceChild(processedScript, node);
         }
       }
     });
