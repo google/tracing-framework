@@ -48,6 +48,14 @@ wtf.ui.DialogOptions;
  * @extends {wtf.ui.Control}
  */
 wtf.ui.Dialog = function(options, parentElement, opt_dom) {
+  /**
+   * Wrapper with wtfReset.
+   * This is the root shield element in the DOM.
+   * @type {Element}
+   * @private
+   */
+  this.wrapper_ = null;
+
   goog.base(this, parentElement, opt_dom);
   var dom = this.getDom();
 
@@ -118,6 +126,7 @@ wtf.ui.Dialog.prototype.enterDocument = function(parentElement) {
   var wrapper = dom.createElement(goog.dom.TagName.DIV);
   goog.dom.classes.add(wrapper, goog.getCssName('wtfReset'));
   goog.style.setStyle(wrapper, 'display', 'block');
+  this.wrapper_ = wrapper;
 
   // Create dialog DOM.
   var el = dom.createElement(goog.dom.TagName.DIV);
@@ -178,6 +187,7 @@ wtf.ui.Dialog.prototype.close = function(opt_callback, opt_scope) {
     this.emitEvent(wtf.ui.Dialog.EventType.CLOSING);
     wtf.timing.setTimeout(218, function() {
       dom.removeNode(el);
+      dom.removeNode(this.wrapper_);
 
       // Give the browser a moment to update itself.
       wtf.timing.setImmediate(function() {
