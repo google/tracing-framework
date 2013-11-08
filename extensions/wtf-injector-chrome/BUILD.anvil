@@ -50,6 +50,7 @@ file_set(
         'uri.js',
         'wtf-call-tracing.js',
         'wtf-injector.js',
+        'wtf-process.js',
         ] +
         glob('assets/scripts/*.js') +
         glob('assets/icons/*.png') +

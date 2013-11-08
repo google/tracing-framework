@@ -63,7 +63,27 @@ function main() {
   if (options['__instrumented__']) {
     // Instrumentation mode.
     if (isTop) {
+      // Create a blob that is both the falafel and process scripts.
+      // This is used to create the worker.
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', chrome.extension.getURL('third_party/falafel.js'), false);
+      xhr.send();
+      var falafelSource = xhr.responseText;
+      xhr = new XMLHttpRequest();
+      xhr.open('GET', chrome.extension.getURL('wtf-process.js'), false);
+      xhr.send();
+      var processSource = xhr.responseText;
+      var blob = new Blob([
+        falafelSource,
+        processSource
+      ], {
+        type: 'application/javascript'
+      });
+      var blobUrl = URL.createObjectURL(blob);
+      options['wtf.instrumentation.blob'] = blobUrl;
+
       injectScriptFile(chrome.extension.getURL('third_party/falafel.js'));
+      injectScriptFile(chrome.extension.getURL('wtf-process.js'));
       injectScriptFile(chrome.extension.getURL('wtf-call-tracing.js'));
     }
     injectScriptFunction(function(options) {

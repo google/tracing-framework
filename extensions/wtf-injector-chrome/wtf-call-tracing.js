@@ -16,12 +16,15 @@
 
 // console.log utility that doesn't explode when it's not present.
 var ENABLE_LOGGING = false;
-var log = (ENABLE_LOGGING && window.console) ?
-    window.console.log.bind(window.console) : function() {};
-var info = window.console && window.console.log ?
-    window.console.log.bind(window.console) : function() {};
-var warn = window.console && window.console.warn ?
-    window.console.warn.bind(window.console) : function() {};
+var log = (ENABLE_LOGGING && global.console) ?
+    global.console.log.bind(global.console) : function() {};
+var info = global.console && global.console.log ?
+    global.console.log.bind(global.console) : function() {};
+var warn = global.console && global.console.warn ?
+    global.console.warn.bind(global.console) : function() {};
+
+
+var ENABLE_CACHING = false;
 
 
 global['wtfi'] = global['wtfi'] || {};
@@ -96,6 +99,112 @@ var resolveUrl = function(baseUrl, url) {
 };
 
 
+var quotaRequestSize = 150 * 1024 * 1024;
+if (navigator.webkitTemporaryStorage) {
+  navigator.webkitTemporaryStorage.requestQuota(quotaRequestSize);
+} else {
+  webkitStorageInfo.requestQuota(
+      webkitStorageInfo.TEMPORARY, quotaRequestSize);
+}
+
+
+// git://github.com/darkskyapp/string-hash.git
+// The Dark Sky Company
+// devsupport@darkskyapp.com
+function stringHash(str) {
+  var hash = 5381, i = str.length
+  while(i)
+    hash = (hash * 33) ^ str.charCodeAt(--i)
+  return hash >= 0 ? hash : (hash & 0x7FFFFFFF) + 0x80000000
+};
+
+
+function loadFromCache(hash) {
+  return sessionStorage[hash];
+};
+
+
+function saveToCache(hash, value) {
+  try {
+    sessionStorage[hash] = value;
+  } catch (e) {
+    warn('Storage over quota, unable to cache results');
+  }
+};
+
+
+var moduleIdRegex = /__WTFMID__/g;
+function fixupModuleIds(moduleId, unreplacedText) {
+  var replacedText = unreplacedText.replace(
+      moduleIdRegex, (moduleId << 24));
+  return replacedText;
+};
+
+
+/**
+ * Processes source code for instrumentation, with caching if possible.
+ * @param {string} sourceText Input source text.
+ * @param {number} moduleId Unique module ID.
+ * @param {!Object} options Instrumentation options.
+ * @param {string=} opt_url Source URL.
+ * @return {string} Transformed source text.
+ */
+function processOrCache(sourceText, moduleId, options, opt_url) {
+  if (ENABLE_CACHING) {
+    var sourceHash = stringHash(sourceText);
+    var resultText = loadFromCache(sourceHash);
+    if (resultText) {
+      return fixupModuleIds(moduleId, resultText);
+    }
+  }
+
+  resultText = global['wtfi']['process'](
+      sourceText, options, opt_url);
+  if (ENABLE_CACHING) {
+    saveToCache(sourceHash, resultText);
+  }
+  return fixupModuleIds(moduleId, resultText);
+};
+
+
+/**
+ * Processes source code for instrumentation, with caching if possible.
+ * @param {string} sourceText Input source text.
+ * @param {number} moduleId Unique module ID.
+ * @param {!Object} options Instrumentation options.
+ * @param {string=} opt_url Source URL.
+ * @param {function(string)} callback Completion callback.
+ */
+function processOrCacheAsync(sourceText, moduleId, options, opt_url, callback) {
+  if (ENABLE_CACHING) {
+    var sourceHash = stringHash(sourceText);
+    var resultText = loadFromCache(sourceHash);
+    if (resultText) {
+      callback(fixupModuleIds(moduleId, resultText));
+      return;
+    }
+  }
+
+  var blobUrl = options['wtf.instrumentation.blob'];
+  var worker = new Worker(blobUrl);
+  worker.onmessage = function(e) {
+    var resultText = e.data.transformedText;
+    if (ENABLE_CACHING) {
+      saveToCache(sourceHash, resultText);
+    }
+    callback(fixupModuleIds(moduleId, resultText));
+    worker.terminate();
+  };
+  worker.postMessage({
+    sourceText: sourceText,
+    moduleId: moduleId,
+    options: options,
+    url: opt_url
+  });
+};
+
+
+
 /**
  * Processes a script element.
  * @param {!HTMLScriptElement} el Input script element.
@@ -112,7 +221,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
     // behavior.
     log('process of sync script', el);
     showActivityIndicator(doc);
-    var resultText = global['wtfi']['process'](
+    var resultText = processOrCache(
         el.text || el.innerText,
         nextModuleId++,
         global['wtfi']['options']);
@@ -135,7 +244,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
         return;
       }
       var responseText = xhr.responseText;
-      var resultText = global['wtfi']['process'](
+      var resultText = processOrCache(
           xhr.responseText,
           nextModuleId++,
           global['wtfi']['options'],
@@ -164,6 +273,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
       replacementEl: doc.createElement('script'),
       src: opt_baseUrl ? resolveUrl(opt_baseUrl, el.getAttribute('src')) : el.src
     };
+    el.src = null;
 
     // TODO(benvanik): dispatch to web worker.
     var xhr = new XMLHttpRequest();
@@ -171,22 +281,24 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
       if (xhr.status != 200) {
         return;
       }
-      var responseText = xhr.responseText;
-      var resultText = global['wtfi']['process'](
+      var moduleId = nextModuleId++;
+
+      processOrCacheAsync(
           xhr.responseText,
-          nextModuleId++,
+          moduleId,
           global['wtfi']['options'],
-          asyncScript.src);
-      el['__wtfi__'] = true;
-      el.src = null;
-      el.text = resultText;
-      asyncScript.replacementEl.parentNode.replaceChild(
-          asyncScript.el, asyncScript.replacementEl);
-      var loadEvent = new Event('load');
-      loadEvent.target = el;
-      loadEvent.srcElement = el;
-      el.dispatchEvent(loadEvent);
-      hideActivityIndicator(doc);
+          asyncScript.src,
+          function(resultText) {
+            el['__wtfi__'] = true;
+            el.text = resultText;
+            asyncScript.replacementEl.parentNode.replaceChild(
+                asyncScript.el, asyncScript.replacementEl);
+            var loadEvent = new Event('load');
+            loadEvent.target = el;
+            loadEvent.srcElement = el;
+            el.dispatchEvent(loadEvent);
+            hideActivityIndicator(doc);
+          });
     };
     xhr.open('GET', asyncScript.src, !opt_synchronous);
     xhr.send();
@@ -222,7 +334,9 @@ function injectScriptElement(targetWindow, doc) {
     if (newChild instanceof HTMLScriptElement && !newChild['__wtfi__']) {
       // appendChild(<script>)
       log('appendChild of script', newChild);
-      var processedChild = processScript(newChild);
+      var baseUrl = arguments.callee.caller ?
+          arguments.callee.caller['__src'] : null;
+      var processedChild = processScript(newChild, false, baseUrl);
       return originalAppendChild.call(this, processedChild);
     } else {
       return originalAppendChild.apply(this, arguments);
@@ -233,7 +347,9 @@ function injectScriptElement(targetWindow, doc) {
     if (newChild instanceof HTMLScriptElement && !newChild['__wtfi__']) {
       // insertBefore(<script>, ...)
       log('insertBefore of script', newChild);
-      var processedChild = processScript(newChild);
+      var baseUrl = arguments.callee.caller ?
+          arguments.callee.caller['__src'] : null;
+      var processedChild = processScript(newChild, false, baseUrl);
       return originalInsertBefore.call(this, processedChild, refChild);
     } else {
       return originalInsertBefore.apply(this, arguments);
@@ -245,7 +361,9 @@ function injectScriptElement(targetWindow, doc) {
     if (newChild instanceof HTMLScriptElement && !newChild['__wtfi__']) {
       // replaceChild(<script>, ...)
       log('insertBefore of script', newChild);
-      var processedChild = processScript(newChild);
+      var baseUrl = arguments.callee.caller ?
+          arguments.callee.caller['__src'] : null;
+      var processedChild = processScript(newChild, false, baseUrl);
       return originalReplaceChild.call(this, processedChild, oldChild);
     } else {
       return originalReplaceChild.apply(this, arguments);
@@ -365,11 +483,10 @@ function scanPageScripts(targetWindow, doc) {
         if (node instanceof HTMLScriptElement && !node['__wtfi__'] &&
             !node.getAttribute('__wtfi__')) {
           var processedScript = processScript(node, true);
-          if (processedScript === node) {
-            processedScript = processedScript.cloneNode(true);
-            processedScript['__wtfi__'] = true;
+          try {
+            node.parentNode.replaceChild(processedScript, node);
+          } catch (e) {
           }
-          node.parentNode.replaceChild(processedScript, node);
         }
       }
     });
@@ -417,259 +534,6 @@ global['wtfi']['prepare'] = function(options, opt_window) {
     // Running in worker.
     log('Workers aren\'t supported yet!');
   }
-};
-
-
-// TODO(benvanik): move to external file to share with node/workers/etc.
-/**
- * Processes source code for instrumentation.
- * @param {string} sourceText Input source text.
- * @param {number} moduleId Unique module ID.
- * @param {!Object} options Instrumentation options.
- * @return {string} Transformed source text.
- */
-global['wtfi']['process'] = function(
-    sourceText, moduleId, options, opt_url) {
-  var instrumentationType = options['type'] || 'calls';
-  var trackHeap = instrumentationType == 'memory';
-  var trackTime = instrumentationType == 'time';
-
-  var falafel = global['wtfi']['falafel'];
-  if (!falafel) {
-    log('Falafel not found!');
-    return sourceText;
-  }
-
-  var url = opt_url || 'inline';
-
-  info('processing script ' + url + ' (' + sourceText.length + 'b)...');
-  var startTime = Date.now();
-
-  // TODO(benvanik): hash and check local storage to see if the source has
-  //     already been transformed.
-
-  // Attempt to guess the names of functions.
-  function getFunctionName(node) {
-    function cleanupName(name) {
-      return name.replace(/[ \n]/g, '');
-    };
-
-    // Simple case of:
-    // function foo() {}
-    if (node.id) {
-      return cleanupName(node.id.name);
-    }
-
-    // get foo() {};
-    if (node.parent.kind == 'get' || node.parent.kind == 'set') {
-      return cleanupName(node.parent.key.name);
-    }
-
-    // var foo = function() {};
-    if (node.parent.type == 'VariableDeclarator') {
-      if (node.parent.id) {
-        return cleanupName(node.parent.id.name);
-      }
-      log('unknown var decl', node.parent);
-      return null;
-    }
-
-    // foo = function() {};
-    // Bar.foo = function() {};
-    //
-    if (node.parent.type == 'AssignmentExpression') {
-      // We are the RHS, LHS is something else.
-      var left = node.parent.left;
-      if (left.type == 'MemberExpression') {
-        // Bar.foo = function() {};
-        // left.object {type: 'Identifier', name: 'Bar'}
-        // left.property {type: 'Identifier', name: 'foo'}
-        // Object can be recursive MemberExpression's:
-        // Bar.prototype.foo = function() {};
-        // left.object {type: 'MemberExpression', ...}
-        // left.property {type: 'Identifier', name: 'foo'}
-        return cleanupName(left.source());
-      } else if (left.type == 'Identifier') {
-        return cleanupName(left.name);
-      }
-      log('unknown assignment LHS', left);
-      return null;
-    }
-
-    //log('unknown fn construct', node);
-
-    // TODO(benvanik): support jscompiler prototype alias:
-    // _.$JSCompiler_prototypeAlias$$ = _.$something;
-    // ...
-    // _.$JSCompiler_prototypeAlias$$.$unnamed = function() {};
-
-    return null;
-  };
-
-  function isFunctionBlock(node) {
-    var parent = node.parent;
-
-    // function foo() {}
-    var isDecl = parent.type == 'FunctionDeclaration';
-    // = function [optional]() {}
-    var isExpr = parent.type == 'FunctionExpression';
-    // get foo() {} / set foo() {}
-    var isProperty = parent && parent.parent &&
-        parent.parent.kind == 'get' || parent.parent.kind == 'set';
-
-    return isDecl || isExpr || isProperty;
-  }
-
-  // Compute an ignore map for fast checks.
-  var ignores = {};
-  var anyIgnores = false;
-  var ignoreArg = options['ignore'] || null;
-  if (ignoreArg) {
-    if (Array.isArray(ignoreArg)) {
-      for (var n = 0; n < ignoreArg.length; n++) {
-        ignores[ignoreArg[n]] = true;
-        anyIgnores = true;
-      }
-    } else {
-      ignores[ignoreArg] = true;
-      anyIgnores = true;
-    }
-  }
-
-  // Compute ignore pattern.
-  var ignorePatternArg = options['ignore-pattern'] || null;
-  var ignorePattern = null;
-  if (ignorePatternArg) {
-    anyIgnores = true;
-    ignorePattern = new RegExp(ignorePatternArg);
-  }
-
-  // Walk the entire document instrumenting functions.
-  var nextFnId = (moduleId << 24) + 1;
-  var nextAnonymousName = 0;
-  var fns = [];
-  // We have two modes of rewriting - wrapping the whole function in a try/catch
-  // and explicitly handling all return statements. The try/catch mode is more
-  // generally correct (since it means we'll always have an "exit" entry), but
-  // can't be used in heap tracking mode because try/catch disables
-  // optimization, which drammatically changes memory generation behavior.
-  var tryCatchMode = !trackHeap && !trackTime;
-  try {
-    var targetCode = falafel(sourceText, function(node) {
-      if (node.type == 'FunctionDeclaration') {
-        // TODO(benvanik): find a way to instrument this with the wrapper.
-      } else if (
-          node.type == 'FunctionExpression' && node.parent.type != 'Property') {
-        // Wrap with our wrapper to pass in source info.
-        // TODO(benvanik): find a way to remove this.
-        node.update('__wtfw(__wtfb, ' + node.source() + ')');
-      } else if (node.type == 'BlockStatement') {
-        var parent = node.parent;
-
-        // This may be a property - need to check:
-        if (!isFunctionBlock(node)) {
-          return;
-        }
-
-        // Guess function name or set to some random one.
-        var name = getFunctionName(parent);
-        if (!name || !name.length) {
-          name = 'anon' + moduleId + '$' + nextAnonymousName++;
-        }
-
-        // Check ignore list.
-        if (ignores[name]) {
-          return;
-        }
-
-        if (ignorePattern && ignorePattern.test(name)) {
-          return;
-        }
-
-        var fnId = nextFnId++;
-        fns.push(fnId);
-        fns.push('"' + name.replace(/\"/g, '\\"') + '"');
-        fns.push(node.range[0]);
-        fns.push(node.range[1]);
-
-        if (tryCatchMode) {
-          node.update([
-            '{',
-            '__wtfEnter(' + fnId + ');',
-            'try{' + node.source() + '}finally{',
-            '__wtfExit(' + fnId + ');',
-            '}}'
-          ].join(''));
-        } else {
-          node.update([
-            '{',
-            'var __wtfId=' + fnId + ',__wtfRet;__wtfEnter(__wtfId);',
-            node.source(),
-            '__wtfExit(__wtfId);',
-            '}'
-          ].join(''));
-        }
-      } else if (!tryCatchMode && node.type == 'ReturnStatement') {
-        // Walk up to see if this function is ignored.
-        if (anyIgnores) {
-          var testNode = node.parent;
-          while (testNode) {
-            if (testNode.type == 'BlockStatement') {
-              if (isFunctionBlock(testNode)) {
-                var testName = getFunctionName(testNode.parent);
-                if (testName && ignores[testName]) {
-                  return;
-                }
-                if (testName && ignorePattern && ignorePattern.test(testName)) {
-                  return;
-                }
-                break;
-              }
-            }
-            testNode = testNode.parent;
-          }
-        }
-
-        if (node.argument) {
-          node.update([
-            '{__wtfRet=(',
-            node.argument.source(),
-            '); __wtfExit(__wtfId);',
-            'return __wtfRet;}'
-          ].join(''));
-        } else {
-          node.update('{__wtfExit(__wtfId); return;}');
-        }
-      } else if (node.type == 'Program') {
-        // node.update([
-        //   node.source(),
-        //   //'\n//@ sourceMappingURL=' + url
-        //   //'\n//@ sourceURL=' + url
-        // ].join(''))
-      }
-    });
-  } catch(e) {
-    warn('Error rewriting code!', e);
-    return sourceText;
-  }
-
-  // Add in the module map to the code.
-  var sourceUrl = url == 'inline' ? url + moduleId : url;
-  var transformedText = [
-    '//# sourceURL=' + sourceUrl,
-    'var __wtfb = "' + url + '"',
-    '__wtfm[' + moduleId + '] = {' +
-        '"src": "' + url + '",' +
-        '"fns": [' + fns.join(',') + ']};',
-    targetCode.toString()
-  ].join('\n');
-
-  // TODO(benvanik): cache the transformed result.
-
-  var totalTime = Date.now() - startTime;
-  info('  completed in ' + totalTime + 'ms');
-
-  return transformedText;
 };
 
 
@@ -746,6 +610,9 @@ function runSharedInitCode(targetWindow, options) {
     addButton('Clear', 'Clear current trace data.', '__resetTrace()');
     addButton('Save', 'Save the trace to a file.', '__saveTrace()');
     addButton('Show', 'Show the trace in the WTF UI.', '__showTrace()');
+    if (ENABLE_CACHING) {
+      addButton('Reset Cache', 'Resets the code cache.', '__resetCache()');
+    }
   }
 
   var dataMagnitude = 26; // 2^26 = 67 million records
@@ -794,6 +661,9 @@ function runSharedInitCode(targetWindow, options) {
   targetWindow.__wtfw = function(__wtfb, f) {
     f['__src'] = __wtfb;
     return f;
+  };
+  targetWindow.__resetCache = function() {
+    sessionStorage.clear();
   };
   targetWindow.__resetTrace = function() {
     targetWindow.__wtfi = 0;

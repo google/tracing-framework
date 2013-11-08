@@ -79,6 +79,7 @@
     // Instrumentation script:
     "third_party/falafel.js",
     "wtf-call-tracing.js",
+    "wtf-process.js",
     // Injected tracing code:
     "wtf_trace_web_js_compiled.js"
   ],
