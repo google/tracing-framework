@@ -4,7 +4,7 @@
   // These can be copy/pasted directly between them.
   // ---------------------------------------------------------------------------
   "manifest_version": 2,
-  "version": "2013.11.6.1",
+  "version": "2013.11.7.1",
   "minimum_chrome_version": "23",
   "homepage_url": "https://github.com/google/tracing-framework",
 
