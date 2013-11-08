@@ -82,8 +82,8 @@ wtf.app.query.QueryTableSource.prototype.paintRowRange = function(
   ctx.fillStyle = '#dddddd';
   ctx.fillRect(gutterWidth - 1, 0, 1, bounds.height);
 
-  var drewColumnTime = false;
   var columnTimeWidth = 13 * charWidth;
+  var columnDurationWidth = 10 * charWidth;
 
   // Draw row contents.
   y = rowOffset;
@@ -94,16 +94,13 @@ wtf.app.query.QueryTableSource.prototype.paintRowRange = function(
 
     // TODO(benvanik): icons to differentiate event types?
 
-    var columnTime = -1;
-    var columnTitle = '';
+    it.seek(n);
+
+    var columnTime = it.getTime();
+    var columnDuration = it.getTotalDuration();
+    var columnTitle = it.getLongString(true);
 
     ctx.fillStyle = 'black';
-
-    it.seek(n);
-    if (it.isScope() || it.isInstance()) {
-      columnTime = it.getTime();
-      columnTitle = it.getLongString(true);
-    }
 
     var x = gutterWidth + charWidth;
     if (columnTime >= 0) {
@@ -112,9 +109,17 @@ wtf.app.query.QueryTableSource.prototype.paintRowRange = function(
           columnTimeText,
           x + columnTimeWidth - (columnTimeText.length * charWidth),
           Math.floor(y + rowCenter));
-      x += columnTimeWidth + 2 * charWidth;
-      drewColumnTime = true;
     }
+    x += columnTimeWidth + 2 * charWidth;
+
+    if (columnDuration >= 0) {
+      var columnDurationText = wtf.db.Unit.format(columnDuration, this.units_);
+      ctx.fillText(
+          columnDurationText,
+          x + columnDurationWidth - (columnDurationText.length * charWidth),
+          Math.floor(y + rowCenter));
+    }
+    x += columnDurationWidth + 2 * charWidth;
 
     ctx.fillText(
         columnTitle,
@@ -122,12 +127,18 @@ wtf.app.query.QueryTableSource.prototype.paintRowRange = function(
         Math.floor(y + rowCenter));
   }
 
-  if (drewColumnTime) {
-    ctx.fillStyle = '#dddddd';
-    ctx.fillRect(
-        gutterWidth + charWidth + columnTimeWidth + charWidth,
-        0, 1, bounds.height);
-  }
+  ctx.fillStyle = '#dddddd';
+  var x = gutterWidth + charWidth;
+  x += columnTimeWidth + charWidth;
+  ctx.fillRect(
+      x,
+      0, 1, bounds.height);
+  x += charWidth;
+  x += columnDurationWidth + charWidth;
+  ctx.fillRect(
+      x,
+      0, 1, bounds.height);
+  x += charWidth;
 };
 
 
