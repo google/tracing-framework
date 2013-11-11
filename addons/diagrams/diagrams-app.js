@@ -49,7 +49,7 @@ function computeScopeGraph(db, zoneIndex) {
   });
   nodeIndices['<root>'] = 0;
 
-  zoneIndex.forEach(Number.MIN_VALUE, Number.MAX_VALUE, function(e) {
+  zoneIndex.forEach(-Number.MAX_VALUE, Number.MAX_VALUE, function(e) {
     var eventType = e.eventType;
     if (eventType.eventClass == wtf.data.EventClass.SCOPE &&
         !(eventType.flags & wtf.data.EventFlag.INTERNAL)) {

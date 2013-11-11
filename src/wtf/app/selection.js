@@ -32,11 +32,11 @@ wtf.app.Selection = function(db) {
 
   /**
    * Wall-time the selection starts at.
-   * This may be {@code Number.MIN_VALUE}.
+   * This may be -{@code Number.MAX_VALUE}.
    * @type {number}
    * @private
    */
-  this.timeStart_ = Number.MIN_VALUE;
+  this.timeStart_ = -Number.MAX_VALUE;
 
   /**
    * Time the selection ends at.
@@ -111,15 +111,15 @@ wtf.app.Selection.prototype.clear = function() {
  * @return {boolean} True if a time range is specified.
  */
 wtf.app.Selection.prototype.hasTimeRangeSpecified = function() {
-  return this.timeStart_ != Number.MIN_VALUE &&
+  return this.timeStart_ != -Number.MAX_VALUE &&
       this.timeEnd_ != Number.MAX_VALUE;
 };
 
 
 /**
  * Gets the start time of the selection.
- * If there is none specified the value will be {@code Number.MIN_VALUE}.
- * @return {number} Selection start or {@code Number.MIN_VALUE}.
+ * If there is none specified the value will be -{@code Number.MAX_VALUE}.
+ * @return {number} Selection start or {@code Number.MAX_VALUE}.
  */
 wtf.app.Selection.prototype.getTimeStart = function() {
   return this.timeStart_;
@@ -155,7 +155,7 @@ wtf.app.Selection.prototype.setTimeRange = function(timeStart, timeEnd) {
  * Clears the active selection time range.
  */
 wtf.app.Selection.prototype.clearTimeRange = function() {
-  this.setTimeRange(Number.MIN_VALUE, Number.MAX_VALUE);
+  this.setTimeRange(-Number.MAX_VALUE, Number.MAX_VALUE);
 };
 
 

@@ -318,8 +318,8 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
   function getClipRect(clip) {
     var minX = Number.MAX_VALUE;
     var minY = Number.MAX_VALUE;
-    var maxX = Number.MIN_VALUE;
-    var maxY = Number.MIN_VALUE;
+    var maxX = -Number.MAX_VALUE;
+    var maxY = -Number.MAX_VALUE;
     for (var i = 0; i < clip.length; i += 2) {
       var x = clip[i];
       var y = clip[i + 1];

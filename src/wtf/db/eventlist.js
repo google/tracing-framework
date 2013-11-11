@@ -446,7 +446,7 @@ wtf.db.EventList.prototype.rescopeEvents_ = function() {
   // This stack is used to track the currently active scopes while scanning
   // forward.
   var MAX_CALLSTACK_SIZE = 1024;
-  var stack = new Uint32Array(MAX_CALLSTACK_SIZE);
+  var stack = new Int32Array(MAX_CALLSTACK_SIZE);
   var typeStack = new Array(MAX_CALLSTACK_SIZE);
   var maxDepthStack = new Uint32Array(MAX_CALLSTACK_SIZE);
   var childTimeStack = new Uint32Array(MAX_CALLSTACK_SIZE);

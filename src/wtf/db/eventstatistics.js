@@ -112,12 +112,12 @@ goog.inherits(wtf.db.EventStatistics, goog.Disposable);
  */
 wtf.db.EventStatistics.prototype.getTable = function(
     opt_startTime, opt_endTime) {
-  var startTime = goog.isDef(opt_startTime) ? opt_startTime : Number.MIN_VALUE;
+  var startTime = goog.isDef(opt_startTime) ? opt_startTime : -Number.MAX_VALUE;
   var endTime = goog.isDef(opt_endTime) ? opt_endTime : Number.MAX_VALUE;
-  if (startTime == Number.MIN_VALUE && endTime == Number.MAX_VALUE) {
+  if (startTime == -Number.MAX_VALUE && endTime == Number.MAX_VALUE) {
     if (!this.fullTable_) {
       this.fullTable_ = new wtf.db.EventStatistics.Table(
-          this.db_, Number.MIN_VALUE, Number.MAX_VALUE);
+          this.db_, -Number.MAX_VALUE, Number.MAX_VALUE);
       this.fullTable_.rebuild();
     }
     return this.fullTable_;

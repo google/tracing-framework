@@ -429,7 +429,7 @@ wtf.db.Database.prototype.endInsertingEvents = function() {
 
   // Reconcile zone changes.
   this.firstEventTime_ = Number.MAX_VALUE;
-  this.lastEventTime_ = Number.MIN_VALUE;
+  this.lastEventTime_ = -Number.MAX_VALUE;
   for (var n = 0; n < this.zoneList_.length; n++) {
     var eventList = this.zoneList_[n].getEventList();
     eventList.rebuild();
