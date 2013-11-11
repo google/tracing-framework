@@ -155,6 +155,29 @@ wtf.db.sources.CallsDataSource.prototype.process_ = function(buffer) {
 
 
 /**
+ * Parses the source JSON string into an object.
+ * NOTE: this function is exported so that jscompiler won't stupidly inline it
+ * and put the try/catch in the same function as the core loop. Yuck.
+ * @param {string} json JSON string.
+ * @return {Object} Header object, if parsed.
+ * @private
+ */
+wtf.db.sources.CallsDataSource.prototype.parseHeaderJson_ = function(json) {
+  try {
+    return /** @type {Object} */ (goog.global.JSON.parse(json));
+  } catch (e) {
+    this.error(
+        'File header invalid',
+        'An error occurred trying to parse the file header.\n' + e);
+    return null;
+  }
+};
+goog.exportProperty(
+    wtf.db.sources.CallsDataSource.prototype, 'parseHeaderJson_',
+    wtf.db.sources.CallsDataSource.prototype.parseHeaderJson_);
+
+
+/**
  * Processes the full buffer.
  * @param {!Uint8Array} buffer Data buffer.
  * @private
@@ -169,13 +192,8 @@ wtf.db.sources.CallsDataSource.prototype.processData_ = function(buffer) {
   var headerJson = wtf.util.convertUint8ArrayToAsciiString(
       new Uint8Array(buffer.buffer, 4, headerLength));
   i += 4 + headerLength;
-  var header;
-  try {
-    header = goog.global.JSON.parse(headerJson);
-  } catch (e) {
-    this.error(
-        'File header invalid',
-        'An error occurred trying to parse the file header.\n' + e);
+  var header = this.parseHeaderJson_(headerJson);
+  if (!header) {
     return;
   }
 
