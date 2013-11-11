@@ -62,6 +62,10 @@ wtf.app.nav.TimelinePainter.prototype.layoutInternal = function(
  */
 wtf.app.nav.TimelinePainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
   var timeScale = 1 / wtf.math.remap(45, 0, bounds.height, 0, 1);

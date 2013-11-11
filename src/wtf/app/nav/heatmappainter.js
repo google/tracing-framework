@@ -76,6 +76,10 @@ wtf.app.nav.HeatmapPainter.prototype.layoutInternal = function(
  */
 wtf.app.nav.HeatmapPainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
   if (!(timeRight - timeLeft)) {

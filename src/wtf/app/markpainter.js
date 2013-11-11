@@ -96,6 +96,10 @@ wtf.app.MarkPainter.prototype.layoutInternal = function(
  */
 wtf.app.MarkPainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var palette = this.palette_;
 
   // Clip to extents.

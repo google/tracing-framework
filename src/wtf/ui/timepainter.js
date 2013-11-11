@@ -63,6 +63,14 @@ wtf.ui.TimePainter.prototype.setTimeRange = function(timeLeft, timeRight) {
 
 
 /**
+ * @return {boolean} True if the time range is valid for painting.
+ */
+wtf.ui.TimePainter.prototype.isTimeRangeValid = function() {
+  return this.timeLeft != this.timeRight;
+};
+
+
+/**
  * Sets the units the painter draws labels in.
  * @param {wtf.db.Unit} value Units.
  */

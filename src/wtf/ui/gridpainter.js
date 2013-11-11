@@ -59,6 +59,10 @@ wtf.ui.GridPainter.prototype.setGranularities = function(min, max) {
  * @override
  */
 wtf.ui.GridPainter.prototype.repaintInternal = function(ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   // Clip to extents.
   this.clip(bounds.left, bounds.top, bounds.width, bounds.height);
 

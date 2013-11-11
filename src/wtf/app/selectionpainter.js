@@ -97,6 +97,10 @@ goog.inherits(wtf.app.SelectionPainter, wtf.ui.TimePainter);
  */
 wtf.app.SelectionPainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var width = bounds.width;
   var height = bounds.height;
   var timeLeft = this.timeLeft;

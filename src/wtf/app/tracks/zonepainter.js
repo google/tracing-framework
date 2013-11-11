@@ -97,6 +97,10 @@ wtf.app.tracks.ZonePainter.prototype.layoutInternal = function(
  */
 wtf.app.tracks.ZonePainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var timeLeft = this.timeLeft;
   var timeRight = this.timeRight;
 

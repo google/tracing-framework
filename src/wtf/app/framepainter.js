@@ -94,6 +94,10 @@ wtf.app.FramePainter.prototype.layoutInternal = function(
  */
 wtf.app.FramePainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var colors = wtf.app.FramePainter.FRAME_COLORS_;
 
   // Clip to extents.

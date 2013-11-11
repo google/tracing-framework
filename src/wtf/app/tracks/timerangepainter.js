@@ -94,6 +94,10 @@ wtf.app.tracks.TimeRangePainter.prototype.layoutInternal = function(
  */
 wtf.app.tracks.TimeRangePainter.prototype.repaintInternal = function(
     ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var palette = this.palette_;
 
   var timeRangeHeight = wtf.app.tracks.TimeRangePainter.TIME_RANGE_HEIGHT_;

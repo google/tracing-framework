@@ -93,6 +93,10 @@ wtf.ui.RulerPainter.prototype.layoutInternal = function(availableBounds) {
  * @override
  */
 wtf.ui.RulerPainter.prototype.repaintInternal = function(ctx, bounds) {
+  if (!this.isTimeRangeValid()) {
+    return;
+  }
+
   var width = bounds.width;
 
   // Hover UI.
