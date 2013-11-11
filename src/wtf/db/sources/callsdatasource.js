@@ -13,6 +13,7 @@
 
 goog.provide('wtf.db.sources.CallsDataSource');
 
+goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.ScriptContextInfo');
 goog.require('wtf.data.formats.BinaryCalls');
@@ -172,9 +173,9 @@ wtf.db.sources.CallsDataSource.prototype.parseHeaderJson_ = function(json) {
     return null;
   }
 };
-goog.exportProperty(
-    wtf.db.sources.CallsDataSource.prototype, 'parseHeaderJson_',
-    wtf.db.sources.CallsDataSource.prototype.parseHeaderJson_);
+
+
+wtf.preventInlining(wtf.db.sources.CallsDataSource.prototype.parseHeaderJson_);
 
 
 /**

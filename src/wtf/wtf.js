@@ -35,6 +35,25 @@ wtf.CHROME_EXTENSION =
 
 
 /**
+ * Stashed inline functions from {@see wtf.preventInlining}.
+ * @type {!Array.<Function>}
+ * @private
+ */
+wtf.dummyStore_ = [];
+
+
+/**
+ * Prevents jscompiler from inlining a function.
+ * Call this from the global scope to prevent the given function from being
+ * inlined into callers (and potentially breaking optimizations).
+ * @param {Function} fn Function to prevent inlining on.
+ */
+wtf.preventInlining = function(fn) {
+  wtf.dummyStore_.push(fn);
+};
+
+
+/**
  * Whether the runtime can provide high-resolution times.
  * If this is false times are likely in milliseconds and largely useless.
  * @type {boolean}
