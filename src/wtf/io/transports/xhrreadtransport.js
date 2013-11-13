@@ -94,13 +94,18 @@ wtf.io.transports.XhrReadTransport.prototype.resume = function() {
     }
   };
   this.xhr_.onload = function(e) {
-    var data = e.target.response;
-    self.emitReceiveData(data);
+    if (e.target.status == 200) {
+      var data = e.target.response;
+      self.emitReceiveData(data);
+    } else {
+      var err = new Error('Error fetching data: ' + e.target.status + ' ' +
+          e.target.statusText);
+      self.emitErrorEvent(err);
+    }
     goog.dispose(self);
   };
   this.xhr_.onerror = function(e) {
-    var err = new Error(
-        'Error fetching data: ' + e.target.status + ' ' + e.target.statusText);
+    var err = new Error('Unknown error fetching data.');
     self.emitErrorEvent(err);
     goog.dispose(self);
   };
