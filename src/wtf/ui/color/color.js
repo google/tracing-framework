@@ -20,7 +20,7 @@ goog.require('goog.math');
 
 
 /**
- * An ABGR color, stored as 0xAABBGGRR.
+ * An RGB color, stored as 0xBBGGRR.
  * @typedef {number}
  */
 wtf.ui.color.RgbColorValue;
@@ -31,12 +31,10 @@ wtf.ui.color.RgbColorValue;
  * @param {number} r Red channel, 0-255.
  * @param {number} g Green channel, 0-255.
  * @param {number} b Blue channel, 0-255.
- * @param {number} a Alpha channel, 0-255.
  * @return {number} Color value.
  */
-wtf.ui.color.createValue = function(r, g, b, a) {
+wtf.ui.color.createValue = function(r, g, b) {
   return (
-      ((a & 0xFF) << 24) |
       ((b & 0xFF) << 16) |
       ((g & 0xFF) << 8) |
       ((r) & 0xFF));
@@ -94,7 +92,6 @@ wtf.ui.color.RgbColor.prototype.toString = function() {
  */
 wtf.ui.color.RgbColor.prototype.toValue = function() {
   return (
-      0xFF000000 |
       ((this.b & 0xFF) << 16) |
       ((this.g & 0xFF) << 8) |
       ((this.r) & 0xFF));

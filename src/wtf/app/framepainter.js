@@ -60,9 +60,9 @@ goog.inherits(wtf.app.FramePainter, wtf.ui.RangePainter);
  * @const
  */
 wtf.app.FramePainter.FRAME_COLORS_ = [
-  wtf.ui.color.createValue(26, 152, 80, 255),
-  wtf.ui.color.createValue(206, 215, 39, 255),
-  wtf.ui.color.createValue(215, 48, 39, 255)
+  wtf.ui.color.createValue(26, 152, 80),
+  wtf.ui.color.createValue(206, 215, 39),
+  wtf.ui.color.createValue(215, 48, 39)
 ];
 
 
