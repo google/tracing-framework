@@ -55,6 +55,17 @@ wtf.ui.Tooltip = function(dom) {
    */
   this.visible_ = false;
 
+  /**
+   * Cached content.
+   * Used to avoid changing the content each frame.
+   * @type {string}
+   * @private
+   */
+  this.currentContent_ = '';
+
+  // Force into a layer.
+  goog.style.setStyle(this.rootElement_, 'transform', 'perspective(0)');
+
   var body = dom.getDocument().body;
   goog.asserts.assert(body);
   this.dom_.appendChild(body, this.rootElement_);
@@ -105,7 +116,10 @@ wtf.ui.Tooltip.prototype.isVisible = function() {
  */
 wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   var el = this.rootElement_;
-  goog.dom.setTextContent(el, content);
+  if (this.currentContent_ != content) {
+    goog.dom.setTextContent(el, content);
+  }
+  this.currentContent_ = content;
 
   var offset = 5;
 
@@ -122,13 +136,11 @@ wtf.ui.Tooltip.prototype.show = function(x, y, content) {
   left = Math.max(0, left);
   top = Math.max(0, top);
 
-  goog.style.setStyle(el, {
-    'left': left + 'px',
-    'top': top + 'px'
-  });
-  goog.style.setElementShown(el, true);
+  goog.style.setStyle(el, 'transform', 'perspective(0) translateX(' +
+      left + 'px) translateY(' + top + 'px)');
 
   if (!this.visible_) {
+    goog.style.setElementShown(el, true);
     wtf.ui.Tooltip.allVisibleTooltips_.push(this);
   }
   this.visible_ = true;

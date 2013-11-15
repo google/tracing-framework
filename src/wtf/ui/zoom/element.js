@@ -13,7 +13,6 @@
 
 goog.provide('wtf.ui.zoom.Element');
 
-goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.events.BrowserEvent');
 goog.require('goog.events.EventHandler');
@@ -21,6 +20,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.math.Coordinate');
 goog.require('goog.style');
 goog.require('goog.userAgent');
+goog.require('wtf.events');
 goog.require('wtf.ui.zoom.TransitionMode');
 
 
@@ -42,6 +42,13 @@ wtf.ui.zoom.Element = function(el, zoomTarget) {
    * @private
    */
   this.dom_ = goog.dom.getDomHelper(el);
+
+  /**
+   * The viewport size monitor.
+   * @type {!goog.dom.ViewportSizeMonitor}
+   * @private
+   */
+  this.viewportSizeMonitor_ = wtf.events.acquireViewportSizeMonitor();
 
   /**
    * Target DOM element.
@@ -68,9 +75,36 @@ wtf.ui.zoom.Element = function(el, zoomTarget) {
    */
   this.ignoreTouches_ = false;
 
+  /**
+   * Cached element offset. Updated on resize.
+   * @type {!goog.math.Coordinate}
+   * @private
+   */
+  this.elementOffset_ = goog.style.getPageOffset(this.el);
+
+  // Relayout as required.
+  this.listen(
+      this.viewportSizeMonitor_,
+      goog.events.EventType.RESIZE,
+      function() {
+        var offset = goog.style.getPageOffset(this.el);
+        this.elementOffset_.x = offset.x;
+        this.elementOffset_.y = offset.y;
+      }, false, this);
+
   this.setCursor();
 };
 goog.inherits(wtf.ui.zoom.Element, goog.events.EventHandler);
+
+
+/**
+ * @override
+ */
+wtf.ui.zoom.Element.prototype.disposeInternal = function() {
+  wtf.events.releaseViewportSizeMonitor(this.viewportSizeMonitor_);
+
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -165,11 +199,8 @@ wtf.ui.zoom.Element.prototype.takeFocus_ = function() {
  * @private
  */
 wtf.ui.zoom.Element.prototype.getEventOffset_ = function(e) {
-  var target = /** @type {Element} */ (e.currentTarget);
-  goog.asserts.assert(target);
-  var offset = goog.style.getPageOffset(target);
-  var x = e.clientX - offset.x;
-  var y = e.clientY - offset.y;
+  var x = e.clientX - this.elementOffset_.x;
+  var y = e.clientY - this.elementOffset_.y;
   return new goog.math.Coordinate(x, y);
 };
 

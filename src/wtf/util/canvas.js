@@ -34,6 +34,15 @@ wtf.util.canvas.isSupported = function() {
 
 
 /**
+ * Attempts to make the element a layer.
+ * @param {!HTMLCanvasElement} canvas Canvas element.
+ */
+wtf.util.canvas.enableLayer = function(canvas) {
+  goog.style.setStyle(canvas, 'transform', 'perspective(0)');
+};
+
+
+/**
  * Gets a 2D rendering context from the given canvas.
  * This will return an uninstrumented canvas.
  * @param {!HTMLCanvasElement} canvas Target canvas.
