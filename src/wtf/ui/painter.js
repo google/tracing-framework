@@ -89,6 +89,8 @@ wtf.ui.Painter = function(canvas) {
    */
   this.canvas_ = canvas;
 
+  wtf.util.canvas.enableLayer(canvas);
+
   /**
    * Canvas rendering context.
    * @type {!CanvasRenderingContext2D}
