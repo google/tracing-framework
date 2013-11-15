@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 13838148E5;
+  return 1384506E6;
 };
 wtf.version.getCommit = function() {
-  return "9770d168c07fcf5f1a03cfcea5a89f888dc6b5ff";
+  return "523844f73252fa4db271244634a157d49bc0cfe3";
 };
 wtf.version.toString = function() {
-  return "2013.11.7-1";
+  return "2013.11.15-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -3029,6 +3029,10 @@ goog.exportSymbol("wtf.version.toString", wtf.version.toString);
 // Input 25
 wtf.NODE = !0;
 wtf.CHROME_EXTENSION = goog.global.chrome && chrome.runtime && chrome.runtime.id;
+wtf.dummyStore_ = [];
+wtf.preventInlining = function(a) {
+  wtf.dummyStore_.push(a);
+};
 wtf.hasHighResolutionTimes = wtf.NODE || !(!goog.global.performance || !goog.global.performance.now && !goog.global.performance.webkitNow);
 wtf.performanceNow_ = function() {
   var a = goog.global.performance;
@@ -6675,7 +6679,7 @@ wtf.db.EventList.prototype.resortEvents_ = function() {
   this.eventData = d;
 };
 wtf.db.EventList.prototype.rescopeEvents_ = function() {
-  var a = this.eventTypeTable.getByName("wtf.scope#enter"), a = a ? a.id : -1, b = this.eventTypeTable.getByName("wtf.scope#leave"), b = b ? b.id : -1, c = this.eventTypeTable.getByName("wtf.scope#appendData"), c = c ? c.id : -1, d = this.eventTypeTable.getByName("wtf.trace#timeStamp"), d = d ? d.id : -1, e = new Uint32Array(1024), f = Array(1024), g = new Uint32Array(1024), k = new Uint32Array(1024), m = new Uint32Array(1024), l = 0, p = 0;
+  var a = this.eventTypeTable.getByName("wtf.scope#enter"), a = a ? a.id : -1, b = this.eventTypeTable.getByName("wtf.scope#leave"), b = b ? b.id : -1, c = this.eventTypeTable.getByName("wtf.scope#appendData"), c = c ? c.id : -1, d = this.eventTypeTable.getByName("wtf.trace#timeStamp"), d = d ? d.id : -1, e = new Int32Array(1024), f = Array(1024), g = new Uint32Array(1024), k = new Uint32Array(1024), m = new Uint32Array(1024), l = 0, p = 0;
   e[0] = -1;
   f[0] = null;
   for (var s = 0, t = this.statistics_, x = this.eventData, y = 0, r = 0;y < this.count;y++, r += wtf.db.EventStruct.STRUCT_SIZE) {
@@ -8466,7 +8470,7 @@ wtf.db.Database.prototype.endInsertingEvents = function() {
   goog.asserts.assert(this.insertingEvents_);
   this.insertingEvents_ = !1;
   this.firstEventTime_ = Number.MAX_VALUE;
-  this.lastEventTime_ = Number.MIN_VALUE;
+  this.lastEventTime_ = -Number.MAX_VALUE;
   for (var a = 0;a < this.zoneList_.length;a++) {
     var b = this.zoneList_[a].getEventList();
     b.rebuild();
@@ -12329,9 +12333,9 @@ wtf.db.EventStatistics = function(a) {
 };
 goog.inherits(wtf.db.EventStatistics, goog.Disposable);
 wtf.db.EventStatistics.prototype.getTable = function(a, b) {
-  var c = goog.isDef(a) ? a : Number.MIN_VALUE, d = goog.isDef(b) ? b : Number.MAX_VALUE;
-  if (c == Number.MIN_VALUE && d == Number.MAX_VALUE) {
-    return this.fullTable_ || (this.fullTable_ = new wtf.db.EventStatistics.Table(this.db_, Number.MIN_VALUE, Number.MAX_VALUE), this.fullTable_.rebuild()), this.fullTable_;
+  var c = goog.isDef(a) ? a : -Number.MAX_VALUE, d = goog.isDef(b) ? b : Number.MAX_VALUE;
+  if (c == -Number.MAX_VALUE && d == Number.MAX_VALUE) {
+    return this.fullTable_ || (this.fullTable_ = new wtf.db.EventStatistics.Table(this.db_, -Number.MAX_VALUE, Number.MAX_VALUE), this.fullTable_.rebuild()), this.fullTable_;
   }
   if (this.selectedTable_ && this.selectedTable_.getStartTime() == c && this.selectedTable_.getEndTime() == d) {
     return this.selectedTable_;
