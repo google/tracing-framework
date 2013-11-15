@@ -13,6 +13,7 @@
 
 goog.provide('wtf.app.tracks.ZonePainter');
 
+goog.require('wtf');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.math');
@@ -272,6 +273,9 @@ wtf.app.tracks.ZonePainter.prototype.drawEvents_ = function(
     it.next();
   }
 };
+
+
+wtf.preventInlining(wtf.app.tracks.ZonePainter.prototype.drawEvents_);
 
 
 /**
