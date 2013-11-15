@@ -160,7 +160,8 @@ wtf.app.tracks.ZonePainter.prototype.drawEvents_ = function(
   // Minimum width of a scope, in screen-space pixels, before it is shown
   // with a grey box. The smaller this value is the slower large traces will
   // render.
-  var MIN_SCOPE_WIDTH = 0.05;
+  var MIN_SCOPE_WIDTH = 0.09;
+  var SKIP_SCOPE_WIDTH = 0.03;
 
   while (!it.done()) {
     // Ignore internal events.
@@ -204,6 +205,12 @@ wtf.app.tracks.ZonePainter.prototype.drawEvents_ = function(
     }
     if (screenLeft >= screenRight) {
       it.next();
+      continue;
+    }
+
+    // If we are *really* small, just skip.
+    if (screenWidth < SKIP_SCOPE_WIDTH) {
+      it.nextSibling();
       continue;
     }
 
