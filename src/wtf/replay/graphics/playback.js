@@ -679,6 +679,8 @@ wtf.replay.graphics.Playback.prototype.clearGpuResource_ = function(obj) {
     ctx.deleteShader(obj);
   } else if (obj instanceof WebGLTexture) {
     ctx.deleteTexture(obj);
+  } else if (obj.constructor.name == 'WebGLVertexArrayObjectOES') {
+    ctx.getExtension('OES_vertex_array_object').deleteVertexArrayOES(obj);
   }
 };
 
@@ -2173,6 +2175,48 @@ wtf.replay.graphics.Playback.CALLS_ = {
     var ext = gl.getExtension('ANGLE_instanced_arrays');
     ext['vertexAttribDivisorANGLE'](
         args['index'], args['divisor']);
+  },
+
+  'OESVertexArrayObject#createVertexArrayOES': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('OES_vertex_array_object');
+    objs[args['arrayObject']] = ext.createVertexArrayOES();
+    playback.setOwningContext_(objs[args['arrayObject']], gl);
+  },
+  'OESVertexArrayObject#deleteVertexArrayOES': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('OES_vertex_array_object');
+    var vao = /** @type {Object} */ (objs[args['arrayObject']]);
+    ext.deleteVertexArrayOES(vao);
+  },
+  'OESVertexArrayObject#isVertexArrayOES': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('OES_vertex_array_object');
+    var vao = /** @type {Object} */ (objs[args['arrayObject']]);
+    ext.isVertexArrayOES(vao);
+  },
+  'OESVertexArrayObject#bindVertexArrayOES': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('OES_vertex_array_object');
+    var vao = /** @type {Object} */ (objs[args['arrayObject']]);
+    ext.bindVertexArrayOES(vao);
+  },
+
+  'WebGLLoseContext#loseContext': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('WEBGL_lose_context');
+    ext.loseContext();
+  },
+  'WebGLLoseContext#restoreContext': function(
+      eventId, playback, gl, args, objs) {
+    // TODO(benvanik): optimize extension fetch.
+    var ext = gl.getExtension('WEBGL_lose_context');
+    ext.restoreContext();
   },
 
   'wtf.webgl#createContext': function(eventId, playback, gl, args, objs) {
