@@ -440,7 +440,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
    * @param {!WebGLRenderingContext} ctx Target context.
    * @param {!Object} proto Prototype object.
    */
-  function wrapInstancedArrays(ctx, proto) {
+  function wrapInstancedArraysExtension(ctx, proto) {
     /**
      * @param {string} signature Event signature.
      * @param {Function=} opt_generator Generator function.
@@ -483,12 +483,112 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
   };
 
   /**
+   * Wraps the OESVertexArrayObject extension object.
+   * @param {!WebGLRenderingContext} ctx Target context.
+   * @param {!Object} proto Prototype object.
+   */
+  function wrapVertexArrayObjectExtension(ctx, proto) {
+    /**
+     * @param {string} signature Event signature.
+     * @param {Function=} opt_generator Generator function.
+     */
+    function wrapVertexArrayObjectMethod(signature, opt_generator) {
+      wrapMethod(
+          proto, 'OESVertexArrayObject',
+          signature, opt_generator);
+    };
+
+    // http://www.khronos.org/registry/webgl/extensions/OES_vertex_array_object/
+
+    wrapVertexArrayObjectMethod(
+        'createVertexArrayOES(uint32 arrayObject)',
+        function(fn, eventType) {
+          return function createVertexArrayOES() {
+            setCurrentContext(ctx);
+            var id = provider.nextObjectId_++;
+            leaveScope(eventType(id));
+            var obj = fn.apply(this, arguments);
+            if (obj) {
+              setHandle(obj, id);
+            }
+            return obj;
+          };
+        });
+    wrapVertexArrayObjectMethod(
+        'deleteVertexArrayOES(uint32 arrayObject)',
+        function(fn, eventType) {
+          return function deleteVertexArrayOES(arrayObject) {
+            setCurrentContext(ctx);
+            var scope = eventType(getHandle(arrayObject));
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+    wrapVertexArrayObjectMethod(
+        'isVertexArrayOES(uint32 arrayObject)',
+        function(fn, eventType) {
+          return function isVertexArrayOES(arrayObject) {
+            setCurrentContext(ctx);
+            var scope = eventType(getHandle(arrayObject));
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+    wrapVertexArrayObjectMethod(
+        'bindVertexArrayOES(uint32 arrayObject)',
+        function(fn, eventType) {
+          return function bindVertexArrayOES(arrayObject) {
+            setCurrentContext(ctx);
+            var scope = eventType(getHandle(arrayObject));
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+  };
+
+  /**
+   * Wraps the WebGLLoseContext extension object.
+   * @param {!WebGLRenderingContext} ctx Target context.
+   * @param {!Object} proto Prototype object.
+   */
+  function wrapLoseContextExtension(ctx, proto) {
+    /**
+     * @param {string} signature Event signature.
+     * @param {Function=} opt_generator Generator function.
+     */
+    function wrapLoseContextMethod(signature, opt_generator) {
+      wrapMethod(
+          proto, 'WebGLLoseContext',
+          signature, opt_generator);
+    };
+
+    // http://www.khronos.org/registry/webgl/extensions/WEBGL_lose_context/
+
+    wrapLoseContextMethod(
+        'loseContext()',
+        function(fn, eventType) {
+          return function loseContext() {
+            setCurrentContext(ctx);
+            var scope = eventType.apply(this, arguments);
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+    wrapLoseContextMethod(
+        'restoreContext()',
+        function(fn, eventType) {
+          return function restoreContext() {
+            setCurrentContext(ctx);
+            var scope = eventType.apply(this, arguments);
+            return leaveScope(scope, fn.apply(this, arguments));
+          };
+        });
+  };
+
+  /**
    * Wraps an extension object.
    * This should be called for each extension object as it is returned from
    * getExtension so that its prototype can be instrumented, as required.
    * @param {!WebGLRenderingContext} ctx Target context.
    * @param {string} name Extension name.
    * @param {!Object} object Extension object.
+   * @return {boolean} True if the extension is supported.
    */
   function instrumentExtensionObject(ctx, name, object) {
     var proto = object.constructor.prototype;
@@ -513,9 +613,29 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     switch (name) {
       case 'ANGLE_instanced_arrays':
         if (checkInstrumented()) {
-          wrapInstancedArrays(ctx, proto);
+          wrapInstancedArraysExtension(ctx, proto);
         }
-        break;
+        return true;
+      case 'OES_vertex_array_object':
+        if (checkInstrumented()) {
+          wrapVertexArrayObjectExtension(ctx, proto);
+        }
+        return true;
+      case 'WEBGL_lose_context':
+        if (checkInstrumented()) {
+          wrapLoseContextExtension(ctx, proto);
+        }
+        return true;
+      case 'WEBGL_draw_buffers':
+        // http://www.khronos.org/registry/webgl/extensions/WEBGL_draw_buffers/
+      case 'WEBGL_security_sensitive_resources':
+        // http://www.khronos.org/registry/webgl/extensions/WEBGL_security_sensitive_resources/
+      case 'WEBGL_shared_resources':
+        // http://www.khronos.org/registry/webgl/extensions/WEBGL_shared_resources/
+        // Don't support these yet, so report them as not present.
+        return false;
+      default:
+        return true;
     }
   };
 
@@ -545,7 +665,9 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
             wtf.trace.appendScopeData('result', false);
           } else {
             // Always check to see if we need to instrument this object.
-            instrumentExtensionObject(this, name, result);
+            if (!instrumentExtensionObject(this, name, result)) {
+              return null;
+            }
           }
           return leaveScope(scope, result);
         };
