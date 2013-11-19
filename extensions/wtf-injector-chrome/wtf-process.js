@@ -165,7 +165,7 @@ global['wtfi']['process'] = function(
           node.type == 'FunctionExpression' && node.parent.type != 'Property') {
         // Wrap with our wrapper to pass in source info.
         // TODO(benvanik): find a way to remove this.
-        node.update('__wtfw(__wtfb, ' + node.source() + ')');
+        node.update('(__wtfw(__wtfb, ' + node.source() + '))');
       } else if (node.type == 'BlockStatement') {
         var parent = node.parent;
 
