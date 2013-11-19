@@ -2,7 +2,7 @@
   "name": "web-tracing-framework",
   "fullName": "Web Tracing Framework",
   "id": "jid1-AdSGhlstK2V5ig",
-  "version": "2013.11.15.1",
+  "version": "2013.11.19.1",
   "description": "Rich tools for instrumenting, analyzing, and visualizing web apps. Make your app jank-free at 60fps!",
   "author": "benvanik@google.com",
   "license": "BSD"
