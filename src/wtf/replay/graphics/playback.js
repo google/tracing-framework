@@ -375,7 +375,7 @@ wtf.replay.graphics.Playback.prototype.constructStepsList_ = function(
   // Get the set of IDs of events that should be displayed.
   // TODO(benvanik): make this list easier to add to.
   var visibleEventsRegex =
-      /^((WebGLRenderingContext#)|(wtf.webgl#)|(ANGLEInstancedArrays#))/;
+      /^((WebGLRenderingContext#)|(wtf.webgl#)|(ANGLEInstancedArrays#)|(OESVertexArrayObject#)|(WebGLLoseContext#))/;
   var displayedEventsIds =
       this.eventList_.eventTypeTable.getSetMatching(visibleEventsRegex);
 
