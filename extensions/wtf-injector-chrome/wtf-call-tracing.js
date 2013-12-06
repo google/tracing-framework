@@ -259,7 +259,12 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
       hideActivityIndicator(doc);
     };
     xhr.open('GET', src, false);
-    xhr.send();
+    try {
+      xhr.send();
+    } catch (e) {
+      warn('Unable to fetch ' + src + ' - using uninstrumented version');
+      el['__wtfi__'] = true;
+    }
 
     return el;
   } else if (el.src && el.src.length && !opt_synchronous) {
@@ -399,7 +404,8 @@ function injectDocumentWrite(targetWindow, doc) {
     }
 
     // Try really hard to get base URLs.
-    var baseUrl = arguments.callee.caller.caller['__src'];
+    var baseUrl = arguments.callee.caller.caller ?
+        arguments.callee.caller.caller['__src'] : null;
     if (!baseUrl) {
       var originalPrepare = Error.prepareStackTrace;
       Error.prepareStackTrace = function(e, callSites) {
