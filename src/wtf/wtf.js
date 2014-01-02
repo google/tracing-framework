@@ -25,6 +25,13 @@ wtf.NODE = false;
 
 
 /**
+ * @define {boolean} True to enable a 'min' build, which cuts out most expesive
+ * or helpful features (error dialogs, human-friendly strings, etc).
+ */
+wtf.MIN_BUILD = false;
+
+
+/**
  * Whether the current code is running inside of a Chrome extension.
  * @type {boolean}
  */

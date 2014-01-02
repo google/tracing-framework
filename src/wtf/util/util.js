@@ -14,8 +14,6 @@
 goog.provide('wtf.util');
 
 goog.require('goog.asserts');
-/** @suppress {extraRequire} */
-goog.require('goog.debug.ErrorHandler');
 goog.require('goog.string');
 goog.require('goog.userAgent.product');
 

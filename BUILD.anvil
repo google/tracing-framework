@@ -90,6 +90,8 @@ SHARED_JS_FLAGS=[
     '--summary_detail_level=3',
     '--define=goog.DEBUG=false',
     '--define=goog.asserts.ENABLE_ASSERTS=false',
+    '--create_source_map=%outname%.map',
+    '--source_map_format=V3',
     ]
 
 RELEASE_JS_FLAGS=[
@@ -269,6 +271,82 @@ file_set(
     name='wtf_trace_web_release',
     srcs=[
         ':wtf_trace_web_js_compiled',
+        ],
+    src_exclude_filter='*-deps.js')
+
+
+# ------------------------------------------------------------------------------
+# JavaScript : trace_min
+# ------------------------------------------------------------------------------
+
+WTF_TRACE_MIN_SRCS=[
+    ':third_party_js',
+    ':wtf_src_js',
+    ]
+
+# All uncompiled JS
+file_set(
+    name='all_trace_min_uncompiled_js',
+    srcs=[
+        'third_party:all_closure_js',
+        'third_party:closure_uncompiled_js',
+        ] + WTF_TRACE_MIN_SRCS)
+
+# All compiled JS
+file_set(
+    name='all_trace_min_compiled_js',
+    srcs=[
+        'third_party:all_closure_js',
+        ] + WTF_TRACE_MIN_SRCS)
+
+WTF_TRACE_MIN_ENTRY_POINTS=[
+    'wtf.trace.exports',
+    ]
+
+WTF_TRACE_MIN_JS_FLAGS=[
+    '--language_in=ECMASCRIPT5_STRICT',
+    '--define=wtf.MIN_BUILD=true',
+    '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
+    '--output_wrapper="if(!this.wtf){(function(){%output%}).call(this);}"',
+    ]
+# wtf_trace_min_js_compiled_debug js
+closure_js_library(
+    name='wtf_trace_min_js_compiled_debug',
+    deps_out='wtf_trace_min_js',
+    mode='ADVANCED',
+    pretty_print=True,
+    entry_points=WTF_TRACE_MIN_ENTRY_POINTS,
+    srcs=':all_trace_min_uncompiled_js',
+    externs=[':all_externs'],
+    compiler_jar=JS_COMPILER_JAR,
+    compiler_flags=SHARED_JS_FLAGS +
+        WTF_TRACE_MIN_JS_FLAGS + [
+            '--debug',
+            '--create_name_map_files',
+            ])
+# wtf_trace_min_js_compiled js
+closure_js_library(
+    name='wtf_trace_min_js_compiled',
+    deps_out='wtf_trace_min_js',
+    mode='ADVANCED',
+    entry_points=WTF_TRACE_MIN_ENTRY_POINTS,
+    srcs=':all_trace_min_compiled_js',
+    externs=[':all_externs'],
+    compiler_jar=JS_COMPILER_JAR,
+    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS +
+        WTF_TRACE_MIN_JS_FLAGS + [
+            ])
+
+file_set(
+    name='wtf_trace_min_debug',
+    srcs=[
+        ':testing_files',
+        ':wtf_trace_min_js_compiled_debug',
+        ])
+file_set(
+    name='wtf_trace_min_release',
+    srcs=[
+        ':wtf_trace_min_js_compiled',
         ],
     src_exclude_filter='*-deps.js')
 
@@ -523,6 +601,7 @@ file_set(
     srcs=[
         ':deps',
         ':wtf_trace_web_release',
+        ':wtf_trace_min_release',
         ':wtf_node_release',
         'app:release',
         ':wtf-trace-web-api',
