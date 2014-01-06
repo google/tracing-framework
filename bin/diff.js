@@ -82,8 +82,13 @@ function diffDatabases(db1, db2, filter) {
   var ALIGN_RIGHT = -8; // 8 chars wide, right aligned
 
   // Build event data tables.
-  var table1 = new wtf.db.EventStatistics(db1).getTable().filter(filter);
-  var table2 = new wtf.db.EventStatistics(db2).getTable().filter(filter);
+  var table1 = new wtf.db.EventStatistics(db1).getTable();
+  var table2 = new wtf.db.EventStatistics(db2).getTable();
+
+  if (filter) {
+    table1 = table1.filter(filter);
+    table2 = table2.filter(filter);
+  }
 
   // Grab all event types from each table and divide by type.
   var allInstanceEntryNames = wtf.db.EventStatistics.getAllEventTypeNames(
