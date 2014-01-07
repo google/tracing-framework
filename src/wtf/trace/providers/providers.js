@@ -36,7 +36,7 @@ wtf.trace.providers.setup = function(traceManager) {
   var options = traceManager.getOptions();
 
   // Replay provider must go first, as it does some really crazy things.
-  if (!wtf.NODE &&
+  if (!wtf.MIN_BUILD && !wtf.NODE &&
       options.getBoolean('wtf.trace.replayable', false)) {
     traceManager.addProvider(
         new wtf.trace.providers.ReplayProvider(traceManager, options));
@@ -49,11 +49,11 @@ wtf.trace.providers.setup = function(traceManager) {
 
   // Browser only:
   if (!wtf.NODE) {
-    if (goog.userAgent.product.CHROME) {
+    if (!wtf.MIN_BUILD && goog.userAgent.product.CHROME) {
       traceManager.addProvider(
           new wtf.trace.providers.ChromeDebugProvider(traceManager, options));
     }
-    if (goog.userAgent.product.FIREFOX) {
+    if (!wtf.MIN_BUILD && goog.userAgent.product.FIREFOX) {
       traceManager.addProvider(
           new wtf.trace.providers.FirefoxDebugProvider(traceManager, options));
     }
@@ -61,12 +61,18 @@ wtf.trace.providers.setup = function(traceManager) {
         new wtf.trace.providers.DomProvider(options));
     traceManager.addProvider(
         new wtf.trace.providers.ImageProvider(options));
-    traceManager.addProvider(
-        new wtf.trace.providers.WebGLProvider(traceManager, options));
-    traceManager.addProvider(
-        new wtf.trace.providers.WebSocketProvider(options));
-    traceManager.addProvider(
-        new wtf.trace.providers.WebWorkerProvider(traceManager, options));
+    if (!wtf.MIN_BUILD) {
+      traceManager.addProvider(
+          new wtf.trace.providers.WebGLProvider(traceManager, options));
+    }
+    if (!wtf.MIN_BUILD) {
+      traceManager.addProvider(
+          new wtf.trace.providers.WebSocketProvider(options));
+    }
+    if (!wtf.MIN_BUILD) {
+      traceManager.addProvider(
+          new wtf.trace.providers.WebWorkerProvider(traceManager, options));
+    }
     traceManager.addProvider(
         new wtf.trace.providers.XhrProvider(options));
   }
