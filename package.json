@@ -33,7 +33,9 @@
     "less": "1.4.2",
     "mocha": "1.4.2",
     "pegjs": "~0.7.0",
-    "wd": "0.0.32"
+    "wd": "0.0.32",
+    "gulp": "~3.2.4",
+    "gulp-if": "0.0.3"
   },
   "optionalDependencies": {
     "microtime": "0.3.3"
