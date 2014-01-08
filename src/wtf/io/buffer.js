@@ -18,7 +18,6 @@ goog.require('goog.asserts');
 goog.require('goog.object');
 goog.require('goog.reflect');
 goog.require('wtf.io');
-goog.require('wtf.io.floatConverter');
 
 
 
@@ -438,7 +437,8 @@ wtf.io.Buffer.prototype.writeFixedUint8Array = function(value) {
  */
 wtf.io.Buffer.prototype.readFloat32 = function() {
   this.ensureAvailable_(4);
-  var value = wtf.io.floatConverter.uint8ArrayToFloat32(this.data, this.offset);
+  var value = wtf.io.getFloatConverter()
+      .uint8ArrayToFloat32(this.data, this.offset);
   this.offset += 4;
   return value;
 };
@@ -450,7 +450,8 @@ wtf.io.Buffer.prototype.readFloat32 = function() {
  */
 wtf.io.Buffer.prototype.writeFloat32 = function(value) {
   this.ensureCapacity_(4);
-  wtf.io.floatConverter.float32ToUint8Array(value, this.data, this.offset);
+  wtf.io.getFloatConverter()
+      .float32ToUint8Array(value, this.data, this.offset);
   this.offset += 4;
 };
 
@@ -461,7 +462,8 @@ wtf.io.Buffer.prototype.writeFloat32 = function(value) {
  */
 wtf.io.Buffer.prototype.readFloat64 = function() {
   this.ensureAvailable_(8);
-  var value = wtf.io.floatConverter.uint8ArrayToFloat64(this.data, this.offset);
+  var value = wtf.io.getFloatConverter()
+      .uint8ArrayToFloat64(this.data, this.offset);
   this.offset += 8;
   return value;
 };
@@ -473,7 +475,8 @@ wtf.io.Buffer.prototype.readFloat64 = function() {
  */
 wtf.io.Buffer.prototype.writeFloat64 = function(value) {
   this.ensureCapacity_(8);
-  wtf.io.floatConverter.float64ToUint8Array(value, this.data, this.offset);
+  wtf.io.getFloatConverter()
+      .float64ToUint8Array(value, this.data, this.offset);
   this.offset += 8;
 };
 

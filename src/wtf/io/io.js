@@ -16,7 +16,6 @@ goog.provide('wtf.io.BlobData');
 goog.provide('wtf.io.ByteArray');
 goog.provide('wtf.io.DataFormat');
 goog.provide('wtf.io.FloatConverter');
-goog.provide('wtf.io.floatConverter');
 
 goog.require('goog.asserts');
 goog.require('goog.crypt.base64');
@@ -272,46 +271,27 @@ wtf.io.FloatConverter;
 
 
 /**
- * Floating point number conversion when typed arrays are not supported.
- * Uses some Javascript arithmetic-fu to do the conversion.
- * @type {!wtf.io.FloatConverter}
+ * Floating point number converter, initialized on first use by
+ * {@see wtf.io#getFloatConverter}.
+ * @type {?wtf.io.FloatConverter}
  * @private
  */
-wtf.io.JavaScriptFloatConverter_ = (function() {
-  return {
-    float32ToUint8Array: function(value, target, offset) {
-      // TODO(benvanik): JS float converter
-      goog.asserts.fail('JS float converter not yet implemented');
-    },
-    uint8ArrayToFloat32: function(source, offset) {
-      // TODO(benvanik): JS float converter
-      goog.asserts.fail('JS float converter not yet implemented');
-      return NaN;
-    },
-    float64ToUint8Array: function(value, target, offset) {
-      // TODO(benvanik): JS float converter
-      goog.asserts.fail('JS float converter not yet implemented');
-    },
-    uint8ArrayToFloat64: function(source, offset) {
-      // TODO(benvanik): JS float converter
-      goog.asserts.fail('JS float converter not yet implemented');
-      return NaN;
-    }
-  };
-})();
+wtf.io.floatConverter_ = null;
 
 
 /**
- * Floating point number conversion when typed arrays are supported.
- * @type {!wtf.io.FloatConverter}
- * @private
+ * Gets a singleton floating point number converter.
+ * @return {!wtf.io.FloatConverter} Shared converter.
  */
-wtf.io.TypedArrayFloatConverter_ = (function() {
+wtf.io.getFloatConverter = function() {
+  if (wtf.io.floatConverter_) {
+    return wtf.io.floatConverter_;
+  }
   var float32 = new Float32Array(16);
   var float32byte = new Uint8Array(float32.buffer);
   var float64 = new Float64Array(16);
   var float64byte = new Uint8Array(float64.buffer);
-  return {
+  wtf.io.floatConverter_ = {
     float32ToUint8Array: function(value, target, offset) {
       float32[0] = value;
       target[offset++] = float32byte[0];
@@ -349,14 +329,5 @@ wtf.io.TypedArrayFloatConverter_ = (function() {
       return float64[0];
     }
   };
-})();
-
-
-/**
- * Floating point number converter.
- * @type {!wtf.io.FloatConverter}
- */
-wtf.io.floatConverter =
-    goog.global['Float32Array'] && goog.global['Float64Array'] ?
-    wtf.io.TypedArrayFloatConverter_ :
-    wtf.io.JavaScriptFloatConverter_;
+  return wtf.io.floatConverter_;
+};
