@@ -14,7 +14,6 @@
 goog.provide('wtf.trace.EventTypeBuilder');
 
 goog.require('goog.asserts');
-goog.require('goog.json');
 goog.require('wtf');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.trace.EventType');
@@ -72,11 +71,8 @@ wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
       json = null;
     } else {
       // JSON is faster and generates less garbage.
-      if (goog.global.JSON) {
-        json = goog.global.JSON.stringify(value);
-      } else {
-        json = goog.json.serialize(value);
-      }
+      // goog.json adds 1K to file size, and is only needed for IE7-.
+      json = goog.global.JSON.stringify(value);
     }
     return json;
   });

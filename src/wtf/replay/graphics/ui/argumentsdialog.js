@@ -19,7 +19,6 @@ goog.require('goog.dom.classes');
 goog.require('goog.dom.forms');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.json');
 goog.require('goog.object');
 goog.require('goog.soy');
 goog.require('goog.string');
@@ -242,7 +241,7 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createLabelInputPair_ =
       goog.dom.classes.add(inputElement, goog.getCssName('dataDumpText'));
 
       // Unsupported argument type. Use JSON to make a pretty string to print.
-      domHelper.setTextContent(inputElement, goog.json.serialize(value));
+      domHelper.setTextContent(inputElement, goog.global.JSON.serialize(value));
       break;
   }
   domHelper.appendChild(inputContainer, inputElement);

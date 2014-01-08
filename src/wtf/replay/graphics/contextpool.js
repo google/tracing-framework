@@ -17,7 +17,6 @@ goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.json');
 goog.require('goog.webgl');
 
 
@@ -71,7 +70,8 @@ wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_ = '__context_pool_hash__';
  */
 wtf.replay.graphics.ContextPool.prototype.getContextHash_ =
     function(contextType, opt_attributes, opt_width, opt_height) {
-  var hashString = contextType + goog.json.serialize(opt_attributes || {});
+  var hashString =
+      contextType + goog.global.JSON.serialize(opt_attributes || {});
   if (opt_width && opt_height) {
     hashString += opt_width + 'x' + opt_height;
   }
