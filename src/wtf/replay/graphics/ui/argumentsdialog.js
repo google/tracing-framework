@@ -241,7 +241,7 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createLabelInputPair_ =
       goog.dom.classes.add(inputElement, goog.getCssName('dataDumpText'));
 
       // Unsupported argument type. Use JSON to make a pretty string to print.
-      domHelper.setTextContent(inputElement, goog.global.JSON.serialize(value));
+      domHelper.setTextContent(inputElement, goog.global.JSON.stringify(value));
       break;
   }
   domHelper.appendChild(inputContainer, inputElement);

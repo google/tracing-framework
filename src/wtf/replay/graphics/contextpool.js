@@ -71,7 +71,7 @@ wtf.replay.graphics.ContextPool.HASH_PROPERTY_NAME_ = '__context_pool_hash__';
 wtf.replay.graphics.ContextPool.prototype.getContextHash_ =
     function(contextType, opt_attributes, opt_width, opt_height) {
   var hashString =
-      contextType + goog.global.JSON.serialize(opt_attributes || {});
+      contextType + goog.global.JSON.stringify(opt_attributes || {});
   if (opt_width && opt_height) {
     hashString += opt_width + 'x' + opt_height;
   }
