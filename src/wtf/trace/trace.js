@@ -226,18 +226,24 @@ wtf.trace.createTransport_ = function(options, streaming, opt_targetValue) {
 wtf.trace.createStreamTarget_ = function(options, transport) {
   // Switch based on format.
   // Note that some formats may not be ideal for certain transports.
-  // TODO(benvanik): force format based on transport type?
-  var formatValue = options.getString('wtf.trace.format', 'binary');
-  switch (formatValue) {
-    default:
-    case 'binary':
-      return new wtf.io.cff.BinaryStreamTarget(transport);
-    case 'json':
-      return new wtf.io.cff.JsonStreamTarget(
-          transport, wtf.io.cff.JsonStreamTarget.Mode.COMPLETE);
-    case 'partial_json':
-      return new wtf.io.cff.JsonStreamTarget(
-          transport, wtf.io.cff.JsonStreamTarget.Mode.PARTIAL);
+
+  if (wtf.MIN_BUILD) {
+    // Binary only in min mode.
+    return new wtf.io.cff.BinaryStreamTarget(transport);
+  } else {
+    // TODO(benvanik): force format based on transport type?
+    var formatValue = options.getString('wtf.trace.format', 'binary');
+    switch (formatValue) {
+      default:
+      case 'binary':
+        return new wtf.io.cff.BinaryStreamTarget(transport);
+      case 'json':
+        return new wtf.io.cff.JsonStreamTarget(
+            transport, wtf.io.cff.JsonStreamTarget.Mode.COMPLETE);
+      case 'partial_json':
+        return new wtf.io.cff.JsonStreamTarget(
+            transport, wtf.io.cff.JsonStreamTarget.Mode.PARTIAL);
+    }
   }
 };
 
