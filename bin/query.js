@@ -52,7 +52,7 @@ function runTool(platform, args, done) {
     console.log('Database loaded in ' + loadDuration.toFixed(3) + 'ms');
     console.log('');
 
-    queryDatabase(db);
+    queryDatabase(db, expr);
 
     done(0);
   });
@@ -62,8 +62,9 @@ function runTool(platform, args, done) {
 /**
  * Runs a REPL that queries a database.
  * @param {!wtf.db.Database} db Database.
+ * @param {string} expr Query string.
  */
-function queryDatabase(db) {
+function queryDatabase(db, expr) {
   // TODO(benvanik): allow the user to switch zone.
   var zone = db.getZones()[0];
 
