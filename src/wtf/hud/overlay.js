@@ -720,19 +720,17 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
       // Chrome extensions can read blobs cross-domain, so just give them
       // the blob URLs.
       var blobUrls = [];
-      var blob = wtf.io.Blob.create(blobs, {
-        'type': 'application/x-extension-wtf-trace'
-      });
-      blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blob));
-      blobUrls.push(goog.fs.createObjectUrl(blob));
-
+      for (var i = 0; i < blobs.length; i++) {
+        var blob = /** @type {!Blob} */ (wtf.io.Blob.toNative(blobs[i]));
+        blobUrls.push(goog.fs.createObjectUrl(blob));
+      }
       goog.asserts.assert(this.extensionChannel_);
       this.extensionChannel_.postMessage({
         'command': 'show_snapshot',
         'page_url': endpoint,
         'new_window': opt_newWindow || false,
-        'content_types': ['application/x-extension-wtf-trace'],
-        'content_sources': [contentSource],
+        'content_types': contentTypes,
+        'content_sources': contentSources,
         'content_urls': blobUrls,
         'content_length': contentLength
       });
