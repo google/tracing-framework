@@ -368,10 +368,7 @@ wtf.trace.snapshotAll = function(callback, opt_scope) {
  */
 wtf.trace.reset = function() {
   var traceManager = wtf.trace.getTraceManager();
-  var session = traceManager.getCurrentSession();
-  if (session instanceof wtf.trace.sessions.SnapshottingSession) {
-    session.reset();
-  }
+  traceManager.reset();
 };
 
 

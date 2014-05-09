@@ -67,6 +67,12 @@ wtf.trace.ISessionListener.prototype.sessionStopped = goog.nullFunction;
 wtf.trace.ISessionListener.prototype.requestSnapshots = goog.nullFunction;
 
 
+/**
+ * Fired when the snapshot should be reset.
+ */
+wtf.trace.ISessionListener.prototype.reset = goog.nullFunction;
+
+
 
 /**
  * Trace manager.
@@ -488,6 +494,20 @@ wtf.trace.TraceManager.prototype.requestSnapshots = function(
     wtf.timing.setImmediate(function() {
       complete();
     });
+  }
+};
+
+
+/**
+ * Resets the snapshot for all sessions.
+ */
+wtf.trace.TraceManager.prototype.reset = function() {
+  var session = this.getCurrentSession();
+  if (session instanceof wtf.trace.sessions.SnapshottingSession) {
+    session.reset();
+  }
+  for (var n = 0; n < this.listeners_.length; n++) {
+    this.listeners_[n].reset();
   }
 };
 

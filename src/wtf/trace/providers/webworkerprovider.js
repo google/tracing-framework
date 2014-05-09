@@ -154,6 +154,16 @@ wtf.trace.providers.WebWorkerProvider.prototype.requestSnapshots = function(
 
 
 /**
+ * @override
+ */
+wtf.trace.providers.WebWorkerProvider.prototype.reset = function() {
+  this.childWorkers_.forEach(function(worker) {
+    worker.reset();
+  });
+};
+
+
+/**
  * Injects MessagePort/MessageChannel.
  * @private
  */
@@ -467,6 +477,10 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     return result;
   };
 
+  ProxyWorker.prototype.reset = function() {
+    this.sendMessage('reset');
+  };
+
   this.injectFunction(goog.global, 'Worker', ProxyWorker);
 };
 
@@ -595,6 +609,13 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
           'id': value['id'],
           'data': data
         }, data[0]);
+        break;
+      case 'reset':
+        // NOTE: due to the async nature of posting messages to workers, the
+        // reset that happens on the worker thread won't happen at *exactly* the
+        // same time, but the work to fix it seems greater than the utility we'd
+        // get.
+        wtf.trace.reset();
         break;
     }
 

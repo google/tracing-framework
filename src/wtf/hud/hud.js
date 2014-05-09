@@ -129,6 +129,12 @@ wtf.hud.SessionListener_.prototype.requestSnapshots = goog.nullFunction;
 
 
 /**
+ * @override
+ */
+wtf.hud.SessionListener_.prototype.reset = goog.nullFunction;
+
+
+/**
  * Shows the HUD, if it is hidden.
  */
 wtf.hud.show = function() {
