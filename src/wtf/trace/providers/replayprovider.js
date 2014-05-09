@@ -126,6 +126,13 @@ wtf.trace.providers.ReplayProvider.prototype.requestSnapshots =
 
 
 /**
+ * @override
+ */
+wtf.trace.providers.ReplayProvider.prototype.reset =
+    goog.nullFunction;
+
+
+/**
  * Re-initializes the Math.random replacement.
  * This should be called at the start of each new session.
  * @private

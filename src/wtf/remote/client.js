@@ -240,3 +240,9 @@ wtf.remote.Client.prototype.sessionStopped = function(session) {
  * @override
  */
 wtf.remote.Client.prototype.requestSnapshots = goog.nullFunction;
+
+
+/**
+ * @override
+ */
+wtf.remote.Client.prototype.reset = goog.nullFunction;
