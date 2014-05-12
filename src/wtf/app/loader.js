@@ -17,7 +17,6 @@ goog.require('goog.Disposable');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.async.Deferred');
-goog.require('goog.async.DeferredList');
 goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
@@ -360,11 +359,16 @@ wtf.app.Loader.prototype.loadDataSources_ = function(
 
   // Wait until the dialog is displayed.
   this.progressDialog_.addListener(wtf.ui.Dialog.EventType.OPENED, function() {
-    // Gather all deferrreds and wait on them.
-    var deferreds = goog.array.map(entries, function(entry) {
-      return entry.start(db);
+    // Each entry must be loaded serially since each trace might be injecting
+    // into its own zone, e.g. with workers.
+    var deferred = new goog.async.Deferred();
+    goog.array.map(entries, function(entry) {
+      deferred.addCallback(function() {
+        return entry.start(db);
+      });
     });
-    goog.async.DeferredList.gatherResults(deferreds).addCallbacks(
+
+    deferred.addCallbacks(
         function() {
           this.loadSucceeded_(doc, entries, opt_title);
         },
@@ -374,6 +378,7 @@ wtf.app.Loader.prototype.loadDataSources_ = function(
               'Source files could not be fetched.',
               false);
         }, this);
+    deferred.callback(true);
   }, this);
 };
 
