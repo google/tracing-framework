@@ -197,6 +197,15 @@ wtf.app.tracks.TracksPanel = function(documentView) {
     goog.array.forEach(zones, this.addZoneTrack_, this);
   }, this);
   var zones = db.getZones();
+
+  // Right now, this will ensure that worker zones (which don't have frames) are
+  // on the top. This is arbitrary, but main thread tracks tend to be deeper, so
+  // it seems reasonable to put that on the bottom.
+  goog.array.sort(zones, function(zoneA, zoneB) {
+    return goog.array.defaultCompare(
+        zoneA.getFrameList().getCount(),
+        zoneB.getFrameList().getCount());
+  });
   goog.array.forEach(zones, this.addZoneTrack_, this);
 
   // Done last so any other handlers are properly registered.
