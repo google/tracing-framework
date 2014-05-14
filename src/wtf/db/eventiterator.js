@@ -770,6 +770,21 @@ wtf.db.EventIterator.prototype.getChildFlows_ = function() {
   return ret;
 };
 
+
+/**
+ * Gets the ID of the first child flow, or -1 if there is no child flow. Used
+ * for filtering.
+ * @return {number} The ID of the first child flow.
+ */
+wtf.db.EventIterator.prototype.getChildFlowId = function() {
+  var childFlows = this.getChildFlows_();
+
+  if (!childFlows) return -1;
+
+  return /** @type {number} */(childFlows[0].getArgument('id'));
+};
+
+
 goog.exportSymbol(
     'wtf.db.EventIterator',
     wtf.db.EventIterator);
@@ -863,3 +878,6 @@ goog.exportProperty(
 goog.exportProperty(
     wtf.db.EventIterator.prototype, 'getScopeStackString',
     wtf.db.EventIterator.prototype.getScopeStackString);
+goog.exportProperty(
+    wtf.db.EventIterator.prototype, 'getChildFlowId',
+    wtf.db.EventIterator.prototype.getChildFlowId);
