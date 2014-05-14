@@ -64,6 +64,19 @@ wtf.trace.Flow.INVALID_ID = 0;
 wtf.trace.Flow.nextId_ = 1;
 
 
+// Flow IDs should be unique across the app. We try to ensure that workers have
+// their own IDs by reserving the high four bits for the worker ID. (0 is used
+// by the main thread.) If an app has more than 2^4 workers or more than 2^27
+// flows, there will be collisions.
+(function() {
+  if (goog.isDef(goog.global['WTF_WORKER_ID'])) {
+    var workerId = goog.global['WTF_WORKER_ID'] + 1;
+    var highBits = workerId & 0xF;
+    wtf.trace.Flow.nextId_ = (highBits << 27) + 1;
+  }
+})();
+
+
 /**
  * Generates a new semi-unique flow ID.
  * @return {number} Flow ID.
