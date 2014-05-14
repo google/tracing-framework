@@ -351,6 +351,7 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
             case '@duration':
             case '@userduration':
             case '@ownduration':
+            case '@flowid':
               requiresScope = true;
               break;
           }
@@ -409,6 +410,8 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
             return 'it.getUserDuration()';
           case '@ownduration':
             return 'it.getOwnDuration()';
+          case '@flowid':
+            return 'it.getChildFlowId()';
           default:
             throw new Error('Unknown event attribute: ' + access);
         }
