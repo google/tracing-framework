@@ -758,6 +758,9 @@ wtf.db.EventIterator.prototype.getChildFlows_ = function() {
   var ret = null;
 
   for (; !it.done(); it.next()) {
+    // This should only get immediate children so that the same flow doesn't
+    // associate with multiple scopes.
+    if (!(it.getParent().getId() == this.getId())) continue;
     var type = it.getTypeId() & 0xFFFF;
     if (type == branchId ||
         type == extendId ||
