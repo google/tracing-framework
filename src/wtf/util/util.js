@@ -82,12 +82,19 @@ wtf.util.formatWallTime = function(value) {
  * Adds event argument lines to the line list.
  * @param {!Array.<string>} lines List of lines that will be added to.
  * @param {Object} data Argument data object.
+ * @param {number=} opt_indent Level of indentation, defaults to 0.
  */
-wtf.util.addArgumentLines = function(lines, data) {
+wtf.util.addArgumentLines = function(lines, data, opt_indent) {
   if (!data) {
     return;
   }
 
+  var indent = '';
+  if (opt_indent) {
+    for (var i = 0; i < opt_indent; i++) {
+      indent += '  ';
+    }
+  }
   for (var argName in data) {
     var argValue = data[argName];
     if (argValue === undefined) {
@@ -116,7 +123,7 @@ wtf.util.addArgumentLines = function(lines, data) {
       // TODO(benvanik): prettier object printing.
       argValue = goog.global.JSON.stringify(argValue, undefined, 2);
     }
-    lines.push(argName + ': ' + argValue);
+    lines.push(indent + argName + ': ' + argValue);
   }
 };
 
