@@ -687,6 +687,14 @@ wtf.db.EventIterator.prototype.getScopeInfoString_ = function(units) {
     wtf.util.addArgumentLines(lines, args);
   }
 
+  var flows = this.getChildFlows_();
+  if (flows) {
+    for (var i = 0; i < flows.length; i++) {
+      lines.push('  ' + flows[i].getType().name);
+      wtf.util.addArgumentLines(lines, flows[i].getArguments(), 2);
+    }
+  }
+
   return lines.join('\n');
 };
 
@@ -730,6 +738,37 @@ wtf.db.EventIterator.prototype.getScopeStackString = function() {
   return stack.join('\n');
 };
 
+
+/**
+ * Gets an array of all flow events that are a child of the current event.
+ * @return {Array.<wtf.db.EventIterator>} The array of children.
+ * @private
+ */
+wtf.db.EventIterator.prototype.getChildFlows_ = function() {
+  var it = this.eventList_.beginTimeRange(this.getTime(), this.getEndTime());
+
+  var branch = this.eventList_.eventTypeTable.getByName('wtf.flow#branch');
+  var branchId = branch ? branch.id : -1;
+  var extend = this.eventList_.eventTypeTable.getByName('wtf.flow#extend');
+  var extendId = extend ? extend.id : -1;
+  var terminate =
+      this.eventList_.eventTypeTable.getByName('wtf.flow#terminate');
+  var terminateId = terminate ? terminate.id : -1;
+
+  var ret = null;
+
+  for (; !it.done(); it.next()) {
+    var type = it.getTypeId() & 0xFFFF;
+    if (type == branchId ||
+        type == extendId ||
+        type == terminateId) {
+      ret = ret || [];
+      ret.push(this.eventList_.getEvent(it.getId()));
+    }
+  }
+
+  return ret;
+};
 
 goog.exportSymbol(
     'wtf.db.EventIterator',
