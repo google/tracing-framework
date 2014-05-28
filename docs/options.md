@@ -139,8 +139,10 @@ override object `wtf_hud_options`.
 Docking position of the HUD overlay. May be one of:
 
 * `tl`: Top Left.
+* `tm`: Top Middle.
 * `tr`: Top Right.
 * `bl`: Bottom Left.
+* `bm`: Bottom Middle.
 * `br`: Bottom Right.
 
 ### wtf.hud.app.mode/wtf.hud.app.endpoint

@@ -234,7 +234,17 @@ wtf.hud.Overlay.DockPosition_ = {
   /**
    * Dock at the bottom-right of the screen.
    */
-  BOTTOM_RIGHT: 'br'
+  BOTTOM_RIGHT: 'br',
+
+  /**
+   * Dock at the top-middle of the screen.
+   */
+  TOP_MIDDLE: 'tm',
+
+  /**
+   * Dock at the bottom-middle of the screen.
+   */
+  BOTTOM_MIDDLE: 'bm'
 };
 
 
@@ -282,6 +292,12 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
     case 'br':
       this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
       break;
+    case 'tm':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_MIDDLE;
+      break;
+    case 'bm':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE;
+      break;
   }
 
   // Adjust position on page.
@@ -323,6 +339,24 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'right': 0
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.TOP_MIDDLE:
+      goog.style.setStyle(rootElement, {
+        'top': 0,
+        'bottom': null,
+        'left': null,
+        'right': '50%'
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE:
+      goog.style.setStyle(rootElement, {
+        'top': null,
+        'bottom': 0,
+        'left': null,
+        'right': '50%'
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
   }
 
@@ -558,8 +592,10 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
               'title': 'Dock at:',
               'options': [
                 {'value': 'tl', 'title': 'Top Left'},
+                {'value': 'tm', 'title': 'Top Middle'},
                 {'value': 'tr', 'title': 'Top Right'},
                 {'value': 'bl', 'title': 'Bottom Left'},
+                {'value': 'bm', 'title': 'Bottom Middle'},
                 {'value': 'br', 'title': 'Bottom Right'}
               ],
               'default': 'br'
