@@ -309,7 +309,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': 0,
         'bottom': null,
         'left': 0,
-        'right': null
+        'right': null,
+        'margin-right': 'auto'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
@@ -318,7 +319,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': null,
         'bottom': 0,
         'left': 0,
-        'right': null
+        'right': null,
+        'margin-right': 'auto'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
@@ -327,7 +329,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': 0,
         'bottom': null,
         'left': null,
-        'right': 0
+        'right': 0,
+        'margin-right': '3px'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
@@ -336,25 +339,32 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': null,
         'bottom': 0,
         'left': null,
-        'right': 0
+        'right': 0,
+        'margin-right': '3px'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
     case wtf.hud.Overlay.DockPosition_.TOP_MIDDLE:
+      var halfWidth = this.getSplitterSize() / 2.0;
+      var marginString = goog.string.buildString('-', halfWidth, 'px');
       goog.style.setStyle(rootElement, {
         'top': 0,
         'bottom': null,
         'left': null,
-        'right': '50%'
+        'right': '50%',
+        'margin-right': marginString
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
     case wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE:
+      var halfWidth = this.getSplitterSize() / 2.0;
+      var marginString = goog.string.buildString('-', halfWidth, 'px');
       goog.style.setStyle(rootElement, {
         'top': null,
         'bottom': 0,
         'left': null,
-        'right': '50%'
+        'right': '50%',
+        'margin-right': marginString
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
