@@ -234,7 +234,17 @@ wtf.hud.Overlay.DockPosition_ = {
   /**
    * Dock at the bottom-right of the screen.
    */
-  BOTTOM_RIGHT: 'br'
+  BOTTOM_RIGHT: 'br',
+
+  /**
+   * Dock at the top-middle of the screen.
+   */
+  TOP_MIDDLE: 'tm',
+
+  /**
+   * Dock at the bottom-middle of the screen.
+   */
+  BOTTOM_MIDDLE: 'bm'
 };
 
 
@@ -282,6 +292,12 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
     case 'br':
       this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
       break;
+    case 'tm':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_MIDDLE;
+      break;
+    case 'bm':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE;
+      break;
   }
 
   // Adjust position on page.
@@ -293,7 +309,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': 0,
         'bottom': null,
         'left': 0,
-        'right': null
+        'right': null,
+        'margin-right': 'auto'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
@@ -302,7 +319,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': null,
         'bottom': 0,
         'left': 0,
-        'right': null
+        'right': null,
+        'margin-right': 'auto'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
@@ -311,7 +329,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': 0,
         'bottom': null,
         'left': null,
-        'right': 0
+        'right': 0,
+        'margin-right': '3px'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
@@ -320,9 +339,34 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': null,
         'bottom': 0,
         'left': null,
-        'right': 0
+        'right': 0,
+        'margin-right': '3px'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.TOP_MIDDLE:
+      var halfWidth = this.getSplitterSize() / 2.0;
+      var marginString = goog.string.buildString('-', halfWidth, 'px');
+      goog.style.setStyle(rootElement, {
+        'top': 0,
+        'bottom': null,
+        'left': null,
+        'right': '50%',
+        'margin-right': marginString
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE:
+      var halfWidth = this.getSplitterSize() / 2.0;
+      var marginString = goog.string.buildString('-', halfWidth, 'px');
+      goog.style.setStyle(rootElement, {
+        'top': null,
+        'bottom': 0,
+        'left': null,
+        'right': '50%',
+        'margin-right': marginString
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
   }
 
@@ -558,8 +602,10 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
               'title': 'Dock at:',
               'options': [
                 {'value': 'tl', 'title': 'Top Left'},
+                {'value': 'tm', 'title': 'Top Middle'},
                 {'value': 'tr', 'title': 'Top Right'},
                 {'value': 'bl', 'title': 'Bottom Left'},
+                {'value': 'bm', 'title': 'Bottom Middle'},
                 {'value': 'br', 'title': 'Bottom Right'}
               ],
               'default': 'br'
