@@ -209,7 +209,12 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   ProxyXMLHttpRequest.prototype.beginTrackingEvent = function(type) {
     var self = this;
     var tracker = function(e) {
-      self['dispatchEvent'](e);
+      var retargettedEvent = Object.create(e, {
+        'target': {
+          'value': self
+        }
+      });
+      self['dispatchEvent'](retargettedEvent);
     };
     this.trackers_[type] = tracker;
     this.handle_.addEventListener(type, tracker, false);
