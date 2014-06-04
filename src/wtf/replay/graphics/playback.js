@@ -22,6 +22,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.fs');
 goog.require('goog.object');
+goog.require('goog.string');
 goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
@@ -139,11 +140,25 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.loadDeferred_ = null;
 
   /**
-   * A mapping of handles to WebGL objects.
+   * A mapping of handles to GPU objects.
    * @type {!Object.<!Object>}
    * @private
    */
   this.objects_ = {};
+
+  /**
+   * A mapping of handles to WebGL GPU object types to the objects themselves.
+   * @type {!Object.<
+   *       wtf.replay.graphics.Playback.GpuObject, !Object.<!Object>>}
+   * @private
+   */
+  this.objectsByType_ = {};
+
+  // Initialize an empty set of GPU objects for each type of GPU object.
+  var webGlObjectTypes = wtf.replay.graphics.Playback.GpuObject;
+  for (var stringKey in webGlObjectTypes) {
+    this.objectsByType_[webGlObjectTypes[stringKey]] = {};
+  }
 
   /**
    * True if and only if the playback is playing.
@@ -153,12 +168,12 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.playing_ = false;
 
   /**
-   * The ID of the event (relative to the step iterator) within a step. This is
-   * the event that has just executed. -1 if no event in a step has executed.
+   * The index of the event (relative to the step iterator) within a step. This
+   * is the event that has just executed. -1 if no event in a step has executed.
    * @type {number}
    * @private
    */
-  this.subStepId_ = -1;
+  this.subStepIndex_ = -1;
 
   /**
    * Handler for animation request.
@@ -470,7 +485,7 @@ wtf.replay.graphics.Playback.prototype.reset = function() {
 wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
   this.clearWebGlObjects_();
   this.currentStepIndex_ = 0;
-  this.subStepId_ = -1;
+  this.subStepIndex_ = -1;
 };
 
 
@@ -487,13 +502,18 @@ wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
   }
 
   // Clear resources on the GPU.
-  for (var objectKey in this.objects_) {
-    if (!this.programs_[objectKey] || opt_clearCached) {
+  for (var handle in this.objects_) {
+    if (!this.programs_[handle] || opt_clearCached) {
       // Do not clear cached programs.
-      this.clearGpuResource_(this.objects_[objectKey]);
+      this.clearGpuResource_(this.objects_[handle]);
     }
   }
   this.objects_ = {};
+
+  // Clear the objects from the typed mapping too.
+  for (var objectType in this.objectsByType_) {
+    this.objectsByType_[goog.string.parseInt(objectType)] = {};
+  }
 
   // Release all the contexts.
   for (var contextKey in this.contexts_) {
@@ -510,8 +530,11 @@ wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
  */
 wtf.replay.graphics.Playback.prototype.clearProgramsCache = function() {
   var programs = this.programs_;
+  var programsStorage =
+      this.objectsByType_[wtf.replay.graphics.Playback.GpuObject.PROGRAM];
   for (var handle in programs) {
     this.clearGpuResource_(programs[handle]);
+    delete programsStorage[handle];
     delete this.objects_[handle];
   }
   this.programs_ = {};
@@ -804,9 +827,9 @@ wtf.replay.graphics.Playback.prototype.isPlaying = function() {
 wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
 
   // If currently within a step, finish the step first.
-  if (this.subStepId_ != -1) {
+  if (this.subStepIndex_ != -1) {
     var it = this.getCurrentStep().getEventIterator(true);
-    it.seek(this.subStepId_);
+    it.seek(this.subStepIndex_);
 
     // This event has already been realized, so skip it.
     it.next();
@@ -828,7 +851,7 @@ wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
   var stepToPlayFrom = this.steps_[this.currentStepIndex_];
   var self = this;
   var handler = function() {
-    self.subStepId_ = -1;
+    self.subStepIndex_ = -1;
     for (var it = stepToPlayFrom.getEventIterator(); !it.done(); it.next()) {
       self.realizeEvent_(it);
     }
@@ -886,7 +909,7 @@ wtf.replay.graphics.Playback.prototype.seekEvent_ = function(targetEventIndex) {
     startIndex = this.getCurrentStep().getEventIterator().getIndex();
   } else {
     // We are seeking to a later step, so finish this one first.
-    var subStepId = this.subStepId_;
+    var subStepId = this.subStepIndex_;
     if (subStepId != -1) {
       var it = currentStep.getEventIterator(true);
       for (it.seek(subStepId + 1); !it.done(); it.next()) {
@@ -928,7 +951,7 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
   var isBackwardsSeek = index <= currentStepIndex;
 
   this.seekEvent_(this.steps_[index].getStartEventId());
-  this.subStepId_ = -1;
+  this.subStepIndex_ = -1;
   this.currentStepIndex_ = index;
 
   if (currentStepChanges) {
@@ -947,11 +970,11 @@ wtf.replay.graphics.Playback.prototype.seekStep = function(index) {
  */
 wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
   var currentStep = this.getCurrentStep();
-  if (!currentStep || this.subStepId_ == index) {
+  if (!currentStep || this.subStepIndex_ == index) {
     return;
   }
 
-  var prevSubstepId = this.subStepId_;
+  var prevSubstepId = this.subStepIndex_;
   var isBackwardsSeek = prevSubstepId != -1 && index < prevSubstepId;
 
   // If backwards seek, go to beginning of frame.
@@ -968,7 +991,7 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
     it.next();
   }
 
-  this.subStepId_ = index;
+  this.subStepIndex_ = index;
   this.emitEvent(
       wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
 };
@@ -982,7 +1005,7 @@ wtf.replay.graphics.Playback.prototype.seekSubStepEvent = function(index) {
  *     are at the very beginning of a step.).
  */
 wtf.replay.graphics.Playback.prototype.getSubStepEventIndex = function() {
-  return this.subStepId_;
+  return this.subStepIndex_;
 };
 
 
@@ -996,7 +1019,7 @@ wtf.replay.graphics.Playback.prototype.seekToLastCall = function() {
   }
 
   var it = currentStep.getEventIterator(true);
-  var eventJustFinished = this.subStepId_;
+  var eventJustFinished = this.subStepIndex_;
 
   // Keep calling events in the step until the step is done.
   it.seek(eventJustFinished + 1);
@@ -1005,7 +1028,7 @@ wtf.replay.graphics.Playback.prototype.seekToLastCall = function() {
     it.next();
   }
 
-  this.subStepId_ = it.getIndex() - 1;
+  this.subStepIndex_ = it.getIndex() - 1;
   this.emitEvent(
       wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
 };
@@ -1023,7 +1046,7 @@ wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
   }
 
   var it = currentStep.getEventIterator(true);
-  var eventJustFinishedIndex = this.subStepId_;
+  var eventJustFinishedIndex = this.subStepIndex_;
 
   if (eventJustFinishedIndex == -1) {
     // No draw call can be before the start of the step.
@@ -1059,7 +1082,7 @@ wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
   }
 
   var it = currentStep.getEventIterator(true);
-  var eventJustFinished = this.subStepId_;
+  var eventJustFinished = this.subStepIndex_;
 
   // Keep calling events in the step until either the step is done or we
   // encounter a draw call.
@@ -1067,7 +1090,7 @@ wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
   while (!it.done()) {
     this.realizeEvent_(it);
     if (this.drawCallIds_[it.getTypeId()]) {
-      this.subStepId_ = it.getIndex();
+      this.subStepIndex_ = it.getIndex();
       this.emitEvent(
           wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
       return;
@@ -1075,7 +1098,7 @@ wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
     it.next();
   }
 
-  this.subStepId_ = it.getIndex() - 1;
+  this.subStepIndex_ = it.getIndex() - 1;
   this.emitEvent(
       wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
 };
@@ -1192,6 +1215,33 @@ wtf.replay.graphics.Playback.prototype.coercePixelType_ =
       goog.asserts.fail('Unsupported texture type');
       return new Uint8Array(buffer);
   }
+};
+
+
+/**
+ * Gets the GPU objects of a certain type that have accumulated so far.
+ * @param {wtf.replay.graphics.Playback.GpuObject} objectType The type of
+ *     GPU objects to fetch.
+ * @return {!Object.<!Object>} A mapping from handles to objects. The returned
+ *     object should not be modified.
+ */
+wtf.replay.graphics.Playback.prototype.getGpuObjects = function(objectType) {
+  return this.objects_[objectType];
+};
+
+
+/**
+ * Enumerates types of GPU objects.
+ * @enum {number}
+ * @const
+ */
+wtf.replay.graphics.Playback.GpuObject = {
+  BUFFER: 1,
+  FRAME_BUFFER: 2,
+  PROGRAM: 3,
+  RENDER_BUFFER: 4,
+  SHADER: 5,
+  TEXTURE: 6
 };
 
 
@@ -1359,41 +1409,65 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#createBuffer': function(
       eventId, playback, gl, args, objs) {
-    objs[args['buffer']] = gl.createBuffer();
+    var buffers = playback.objectsByType_[
+        wtf.replay.graphics.Playback.GpuObject.BUFFER];
+    var bufferHandle = args['buffer'];
+    objs[bufferHandle] = gl.createBuffer();
+    buffers[bufferHandle] = objs[bufferHandle];
     playback.setOwningContext_(objs[args['buffer']], gl);
   },
   'WebGLRenderingContext#createFramebuffer': function(
       eventId, playback, gl, args, objs) {
-    objs[args['framebuffer']] = gl.createFramebuffer();
+    var framebuffers = playback.objectsByType_[
+        wtf.replay.graphics.Playback.GpuObject.FRAME_BUFFER];
+    var framebufferHandle = args['framebuffer'];
+    objs[framebufferHandle] = gl.createFramebuffer();
+    framebuffers[framebufferHandle] = objs[framebufferHandle];
     playback.setOwningContext_(objs[args['framebuffer']], gl);
   },
   'WebGLRenderingContext#createRenderbuffer': function(
       eventId, playback, gl, args, objs) {
-    objs[args['renderbuffer']] = gl.createRenderbuffer();
-    playback.setOwningContext_(objs[args['renderbuffer']], gl);
+    var renderbuffers = playback.objectsByType_[
+        wtf.replay.graphics.Playback.GpuObject.RENDER_BUFFER];
+    var renderbufferHandle = args['renderbuffer'];
+    objs[renderbufferHandle] = gl.createRenderbuffer();
+    renderbuffers[renderbufferHandle] = objs[renderbufferHandle];
+    playback.setOwningContext_(objs[renderbufferHandle], gl);
   },
   'WebGLRenderingContext#createTexture': function(
       eventId, playback, gl, args, objs) {
-    objs[args['texture']] = gl.createTexture();
-    playback.setOwningContext_(objs[args['texture']], gl);
+    var textures = playback.objectsByType_[
+        wtf.replay.graphics.Playback.GpuObject.TEXTURE];
+    var textureHandle = args['texture'];
+    objs[textureHandle] = gl.createTexture();
+    textures[textureHandle] = objs[textureHandle];
+    playback.setOwningContext_(objs[textureHandle], gl);
   },
   'WebGLRenderingContext#createProgram': function(
       eventId, playback, gl, args, objs) {
-    if (playback.programs_[args['program']]) {
+    var programs = playback.objectsByType_[
+        wtf.replay.graphics.Playback.GpuObject.PROGRAM];
+    var programHandle = args['program'];
+
+    if (playback.programs_[programHandle]) {
       // Use the cached program.
-      objs[args['program']] = playback.programs_[args['program']];
+      objs[programHandle] = playback.programs_[programHandle];
     } else {
       var newProgram = gl.createProgram();
-      playback.setOwningContext_(newProgram, gl);
-      objs[args['program']] = newProgram;
+      objs[programHandle] = newProgram;
     }
 
-    playback.setOwningContext_(objs[args['program']], gl);
+    programs[programHandle] = objs[programHandle];
+    playback.setOwningContext_(objs[programHandle], gl);
   },
   'WebGLRenderingContext#createShader': function(
       eventId, playback, gl, args, objs) {
-    objs[args['shader']] = gl.createShader(args['type']);
-    playback.setOwningContext_(objs[args['shader']], gl);
+    var shaders = playback.objectsByType_[
+        wtf.replay.graphics.Playback.GpuObject.SHADER];
+    var shaderHandle = args['shader'];
+    objs[shaderHandle] = gl.createShader(args['type']);
+    shaders[shaderHandle] = objs[shaderHandle];
+    playback.setOwningContext_(objs[shaderHandle], gl);
   },
   'WebGLRenderingContext#cullFace': function(
       eventId, playback, gl, args, objs) {
