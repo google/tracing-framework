@@ -25,6 +25,7 @@ goog.require('goog.object');
 goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
+goog.require('wtf.replay.graphics.Highlight');
 goog.require('wtf.replay.graphics.Step');
 goog.require('wtf.timing.util');
 
@@ -124,6 +125,37 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.programs_ = {};
 
   /**
+   * The program handle from event arguments for the latest used program.
+   * @type {number}
+   * @private
+   */
+  this.latestProgramHandle_ = 0;
+
+  /**
+   * Draw call highlighting visualizer.
+   * @type {!wtf.replay.graphics.Highlight}
+   * @private
+   */
+  this.highlightVisualizer_ = new wtf.replay.graphics.Highlight(this);
+  this.registerDisposable(this.highlightVisualizer_);
+
+  // TODO(scotttodd): Replace type with Visualizer parent class.
+  /**
+   * The active visualizer, or null if no visualizer is active.
+   * @type {wtf.replay.graphics.Highlight}
+   * @private
+   */
+  this.activeVisualizer_ = null;
+
+  // TODO(scotttodd): Replace type with Visualizer parent class.
+  /**
+   * A finished visualizer. Call finishVisualization before advancing playback.
+   * @type {wtf.replay.graphics.Highlight}
+   * @private
+   */
+  this.finishedVisualizer_ = null;
+
+  /**
    * Whether resources have finished loading. Set to true after a
    * {@see #fetchResources_} process finishes.
    * @type {boolean}
@@ -194,6 +226,13 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
    * @private
    */
   this.currentContext_ = null;
+
+  /**
+   * The current context handle from event arguments.
+   * @type {?number}
+   * @private
+   */
+  this.currentContextHandle_ = null;
 
   /**
    * Attribute values that override those of created contexts.
@@ -475,6 +514,37 @@ wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
 
 
 /**
+ * Sets the active visualizer.
+ * @param {wtf.replay.graphics.Highlight} visualizer The Visualizer.
+ */
+wtf.replay.graphics.Playback.prototype.setActiveVisualizer = function(
+    visualizer) {
+  this.activeVisualizer_ = visualizer;
+};
+
+
+/**
+ * Sets the finished visualizer.
+ * @param {wtf.replay.graphics.Highlight} visualizer The Visualizer.
+ */
+wtf.replay.graphics.Playback.prototype.setFinishedVisualizer = function(
+    visualizer) {
+  this.finishedVisualizer_ = visualizer;
+};
+
+
+/**
+ * Triggers highlight visualization for a target substep index.
+ * @param {!number} index The substep index to highlight. Should be a draw call.
+ */
+wtf.replay.graphics.Playback.prototype.triggerHighlight = function(index) {
+  this.highlightVisualizer_.triggerVisualization(this.currentContextHandle_,
+      index);
+  return;
+};
+
+
+/**
  * Clears WebGL objects.
  * @param {boolean=} opt_clearCached True if cached programs should be cleared
  *     too. False by default.
@@ -484,6 +554,10 @@ wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
     opt_clearCached) {
   if (this.isPlaying()) {
     this.pause();
+  }
+
+  if (opt_clearCached) {
+    this.highlightVisualizer_.clearPrograms();
   }
 
   // Clear resources on the GPU.
@@ -514,6 +588,7 @@ wtf.replay.graphics.Playback.prototype.clearProgramsCache = function() {
     this.clearGpuResource_(programs[handle]);
     delete this.objects_[handle];
   }
+  this.highlightVisualizer_.clearPrograms();
   this.programs_ = {};
 };
 
@@ -625,6 +700,7 @@ wtf.replay.graphics.Playback.prototype.resetProgramUniforms_ = function(
   }
 
   context.useProgram(null);
+  this.latestProgramHandle_ = 0;
 };
 
 
@@ -1012,6 +1088,16 @@ wtf.replay.graphics.Playback.prototype.seekToLastCall = function() {
 
 
 /**
+ * Returns whether a given EventIterator is at a draw call.
+ * @param {!wtf.db.EventIterator} it Event iterator.
+ * @return {boolean} True if 'it' is a draw call, false otherwise.
+ */
+wtf.replay.graphics.Playback.prototype.isDrawCall = function(it) {
+  return this.drawCallIds_[it.getTypeId()];
+};
+
+
+/**
  * Seeks to the previous draw call within the current step. If no draw call is
  * before the current call within the step, seeks to the start of the step.
  */
@@ -1033,7 +1119,7 @@ wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
   --eventJustFinishedIndex;
   while (eventJustFinishedIndex >= 0) {
     it.seek(eventJustFinishedIndex);
-    if (this.drawCallIds_[it.getTypeId()]) {
+    if (this.isDrawCall(it)) {
       // Found a previous draw call. Seek to it.
       this.seekSubStepEvent(eventJustFinishedIndex);
       return;
@@ -1066,7 +1152,7 @@ wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
   it.seek(eventJustFinished + 1);
   while (!it.done()) {
     this.realizeEvent_(it);
-    if (this.drawCallIds_[it.getTypeId()]) {
+    if (this.isDrawCall(it)) {
       this.subStepId_ = it.getIndex();
       this.emitEvent(
           wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
@@ -1111,6 +1197,11 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
   var associatedFunction = this.callLookupTable_[it.getTypeId()];
   if (associatedFunction) {
     try {
+      if (this.finishedVisualizer_) {
+        this.finishedVisualizer_.finishVisualization(
+            this.currentContextHandle_);
+        this.finishedVisualizer_ = null;
+      }
       associatedFunction.call(null, it.getId(), this, this.currentContext_,
           it.getArguments(), this.objects_);
     } catch (e) {
@@ -1120,6 +1211,27 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
           ': ' + e);
     }
   }
+};
+
+
+/**
+ * Calls the drawFunction and handles usage of variant programs.
+ * @param {function()} drawFunction The draw function to call.
+ */
+wtf.replay.graphics.Playback.prototype.performDraw = function(drawFunction) {
+  var gl = this.currentContext_;
+
+  var originalFramebuffer = /** @type {WebGLFramebuffer} */ (
+      gl.getParameter(goog.webgl.FRAMEBUFFER_BINDING));
+
+  // Do not edit calls where the target is not the visible framebuffer.
+  if (!this.activeVisualizer_ || originalFramebuffer != null) {
+    drawFunction();
+  } else {
+    this.activeVisualizer_.processPerformDraw(this.currentContextHandle_,
+        this.latestProgramHandle_, drawFunction);
+  }
+  return;
 };
 
 
@@ -1303,6 +1415,7 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#clear': function(
       eventId, playback, gl, args, objs) {
     gl.clear(args['mask']);
+    // TODO(scotttodd): Call clear within visualizers?
   },
   'WebGLRenderingContext#clearColor': function(
       eventId, playback, gl, args, objs) {
@@ -1413,6 +1526,7 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#deleteProgram': function(
       eventId, playback, gl, args, objs) {
     var programHandle = args['program'];
+    playback.highlightVisualizer_.deleteProgram(programHandle);
     gl.deleteProgram(
         /** @type {WebGLProgram} */ (objs[programHandle]));
     delete objs[programHandle];
@@ -1460,14 +1574,16 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#drawArrays': function(
       eventId, playback, gl, args, objs) {
-    gl.drawArrays(
-        args['mode'], args['first'], args['count']);
+    playback.performDraw(function() {
+      gl.drawArrays(args['mode'], args['first'], args['count']);
+    });
   },
   'WebGLRenderingContext#drawElements': function(
       eventId, playback, gl, args, objs) {
-    gl.drawElements(
-        args['mode'], args['count'], args['type'],
-        args['offset']);
+    playback.performDraw(function() {
+      gl.drawElements(args['mode'], args['count'], args['type'],
+          args['offset']);
+    });
   },
   'WebGLRenderingContext#enable': function(
       eventId, playback, gl, args, objs) {
@@ -1687,6 +1803,9 @@ wtf.replay.graphics.Playback.CALLS_ = {
       // Link the program only if the program was not cached.
       gl.linkProgram(
           /** @type {WebGLProgram} */ (objs[args['program']]));
+      playback.highlightVisualizer_.processLinkProgram(gl,
+          /** @type {WebGLProgram} */ (objs[args['program']]),
+          /** @type {number} */ (args['program']));
     }
   },
   'WebGLRenderingContext#pixelStorei': function(
@@ -1968,6 +2087,7 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#useProgram': function(
       eventId, playback, gl, args, objs) {
     gl.useProgram(/** @type {WebGLProgram} */ (objs[args['program']]));
+    playback.latestProgramHandle_ = args['program'];
   },
   'WebGLRenderingContext#validateProgram': function(
       eventId, playback, gl, args, objs) {
@@ -2022,16 +2142,21 @@ wtf.replay.graphics.Playback.CALLS_ = {
       eventId, playback, gl, args, objs) {
     // TODO(benvanik): optimize extension fetch.
     var ext = gl.getExtension('ANGLE_instanced_arrays');
-    ext['drawArraysInstancedANGLE'](
-        args['mode'], args['first'], args['count'], args['primcount']);
+
+    playback.performDraw(function() {
+      ext['drawArraysInstancedANGLE'](args['mode'], args['first'],
+          args['count'], args['primcount']);
+    });
   },
   'ANGLEInstancedArrays#drawElementsInstancedANGLE': function(
       eventId, playback, gl, args, objs) {
     // TODO(benvanik): optimize extension fetch.
     var ext = gl.getExtension('ANGLE_instanced_arrays');
-    ext['drawElementsInstancedANGLE'](
-        args['mode'], args['count'], args['type'], args['offset'],
-        args['primcount']);
+
+    playback.performDraw(function() {
+      ext['drawElementsInstancedANGLE'](args['mode'], args['count'],
+          args['type'], args['offset'], args['primcount']);
+    });
   },
   'ANGLEInstancedArrays#vertexAttribDivisorANGLE': function(
       eventId, playback, gl, args, objs) {
@@ -2132,7 +2257,11 @@ wtf.replay.graphics.Playback.CALLS_ = {
     }
 
     playback.currentContext_ = gl;
+    playback.currentContextHandle_ = contextHandle;
     gl.viewport(0, 0, width, height);
+
+    playback.highlightVisualizer_.processSetContext(gl, contextHandle,
+        width, height);
 
     playback.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_SET,
         gl, contextHandle);
