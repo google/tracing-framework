@@ -240,8 +240,8 @@ WTF.trace.timeStamp('hello!');</pre>
 WTF.trace.timeStamp('didSomething', someObject.value);</pre>
 
   <h2>Scope Events</h2>
-  <p><code>WTF.trace.enterScope(string name, any opt_result) -> Scope</code></p>
-  <p><code>WTF.trace.leaveScope(Scope scope)</code></p>
+  <p><code>WTF.trace.enterScope(string name) -> Scope</code></p>
+  <p><code>WTF.trace.leaveScope(Scope scope, any opt_result)</code></p>
   <p>Enters a scope by name. This must be matched with a <code>WTF.trace.leaveScope</code> call.</p>
   <p>It is strongly recommended that a custom enter scope event should be used instead of this, as the overhead required to write the scope name is non-trivial. Only use this when the name changes many times at runtime or you're hacking something together. See <code>WTF.trace.events.createScope</code>.</p>
   <pre class="prettyprint linenums">
