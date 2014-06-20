@@ -251,6 +251,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
           src);
       el['__wtfi__'] = true;
       el.src = null;
+      el.removeAttribute('src');
       el.text = resultText;
       var loadEvent = new Event('load');
       loadEvent.target = el;
@@ -279,6 +280,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
       src: opt_baseUrl ? resolveUrl(opt_baseUrl, el.getAttribute('src')) : el.src
     };
     el.src = null;
+    el.removeAttribute('src');
 
     // TODO(benvanik): dispatch to web worker.
     var xhr = new XMLHttpRequest();
