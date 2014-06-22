@@ -26,6 +26,14 @@ var warn = global.console && global.console.warn ?
 
 var ENABLE_CACHING = false;
 
+var SUPPORTED_SCRIPT_TYPES = {
+  '': 1,
+  'text/javascript': 1,
+  'text/ecmascript': 1,
+  'application/javascript': 1,
+  'application/ecmascript': 1
+};
+
 
 global['wtfi'] = global['wtfi'] || {};
 
@@ -214,6 +222,8 @@ function processOrCacheAsync(sourceText, moduleId, options, opt_url, callback) {
  *      input element.
  */
 function processScript(el, opt_synchronous, opt_baseUrl) {
+  if (!(el.type in SUPPORTED_SCRIPT_TYPES)) return el;
+  
   var doc = el.ownerDocument;
   if (el.text || el.innerText) {
     // Synchronous block.
