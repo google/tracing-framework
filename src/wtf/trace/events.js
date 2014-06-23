@@ -39,6 +39,8 @@ wtf.trace.events.create_ = function(signature, eventClass, flags) {
   var existingEventType = registry.getEventType(name);
   if (existingEventType) {
     // TODO(benvanik): assert the same event type (not a redefinition).
+    goog.global.console.log(
+        'Attempting to redifine ' + name + ', using first definition');
     return existingEventType;
   }
 
