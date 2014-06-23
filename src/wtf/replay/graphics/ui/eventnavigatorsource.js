@@ -187,9 +187,19 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_ = {
   EDIT_WIDTH: 28,
 
   /**
+   * The left side of the highlight draw call button.
+   */
+  HIGHLIGHT_LEFT: 28,
+
+  /**
+   * The width of the highlight draw call button.
+   */
+  HIGHLIGHT_WIDTH: 18,
+
+  /**
    * The left side of the goto button.
    */
-  GOTO_LEFT: 28,
+  GOTO_LEFT: 46,
 
   /**
    * The width of the goto button.
@@ -199,7 +209,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_ = {
   /**
    * The width of the gutter.
    */
-  GUTTER_WIDTH: 80
+  GUTTER_WIDTH: 98
 };
 
 
@@ -347,7 +357,19 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           ctx.font = fonts.EDIT_BUTTON;
           var oldColor = ctx.fillStyle;
           ctx.fillStyle = colors.ALTER_BUTTON_TEXT;
+          // Use the unicode lower right pencil character as the edit button.
           ctx.fillText('\u270e', charWidth, y + rowHeight);
+          ctx.fillStyle = oldColor;
+          ctx.font = fonts.DEFAULT;
+        }
+
+        // Draw the highlight button if this is a draw call.
+        if (this.playback_.isDrawCall(it)) {
+          ctx.font = fonts.EDIT_BUTTON;
+          var oldColor = ctx.fillStyle;
+          ctx.fillStyle = colors.ALTER_BUTTON_TEXT;
+          // Use the unicode black nib character as the highlight button.
+          ctx.fillText('\u2712', lengths.HIGHLIGHT_LEFT, y + rowHeight);
           ctx.fillStyle = oldColor;
           ctx.font = fonts.DEFAULT;
         }
@@ -470,6 +492,8 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
   var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
   var editLeft = lengths.EDIT_LEFT;
   var editRight = editLeft + lengths.EDIT_WIDTH;
+  var highlightLeft = lengths.HIGHLIGHT_LEFT;
+  var highlightRight = highlightLeft + lengths.HIGHLIGHT_WIDTH;
   var gotoLeft = lengths.GOTO_LEFT;
   var gotoRight = lengths.GUTTER_WIDTH;
   var contextLeft = lengths.GUTTER_WIDTH;
@@ -484,6 +508,10 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
       // Edit button.
       if (it.getType().getArguments().length) {
         this.handleEditClick_(row);
+      }
+    } else if (x > highlightLeft && x <= highlightRight) {
+      if (playback.isDrawCall(it)) {
+        playback.triggerHighlight(it.getIndex());
       }
     } else if (x > gotoLeft && x <= gotoRight) {
       // Goto button.
@@ -641,6 +669,8 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
   var lengths = wtf.replay.graphics.ui.EventNavigatorTableSource.LENGTH_;
   var editLeft = lengths.EDIT_LEFT;
   var editRight = editLeft + lengths.EDIT_WIDTH;
+  var highlightLeft = lengths.HIGHLIGHT_LEFT;
+  var highlightRight = highlightLeft + lengths.HIGHLIGHT_WIDTH;
   var gotoLeft = lengths.GOTO_LEFT;
   var gotoRight = lengths.GUTTER_WIDTH;
   var contextLeft = lengths.GUTTER_WIDTH;
@@ -652,6 +682,13 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getInfoString =
       return 'Edit arguments for ' + it.getName();
     }
     return null;
+  } else if (x > highlightLeft && x <= highlightRight) {
+    if (this.playback_.isDrawCall(it)) {
+      return 'Highlight this draw call';
+    } else {
+      // Otherwise, show what the goto area shows.
+      return it.getScopeStackString();
+    }
   } else if (x > gotoLeft && x <= gotoRight) {
     // Goto button.
     return it.getScopeStackString();
