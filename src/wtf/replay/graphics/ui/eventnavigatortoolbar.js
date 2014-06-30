@@ -24,6 +24,7 @@ goog.require('goog.ui.PopupMenu');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.replay.graphics.Overdraw');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.eventNavigatorToolbar');
 goog.require('wtf.ui.Control');
@@ -90,6 +91,14 @@ wtf.replay.graphics.ui.EventNavigatorToolbar = function(
    */
   this.lastCallButton_ = this.getChildElement(
       goog.getCssName('lastCallButton'));
+
+  /**
+   * The toggle overdraw button.
+   * @type {!Element}
+   * @private
+   */
+  this.toggleOverdrawButton_ = this.getChildElement(
+      goog.getCssName('toggleOverdrawButton'));
 
   /**
    * The options button.
@@ -201,6 +210,18 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
         }
       }, this);
 
+  // Listen for overdraw visibility to select the overdraw button.
+  var overdrawVisualizer = /** @type {wtf.replay.graphics.Overdraw} */ (
+      playback.getVisualizer('overdraw'));
+  if (overdrawVisualizer) {
+    overdrawVisualizer.addListener(
+        wtf.replay.graphics.Overdraw.EventType.VISIBILITY_CHANGED,
+        function() {
+          this.toggleSelected(goog.getCssName('toggleOverdrawButton'),
+              overdrawVisualizer.isVisible());
+        }, this);
+  }
+
   // Handle button clicks.
   var eh = this.getHandler();
   eh.listen(
@@ -219,6 +240,10 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
       this.lastCallButton_,
       goog.events.EventType.CLICK,
       this.lastCallHandler_, false, this);
+  eh.listen(
+      this.toggleOverdrawButton_,
+      goog.events.EventType.CLICK,
+      this.toggleOverdrawHandler_, false, this);
 
   // Setup keyboard shortcuts.
   var keyboard = wtf.events.getWindowKeyboard(this.getDom());
@@ -253,6 +278,7 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setEnabled_ =
   this.toggleButton(goog.getCssName('previousDrawCallButton'), enabled);
   this.toggleButton(goog.getCssName('nextDrawCallButton'), enabled);
   this.toggleButton(goog.getCssName('lastCallButton'), enabled);
+  this.toggleButton(goog.getCssName('toggleOverdrawButton'), enabled);
   this.searchControl_.setEnabled(enabled);
   this.toggleButton(goog.getCssName('optionsButton'), enabled);
 };
@@ -323,6 +349,20 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.lastCallHandler_ =
   this.emitEvent(
       wtf.replay.graphics.ui.EventNavigatorToolbar.EventType
           .MANUAL_SUB_STEP_SEEK);
+};
+
+
+/**
+ * Handles clicks of the toggle overdraw button.
+ * @private
+ */
+wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.toggleOverdrawHandler_ =
+    function() {
+  if (!this.enabled_) {
+    return;
+  }
+
+  this.playback_.triggerVisualizer('overdraw');
 };
 
 

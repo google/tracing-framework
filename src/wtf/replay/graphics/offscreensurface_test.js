@@ -98,9 +98,14 @@ wtf.replay.graphics.OffscreenSurface_test =
 
     // Capture, clear, and draw, then ensure that black is in the framebuffer.
     offscreenSurface.captureTexture();
-    offscreenSurface.clear();
+    offscreenSurface.clear([0.0, 0.0, 0.0, 1.0]);
     offscreenSurface.drawTexture();
     checkColor(pixelContents, 0, 0, 0);
+
+    // Clear the offscreenSurface to green and test that it draws green.
+    offscreenSurface.clear([0.0, 1.0, 0.0, 1.0]);
+    offscreenSurface.drawTexture();
+    checkColor(pixelContents, 0, 255, 0);
 
     goog.dispose(offscreenSurface);
   });

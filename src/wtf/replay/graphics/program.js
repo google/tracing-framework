@@ -170,6 +170,15 @@ wtf.replay.graphics.Program.prototype.deleteVariants = function() {
 
 
 /**
+ * Returns the original program.
+ * @return {WebGLProgram}
+ */
+wtf.replay.graphics.Program.prototype.getOriginalProgram = function() {
+  return this.originalProgram_;
+};
+
+
+/**
  * Returns the variant program requested. Fails if the variant does not exist.
  * @param {!string} variantName The name of the variant program to get.
  * @return {WebGLProgram}
@@ -209,7 +218,6 @@ wtf.replay.graphics.Program.prototype.drawWithVariant =
  */
 wtf.replay.graphics.Program.prototype.syncPrograms_ =
     function(variantName) {
-
   var context = this.context_;
 
   // Sync uniforms.

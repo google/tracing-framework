@@ -11,16 +11,11 @@
  * @author scotttodd@google.com (Scott Todd)
  */
 
-// TODO(scotttodd): Create a Visualizer class that defines an interface and
-//                  implements common logic.
-
 goog.provide('wtf.replay.graphics.Highlight');
 
-goog.require('goog.Disposable');
 goog.require('goog.webgl');
-goog.require('wtf.replay.graphics.OffscreenSurface');
+goog.require('wtf.replay.graphics.DrawCallVisualizer');
 goog.require('wtf.replay.graphics.Program');
-goog.require('wtf.replay.graphics.WebGLState');
 
 
 
@@ -29,192 +24,104 @@ goog.require('wtf.replay.graphics.WebGLState');
  *
  * @param {!wtf.replay.graphics.Playback} playback The playback instance.
  * @constructor
- * @extends {goog.Disposable}
+ * @extends {wtf.replay.graphics.DrawCallVisualizer}
  */
 wtf.replay.graphics.Highlight = function(playback) {
-  goog.base(this);
+  goog.base(this, playback);
 
   /**
-   * The playback instance. Manipulated when visualization is triggered.
-   * @type {!wtf.replay.graphics.Playback}
-   * @private
-   */
-  this.playback_ = playback;
-
-  /**
-   * A mapping of handles to contexts.
-   * Keys are context handles from event arguments.
-   * @type {!Object.<!WebGLRenderingContext>}
-   * @private
-   */
-  this.contexts_ = {};
-
-  /**
-   * A mapping of handles to Programs.
-   * Keys are program handles from event arguments.
-   * @type {!Object.<!wtf.replay.graphics.Program>}
-   * @private
-   */
-  this.programs_ = {};
-
-  /**
-   * Surfaces for playback state, mapping of handles to OffscreenSurfaces.
-   * Keys are context handles from event arguments.
-   * @type {!Object.<!wtf.replay.graphics.OffscreenSurface>}
-   * @private
-   */
-  this.playbackSurfaces_ = {};
-
-  /**
-   * Surfaces for highlighting, mapping of handles to OffscreenSurfaces.
-   * Keys are context handles from event arguments.
-   * @type {!Object.<!wtf.replay.graphics.OffscreenSurface>}
-   * @private
-   */
-  this.highlightSurfaces_ = {};
-
-  /**
-   * WebGLStates for backup/restore, mapping of handles to WebGLStates.
-   * Keys are context handles from event arguments.
-   * @type {!Object.<!wtf.replay.graphics.WebGLState>}
-   * @private
-   */
-  this.webGLStates_ = {};
-
-  /**
-   * If true, render draw calls using an alternate color and blending.
+   * If true, setup the stencil buffer for later draws to reference.
    * @type {!boolean}
    * @private
    */
-  this.secondaryHighlight_ = false;
+  this.firstDraw_ = true;
 };
-goog.inherits(wtf.replay.graphics.Highlight, goog.Disposable);
+goog.inherits(wtf.replay.graphics.Highlight,
+    wtf.replay.graphics.DrawCallVisualizer);
 
 
 /**
- * Tracks contexts, updating internal dimensions to match context parameters.
- * @param {!WebGLRenderingContext} gl The context.
- * @param {!number} contextHandle Context handle from event arguments.
- * @param {!number} width The width of the rendered area.
- * @param {!number} height The height of the rendered area.
+ * Creates a Program object with a highlight variant.
+ * @param {number} programHandle Program handle from event arguments.
+ * @param {!WebGLProgram} originalProgram The original program.
+ * @param {!WebGLRenderingContext} gl The associated rendering context.
+ * @protected
+ * @override
  */
-wtf.replay.graphics.Highlight.prototype.processSetContext = function(
-    gl, contextHandle, width, height) {
-  if (this.contexts_[contextHandle]) {
-    this.playbackSurfaces_[contextHandle].resize(width, height);
-    this.highlightSurfaces_[contextHandle].resize(width, height);
-  } else {
-    this.contexts_[contextHandle] = gl;
-
-    var playbackSurface = new wtf.replay.graphics.OffscreenSurface(gl,
-        width, height);
-    this.playbackSurfaces_[contextHandle] = playbackSurface;
-    this.registerDisposable(playbackSurface);
-
-    var highlightSurface = new wtf.replay.graphics.OffscreenSurface(gl,
-        width, height);
-    this.highlightSurfaces_[contextHandle] = highlightSurface;
-    this.registerDisposable(highlightSurface);
-
-    var webGLState = new wtf.replay.graphics.WebGLState(gl);
-    this.webGLStates_[contextHandle] = webGLState;
-  }
-};
-
-
-/**
- * Creates variant programs whenever a program is linked.
- * @param {!WebGLRenderingContext} gl The context for this program.
- * @param {!WebGLProgram} originalProgram The just linked program to mirror.
- * @param {!number} programHandle Program handle from event arguments.
- */
-wtf.replay.graphics.Highlight.prototype.processLinkProgram = function(
-    gl, originalProgram, programHandle) {
-  // Programs can be linked multiple times. Avoid leaking objects.
-  if (this.programs_[programHandle]) {
-    this.deleteProgram(programHandle);
-  }
-
+wtf.replay.graphics.Highlight.prototype.createProgram = function(
+    programHandle, originalProgram, gl) {
   var program = new wtf.replay.graphics.Program(originalProgram, gl);
   this.registerDisposable(program);
-  this.programs_[programHandle] = program;
+  this.programs[programHandle] = program;
 
-  // Include _wtf_ in new uniform names to avoid collisions.
+  var visualizerSurface = this.visualizerSurfaces[this.latestContextHandle];
+
   var highlightFragmentSource = 'precision mediump float;' +
-      'uniform vec4 _wtf_highlightColor;' +
-      'void main(void) { gl_FragColor = _wtf_highlightColor; }';
+      'void main(void) { gl_FragColor = ' +
+      visualizerSurface.getThresholdDrawColor() + '; }';
+
   program.createVariantProgram('highlight', '', highlightFragmentSource);
 };
 
 
 /**
- * Deletes the specified program.
- * @param {!number|string} programHandle Program handle from event arguments.
- */
-wtf.replay.graphics.Highlight.prototype.deleteProgram = function(
-    programHandle) {
-  goog.dispose(this.programs_[programHandle]);
-  delete this.programs_[programHandle];
-};
-
-
-/**
- * Deletes all stored programs.
- */
-wtf.replay.graphics.Highlight.prototype.clearPrograms = function() {
-  for (var programHandle in this.programs_) {
-    this.deleteProgram(programHandle);
-  }
-};
-
-
-/**
  * Handles special logic associated with performing a draw call.
- * @param {?number} contextHandle Context handle from event arguments.
- * @param {!number} programHandle Program handle from event arguments.
  * @param {function()} drawFunction The draw function to call.
+ * @protected
+ * @override
  */
-wtf.replay.graphics.Highlight.prototype.processPerformDraw = function(
-    contextHandle, programHandle, drawFunction) {
-  if (!contextHandle) {
+wtf.replay.graphics.Highlight.prototype.handleDrawCall = function(
+    drawFunction) {
+  if (!this.active) {
     return;
   }
+
   // Render normally to the active framebuffer.
   drawFunction();
 
-  var gl = this.contexts_[contextHandle];
+  var contextHandle = this.latestContextHandle;
+  var programHandle = this.latestProgramHandle;
 
-  var webGLState = this.webGLStates_[contextHandle];
+  if (!this.modifyDraws || !contextHandle || !programHandle) {
+    return;
+  }
+
+  var gl = this.contexts[contextHandle];
+
+  // Do not edit calls where the target is not the visible framebuffer.
+  var originalFramebuffer = /** @type {WebGLFramebuffer} */ (
+      gl.getParameter(goog.webgl.FRAMEBUFFER_BINDING));
+  if (originalFramebuffer != null) {
+    return;
+  }
+
+  var webGLState = this.webGLStates[contextHandle];
   webGLState.backup();
 
-  // Render with the highlight program into the highlight surface.
-  var highlightSurface = this.highlightSurfaces_[contextHandle];
-  highlightSurface.bindFramebuffer();
-  var program = this.programs_[programHandle];
+  // Render with the highlight program into the visualizer surface.
+  var visualizerSurface = this.visualizerSurfaces[contextHandle];
+  visualizerSurface.bindFramebuffer();
+  var program = this.programs[programHandle];
 
-  gl.disable(goog.webgl.STENCIL_TEST);
-
-  var highlightColor;
-  if (!this.secondaryHighlight_) {
-    highlightColor = [0.1, 0.2, 0.5, 1.0];
+  gl.enable(goog.webgl.BLEND);
+  gl.blendFunc(goog.webgl.SRC_ALPHA, goog.webgl.ONE_MINUS_SRC_ALPHA);
+  gl.blendEquation(goog.webgl.FUNC_ADD);
+  gl.enable(goog.webgl.STENCIL_TEST);
+  if (this.firstDraw_) {
     gl.disable(goog.webgl.DEPTH_TEST);
-    gl.disable(goog.webgl.BLEND);
+    gl.disable(goog.webgl.CULL_FACE);
+    // The stencil should already be cleared to all 0s.
+    // Draw 1s into the stencil for the highlighted call.
+    gl.stencilMask(0xff); // Allow writing to all bits in the buffer.
+    gl.stencilFunc(goog.webgl.ALWAYS, 1, 0xff); // Always write 1.
+    // Keep 0 on failure, replace with 1 on depth and stencil test success.
+    gl.stencilOp(goog.webgl.KEEP, goog.webgl.KEEP, goog.webgl.REPLACE);
   } else {
-    highlightColor = [0.05, 0.15, 0.05, 1.0];
-    // Do not change depth test, use what playback uses.
-    gl.enable(goog.webgl.BLEND);
-    gl.blendEquation(goog.webgl.FUNC_ADD);
-    gl.blendFunc(goog.webgl.DST_ALPHA, goog.webgl.ONE);
+    // Only draw where the stencil has a value of 1.
+    gl.stencilFunc(goog.webgl.EQUAL, 1, 0xff);
+    // Keep stencil buffer values no matter the test status.
+    gl.stencilOp(goog.webgl.KEEP, goog.webgl.KEEP, goog.webgl.KEEP);
   }
-  // Set the highlightColor uniform.
-  var originalProgram = /** @type {!WebGLProgram} */ (
-      gl.getParameter(goog.webgl.CURRENT_PROGRAM));
-  var hightlightVariantProgram = program.getVariantProgram('highlight');
-  gl.useProgram(hightlightVariantProgram);
-  var uniformLocation = gl.getUniformLocation(hightlightVariantProgram,
-      '_wtf_highlightColor');
-  gl.uniform4fv(uniformLocation, highlightColor);
-  gl.useProgram(originalProgram);
 
   program.drawWithVariant(drawFunction, 'highlight');
 
@@ -224,69 +131,54 @@ wtf.replay.graphics.Highlight.prototype.processPerformDraw = function(
 
 /**
  * Runs visualization, manipulating playback and surfaces as needed.
- * @param {?number} contextHandle Context handle from event arguments.
- * @param {!number} index The substep index to highlight.
+ * @param {Object.<string, !Object>=} opt_args Visualizer trigger arguments.
+ * @override
  */
-wtf.replay.graphics.Highlight.prototype.triggerVisualization = function(
-    contextHandle, index) {
+wtf.replay.graphics.Highlight.prototype.trigger = function(opt_args) {
+  var contextHandle = this.latestContextHandle;
   if (!contextHandle) {
+    this.playback.finishVisualizer(this);
     return;
   }
-  this.finishVisualization(contextHandle);
+  var index = Number(opt_args['index']);
 
-  var playback = this.playback_;
+  this.reset();
+  this.active = true;
 
+  var playback = this.playback;
   var currentSubStepId = playback.getSubStepEventIndex();
-
   // Seek to the substep event immediately before the target index.
   playback.seekSubStepEvent(index - 1);
 
-  var playbackSurface = this.playbackSurfaces_[contextHandle];
-  // Notify playback that we should be used for the next draw call.
-  playback.setActiveVisualizer(this);
-  // Advance to the highlight call and then return to regular playback.
+  this.modifyDraws = true;
+  // Perform the call at the target index.
+  this.firstDraw_ = true;
   playback.seekSubStepEvent(index);
+  this.firstDraw_ = false;
 
-  // If playback continues forward from here, continue drawing using
-  // a secondary highlight. Otherwise, stop drawing.
-  if (currentSubStepId > index) {
-    this.secondaryHighlight_ = true;
-  } else {
-    playback.setActiveVisualizer(null);
+  // If playback continues forward from here, continue modifying draw calls.
+  // Otherwise, seek will go from the beginning, so should not modify calls.
+  if (currentSubStepId <= index) {
+    this.modifyDraws = false;
   }
 
   // Prevent resizing during seek, since that would destroy surface contents.
-  var highlightSurface = this.highlightSurfaces_[contextHandle];
-  highlightSurface.disableResize();
-  playback.seekSubStepEvent(currentSubStepId);
-  highlightSurface.enableResize();
-
-  // Save the current framebuffer as a texture to restore when finished.
-  playbackSurface.captureTexture();
-
-  // Draw the captured highlight texture.
-  // Enable blending to not overwrite the rest of the framebuffer.
-  highlightSurface.drawTexture(true);
-
-  playback.setActiveVisualizer(null);
-  playback.setFinishedVisualizer(this);
-};
-
-
-/**
- * Finishes a visualization, restoring state as needed.
- * @param {?number} contextHandle Context handle from event arguments.
- */
-wtf.replay.graphics.Highlight.prototype.finishVisualization = function(
-    contextHandle) {
-  if (!contextHandle) {
-    return;
+  for (contextHandle in this.contexts) {
+    this.visualizerSurfaces[contextHandle].disableResize();
   }
-  var highlightSurface = this.highlightSurfaces_[contextHandle];
-  highlightSurface.clear();
+  playback.seekSubStepEvent(currentSubStepId);
 
-  var playbackSurface = this.playbackSurfaces_[contextHandle];
-  playbackSurface.drawTexture();
+  // Save current framebuffers as textures to restore when finished.
+  for (contextHandle in this.contexts) {
+    this.playbackSurfaces[contextHandle].captureTexture();
+  }
 
-  this.secondaryHighlight_ = false;
+  // Draw captured visualizer textures.
+  // Enable blending to not overwrite the rest of the framebuffer.
+  for (contextHandle in this.contexts) {
+    this.visualizerSurfaces[contextHandle].drawTexture(true, true);
+    this.visualizerSurfaces[contextHandle].enableResize();
+  }
+
+  this.playback.finishVisualizer(this);
 };
