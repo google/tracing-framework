@@ -359,6 +359,8 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.restoreState = function() {
     this.playbackSurfaces[contextHandle].drawTexture();
 
     gl.bindFramebuffer(goog.webgl.FRAMEBUFFER, originalFramebuffer);
+
+    this.playback.changeContextMessage(contextHandle, ' ');
   }
 
   this.active = false;

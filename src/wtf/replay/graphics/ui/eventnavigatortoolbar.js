@@ -261,6 +261,9 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
   keyboardScope.addShortcut('ctrl+shift+down', function() {
     this.lastCallHandler_();
   }, this);
+  keyboardScope.addShortcut('v', function() {
+    this.toggleOverdrawHandler_();
+  }, this);
 
   this.setEnabled_(true);
 };

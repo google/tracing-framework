@@ -290,7 +290,12 @@ wtf.replay.graphics.Playback.EventType = {
    * Playing stopped. Could be due to finishing the animation, pausing,
    * or resetting.
    */
-  PLAY_STOPPED: goog.events.getUniqueId('play_stopped')
+  PLAY_STOPPED: goog.events.getUniqueId('play_stopped'),
+
+  /**
+   * A context message was changed.
+   */
+  CONTEXT_MESSAGE_CHANGED: goog.events.getUniqueId('context_message_changed')
 };
 
 
@@ -548,6 +553,18 @@ wtf.replay.graphics.Playback.prototype.triggerVisualizer = function(
 
   this.activeVisualizer_ = this.visualizers_[name];
   this.visualizers_[name].trigger(opt_args);
+};
+
+
+/**
+ * Signals that the message for a context should be changed.
+ * @param {string} contextHandle Context handle matching the context to update.
+ * @param {string} message New message for the context.
+ */
+wtf.replay.graphics.Playback.prototype.changeContextMessage = function(
+    contextHandle, message) {
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_MESSAGE_CHANGED,
+      contextHandle, message);
 };
 
 

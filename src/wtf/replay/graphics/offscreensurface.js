@@ -598,3 +598,41 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
 
   this.webGLState_.restore();
 };
+
+
+/**
+ * Calculates stats on the number of pixels drawn and overdrawn.
+ * @return {Object.<string, number>} Overdraw stats.
+ *   'numPixels': The total number of pixels in the rendered area.
+ *   'numAffected': The number of pixels affected.
+ *   'numOverdraw': The number of pixels drawn, using the threshold draw color.
+ */
+wtf.replay.graphics.OffscreenSurface.prototype.calculateOverdraw = function() {
+  if (!this.initialized_) {
+    return {};
+  }
+
+  var gl = this.context_;
+
+  var numPixels = this.width_ * this.height_;
+  var numOverdraw = 0;
+  var numAffected = 0;
+
+  var pixelContents = new Uint8Array(4 * numPixels);
+  gl.readPixels(0, 0, this.width_, this.height_, goog.webgl.RGBA,
+      goog.webgl.UNSIGNED_BYTE, pixelContents);
+
+  var pixelValue;
+  for (var i = 0; i < numPixels; i++) {
+    pixelValue = pixelContents[4 * i] / 255.0;
+    numAffected += pixelValue > 0 ? 1 : 0;
+    numOverdraw += pixelValue / this.thresholdValuePerCall_;
+  }
+
+  var overdrawStats = {};
+  overdrawStats['numPixels'] = numPixels;
+  overdrawStats['numAffected'] = numAffected;
+  overdrawStats['numOverdraw'] = numOverdraw;
+
+  return overdrawStats;
+};

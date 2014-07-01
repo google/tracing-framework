@@ -45,6 +45,13 @@ wtf.replay.graphics.Overdraw = function(playback) {
   this.latestSubStepIndex_ = -1;
 
   /**
+   * Latest recorded overdraw ratios. Keys are context handles.
+   * @type {!Object.<string>}
+   * @private
+   */
+  this.latestOverdraws_ = {};
+
+  /**
    * Toggled value, used when toggling overdraw for the same step and substep.
    * @type {boolean}
    * @private
@@ -184,6 +191,10 @@ wtf.replay.graphics.Overdraw.prototype.trigger = function(opt_args) {
     } else {
       for (contextHandle in this.contexts) {
         this.drawTexture(this.visualizerSurfaces[contextHandle]);
+
+        var overdrawAmount = this.latestOverdraws_[contextHandle];
+        var message = 'Overdraw: ' + overdrawAmount;
+        this.playback.changeContextMessage(contextHandle, message);
       }
       this.previousVisibility_ = true;
     }
@@ -211,19 +222,27 @@ wtf.replay.graphics.Overdraw.prototype.trigger = function(opt_args) {
   }
 
   for (contextHandle in this.contexts) {
+    // Draw without thresholding to calculate overdraw.
+    this.visualizerSurfaces[contextHandle].drawTexture(false, false);
+
+    // Calculate overdraw and update the context's message.
+    var stats = this.visualizerSurfaces[contextHandle].calculateOverdraw();
+    var overdrawAmount = stats['numOverdraw'] / stats['numPixels'];
+    overdrawAmount = overdrawAmount.toFixed(2);
+    this.latestOverdraws_[contextHandle] = overdrawAmount;
+    var message = 'Overdraw: ' + overdrawAmount;
+    this.playback.changeContextMessage(contextHandle, message);
+
+    // Draw with thresholding for display.
     this.drawTexture(this.visualizerSurfaces[contextHandle]);
+
+    this.visualizerSurfaces[contextHandle].disableResize();
+    this.playbackSurfaces[contextHandle].disableResize();
   }
 
   this.latestStepIndex_ = currentStepIndex;
   this.latestSubStepIndex_ = currentSubStepIndex;
   this.previousVisibility_ = true;
-
-  for (var handle in this.visualizerSurfaces) {
-    this.visualizerSurfaces[handle].disableResize();
-  }
-  for (var handle in this.playbackSurfaces) {
-    this.playbackSurfaces[handle].disableResize();
-  }
 
   this.playback.finishVisualizer(this);
 };

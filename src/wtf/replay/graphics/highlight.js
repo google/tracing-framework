@@ -174,8 +174,27 @@ wtf.replay.graphics.Highlight.prototype.trigger = function(opt_args) {
   }
 
   // Draw captured visualizer textures.
-  // Enable blending to not overwrite the rest of the framebuffer.
   for (contextHandle in this.contexts) {
+    // Draw without thresholding to calculate overdraw.
+    this.visualizerSurfaces[contextHandle].drawTexture(false, false);
+
+    // Calculate overdraw and update the context's message.
+    var stats = this.visualizerSurfaces[contextHandle].calculateOverdraw();
+    var overdrawAmount;
+    if (stats['numAffected'] < 0.001) {
+      overdrawAmount = 0;
+    } else {
+      overdrawAmount = (stats['numOverdraw'] / stats['numAffected']).toFixed(2);
+    }
+    var affectedPercent = stats['numAffected'] / stats['numPixels'];
+    affectedPercent = (affectedPercent * 100.0).toFixed(0);
+
+    var message = 'Overdraw: ' + overdrawAmount + ', ' + affectedPercent +
+        '% of screen';
+    this.playback.changeContextMessage(contextHandle, message);
+
+    this.playbackSurfaces[contextHandle].drawTexture(false, false);
+    // Draw for display, with thresholding and blending (to not overwrite).
     this.visualizerSurfaces[contextHandle].drawTexture(true, true);
     this.visualizerSurfaces[contextHandle].enableResize();
   }
