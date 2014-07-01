@@ -17,7 +17,6 @@ goog.provide('wtf.replay.graphics.OffscreenSurface');
 goog.require('goog.Disposable');
 goog.require('goog.asserts');
 goog.require('goog.webgl');
-goog.require('wtf.replay.graphics.Program');
 goog.require('wtf.replay.graphics.WebGLState');
 
 
@@ -33,8 +32,6 @@ goog.require('wtf.replay.graphics.WebGLState');
  * @param {Object.<string, !Object>=} opt_args Additional setup arguments.
  *   'stencil' : {boolean} Force stencil buffer support.
  *   'depth' : {boolean} Force depth buffer support.
- *   'thresholdColors': {Array.<string>} Override threshold colors.
- *      These should be formatted like: 'vec4(0.0, 0.0, 0.0, 1.0)', range 0-1.
  * @constructor
  * @extends {goog.Disposable}
  */
@@ -44,38 +41,23 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
   /**
    * The WebGL context to associate with.
    * @type {!WebGLRenderingContext}
-   * @private
+   * @protected
    */
-  this.context_ = gl;
+  this.context = gl;
 
   /**
    * The width of the rendered area.
    * @type {number}
-   * @private
+   * @protected
    */
-  this.width_ = width;
+  this.width = width;
 
   /**
    * The height of the rendered area.
    * @type {number}
-   * @private
+   * @protected
    */
-  this.height_ = height;
-
-  /**
-   * Array of color strings (GLSL vec4s), sorted from darkest to brightest.
-   * @type {!Array.<string>}
-   * @private
-   */
-  this.thresholdColors_ = opt_args && /** @type {Array.<string>} */ (
-      opt_args['thresholdColors']) || this.getDefaultColors_();
-
-  /**
-   * Amount to draw into the visualizerSurface with each draw call.
-   * @type {!number}
-   * @private
-   */
-  this.thresholdValuePerCall_ = 1.0 / (this.thresholdColors_.length + 1);
+  this.height = height;
 
   /**
    * Context attributes. These cannot be changed after getting the context.
@@ -103,9 +85,9 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
   /**
    * A backup/restore utility for this context.
    * @type {!wtf.replay.graphics.WebGLState}
-   * @private
+   * @protected
    */
-  this.webGLState_ = new wtf.replay.graphics.WebGLState(gl);
+  this.webGLState = new wtf.replay.graphics.WebGLState(gl);
 
   /**
    * Prevents resizing if true - preserving surface contents.
@@ -169,7 +151,7 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
 
   /**
    * A shader program that simply draws a texture.
-   * @type {wtf.replay.graphics.Program}
+   * @type {WebGLProgram}
    * @private
    */
   this.drawTextureProgram_ = null;
@@ -191,9 +173,9 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
   /**
    * Whether this object has been initialized.
    * @type {boolean}
-   * @private
+   * @protected
    */
-  this.initialized_ = false;
+  this.initialized = false;
 };
 goog.inherits(wtf.replay.graphics.OffscreenSurface, goog.Disposable);
 
@@ -202,11 +184,12 @@ goog.inherits(wtf.replay.graphics.OffscreenSurface, goog.Disposable);
  * @override
  */
 wtf.replay.graphics.OffscreenSurface.prototype.disposeInternal = function() {
-  var gl = this.context_;
+  var gl = this.context;
 
-  if (this.initialized_) {
+  if (this.initialized) {
     gl.deleteFramebuffer(this.framebuffer_);
     gl.deleteTexture(this.texture_);
+    gl.deleteProgram(this.drawTextureProgram_);
     if (this.depthStencilBuffer_) {
       gl.deleteRenderbuffer(this.depthStencilBuffer_);
     }
@@ -219,45 +202,17 @@ wtf.replay.graphics.OffscreenSurface.prototype.disposeInternal = function() {
 
 
 /**
- * Returns the default threshold colors.
- * @return {!Array.<string>} Array of color strings.
- * @private
- */
-wtf.replay.graphics.OffscreenSurface.prototype.getDefaultColors_ = function() {
-  return [
-    'vec4(0.00, 0.00, 0.00, 0.0)', /* Transparent */
-    'vec4(0.26, 0.53, 0.19, 1.0)', /* Dark Green */
-    'vec4(0.46, 0.78, 0.39, 1.0)', /* Light Green */
-    'vec4(0.83, 0.83, 0.33, 1.0)', /* Yellow */
-    'vec4(0.86, 0.47, 0.13, 1.0)', /* Orange */
-    'vec4(0.93, 0.20, 0.20, 1.0)', /* Red */
-    'vec4(0.90, 0.90, 0.90, 1.0)'  /* White */
-  ];
-};
-
-
-/**
- * Returns the color to be used with draw calls for thresholding.
- * @return {!string} Color string formatted as a GLSL vec4.
- */
-wtf.replay.graphics.OffscreenSurface.prototype.getThresholdDrawColor =
-    function() {
-  return 'vec4(1.0, 1.0, 1.0, ' + this.thresholdValuePerCall_ + ')';
-};
-
-
-/**
  * Creates framebuffer, texture, drawTextureProgram, and buffers.
- * @private
+ * @protected
  */
-wtf.replay.graphics.OffscreenSurface.prototype.initialize_ = function() {
-  if (this.initialized_) {
+wtf.replay.graphics.OffscreenSurface.prototype.initialize = function() {
+  if (this.initialized) {
     return;
   }
 
-  var gl = this.context_;
+  var gl = this.context;
 
-  this.webGLState_.backup();
+  this.webGLState.backup();
 
   // Create the offscreen framebuffer.
   this.framebuffer_ = gl.createFramebuffer();
@@ -274,8 +229,8 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize_ = function() {
       goog.webgl.CLAMP_TO_EDGE);
   gl.texParameteri(goog.webgl.TEXTURE_2D, goog.webgl.TEXTURE_WRAP_T,
       goog.webgl.CLAMP_TO_EDGE);
-  gl.texImage2D(goog.webgl.TEXTURE_2D, 0, goog.webgl.RGBA, this.width_,
-      this.height_, 0, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE, null);
+  gl.texImage2D(goog.webgl.TEXTURE_2D, 0, goog.webgl.RGBA, this.width,
+      this.height, 0, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE, null);
   gl.framebufferTexture2D(goog.webgl.FRAMEBUFFER,
       goog.webgl.COLOR_ATTACHMENT0, goog.webgl.TEXTURE_2D, this.texture_, 0);
 
@@ -331,30 +286,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize_ = function() {
   goog.asserts.assert(gl.getProgramParameter(program, goog.webgl.LINK_STATUS),
       'OffscreenSurface drawTexture program did not link.');
 
-  this.drawTextureProgram_ = new wtf.replay.graphics.Program(program, gl);
-  this.registerDisposable(this.drawTextureProgram_);
-
-  // Color threshold shader.
-  var thresholdFragmentSource = 'precision mediump float;' +
-      'varying vec2 vTextureCoord;' +
-      'uniform sampler2D uSampler;' +
-      'void main(void) {' +
-      '  vec4 sampleColor = texture2D(uSampler, vTextureCoord);' +
-      '  vec4 outputColor = vec4(1.0, 0.0, 1.0, 1.0); /* default */';
-  for (var i = 0; i < this.thresholdColors_.length; i++) {
-    // Cutoff halfway between to avoid floating point issues.
-    var threshold = this.thresholdValuePerCall_ * (i - 0.5);
-    thresholdFragmentSource += '' +
-        'if (sampleColor.x >= ' + threshold + ' ) {' +
-        '  outputColor = ' + this.thresholdColors_[i] + ';' +
-        '}';
-  }
-  thresholdFragmentSource += '' +
-      '  gl_FragColor = vec4(outputColor);' +
-      '}';
-
-  this.drawTextureProgram_.createVariantProgram('threshold', '',
-      thresholdFragmentSource);
+  this.drawTextureProgram_ = program;
 
   gl.detachShader(program, drawTextureVertexShader);
   gl.detachShader(program, drawTextureFragmentShader);
@@ -386,24 +318,24 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize_ = function() {
   gl.bufferData(goog.webgl.ARRAY_BUFFER, new Float32Array(textureCoords),
       goog.webgl.STATIC_DRAW);
 
-  this.webGLState_.restore();
+  this.webGLState.restore();
 
-  this.initialized_ = true;
+  this.initialized = true;
 };
 
 
 /**
- * Updates renderbuffer using this.width_ and this.height_.
+ * Updates renderbuffer using this.width and this.height.
  * @private
  */
 wtf.replay.graphics.OffscreenSurface.prototype.updateRenderbuffer_ =
     function() {
-  var gl = this.context_;
+  var gl = this.context;
 
   if (this.rbStorageFormat_) {
     gl.bindRenderbuffer(goog.webgl.RENDERBUFFER, this.depthStencilBuffer_);
     gl.renderbufferStorage(goog.webgl.RENDERBUFFER, this.rbStorageFormat_,
-        this.width_, this.height_);
+        this.width, this.height);
   }
 };
 
@@ -437,28 +369,28 @@ wtf.replay.graphics.OffscreenSurface.prototype.resize = function(
   this.nextHeight_ = height;
 
   if (this.resizeDisabled_ ||
-      (this.width_ === width && this.height_ === height)) {
+      (this.width === width && this.height === height)) {
     return;
   }
 
-  this.width_ = width;
-  this.height_ = height;
+  this.width = width;
+  this.height = height;
 
-  if (!this.initialized_) {
+  if (!this.initialized) {
     return;
   }
 
-  var gl = this.context_;
+  var gl = this.context;
 
-  this.webGLState_.backup();
+  this.webGLState.backup();
 
   gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture_);
-  gl.texImage2D(goog.webgl.TEXTURE_2D, 0, goog.webgl.RGBA, this.width_,
-      this.height_, 0, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE, null);
+  gl.texImage2D(goog.webgl.TEXTURE_2D, 0, goog.webgl.RGBA, this.width,
+      this.height, 0, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE, null);
 
   this.updateRenderbuffer_();
 
-  this.webGLState_.restore();
+  this.webGLState.restore();
 };
 
 
@@ -466,9 +398,9 @@ wtf.replay.graphics.OffscreenSurface.prototype.resize = function(
  * Binds the internal framebuffer.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.bindFramebuffer = function() {
-  this.initialize_();
+  this.initialize();
 
-  var gl = this.context_;
+  var gl = this.context;
 
   gl.bindFramebuffer(goog.webgl.FRAMEBUFFER, this.framebuffer_);
 };
@@ -478,9 +410,9 @@ wtf.replay.graphics.OffscreenSurface.prototype.bindFramebuffer = function() {
  * Captures the pixel contents of the active framebuffer in the texture.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.captureTexture = function() {
-  this.initialize_();
+  this.initialize();
 
-  var gl = this.context_;
+  var gl = this.context;
 
   var originalTextureBinding = /** @type {!WebGLTexture} */ (
       gl.getParameter(goog.webgl.TEXTURE_BINDING_2D));
@@ -489,7 +421,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.captureTexture = function() {
   var alpha = this.contextAttributes_['alpha'];
   var format = alpha ? goog.webgl.RGBA : goog.webgl.RGB;
   gl.copyTexImage2D(goog.webgl.TEXTURE_2D, 0, format, 0, 0,
-      this.width_, this.height_, 0);
+      this.width, this.height, 0);
 
   gl.bindTexture(goog.webgl.TEXTURE_2D, originalTextureBinding);
 };
@@ -500,13 +432,13 @@ wtf.replay.graphics.OffscreenSurface.prototype.captureTexture = function() {
  * @param {Array.<number>=} opt_color Override color to clear with.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.clear = function(opt_color) {
-  if (!this.initialized_) {
+  if (!this.initialized) {
     return;
   }
 
-  var gl = this.context_;
+  var gl = this.context;
 
-  this.webGLState_.backup();
+  this.webGLState.backup();
 
   this.bindFramebuffer();
   gl.disable(goog.webgl.SCISSOR_TEST);
@@ -520,27 +452,39 @@ wtf.replay.graphics.OffscreenSurface.prototype.clear = function(opt_color) {
   gl.clear(goog.webgl.COLOR_BUFFER_BIT | goog.webgl.DEPTH_BUFFER_BIT |
       goog.webgl.STENCIL_BUFFER_BIT);
 
-  this.webGLState_.restore();
+  this.webGLState.restore();
 };
 
 
 /**
  * Draws the render texture using an internal shader to the active framebuffer.
  * @param {boolean=} opt_blend If true, use alpha blending. Otherwise no blend.
- * @param {boolean=} opt_threshold If true, draw thresholded colors.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
-    opt_blend, opt_threshold) {
-  this.initialize_();
+    opt_blend) {
+  this.initialize();
+  this.drawTextureInternal(this.texture_, this.drawTextureProgram_, opt_blend);
+};
 
-  var gl = this.context_;
 
-  this.webGLState_.backup();
+/**
+ * Draws a texture using the internal shader to the active framebuffer.
+ * @param {WebGLTexture} texture The texture to draw.
+ * @param {WebGLProgram} program The program to use.
+ *   Expected to have attributes aVertexPosition and aTextureCoord (both vec2).
+ *   Expected to have uniform uSampler (sampler2D).
+ * @param {boolean=} opt_blend If true, use alpha blending. Otherwise no blend.
+ * @protected
+ */
+wtf.replay.graphics.OffscreenSurface.prototype.drawTextureInternal = function(
+    texture, program, opt_blend) {
+  this.initialize();
 
-  var drawTextureProgram = opt_threshold ?
-      this.drawTextureProgram_.getVariantProgram('threshold') :
-      this.drawTextureProgram_.getOriginalProgram();
-  gl.useProgram(drawTextureProgram);
+  var gl = this.context;
+
+  this.webGLState.backup();
+
+  gl.useProgram(program);
 
   // Disable all attributes.
   var maxVertexAttribs = /** @type {number} */ (gl.getParameter(
@@ -550,16 +494,15 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
   }
 
   // Update vertex attrib settings.
-  var vertexAttribLocation = gl.getAttribLocation(drawTextureProgram,
-      'aVertexPosition');
+  var vertexAttribLocation = gl.getAttribLocation(program, 'aVertexPosition');
   gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer_);
   gl.enableVertexAttribArray(vertexAttribLocation);
   gl.vertexAttribPointer(vertexAttribLocation, 2, goog.webgl.FLOAT, false,
       0, 0);
 
   // Update texture coord attrib settings.
-  var textureCoordAttribLocation = gl.getAttribLocation(
-      drawTextureProgram, 'aTextureCoord');
+  var textureCoordAttribLocation = gl.getAttribLocation(program,
+      'aTextureCoord');
   gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareTextureCoordBuffer_);
   gl.enableVertexAttribArray(textureCoordAttribLocation);
   gl.vertexAttribPointer(textureCoordAttribLocation, 2, goog.webgl.FLOAT,
@@ -572,9 +515,9 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
     ext['vertexAttribDivisorANGLE'](textureCoordAttribLocation, 0);
   }
 
-  var uniformLocation = gl.getUniformLocation(drawTextureProgram, 'uSampler');
+  var uniformLocation = gl.getUniformLocation(program, 'uSampler');
   gl.activeTexture(goog.webgl.TEXTURE0);
-  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture_);
+  gl.bindTexture(goog.webgl.TEXTURE_2D, texture);
   gl.uniform1i(uniformLocation, 0);
 
   // Change states prior to drawing.
@@ -596,43 +539,5 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
   // Draw the texture to the current framebuffer.
   gl.drawArrays(goog.webgl.TRIANGLES, 0, 6);
 
-  this.webGLState_.restore();
-};
-
-
-/**
- * Calculates stats on the number of pixels drawn and overdrawn.
- * @return {Object.<string, number>} Overdraw stats.
- *   'numPixels': The total number of pixels in the rendered area.
- *   'numAffected': The number of pixels affected.
- *   'numOverdraw': The number of pixels drawn, using the threshold draw color.
- */
-wtf.replay.graphics.OffscreenSurface.prototype.calculateOverdraw = function() {
-  if (!this.initialized_) {
-    return {};
-  }
-
-  var gl = this.context_;
-
-  var numPixels = this.width_ * this.height_;
-  var numOverdraw = 0;
-  var numAffected = 0;
-
-  var pixelContents = new Uint8Array(4 * numPixels);
-  gl.readPixels(0, 0, this.width_, this.height_, goog.webgl.RGBA,
-      goog.webgl.UNSIGNED_BYTE, pixelContents);
-
-  var pixelValue;
-  for (var i = 0; i < numPixels; i++) {
-    pixelValue = pixelContents[4 * i] / 255.0;
-    numAffected += pixelValue > 0 ? 1 : 0;
-    numOverdraw += pixelValue / this.thresholdValuePerCall_;
-  }
-
-  var overdrawStats = {};
-  overdrawStats['numPixels'] = numPixels;
-  overdrawStats['numAffected'] = numAffected;
-  overdrawStats['numOverdraw'] = numOverdraw;
-
-  return overdrawStats;
+  this.webGLState.restore();
 };

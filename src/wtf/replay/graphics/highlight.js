@@ -15,6 +15,7 @@ goog.provide('wtf.replay.graphics.Highlight');
 
 goog.require('goog.webgl');
 goog.require('wtf.replay.graphics.DrawCallVisualizer');
+goog.require('wtf.replay.graphics.OverdrawSurface');
 goog.require('wtf.replay.graphics.Program');
 
 
@@ -35,9 +36,63 @@ wtf.replay.graphics.Highlight = function(playback) {
    * @private
    */
   this.firstDraw_ = true;
+
+  this.calls['WebGLRenderingContext#clear'] = function(
+      visualizer, gl, args, callFunction) {
+    if (!visualizer.active) {
+      return;
+    }
+
+    callFunction();
+
+    if (!visualizer.modifyDraws) {
+      return;
+    }
+
+    var contextHandle = visualizer.latestContextHandle;
+    var visualizerSurface = visualizer.visualizerSurfaces[contextHandle];
+    var drawToSurfaceFunction = function() {
+      visualizerSurface.drawQuad();
+    };
+
+    var webGLState = visualizer.webGLStates[contextHandle];
+    webGLState.backup();
+
+    // Force states to mimic clear behavior.
+    // Let drawToSurface handle stencil for highlighting.
+    gl.colorMask(true, true, true, true);
+    gl.depthMask(false);
+    gl.disable(goog.webgl.DEPTH_TEST);
+    gl.disable(goog.webgl.CULL_FACE);
+    gl.frontFace(goog.webgl.CCW);
+
+    visualizer.drawToSurface_(drawToSurfaceFunction);
+
+    webGLState.restore();
+  };
 };
 goog.inherits(wtf.replay.graphics.Highlight,
     wtf.replay.graphics.DrawCallVisualizer);
+
+
+/**
+ * Creates an OverdrawSurface and adds it to this.visualizerSurfaces.
+ * @param {!number|string} contextHandle Context handle from event arguments.
+ * @param {!WebGLRenderingContext} gl The context.
+ * @param {number} width The width of the surface.
+ * @param {number} height The height of the surface.
+ * @protected
+ * @override
+ */
+wtf.replay.graphics.Highlight.prototype.createSurface = function(
+    contextHandle, gl, width, height) {
+  var args = {};
+  args['stencil'] = true;
+  var visualizerSurface = new wtf.replay.graphics.OverdrawSurface(gl,
+      width, height, args);
+  this.visualizerSurfaces[contextHandle] = visualizerSurface;
+  this.registerDisposable(visualizerSurface);
+};
 
 
 /**
@@ -86,6 +141,29 @@ wtf.replay.graphics.Highlight.prototype.handleDrawCall = function(
     return;
   }
 
+  var program = this.programs[programHandle];
+  var drawToSurfaceFunction = function() {
+    program.drawWithVariant(drawFunction, 'highlight');
+  };
+
+  var webGLState = this.webGLStates[contextHandle];
+  webGLState.backup();
+
+  this.drawToSurface_(drawToSurfaceFunction);
+
+  webGLState.restore();
+};
+
+
+/**
+ * Calls drawFunction onto the active visualizerSurface using custom GL state.
+ * The caller of this function is responsible for restoring state.
+ * @param {!function()} drawFunction The draw function to call.
+ * @private
+ */
+wtf.replay.graphics.Highlight.prototype.drawToSurface_ = function(
+    drawFunction) {
+  var contextHandle = this.latestContextHandle;
   var gl = this.contexts[contextHandle];
 
   // Do not edit calls where the target is not the visible framebuffer.
@@ -95,19 +173,16 @@ wtf.replay.graphics.Highlight.prototype.handleDrawCall = function(
     return;
   }
 
-  var webGLState = this.webGLStates[contextHandle];
-  webGLState.backup();
-
   // Render with the highlight program into the visualizer surface.
   var visualizerSurface = this.visualizerSurfaces[contextHandle];
   visualizerSurface.bindFramebuffer();
-  var program = this.programs[programHandle];
 
   gl.enable(goog.webgl.BLEND);
   gl.blendFunc(goog.webgl.SRC_ALPHA, goog.webgl.ONE_MINUS_SRC_ALPHA);
   gl.blendEquation(goog.webgl.FUNC_ADD);
   gl.enable(goog.webgl.STENCIL_TEST);
   if (this.firstDraw_) {
+    gl.colorMask(true, true, true, true);
     gl.disable(goog.webgl.DEPTH_TEST);
     gl.disable(goog.webgl.CULL_FACE);
     // The stencil should already be cleared to all 0s.
@@ -123,9 +198,7 @@ wtf.replay.graphics.Highlight.prototype.handleDrawCall = function(
     gl.stencilOp(goog.webgl.KEEP, goog.webgl.KEEP, goog.webgl.KEEP);
   }
 
-  program.drawWithVariant(drawFunction, 'highlight');
-
-  webGLState.restore();
+  drawFunction();
 };
 
 
@@ -176,7 +249,7 @@ wtf.replay.graphics.Highlight.prototype.trigger = function(opt_args) {
   // Draw captured visualizer textures.
   for (contextHandle in this.contexts) {
     // Draw without thresholding to calculate overdraw.
-    this.visualizerSurfaces[contextHandle].drawTexture(false, false);
+    this.visualizerSurfaces[contextHandle].drawTexture(false);
 
     // Calculate overdraw and update the context's message.
     var stats = this.visualizerSurfaces[contextHandle].calculateOverdraw();
@@ -193,9 +266,9 @@ wtf.replay.graphics.Highlight.prototype.trigger = function(opt_args) {
         '% of screen';
     this.playback.changeContextMessage(contextHandle, message);
 
-    this.playbackSurfaces[contextHandle].drawTexture(false, false);
+    this.playbackSurfaces[contextHandle].drawTexture(false);
     // Draw for display, with thresholding and blending (to not overwrite).
-    this.visualizerSurfaces[contextHandle].drawTexture(true, true);
+    this.visualizerSurfaces[contextHandle].drawOverdraw(true);
     this.visualizerSurfaces[contextHandle].enableResize();
   }
 
