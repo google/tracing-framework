@@ -121,7 +121,9 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
   var retrievedContext;
   if (contextList && contextList.length) {
     // Since context with desired type and attributes exists, return it.
-    retrievedContext = contextList.pop();
+    // Use shift() instead of pop() - First in, First Out ensures that contexts
+    // are returned in the same order that they were released.
+    retrievedContext = contextList.shift();
     this.resetWebGLContext_(retrievedContext);
   } else {
     // Create a new context.
