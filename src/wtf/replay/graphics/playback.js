@@ -124,25 +124,18 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.programs_ = {};
 
   /**
-   * Set of Visualizers. Keys are string names. Add these using addVisualizer.
-   * @type {!Object.<wtf.replay.graphics.IVisualizer>}
+   * Array of Visualizers. Add these using addVisualizer.
+   * @type {!Array.<wtf.replay.graphics.Visualizer>}
    * @private
    */
-  this.visualizers_ = {};
+  this.visualizers_ = [];
 
   /**
-   * The active visualizer, or null if no visualizer is active.
-   * @type {wtf.replay.graphics.IVisualizer}
+   * Array of Visualizer names corresponding to entries in this.visualizers_.
+   * @type {!Array.<string>}
    * @private
    */
-  this.activeVisualizer_ = null;
-
-  /**
-   * A finished visualizer, or null if no visualizer is finished.
-   * @type {wtf.replay.graphics.IVisualizer}
-   * @private
-   */
-  this.finishedVisualizer_ = null;
+  this.visualizerNames_ = [];
 
   /**
    * Whether resources have finished loading. Set to true after a
@@ -506,33 +499,32 @@ wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
 
 
 /**
- * Adds a new visualizer.
- * @param {wtf.replay.graphics.IVisualizer} visualizer The Visualizer.
+ * Adds a new visualizer. The name provided is used by getVisualizer.
+ * @param {!wtf.replay.graphics.Visualizer} visualizer The Visualizer.
  * @param {string} name The name for this Visualizer.
  */
 wtf.replay.graphics.Playback.prototype.addVisualizer = function(
     visualizer, name) {
-  this.visualizers_[name] = visualizer;
+  this.visualizers_.push(visualizer);
+  this.visualizerNames_.push(name);
+  this.registerDisposable(visualizer);
 };
 
 
 /**
- * Gets a visualizer.
+ * Gets a visualizer by the name used to add it with addVisualizer.
  * @param {string} name The name of the Visualizer.
- * @return {?wtf.replay.graphics.IVisualizer} The Visualizer.
+ * @return {?wtf.replay.graphics.Visualizer} The Visualizer.
  */
 wtf.replay.graphics.Playback.prototype.getVisualizer = function(name) {
-  return this.visualizers_[name] || null;
-};
-
-
-/**
- * Notifies Playback that a visualizer finished running.
- * @param {wtf.replay.graphics.IVisualizer} visualizer The Visualizer.
- */
-wtf.replay.graphics.Playback.prototype.finishVisualizer = function(visualizer) {
-  this.activeVisualizer_ = null;
-  this.finishedVisualizer_ = visualizer;
+  for (var i = 0; i < this.visualizers_.length; ++i) {
+    if (this.visualizerNames_[i] == name) {
+      return this.visualizers_[i];
+    }
+  }
+  goog.global.console.log('Could not find a visualizer with name \'' + name +
+      '\'.');
+  return null;
 };
 
 
@@ -543,16 +535,10 @@ wtf.replay.graphics.Playback.prototype.finishVisualizer = function(visualizer) {
  */
 wtf.replay.graphics.Playback.prototype.triggerVisualizer = function(
     name, opt_args) {
-  // Restore state before starting any new visualizations.
-  if (this.activeVisualizer_) {
-    this.activeVisualizer_.restoreState();
-  } else if (this.finishedVisualizer_) {
-    this.finishedVisualizer_.restoreState();
-    this.finishedVisualizer_ = null;
+  var visualizer = this.getVisualizer(name);
+  if (visualizer) {
+    visualizer.trigger(opt_args);
   }
-
-  this.activeVisualizer_ = this.visualizers_[name];
-  this.visualizers_[name].trigger(opt_args);
 };
 
 
@@ -1216,38 +1202,26 @@ wtf.replay.graphics.Playback.prototype.getCurrentStepIndex = function() {
  * @private
  */
 wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
+  var i;
+  for (i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].handlePreEvent(it, this.currentContext_);
+  }
+
   var associatedFunction = this.callLookupTable_[it.getTypeId()];
   if (associatedFunction) {
     try {
-      if (this.finishedVisualizer_) {
-        this.finishedVisualizer_.restoreState();
-        this.finishedVisualizer_ = null;
-      }
-
-      // The active visualizer is responsible for calling the function.
-      var playback = this; // Capture this within the function.
-      var callFunction = function() {
-        associatedFunction.call(null, it.getId(), playback,
-            playback.currentContext_, it.getArguments(),
-            playback.objects_);
-      };
-
-      // If there is no active visualizer, call the function here.
-      if (!this.activeVisualizer_) {
-        callFunction();
-      }
-
-      // All visualizers, inactive or active, handle the event in some way.
-      for (var name in this.visualizers_) {
-        this.visualizers_[name].handleEvent(it, this.currentContext_,
-            callFunction);
-      }
+      associatedFunction.call(null, it.getId(), this, this.currentContext_,
+          it.getArguments(), this.objects_);
     } catch (e) {
       // TODO(benvanik): log to status bar? this usually happens with
       //     cross-origin texture uploads.
       goog.global.console.log('Error realizing event ' + it.getLongString() +
           ': ' + e);
     }
+  }
+
+  for (i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].handlePostEvent(it, this.currentContext_);
   }
 };
 

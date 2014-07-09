@@ -17,8 +17,8 @@ goog.require('goog.asserts');
 goog.require('goog.dom.DomHelper');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ContextPool');
-goog.require('wtf.replay.graphics.Highlight');
-goog.require('wtf.replay.graphics.Overdraw');
+goog.require('wtf.replay.graphics.HighlightVisualizer');
+goog.require('wtf.replay.graphics.OverdrawVisualizer');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.GraphicsPanel');
 
@@ -71,13 +71,13 @@ wtf.replay.graphics.Session = function(db, parentElement, opt_domHelper) {
   });
 
   // Add visualizers to the playback.
-  var highlightVisualizer = new wtf.replay.graphics.Highlight(this.playback_);
+  var highlightVisualizer = new wtf.replay.graphics.HighlightVisualizer(
+      this.playback_);
   this.playback_.addVisualizer(highlightVisualizer, 'highlight');
-  this.registerDisposable(highlightVisualizer);
 
-  var overdrawVisualizer = new wtf.replay.graphics.Overdraw(this.playback_);
+  var overdrawVisualizer = new wtf.replay.graphics.OverdrawVisualizer(
+      this.playback_);
   this.playback_.addVisualizer(overdrawVisualizer, 'overdraw');
-  this.registerDisposable(overdrawVisualizer);
 
   /**
    * A panel for controlling graphics replay.

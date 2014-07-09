@@ -78,7 +78,7 @@ wtf.replay.graphics.Program = function(originalProgram, gl) {
 
   /**
    * A mapping of variant names to compiled variant shader programs.
-   * @type {!Object.<!string, WebGLProgram>}
+   * @type {!Object.<string, WebGLProgram>}
    * @private
    */
   this.variants_ = {};
@@ -99,7 +99,7 @@ wtf.replay.graphics.Program.prototype.disposeInternal = function() {
 /**
  * Creates and links a variant program.
  * If optional sources are not defined, the original shaders are used.
- * @param {!string} variantName The name of the variant program to create.
+ * @param {string} variantName The name of the variant program to create.
  * @param {string=} opt_vertexShaderSource Custom vertex shader source.
  * @param {string=} opt_fragmentShaderSource Custom fragment shader source.
  */
@@ -180,7 +180,7 @@ wtf.replay.graphics.Program.prototype.getOriginalProgram = function() {
 
 /**
  * Returns the variant program requested. Fails if the variant does not exist.
- * @param {!string} variantName The name of the variant program to get.
+ * @param {string} variantName The name of the variant program to get.
  * @return {WebGLProgram}
  */
 wtf.replay.graphics.Program.prototype.getVariantProgram =
@@ -194,7 +194,7 @@ wtf.replay.graphics.Program.prototype.getVariantProgram =
 /**
  * Calls the specified draw function using the specified variant program.
  * @param {function()} drawFunction The draw function to call.
- * @param {!string} variantName The name of the variant program to use.
+ * @param {string} variantName The name of the variant program to use.
  */
 wtf.replay.graphics.Program.prototype.drawWithVariant =
     function(drawFunction, variantName) {
@@ -213,7 +213,7 @@ wtf.replay.graphics.Program.prototype.drawWithVariant =
 
 /**
  * Copies uniforms and attributes from the original program to a variant.
- * @param {!string} variantName The name of the variant program to sync.
+ * @param {string} variantName The name of the variant program to sync.
  * @private
  */
 wtf.replay.graphics.Program.prototype.syncPrograms_ =

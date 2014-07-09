@@ -27,11 +27,11 @@ goog.require('wtf.replay.graphics.WebGLState');
  * However, these can be resized after creation using the resize method.
  *
  * @param {!WebGLRenderingContext} gl The context to work with.
- * @param {!number} width The width of the rendered area.
- * @param {!number} height The height of the rendered area.
- * @param {Object.<string, !Object>=} opt_args Additional setup arguments.
- *   'stencil' : {boolean} Force stencil buffer support.
- *   'depth' : {boolean} Force depth buffer support.
+ * @param {number} width The width of the rendered area.
+ * @param {number} height The height of the rendered area.
+ * @param {{stencil: (boolean|undefined), depth: (boolean|undefined)}=} opt_args
+ *   Additional setup arguments.
+ *   Stencil and depth are used to force stencil/depth buffer support.
  * @constructor
  * @extends {goog.Disposable}
  */
@@ -68,15 +68,15 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
 
   /**
    * Whether the surface should have a stencil buffer.
-   * @type {!boolean}
+   * @type {boolean}
    * @private
    */
-  this.stencil_ = opt_args && opt_args['stencil'] ||
+  this.stencil_ = (opt_args && opt_args['stencil']) ||
       this.contextAttributes_['stencil'];
 
   /**
    * Whether the surface should have a depth buffer.
-   * @type {!boolean}
+   * @type {boolean}
    * @private
    */
   this.depth_ = opt_args && opt_args['depth'] ||
@@ -172,10 +172,10 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
 
   /**
    * Whether this object has been initialized.
-   * @type {boolean}
+   * @type {boolean|undefined}
    * @protected
    */
-  this.initialized = false;
+  this.initialized = undefined;
 };
 goog.inherits(wtf.replay.graphics.OffscreenSurface, goog.Disposable);
 
@@ -184,32 +184,47 @@ goog.inherits(wtf.replay.graphics.OffscreenSurface, goog.Disposable);
  * @override
  */
 wtf.replay.graphics.OffscreenSurface.prototype.disposeInternal = function() {
-  var gl = this.context;
-
-  if (this.initialized) {
-    gl.deleteFramebuffer(this.framebuffer_);
-    gl.deleteTexture(this.texture_);
-    gl.deleteProgram(this.drawTextureProgram_);
-    if (this.depthStencilBuffer_) {
-      gl.deleteRenderbuffer(this.depthStencilBuffer_);
-    }
-    gl.deleteBuffer(this.squareVertexPositionBuffer_);
-    gl.deleteBuffer(this.squareTextureCoordBuffer_);
-  }
+  this.clearWebGLObjects();
 
   goog.base(this, 'disposeInternal');
 };
 
 
 /**
+ * Clears WebGL objects.
+ * @protected
+ */
+wtf.replay.graphics.OffscreenSurface.prototype.clearWebGLObjects = function() {
+  var gl = this.context;
+
+  gl.deleteFramebuffer(this.framebuffer_);
+  gl.deleteTexture(this.texture_);
+  gl.deleteProgram(this.drawTextureProgram_);
+  gl.deleteRenderbuffer(this.depthStencilBuffer_);
+  gl.deleteBuffer(this.squareVertexPositionBuffer_);
+  gl.deleteBuffer(this.squareTextureCoordBuffer_);
+};
+
+
+/**
+ * Performs one time initialization if needed. Only attempts setup once.
+ * @return {boolean} Whether initialization succeeded or was already completed.
+ * @protected
+ */
+wtf.replay.graphics.OffscreenSurface.prototype.ensureInitialized = function() {
+  if (!goog.isDef(this.initialized)) {
+    this.initialized = this.initialize();
+  }
+  return this.initialized;
+};
+
+
+/**
  * Creates framebuffer, texture, drawTextureProgram, and buffers.
+ * @return {boolean} Whether initialization succeeded.
  * @protected
  */
 wtf.replay.graphics.OffscreenSurface.prototype.initialize = function() {
-  if (this.initialized) {
-    return;
-  }
-
   var gl = this.context;
 
   this.webGLState.backup();
@@ -320,7 +335,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize = function() {
 
   this.webGLState.restore();
 
-  this.initialized = true;
+  return true;
 };
 
 
@@ -360,8 +375,8 @@ wtf.replay.graphics.OffscreenSurface.prototype.enableResize = function() {
 
 /**
  * Resizes the render texture and depthStencilBuffer.
- * @param {!number} width The new width of the rendered area.
- * @param {!number} height The new height of the rendered area.
+ * @param {number} width The new width of the rendered area.
+ * @param {number} height The new height of the rendered area.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.resize = function(
     width, height) {
@@ -398,7 +413,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.resize = function(
  * Binds the internal framebuffer.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.bindFramebuffer = function() {
-  this.initialize();
+  this.ensureInitialized();
 
   var gl = this.context;
 
@@ -410,7 +425,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.bindFramebuffer = function() {
  * Captures the pixel contents of the active framebuffer in the texture.
  */
 wtf.replay.graphics.OffscreenSurface.prototype.captureTexture = function() {
-  this.initialize();
+  this.ensureInitialized();
 
   var gl = this.context;
 
@@ -462,7 +477,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.clear = function(opt_color) {
  */
 wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
     opt_blend) {
-  this.initialize();
+  this.ensureInitialized();
   this.drawTextureInternal(this.texture_, this.drawTextureProgram_, opt_blend);
 };
 
@@ -478,7 +493,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
  */
 wtf.replay.graphics.OffscreenSurface.prototype.drawTextureInternal = function(
     texture, program, opt_blend) {
-  this.initialize();
+  this.ensureInitialized();
 
   var gl = this.context;
 

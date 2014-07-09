@@ -23,13 +23,13 @@ goog.require('wtf.replay.graphics.OffscreenSurface');
  * OffscreenSurface used for overdraw.
  *
  * @param {!WebGLRenderingContext} gl The context to work with.
- * @param {!number} width The width of the rendered area.
- * @param {!number} height The height of the rendered area.
- * @param {Object.<string, !Object>=} opt_args Additional setup arguments.
- *   'stencil' : {boolean} Force stencil buffer support.
- *   'depth' : {boolean} Force depth buffer support.
- *   'thresholdColors': {Array.<string>} Override threshold colors.
- *      These should be formatted like: 'vec4(0.0, 0.0, 0.0, 1.0)', range 0-1.
+ * @param {number} width The width of the rendered area.
+ * @param {number} height The height of the rendered area.
+ * @param {{stencil: (boolean|undefined), depth: (boolean|undefined),
+ *     thresholdColors: (Array.<string>|undefined)}=} opt_args
+ *   Additional setup arguments.
+ *   Stencil and depth are used to force stencil/depth buffer support.
+ *   Override threshold colors are formatted like: 'vec4(0.0, 0.0, 0.0, 1.0)'.
  * @constructor
  * @extends {wtf.replay.graphics.OffscreenSurface}
  */
@@ -60,25 +60,27 @@ wtf.replay.graphics.OverdrawSurface = function(gl, width, height, opt_args) {
 
   /**
    * Amount to draw into the visualizerSurface with each draw call.
-   * @type {!number}
+   * @type {number}
    * @private
    */
-  this.thresholdValuePerCall_ = 1.0 / (this.thresholdColors_.length + 1);
+  this.thresholdValuePerCall_ = 1.0 / 255.0;
 };
 goog.inherits(wtf.replay.graphics.OverdrawSurface,
     wtf.replay.graphics.OffscreenSurface);
 
 
 /**
+ * Clears WebGL objects.
+ * @protected
  * @override
  */
-wtf.replay.graphics.OverdrawSurface.prototype.disposeInternal = function() {
-  if (this.initialized_) {
-    this.context.deleteProgram(this.drawOverdrawProgram_);
-    this.context.deleteProgram(this.drawQuadProgram_);
-  }
+wtf.replay.graphics.OverdrawSurface.prototype.clearWebGLObjects = function() {
+  goog.base(this, 'clearWebGLObjects');
 
-  goog.base(this, 'disposeInternal');
+  var gl = this.context;
+
+  gl.deleteProgram(this.drawOverdrawProgram_);
+  gl.deleteProgram(this.drawQuadProgram_);
 };
 
 
@@ -90,19 +92,22 @@ wtf.replay.graphics.OverdrawSurface.prototype.disposeInternal = function() {
 wtf.replay.graphics.OverdrawSurface.prototype.getDefaultColors_ = function() {
   return [
     'vec4(0.00, 0.00, 0.00, 0.0)', /* Transparent */
-    'vec4(0.26, 0.53, 0.19, 1.0)', /* Dark Green */
+    'vec4(0.15, 0.15, 0.15, 1.0)', /* Black */
+    'vec4(0.08, 0.36, 0.05, 1.0)', /* Dark Green */
+    'vec4(0.30, 0.60, 0.25, 1.0)', /* Green */
     'vec4(0.46, 0.78, 0.39, 1.0)', /* Light Green */
     'vec4(0.83, 0.83, 0.33, 1.0)', /* Yellow */
-    'vec4(0.86, 0.47, 0.13, 1.0)', /* Orange */
-    'vec4(0.93, 0.20, 0.20, 1.0)', /* Red */
-    'vec4(0.90, 0.90, 0.90, 1.0)'  /* White */
+    'vec4(0.93, 0.57, 0.16, 1.0)', /* Orange */
+    'vec4(0.95, 0.22, 0.22, 1.0)', /* Red */
+    'vec4(0.60, 0.12, 0.12, 1.0)', /* Dark Red */
+    'vec4(0.85, 0.85, 0.85, 1.0)'  /* White */
   ];
 };
 
 
 /**
  * Returns the color to be used with draw calls for thresholding.
- * @return {!string} Color string formatted as a GLSL vec4.
+ * @return {string} Color string formatted as a GLSL vec4.
  */
 wtf.replay.graphics.OverdrawSurface.prototype.getThresholdDrawColor =
     function() {
@@ -112,14 +117,13 @@ wtf.replay.graphics.OverdrawSurface.prototype.getThresholdDrawColor =
 
 /**
  * Creates framebuffer, texture, drawTextureProgram, and buffers.
+ * @return {boolean} Whether initialization succeeded.
  * @protected
  */
 wtf.replay.graphics.OverdrawSurface.prototype.initialize = function() {
-  if (this.initialized) {
-    return;
+  if (!goog.base(this, 'initialize')) {
+    return false;
   }
-
-  goog.base(this, 'initialize');
 
   var gl = this.context;
 
@@ -205,7 +209,7 @@ wtf.replay.graphics.OverdrawSurface.prototype.initialize = function() {
 
   this.webGLState.restore();
 
-  this.initialized_ = true;
+  return true;
 };
 
 
@@ -215,7 +219,7 @@ wtf.replay.graphics.OverdrawSurface.prototype.initialize = function() {
  */
 wtf.replay.graphics.OffscreenSurface.prototype.drawOverdraw = function(
     opt_blend) {
-  this.initialize();
+  this.ensureInitialized();
   this.drawTextureInternal(this.texture_, this.drawOverdrawProgram_, opt_blend);
 };
 
@@ -262,14 +266,15 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawQuad = function() {
 
 /**
  * Calculates stats on the number of pixels drawn and overdrawn.
- * @return {Object.<string, number>} Overdraw stats.
+ * @return {?{numPixels: number, numAffected: number, numOverdraw: number}}
+ *   Overdraw stats. Returns null if not initialized.
  *   'numPixels': The total number of pixels in the rendered area.
  *   'numAffected': The number of pixels affected.
  *   'numOverdraw': The number of pixels drawn, using the threshold draw color.
  */
 wtf.replay.graphics.OverdrawSurface.prototype.calculateOverdraw = function() {
-  if (!this.initialized_) {
-    return {};
+  if (!this.initialized) {
+    return null;
   }
 
   var gl = this.context;
@@ -284,15 +289,16 @@ wtf.replay.graphics.OverdrawSurface.prototype.calculateOverdraw = function() {
 
   var pixelValue;
   for (var i = 0; i < numPixels; i++) {
+    // readPixels returns colors in the range [0,255]
     pixelValue = pixelContents[4 * i] / 255.0;
     numAffected += pixelValue > 0 ? 1 : 0;
     numOverdraw += pixelValue / this.thresholdValuePerCall_;
   }
 
   var overdrawStats = {};
-  overdrawStats['numPixels'] = numPixels;
-  overdrawStats['numAffected'] = numAffected;
-  overdrawStats['numOverdraw'] = numOverdraw;
+  overdrawStats.numPixels = numPixels;
+  overdrawStats.numAffected = numAffected;
+  overdrawStats.numOverdraw = numOverdraw;
 
   return overdrawStats;
 };

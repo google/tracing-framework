@@ -24,7 +24,7 @@ goog.require('goog.ui.PopupMenu');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
-goog.require('wtf.replay.graphics.Overdraw');
+goog.require('wtf.replay.graphics.OverdrawVisualizer');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.eventNavigatorToolbar');
 goog.require('wtf.ui.Control');
@@ -211,11 +211,11 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
       }, this);
 
   // Listen for overdraw visibility to select the overdraw button.
-  var overdrawVisualizer = /** @type {wtf.replay.graphics.Overdraw} */ (
-      playback.getVisualizer('overdraw'));
+  var overdrawVisualizer = /** @type {wtf.replay.graphics.OverdrawVisualizer} */
+      (playback.getVisualizer('overdraw'));
   if (overdrawVisualizer) {
     overdrawVisualizer.addListener(
-        wtf.replay.graphics.Overdraw.EventType.VISIBILITY_CHANGED,
+        wtf.replay.graphics.OverdrawVisualizer.EventType.VISIBILITY_CHANGED,
         function() {
           this.toggleSelected(goog.getCssName('toggleOverdrawButton'),
               overdrawVisualizer.isVisible());

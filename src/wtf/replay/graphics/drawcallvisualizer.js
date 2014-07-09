@@ -14,12 +14,10 @@
 goog.provide('wtf.replay.graphics.DrawCallVisualizer');
 
 goog.require('goog.asserts');
-goog.require('goog.object');
 goog.require('goog.webgl');
-goog.require('wtf.events.EventEmitter');
-goog.require('wtf.replay.graphics.IVisualizer');
 goog.require('wtf.replay.graphics.OffscreenSurface');
 goog.require('wtf.replay.graphics.Playback');
+goog.require('wtf.replay.graphics.Visualizer');
 goog.require('wtf.replay.graphics.WebGLState');
 
 
@@ -29,18 +27,10 @@ goog.require('wtf.replay.graphics.WebGLState');
  *
  * @param {!wtf.replay.graphics.Playback} playback The playback instance.
  * @constructor
- * @extends {wtf.events.EventEmitter}
- * @implements {wtf.replay.graphics.IVisualizer}
+ * @extends {wtf.replay.graphics.Visualizer}
  */
 wtf.replay.graphics.DrawCallVisualizer = function(playback) {
-  goog.base(this);
-
-  /**
-   * The playback instance. Manipulated when visualization is triggered.
-   * @type {!wtf.replay.graphics.Playback}
-   * @protected
-   */
-  this.playback = playback;
+  goog.base(this, playback);
 
   /**
    * A mapping of handles to contexts.
@@ -83,11 +73,12 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
   this.webGLStates = {};
 
   /**
-   * Whether this Visualizer is active.
+   * Whether this Visualizer is completed and can call restoreState
+   * before the next event.
    * @type {boolean}
    * @protected
    */
-  this.active = false;
+  this.completed = false;
 
   /**
    * Whether draw calls should be modified.
@@ -95,12 +86,6 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
    * @protected
    */
   this.modifyDraws = false;
-
-  /**
-   * Mapping from event names to functions. Shallow clone to support overrides.
-   * @type {!Object.<wtf.replay.graphics.DrawCallVisualizer.Call>}
-   */
-  this.calls = goog.object.clone(wtf.replay.graphics.DrawCallVisualizer.CALLS);
 
   /**
    * The current context handle from event arguments.
@@ -116,148 +101,137 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
    */
   this.latestProgramHandle = 0;
 
-  playback.addListener(
-      wtf.replay.graphics.Playback.EventType.CLEAR_PROGRAMS,
-      function() {
-        this.clearPrograms_();
-      }, this);
+  playback.addListener(wtf.replay.graphics.Playback.EventType.CLEAR_PROGRAMS,
+      this.clearPrograms_, this);
+
+  this.mutators['wtf.webgl#setContext'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          // Track contexts, update dimensions to match context parameters.
+          var contextHandle = args['handle'];
+          var height = args['height'];
+          var width = args['width'];
+
+          if (visualizer.contexts[contextHandle]) {
+            visualizer.playbackSurfaces[contextHandle].resize(width, height);
+            visualizer.visualizerSurfaces[contextHandle].resize(width, height);
+          } else {
+            visualizer.contexts[contextHandle] = gl;
+
+            var playbackSurface = new wtf.replay.graphics.OffscreenSurface(gl,
+                width, height);
+            visualizer.playbackSurfaces[contextHandle] = playbackSurface;
+            visualizer.registerDisposable(playbackSurface);
+
+            visualizer.createSurface(contextHandle, gl, width, height);
+
+            var webGLState = new wtf.replay.graphics.WebGLState(gl);
+            visualizer.webGLStates[contextHandle] = webGLState;
+          }
+
+          visualizer.latestContextHandle = contextHandle;
+        }
+      });
+
+  this.mutators['WebGLRenderingContext#linkProgram'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          // Create variant programs whenever a program is linked.
+          var programHandle = /** @type {number} */ (args['program']);
+          var originalProgram = /** @type {WebGLProgram} */ (
+              visualizer.playback.getObject(programHandle));
+          goog.asserts.assert(originalProgram);
+
+          // Programs can be linked multiple times. Avoid leaking objects.
+          if (visualizer.programs[programHandle]) {
+            visualizer.deleteProgram_(programHandle);
+          }
+
+          visualizer.createProgram(programHandle, originalProgram, gl);
+        }
+      });
+
+  this.mutators['WebGLRenderingContext#useProgram'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          visualizer.latestProgramHandle = args['program'];
+        }
+      });
+
+  this.mutators['WebGLRenderingContext#deleteProgram'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          visualizer.deleteProgram_(args['program']);
+        }
+      });
+
+  this.mutators['WebGLRenderingContext#drawArrays'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          visualizer.handleDrawCall(function() {
+            gl.drawArrays(
+                args['mode'], args['first'], args['count']);
+          });
+        }
+      });
+
+  this.mutators['WebGLRenderingContext#drawElements'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          visualizer.handleDrawCall(function() {
+            gl.drawElements(
+                args['mode'], args['count'], args['type'],
+                args['offset']);
+          });
+        }
+      });
+
+  this.mutators['ANGLEInstancedArrays#drawArraysInstancedANGLE'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          var ext = gl.getExtension('ANGLE_instanced_arrays');
+          visualizer.handleDrawCall(function() {
+            ext['drawArraysInstancedANGLE'](
+                args['mode'], args['first'], args['count'], args['primcount']);
+          });
+        }
+      });
+
+  this.mutators['ANGLEInstancedArrays#drawElementsInstancedANGLE'] = /** @type
+    {wtf.replay.graphics.Visualizer.Mutator} */ ({
+        post: function(visualizer, gl, args) {
+          var ext = gl.getExtension('ANGLE_instanced_arrays');
+          visualizer.handleDrawCall(function() {
+            ext['drawElementsInstancedANGLE'](
+                args['mode'], args['count'], args['type'], args['offset'],
+                args['primcount']);
+          });
+        }
+      });
 };
-goog.inherits(wtf.replay.graphics.DrawCallVisualizer, wtf.events.EventEmitter);
+goog.inherits(wtf.replay.graphics.DrawCallVisualizer,
+    wtf.replay.graphics.Visualizer);
 
 
 /**
- * Calls callFunction if active.
- * @param {function()} callFunction The function Playback was to call.
- * @protected
- */
-wtf.replay.graphics.DrawCallVisualizer.prototype.callIfActive = function(
-    callFunction) {
-  if (this.active) {
-    callFunction();
-  }
-};
-
-
-/**
- * Handles the provided event. If active, calls callFunction.
+ * Handles operations that should occur before the provided event.
  * @param {!wtf.db.EventIterator} it Event iterator.
  * @param {WebGLRenderingContext} gl The context.
- * @param {function()} callFunction The function Playback was to call.
+ * @override
  */
-wtf.replay.graphics.DrawCallVisualizer.prototype.handleEvent = function(
-    it, gl, callFunction) {
-  var associatedFunction = this.calls[it.getName()];
-  if (associatedFunction) {
-    associatedFunction.call(null, this, gl, it.getArguments(), callFunction);
-  } else {
-    this.callIfActive(callFunction);
+wtf.replay.graphics.DrawCallVisualizer.prototype.handlePreEvent = function(
+    it, gl) {
+  if (this.completed) {
+    this.restoreState();
   }
-};
 
-
-/**
- * @typedef {function(
- *     !wtf.replay.graphics.DrawCallVisualizer, WebGLRenderingContext,
- *         wtf.db.ArgumentData, function())}
- */
-wtf.replay.graphics.DrawCallVisualizer.Call;
-
-
-/**
- * A mapping from event names to functions.
- * @type {!Object.<wtf.replay.graphics.DrawCallVisualizer.Call>}
- */
-wtf.replay.graphics.DrawCallVisualizer.CALLS = {
-  'wtf.webgl#setContext': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-
-    // Track contexts, update internal dimensions to match context parameters.
-    var contextHandle = args['handle'];
-    gl = visualizer.playback.getContext(contextHandle);
-    var height = args['height'];
-    var width = args['width'];
-
-    if (visualizer.contexts[contextHandle]) {
-      visualizer.playbackSurfaces[contextHandle].resize(width, height);
-      visualizer.visualizerSurfaces[contextHandle].resize(width, height);
-    } else {
-      visualizer.contexts[contextHandle] = gl;
-
-      var playbackSurface = new wtf.replay.graphics.OffscreenSurface(gl,
-          width, height);
-      visualizer.playbackSurfaces[contextHandle] = playbackSurface;
-      visualizer.registerDisposable(playbackSurface);
-
-      visualizer.createSurface(contextHandle, gl, width, height);
-
-      var webGLState = new wtf.replay.graphics.WebGLState(gl);
-      visualizer.webGLStates[contextHandle] = webGLState;
-    }
-
-    visualizer.latestContextHandle = contextHandle;
-  },
-  'WebGLRenderingContext#linkProgram': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-
-    // Create variant programs whenever a program is linked.
-    var programHandle = /** @type {number} */ (args['program']);
-    var originalProgram = /** @type {WebGLProgram} */ (
-        visualizer.playback.getObject(programHandle));
-    goog.asserts.assert(originalProgram);
-
-    // Programs can be linked multiple times. Avoid leaking objects.
-    if (visualizer.programs[programHandle]) {
-      visualizer.deleteProgram_(programHandle);
-    }
-
-    visualizer.createProgram(programHandle, originalProgram, gl);
-  },
-  'WebGLRenderingContext#useProgram': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-    visualizer.latestProgramHandle = args['program'];
-  },
-  'WebGLRenderingContext#deleteProgram': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-    visualizer.deleteProgram_(args['program']);
-  },
-  'WebGLRenderingContext#drawArrays': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.handleDrawCall(callFunction);
-  },
-  'WebGLRenderingContext#drawElements': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.handleDrawCall(callFunction);
-  },
-  'ANGLEInstancedArrays#drawArraysInstancedANGLE': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.handleDrawCall(callFunction);
-  },
-  'ANGLEInstancedArrays#drawElementsInstancedANGLE': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.handleDrawCall(callFunction);
-  },
-  'WebGLRenderingContext#clear': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-  },
-  'WebGLRenderingContext#finish': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-  },
-  'WebGLRenderingContext#flush': function(
-      visualizer, gl, args, callFunction) {
-    visualizer.callIfActive(callFunction);
-  }
+  goog.base(this, 'handlePreEvent', it, gl);
 };
 
 
 /**
  * Creates an OffscreenSurface and adds it to this.visualizerSurfaces.
- * @param {!number|string} contextHandle Context handle from event arguments.
+ * @param {number|string} contextHandle Context handle from event arguments.
  * @param {!WebGLRenderingContext} gl The context.
  * @param {number} width The width of the surface.
  * @param {number} height The height of the surface.
@@ -265,10 +239,8 @@ wtf.replay.graphics.DrawCallVisualizer.CALLS = {
  */
 wtf.replay.graphics.DrawCallVisualizer.prototype.createSurface = function(
     contextHandle, gl, width, height) {
-  var args = {};
-  args['stencil'] = true;
   var visualizerSurface = new wtf.replay.graphics.OffscreenSurface(gl,
-      width, height, args);
+      width, height, {stencil: true});
   this.visualizerSurfaces[contextHandle] = visualizerSurface;
   this.registerDisposable(visualizerSurface);
 };
@@ -276,7 +248,7 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.createSurface = function(
 
 /**
  * Deletes the specified program.
- * @param {!number|string} programHandle Program handle from event arguments.
+ * @param {number|string} programHandle Program handle from event arguments.
  * @private
  */
 wtf.replay.graphics.DrawCallVisualizer.prototype.deleteProgram_ = function(
@@ -313,13 +285,8 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.createProgram =
  * @param {function()} drawFunction The draw function to call.
  * @protected
  */
-wtf.replay.graphics.DrawCallVisualizer.prototype.handleDrawCall = function(
-    drawFunction) {
-  if (!this.active) {
-    return;
-  }
-  drawFunction();
-};
+wtf.replay.graphics.DrawCallVisualizer.prototype.handleDrawCall =
+    goog.nullFunction;
 
 
 /**
@@ -331,13 +298,10 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.trigger = goog.nullFunction;
 
 
 /**
- * Resets properties to a pre-visualization state.
+ * Prepares surfaces for use in a visualization run.
  * @protected
  */
-wtf.replay.graphics.DrawCallVisualizer.prototype.reset = function() {
-  this.active = false;
-  this.modifyDraws = false;
-
+wtf.replay.graphics.DrawCallVisualizer.prototype.setupSurfaces = function() {
   for (var handle in this.visualizerSurfaces) {
     this.visualizerSurfaces[handle].clear([0.0, 0.0, 0.0, 0.0]);
   }
@@ -346,7 +310,6 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.reset = function() {
 
 /**
  * Restores state back to standard playback.
- * @override
  */
 wtf.replay.graphics.DrawCallVisualizer.prototype.restoreState = function() {
   // Draw playback surfaces to the visible framebuffers.
@@ -364,4 +327,6 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.restoreState = function() {
   }
 
   this.active = false;
+  this.modifyDraws = false;
+  this.completed = false;
 };
