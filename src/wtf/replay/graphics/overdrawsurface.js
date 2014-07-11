@@ -92,7 +92,6 @@ wtf.replay.graphics.OverdrawSurface.prototype.clearWebGLObjects = function() {
 wtf.replay.graphics.OverdrawSurface.prototype.getDefaultColors_ = function() {
   return [
     'vec4(0.00, 0.00, 0.00, 0.0)', /* Transparent */
-    'vec4(0.15, 0.15, 0.15, 1.0)', /* Black */
     'vec4(0.08, 0.36, 0.05, 1.0)', /* Dark Green */
     'vec4(0.30, 0.60, 0.25, 1.0)', /* Green */
     'vec4(0.46, 0.78, 0.39, 1.0)', /* Light Green */
@@ -100,6 +99,9 @@ wtf.replay.graphics.OverdrawSurface.prototype.getDefaultColors_ = function() {
     'vec4(0.93, 0.57, 0.16, 1.0)', /* Orange */
     'vec4(0.95, 0.22, 0.22, 1.0)', /* Red */
     'vec4(0.60, 0.12, 0.12, 1.0)', /* Dark Red */
+    'vec4(0.15, 0.15, 0.15, 1.0)', /* Black */
+    'vec4(0.35, 0.35, 0.35, 1.0)', /* Grey */
+    'vec4(0.55, 0.55, 0.55, 1.0)', /* Light Grey */
     'vec4(0.85, 0.85, 0.85, 1.0)'  /* White */
   ];
 };

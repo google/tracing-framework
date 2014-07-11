@@ -51,10 +51,10 @@ goog.inherits(wtf.replay.graphics.Visualizer, wtf.events.EventEmitter);
 
 
 /**
- * Triggers or runs this visualization, manipulating playback as needed.
- * @param {Object.<string, !Object>=} opt_args Visualizer trigger arguments.
+ * Runs this visualization on a substep of the current step.
+ * @param {number=} opt_subStepIndex Target substep, or the current by default.
  */
-wtf.replay.graphics.Visualizer.prototype.trigger = goog.nullFunction;
+wtf.replay.graphics.Visualizer.prototype.applyToSubStep = goog.nullFunction;
 
 
 /**

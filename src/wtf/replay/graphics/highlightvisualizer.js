@@ -14,18 +14,17 @@
 goog.provide('wtf.replay.graphics.HighlightVisualizer');
 
 goog.require('goog.webgl');
-goog.require('wtf.replay.graphics.DrawCallVisualizer');
 goog.require('wtf.replay.graphics.OverdrawSurface');
-goog.require('wtf.replay.graphics.Program');
+goog.require('wtf.replay.graphics.OverdrawVisualizer');
 
 
 
 /**
- * Visualizer for draw call highlighting.
+ * Visualizer for draw call highlighting using overdraw.
  *
  * @param {!wtf.replay.graphics.Playback} playback The playback instance.
  * @constructor
- * @extends {wtf.replay.graphics.DrawCallVisualizer}
+ * @extends {wtf.replay.graphics.OverdrawVisualizer}
  */
 wtf.replay.graphics.HighlightVisualizer = function(playback) {
   goog.base(this, playback);
@@ -36,39 +35,9 @@ wtf.replay.graphics.HighlightVisualizer = function(playback) {
    * @private
    */
   this.firstDraw_ = true;
-
-  this.mutators['WebGLRenderingContext#clear'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          if (!visualizer.modifyDraws) {
-            return;
-          }
-
-          var contextHandle = visualizer.latestContextHandle;
-          var visualizerSurface = visualizer.visualizerSurfaces[contextHandle];
-          var drawToSurfaceFunction = function() {
-            visualizerSurface.drawQuad();
-          };
-
-          var webGLState = visualizer.webGLStates[contextHandle];
-          webGLState.backup();
-
-          // Force states to mimic clear behavior.
-          // Let drawToSurface handle stencil for highlighting.
-          gl.colorMask(true, true, true, true);
-          gl.depthMask(false);
-          gl.disable(goog.webgl.DEPTH_TEST);
-          gl.disable(goog.webgl.CULL_FACE);
-          gl.frontFace(goog.webgl.CCW);
-
-          visualizer.drawToSurface_(drawToSurfaceFunction);
-
-          webGLState.restore();
-        }
-      });
 };
 goog.inherits(wtf.replay.graphics.HighlightVisualizer,
-    wtf.replay.graphics.DrawCallVisualizer);
+    wtf.replay.graphics.OverdrawVisualizer);
 
 
 /**
@@ -90,65 +59,13 @@ wtf.replay.graphics.HighlightVisualizer.prototype.createSurface = function(
 
 
 /**
- * Creates a Program object with a highlight variant.
- * @param {number} programHandle Program handle from event arguments.
- * @param {!WebGLProgram} originalProgram The original program.
- * @param {!WebGLRenderingContext} gl The associated rendering context.
- * @protected
- * @override
- */
-wtf.replay.graphics.HighlightVisualizer.prototype.createProgram = function(
-    programHandle, originalProgram, gl) {
-  var program = new wtf.replay.graphics.Program(originalProgram, gl);
-  this.registerDisposable(program);
-  this.programs[programHandle] = program;
-
-  var visualizerSurface = this.visualizerSurfaces[this.latestContextHandle];
-
-  var highlightFragmentSource = 'precision mediump float;' +
-      'void main(void) { gl_FragColor = ' +
-      visualizerSurface.getThresholdDrawColor() + '; }';
-
-  program.createVariantProgram('highlight', '', highlightFragmentSource);
-};
-
-
-/**
- * Handles special logic associated with performing a draw call.
- * @param {function()} drawFunction The draw function to call.
- * @protected
- * @override
- */
-wtf.replay.graphics.HighlightVisualizer.prototype.handleDrawCall = function(
-    drawFunction) {
-  var contextHandle = this.latestContextHandle;
-  var programHandle = this.latestProgramHandle;
-
-  if (!this.modifyDraws || !contextHandle || !programHandle) {
-    return;
-  }
-
-  var program = this.programs[programHandle];
-  var drawToSurfaceFunction = function() {
-    program.drawWithVariant(drawFunction, 'highlight');
-  };
-
-  var webGLState = this.webGLStates[contextHandle];
-  webGLState.backup();
-
-  this.drawToSurface_(drawToSurfaceFunction);
-
-  webGLState.restore();
-};
-
-
-/**
  * Calls drawFunction onto the active visualizerSurface using custom GL state.
  * The caller of this function is responsible for restoring state.
  * @param {!function()} drawFunction The draw function to call.
- * @private
+ * @protected
+ * @override
  */
-wtf.replay.graphics.HighlightVisualizer.prototype.drawToSurface_ = function(
+wtf.replay.graphics.HighlightVisualizer.prototype.drawToSurface = function(
     drawFunction) {
   var contextHandle = this.latestContextHandle;
   var gl = this.contexts[contextHandle];
@@ -191,45 +108,36 @@ wtf.replay.graphics.HighlightVisualizer.prototype.drawToSurface_ = function(
 
 /**
  * Runs visualization, manipulating playback and surfaces as needed.
- * @param {Object.<string, !Object>=} opt_args Visualizer trigger arguments.
+ * @param {number} targetSubStepIndex Target subStep event index.
+ * @protected
  * @override
  */
-wtf.replay.graphics.HighlightVisualizer.prototype.trigger = function(opt_args) {
-  var index = Number(opt_args['index']);
-
-  if (this.completed) {
-    this.restoreState();
-  }
-  this.active = true;
-
-
+wtf.replay.graphics.HighlightVisualizer.prototype.trigger = function(
+    targetSubStepIndex) {
   var playback = this.playback;
-  var currentStepIndex = playback.getCurrentStepIndex();
   var currentSubStepIndex = playback.getSubStepEventIndex();
-  // Seek from the start to the current step to update all internal state.
-  playback.seekStep(0);
-  playback.seekStep(currentStepIndex);
 
-  this.setupSurfaces();
+  this.setupVisualization();
 
   // Seek to the substep event immediately before the target index.
-  playback.seekSubStepEvent(index - 1);
+  playback.seekSubStepEvent(targetSubStepIndex - 1);
 
   var contextHandle = this.latestContextHandle;
+  // Finish early if there is no active context yet.
   if (!contextHandle) {
     this.completed = true;
     return;
   }
 
-  this.modifyDraws = true;
   // Perform the call at the target index.
+  this.modifyDraws = true;
   this.firstDraw_ = true;
-  playback.seekSubStepEvent(index);
+  playback.seekSubStepEvent(targetSubStepIndex);
   this.firstDraw_ = false;
 
   // If playback continues forward from here, continue modifying draw calls.
   // Otherwise, seek will go from the beginning, so do not modify draw calls.
-  if (currentSubStepIndex <= index) {
+  if (currentSubStepIndex <= targetSubStepIndex) {
     this.modifyDraws = false;
   }
 
@@ -266,13 +174,25 @@ wtf.replay.graphics.HighlightVisualizer.prototype.trigger = function(opt_args) {
       var message = 'Overdraw: ' + overdrawAmount + ', ' + affectedPercent +
           '% of screen';
       this.playback.changeContextMessage(contextHandle, message);
+      this.latestMessages[contextHandle] = message;
     }
 
     this.playbackSurfaces[contextHandle].drawTexture(false);
     // Draw for display, with thresholding and blending (to not overwrite).
     this.visualizerSurfaces[contextHandle].drawOverdraw(true);
-    this.visualizerSurfaces[contextHandle].enableResize();
   }
 
   this.completed = true;
+};
+
+
+/**
+ * Draws the recorded visualization for the provided context handle.
+ * @param {number|string} contextHandle The context handle to draw to.
+ * @protected
+ * @override
+ */
+wtf.replay.graphics.HighlightVisualizer.prototype.drawVisualization = function(
+    contextHandle) {
+  this.visualizerSurfaces[contextHandle].drawOverdraw(true);
 };

@@ -6,14 +6,13 @@
  */
 
 /**
- * @fileoverview OverdrawVisualizer. Visualizer for overdraw.
+ * @fileoverview OverdrawVisualizer. Abstract Visualizer for overdraw.
  *
  * @author scotttodd@google.com (Scott Todd)
  */
 
 goog.provide('wtf.replay.graphics.OverdrawVisualizer');
 
-goog.require('goog.events');
 goog.require('goog.webgl');
 goog.require('wtf.replay.graphics.DrawCallVisualizer');
 goog.require('wtf.replay.graphics.OverdrawSurface');
@@ -30,41 +29,6 @@ goog.require('wtf.replay.graphics.Program');
  */
 wtf.replay.graphics.OverdrawVisualizer = function(playback) {
   goog.base(this, playback);
-
-  /**
-   * The index of the latest step that was visualized.
-   * @type {number}
-   * @private
-   */
-  this.latestStepIndex_ = -1;
-
-  /**
-   * The index of the latest substep that was visualized.
-   * @type {number}
-   * @private
-   */
-  this.latestSubStepIndex_ = -1;
-
-  /**
-   * Latest recorded overdraw ratios. Keys are context handles.
-   * @type {!Object.<string>}
-   * @private
-   */
-  this.latestOverdraws_ = {};
-
-  /**
-   * Toggled value, used when toggling overdraw for the same step and substep.
-   * @type {boolean}
-   * @private
-   */
-  this.visible_ = false;
-
-  /**
-   * The previous this.visible_ value, used for toggling for the same substep.
-   * @type {boolean}
-   * @private
-   */
-  this.previousVisibility_ = false;
 
   this.mutators['WebGLRenderingContext#clear'] = /** @type
     {wtf.replay.graphics.Visualizer.Mutator} */ ({
@@ -89,7 +53,7 @@ wtf.replay.graphics.OverdrawVisualizer = function(playback) {
           gl.disable(goog.webgl.CULL_FACE);
           gl.frontFace(goog.webgl.CCW);
 
-          visualizer.drawToSurface_(drawToSurfaceFunction);
+          visualizer.drawToSurface(drawToSurfaceFunction);
 
           webGLState.restore();
         }
@@ -97,43 +61,6 @@ wtf.replay.graphics.OverdrawVisualizer = function(playback) {
 };
 goog.inherits(wtf.replay.graphics.OverdrawVisualizer,
     wtf.replay.graphics.DrawCallVisualizer);
-
-
-/**
- * Events related to this visualization.
- * @enum {string}
- */
-wtf.replay.graphics.OverdrawVisualizer.EventType = {
-  /**
-   * Visibility changed.
-   */
-  VISIBILITY_CHANGED: goog.events.getUniqueId('visibility_changed')
-};
-
-
-/**
- * Returns if this visualizer is visible.
- * @return {boolean} Whether this visualizer is visible.
- */
-wtf.replay.graphics.OverdrawVisualizer.prototype.isVisible = function() {
-  return this.visible_;
-};
-
-
-/**
- * Handles operations that should occur before the provided event.
- * @param {!wtf.db.EventIterator} it Event iterator.
- * @param {WebGLRenderingContext} gl The context.
- * @override
- */
-wtf.replay.graphics.OverdrawVisualizer.prototype.handlePreEvent = function(
-    it, gl) {
-  if (!this.active) {
-    this.previousVisibility_ = false;
-  }
-
-  goog.base(this, 'handlePreEvent', it, gl);
-};
 
 
 /**
@@ -201,7 +128,7 @@ wtf.replay.graphics.OverdrawVisualizer.prototype.handleDrawCall = function(
   var webGLState = this.webGLStates[contextHandle];
   webGLState.backup();
 
-  this.drawToSurface_(drawToSurfaceFunction);
+  this.drawToSurface(drawToSurfaceFunction);
 
   webGLState.restore();
 };
@@ -211,159 +138,19 @@ wtf.replay.graphics.OverdrawVisualizer.prototype.handleDrawCall = function(
  * Calls drawFunction onto the active visualizerSurface using custom GL state.
  * The caller of this function is responsible for restoring state.
  * @param {!function()} drawFunction The draw function to call.
- * @private
+ * @protected
  */
-wtf.replay.graphics.OverdrawVisualizer.prototype.drawToSurface_ = function(
-    drawFunction) {
-  var contextHandle = this.latestContextHandle;
-  var gl = this.contexts[contextHandle];
-
-  // Do not edit calls where the target is not the visible framebuffer.
-  var originalFramebuffer = /** @type {WebGLFramebuffer} */ (
-      gl.getParameter(goog.webgl.FRAMEBUFFER_BINDING));
-  if (originalFramebuffer != null) {
-    return;
-  }
-
-  var visualizerSurface = this.visualizerSurfaces[contextHandle];
-  visualizerSurface.bindFramebuffer();
-
-  gl.enable(goog.webgl.BLEND);
-  gl.blendFunc(goog.webgl.SRC_ALPHA, goog.webgl.ONE_MINUS_SRC_ALPHA);
-  gl.blendEquation(goog.webgl.FUNC_ADD);
-  gl.colorMask(true, true, true, true);
-
-  drawFunction();
-};
+wtf.replay.graphics.OverdrawVisualizer.prototype.drawToSurface =
+    goog.nullFunction;
 
 
 /**
- * Runs visualization, manipulating playback and surfaces as needed.
- * @param {Object.<string, !Object>=} opt_args Visualizer trigger arguments.
+ * Draws the recorded visualization for the provided context handle.
+ * @param {number|string} contextHandle The context handle to draw to.
+ * @protected
  * @override
  */
-wtf.replay.graphics.OverdrawVisualizer.prototype.trigger = function(opt_args) {
-  var contextHandle = this.latestContextHandle;
-  var currentStepIndex = this.playback.getCurrentStepIndex();
-  var currentSubStepIndex = this.playback.getSubStepEventIndex();
-
-  // If latest step and substep match current, toggle between views.
-  if (currentStepIndex == this.latestStepIndex_ &&
-      currentSubStepIndex == this.latestSubStepIndex_) {
-    if (this.previousVisibility_) {
-      this.restoreState();
-      this.previousVisibility_ = false;
-    } else {
-      for (contextHandle in this.contexts) {
-        this.drawOverdraw_(this.visualizerSurfaces[contextHandle]);
-
-        var overdrawAmount = this.latestOverdraws_[contextHandle];
-        var message = 'Overdraw: ' + overdrawAmount;
-        this.playback.changeContextMessage(contextHandle, message);
-      }
-      this.previousVisibility_ = true;
-    }
-    this.completed = true;
-    return;
-  }
-
-  this.active = true;
-
-  // Seek from the start to the current step to update all internal state.
-  this.playback.seekStep(0);
-  this.playback.seekStep(currentStepIndex);
-
-  this.setupSurfaces();
-
-  contextHandle = this.latestContextHandle;
-  // Finish early if there is no active context yet.
-  if (!contextHandle) {
-    this.completed = true;
-    return;
-  }
-
-  this.modifyDraws = true;
-  this.playback.seekSubStepEvent(currentSubStepIndex);
-  this.modifyDraws = false;
-
-  for (contextHandle in this.contexts) {
-    var gl = this.contexts[contextHandle];
-    var originalFramebuffer = /** @type {WebGLFramebuffer} */ (
-        gl.getParameter(goog.webgl.FRAMEBUFFER_BINDING));
-    gl.bindFramebuffer(goog.webgl.FRAMEBUFFER, null);
-
-    this.playbackSurfaces[contextHandle].captureTexture();
-
-    gl.bindFramebuffer(goog.webgl.FRAMEBUFFER, originalFramebuffer);
-  }
-
-  for (contextHandle in this.contexts) {
-    // Draw without thresholding to calculate overdraw.
-    this.visualizerSurfaces[contextHandle].drawTexture(false);
-
-    // Calculate overdraw and update the context's message.
-    var stats = this.visualizerSurfaces[contextHandle].calculateOverdraw();
-    if (stats) {
-      overdrawAmount = stats.numOverdraw / stats.numPixels;
-      overdrawAmount = overdrawAmount.toFixed(2);
-      this.latestOverdraws_[contextHandle] = overdrawAmount;
-      var message = 'Overdraw: ' + overdrawAmount;
-      this.playback.changeContextMessage(contextHandle, message);
-    }
-
-    // Draw with thresholding for display.
-    this.drawOverdraw_(this.visualizerSurfaces[contextHandle]);
-
-    this.visualizerSurfaces[contextHandle].disableResize();
-    this.playbackSurfaces[contextHandle].disableResize();
-  }
-
-  this.latestStepIndex_ = currentStepIndex;
-  this.latestSubStepIndex_ = currentSubStepIndex;
-  this.previousVisibility_ = true;
-  this.completed = true;
-};
-
-
-/**
- * Prepares surfaces for use in a visualization run.
- * @override
- */
-wtf.replay.graphics.OverdrawVisualizer.prototype.setupSurfaces = function() {
-  goog.base(this, 'setupSurfaces');
-
-  for (var handle in this.visualizerSurfaces) {
-    this.visualizerSurfaces[handle].enableResize();
-  }
-  for (var handle in this.playbackSurfaces) {
-    this.playbackSurfaces[handle].enableResize();
-  }
-};
-
-
-/**
- * Draws the texture within surface, using overdraw settings.
- * @param {wtf.replay.graphics.OffscreenSurface} surface The surface to draw.
- * @private
- */
-wtf.replay.graphics.OverdrawVisualizer.prototype.drawOverdraw_ = function(
-    surface) {
-  // Disable blending to overwrite the framebuffer.
-  surface.drawOverdraw(false);
-  this.visible_ = true;
-  this.emitEvent(
-      wtf.replay.graphics.OverdrawVisualizer.EventType.VISIBILITY_CHANGED);
-};
-
-
-/**
- * Restores state back to standard playback.
- * @override
- */
-wtf.replay.graphics.OverdrawVisualizer.prototype.restoreState = function() {
-  goog.base(this, 'restoreState');
-
-  this.visible_ = false;
-  this.emitEvent(
-      wtf.replay.graphics.OverdrawVisualizer.EventType.VISIBILITY_CHANGED);
+wtf.replay.graphics.OverdrawVisualizer.prototype.drawVisualization = function(
+    contextHandle) {
+  this.visualizerSurfaces[contextHandle].drawOverdraw(false);
 };

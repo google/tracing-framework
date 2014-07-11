@@ -24,7 +24,7 @@ goog.require('goog.ui.PopupMenu');
 goog.require('wtf.events');
 goog.require('wtf.events.EventType');
 goog.require('wtf.events.KeyboardScope');
-goog.require('wtf.replay.graphics.OverdrawVisualizer');
+goog.require('wtf.replay.graphics.DrawCallVisualizer');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.eventNavigatorToolbar');
 goog.require('wtf.ui.Control');
@@ -215,7 +215,7 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
       (playback.getVisualizer('overdraw'));
   if (overdrawVisualizer) {
     overdrawVisualizer.addListener(
-        wtf.replay.graphics.OverdrawVisualizer.EventType.VISIBILITY_CHANGED,
+        wtf.replay.graphics.DrawCallVisualizer.EventType.VISIBILITY_CHANGED,
         function() {
           this.toggleSelected(goog.getCssName('toggleOverdrawButton'),
               overdrawVisualizer.isVisible());
@@ -365,7 +365,15 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.toggleOverdrawHandler_ =
     return;
   }
 
-  this.playback_.triggerVisualizer('overdraw');
+  var currentStep = this.playback_.getCurrentStep();
+  var currentSubStep = this.playback_.getSubStepEventIndex();
+  if (currentSubStep > 0) {
+    this.playback_.visualizeSubStep('overdraw');
+  } else {
+    var eventIterator = currentStep.getEventIterator(true);
+    var lastSubStep = eventIterator.getCount() - 1;
+    this.playback_.visualizeSubStep('overdraw', lastSubStep);
+  }
 };
 
 

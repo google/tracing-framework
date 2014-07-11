@@ -529,15 +529,15 @@ wtf.replay.graphics.Playback.prototype.getVisualizer = function(name) {
 
 
 /**
- * Triggers a visualization.
+ * Runs a Visualizer with the given name at a substep of the current step.
  * @param {string} name Visualizer name.
- * @param {Object.<string, !Object>=} opt_args Visualizer trigger arguments.
+ * @param {number=} opt_subStepIndex Target substep, or the current by default.
  */
-wtf.replay.graphics.Playback.prototype.triggerVisualizer = function(
-    name, opt_args) {
+wtf.replay.graphics.Playback.prototype.visualizeSubStep = function(
+    name, opt_subStepIndex) {
   var visualizer = this.getVisualizer(name);
   if (visualizer) {
-    visualizer.trigger(opt_args);
+    visualizer.applyToSubStep(opt_subStepIndex);
   }
 };
 
