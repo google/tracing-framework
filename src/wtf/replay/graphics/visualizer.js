@@ -11,6 +11,7 @@
  * @author scotttodd@google.com (Scott Todd)
  */
 
+goog.require('goog.asserts');
 goog.require('goog.object');
 goog.require('wtf.events.EventEmitter');
 goog.provide('wtf.replay.graphics.Visualizer');
@@ -46,6 +47,8 @@ wtf.replay.graphics.Visualizer = function(playback) {
    * @protected
    */
   this.mutators = goog.object.clone(wtf.replay.graphics.Visualizer.MUTATORS_);
+
+  this.setupMutators();
 };
 goog.inherits(wtf.replay.graphics.Visualizer, wtf.events.EventEmitter);
 
@@ -55,6 +58,30 @@ goog.inherits(wtf.replay.graphics.Visualizer, wtf.events.EventEmitter);
  * @param {number=} opt_subStepIndex Target substep, or the current by default.
  */
 wtf.replay.graphics.Visualizer.prototype.applyToSubStep = goog.nullFunction;
+
+
+/**
+ * Adds a mutator for the given event name.
+ * @param {string} name Event name.
+ * @param {wtf.replay.graphics.Visualizer.Mutator} mutator The mutator.
+ * @protected
+ */
+wtf.replay.graphics.Visualizer.prototype.registerMutator = function(name,
+    mutator) {
+  // TODO(scotttodd): Replace this assert with a list of mutators to call.
+  //   and handle adding a pre or a post without overwriting.
+  goog.asserts.assert(!this.mutators[name],
+      'A mutator named \'' + name + '\' already exists.');
+
+  this.mutators[name] = mutator;
+};
+
+
+/**
+ * Adds mutators using registerMutator.
+ * @protected
+ */
+wtf.replay.graphics.Visualizer.prototype.setupMutators = goog.nullFunction;
 
 
 /**

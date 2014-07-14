@@ -108,16 +108,23 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
   /**
    * The index of the latest step that was visualized.
    * @type {number}
-   * @private
+   * @protected
    */
-  this.latestStepIndex_ = -1;
+  this.latestStepIndex = -1;
 
   /**
-   * The index of the latest substep that was visualized.
+   * The index of the latest source substep that was visualized.
    * @type {number}
-   * @private
+   * @protected
    */
-  this.latestSubStepIndex_ = -1;
+  this.latestSubStepIndex = -1;
+
+  /**
+   * The index of the latest target substep that was visualized.
+   * @type {number}
+   * @protected
+   */
+  this.latestTargetSubStepIndex = -1;
 
   /**
    * Latest recorded context messages. Keys are context handles.
@@ -139,114 +146,116 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
    * @private
    */
   this.previousVisibility_ = false;
-
-  this.mutators['wtf.webgl#setContext'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          // Track contexts, update dimensions to match context parameters.
-          var contextHandle = args['handle'];
-          var height = args['height'];
-          var width = args['width'];
-
-          if (visualizer.contexts[contextHandle]) {
-            visualizer.playbackSurfaces[contextHandle].resize(width, height);
-            visualizer.visualizerSurfaces[contextHandle].resize(width, height);
-          } else {
-            visualizer.contexts[contextHandle] = gl;
-
-            var playbackSurface = new wtf.replay.graphics.OffscreenSurface(gl,
-                width, height);
-            visualizer.playbackSurfaces[contextHandle] = playbackSurface;
-            visualizer.registerDisposable(playbackSurface);
-
-            visualizer.createSurface(contextHandle, gl, width, height);
-
-            var webGLState = new wtf.replay.graphics.WebGLState(gl);
-            visualizer.webGLStates[contextHandle] = webGLState;
-          }
-
-          visualizer.latestContextHandle = contextHandle;
-        }
-      });
-
-  this.mutators['WebGLRenderingContext#linkProgram'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          // Create variant programs whenever a program is linked.
-          var programHandle = /** @type {number} */ (args['program']);
-          var originalProgram = /** @type {WebGLProgram} */ (
-              visualizer.playback.getObject(programHandle));
-          goog.asserts.assert(originalProgram);
-
-          // Programs can be linked multiple times. Avoid leaking objects.
-          if (visualizer.programs[programHandle]) {
-            visualizer.deleteProgram_(programHandle);
-          }
-
-          visualizer.createProgram(programHandle, originalProgram, gl);
-        }
-      });
-
-  this.mutators['WebGLRenderingContext#useProgram'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          visualizer.latestProgramHandle = args['program'];
-        }
-      });
-
-  this.mutators['WebGLRenderingContext#deleteProgram'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          visualizer.deleteProgram_(args['program']);
-        }
-      });
-
-  this.mutators['WebGLRenderingContext#drawArrays'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          visualizer.handleDrawCall(function() {
-            gl.drawArrays(
-                args['mode'], args['first'], args['count']);
-          });
-        }
-      });
-
-  this.mutators['WebGLRenderingContext#drawElements'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          visualizer.handleDrawCall(function() {
-            gl.drawElements(
-                args['mode'], args['count'], args['type'],
-                args['offset']);
-          });
-        }
-      });
-
-  this.mutators['ANGLEInstancedArrays#drawArraysInstancedANGLE'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          var ext = gl.getExtension('ANGLE_instanced_arrays');
-          visualizer.handleDrawCall(function() {
-            ext['drawArraysInstancedANGLE'](
-                args['mode'], args['first'], args['count'], args['primcount']);
-          });
-        }
-      });
-
-  this.mutators['ANGLEInstancedArrays#drawElementsInstancedANGLE'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          var ext = gl.getExtension('ANGLE_instanced_arrays');
-          visualizer.handleDrawCall(function() {
-            ext['drawElementsInstancedANGLE'](
-                args['mode'], args['count'], args['type'], args['offset'],
-                args['primcount']);
-          });
-        }
-      });
 };
 goog.inherits(wtf.replay.graphics.DrawCallVisualizer,
     wtf.replay.graphics.Visualizer);
+
+
+/**
+ * Adds mutators using registerMutator.
+ * @protected
+ * @override
+ */
+wtf.replay.graphics.DrawCallVisualizer.prototype.setupMutators = function() {
+  goog.base(this, 'setupMutators');
+
+  this.registerMutator('wtf.webgl#setContext', {
+    post: function(visualizer, gl, args) {
+      // Track contexts, update dimensions to match context parameters.
+      var contextHandle = args['handle'];
+      var height = args['height'];
+      var width = args['width'];
+
+      if (visualizer.contexts[contextHandle]) {
+        visualizer.playbackSurfaces[contextHandle].resize(width, height);
+        visualizer.visualizerSurfaces[contextHandle].resize(width, height);
+      } else {
+        visualizer.contexts[contextHandle] = gl;
+
+        var playbackSurface = new wtf.replay.graphics.OffscreenSurface(gl,
+            width, height);
+        visualizer.playbackSurfaces[contextHandle] = playbackSurface;
+        visualizer.registerDisposable(playbackSurface);
+
+        visualizer.createSurface(contextHandle, gl, width, height);
+
+        var webGLState = new wtf.replay.graphics.WebGLState(gl);
+        visualizer.webGLStates[contextHandle] = webGLState;
+      }
+
+      visualizer.latestContextHandle = contextHandle;
+    }
+  });
+
+  this.registerMutator('WebGLRenderingContext#linkProgram', {
+    post: function(visualizer, gl, args) {
+      // Create variant programs whenever a program is linked.
+      var programHandle = /** @type {number} */ (args['program']);
+      var originalProgram = /** @type {WebGLProgram} */ (
+          visualizer.playback.getObject(programHandle));
+      goog.asserts.assert(originalProgram);
+
+      // Programs can be linked multiple times. Avoid leaking objects.
+      if (visualizer.programs[programHandle]) {
+        visualizer.deleteProgram_(programHandle);
+      }
+
+      visualizer.createProgram(programHandle, originalProgram, gl);
+    }
+  });
+
+  this.registerMutator('WebGLRenderingContext#useProgram', {
+    post: function(visualizer, gl, args) {
+      visualizer.latestProgramHandle = args['program'];
+    }
+  });
+
+  this.registerMutator('WebGLRenderingContext#deleteProgram', {
+    post: function(visualizer, gl, args) {
+      visualizer.deleteProgram_(args['program']);
+    }
+  });
+
+  this.registerMutator('WebGLRenderingContext#drawArrays', {
+    post: function(visualizer, gl, args) {
+      visualizer.handleDrawCall(function() {
+        gl.drawArrays(
+            args['mode'], args['first'], args['count']);
+      });
+    }
+  });
+
+  this.registerMutator('WebGLRenderingContext#drawElements', {
+    post: function(visualizer, gl, args) {
+      visualizer.handleDrawCall(function() {
+        gl.drawElements(
+            args['mode'], args['count'], args['type'],
+            args['offset']);
+      });
+    }
+  });
+
+  this.registerMutator('ANGLEInstancedArrays#drawArraysInstancedANGLE', {
+    post: function(visualizer, gl, args) {
+      var ext = gl.getExtension('ANGLE_instanced_arrays');
+      visualizer.handleDrawCall(function() {
+        ext['drawArraysInstancedANGLE'](
+            args['mode'], args['first'], args['count'], args['primcount']);
+      });
+    }
+  });
+
+  this.registerMutator('ANGLEInstancedArrays#drawElementsInstancedANGLE', {
+    post: function(visualizer, gl, args) {
+      var ext = gl.getExtension('ANGLE_instanced_arrays');
+      visualizer.handleDrawCall(function() {
+        ext['drawElementsInstancedANGLE'](
+            args['mode'], args['count'], args['type'], args['offset'],
+            args['primcount']);
+      });
+    }
+  });
+};
 
 
 /**
@@ -397,11 +406,11 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.applyToSubStep = function(
     opt_subStepIndex) {
   var playback = this.playback;
   var currentStepIndex = playback.getCurrentStepIndex();
-  var targetSubStepIndex = opt_subStepIndex || playback.getSubStepEventIndex();
+  var currentSubStepIndex = playback.getSubStepEventIndex();
+  var targetSubStepIndex = opt_subStepIndex || currentSubStepIndex;
 
-  // If latest step and substep match target, toggle between views.
-  if (currentStepIndex == this.latestStepIndex_ &&
-      targetSubStepIndex == this.latestSubStepIndex_) {
+  // If the visualization is stored for this target, toggle between views.
+  if (this.visualizationStored(targetSubStepIndex)) {
     if (this.previousVisibility_) {
       this.restoreState();
       this.previousVisibility_ = false;
@@ -425,9 +434,25 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.applyToSubStep = function(
 
   this.trigger(targetSubStepIndex);
 
-  this.latestStepIndex_ = currentStepIndex;
-  this.latestSubStepIndex_ = targetSubStepIndex;
+  this.latestStepIndex = currentStepIndex;
+  this.latestSubStepIndex = currentSubStepIndex;
+  this.latestTargetSubStepIndex = targetSubStepIndex;
   this.previousVisibility_ = true;
+};
+
+
+/**
+ * Returns whether the visualization for a target substep is stored.
+ * @param {number} targetSubStepIndex Target substep.
+ * @return {boolean} Whether the visualization is stored for a target substep.
+ * @protected
+ */
+wtf.replay.graphics.DrawCallVisualizer.prototype.visualizationStored = function(
+    targetSubStepIndex) {
+  var currentStepIndex = this.playback.getCurrentStepIndex();
+
+  return currentStepIndex == this.latestStepIndex &&
+      targetSubStepIndex == this.latestTargetSubStepIndex;
 };
 
 

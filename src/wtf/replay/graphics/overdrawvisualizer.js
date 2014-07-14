@@ -29,38 +29,47 @@ goog.require('wtf.replay.graphics.Program');
  */
 wtf.replay.graphics.OverdrawVisualizer = function(playback) {
   goog.base(this, playback);
-
-  this.mutators['WebGLRenderingContext#clear'] = /** @type
-    {wtf.replay.graphics.Visualizer.Mutator} */ ({
-        post: function(visualizer, gl, args) {
-          if (!visualizer.modifyDraws) {
-            return;
-          }
-
-          var contextHandle = visualizer.latestContextHandle;
-          var visualizerSurface = visualizer.visualizerSurfaces[contextHandle];
-          var drawToSurfaceFunction = function() {
-            visualizerSurface.drawQuad();
-          };
-
-          var webGLState = visualizer.webGLStates[contextHandle];
-          webGLState.backup();
-
-          // Force states to mimic clear behavior.
-          gl.colorMask(true, true, true, true);
-          gl.depthMask(false);
-          gl.disable(goog.webgl.DEPTH_TEST);
-          gl.disable(goog.webgl.CULL_FACE);
-          gl.frontFace(goog.webgl.CCW);
-
-          visualizer.drawToSurface(drawToSurfaceFunction);
-
-          webGLState.restore();
-        }
-      });
 };
 goog.inherits(wtf.replay.graphics.OverdrawVisualizer,
     wtf.replay.graphics.DrawCallVisualizer);
+
+
+/**
+ * Adds mutators using registerMutator.
+ * @protected
+ * @override
+ */
+wtf.replay.graphics.OverdrawVisualizer.prototype.setupMutators = function() {
+  goog.base(this, 'setupMutators');
+
+  this.registerMutator('WebGLRenderingContext#clear', {
+    post: function(visualizer, gl, args) {
+      if (!visualizer.modifyDraws) {
+        return;
+      }
+
+      var contextHandle = visualizer.latestContextHandle;
+      var visualizerSurface = visualizer.visualizerSurfaces[contextHandle];
+      var drawToSurfaceFunction = function() {
+        visualizerSurface.drawQuad();
+      };
+
+      var webGLState = visualizer.webGLStates[contextHandle];
+      webGLState.backup();
+
+      // Force states to mimic clear behavior.
+      gl.colorMask(true, true, true, true);
+      gl.depthMask(false);
+      gl.disable(goog.webgl.DEPTH_TEST);
+      gl.disable(goog.webgl.CULL_FACE);
+      gl.frontFace(goog.webgl.CCW);
+
+      visualizer.drawToSurface(drawToSurfaceFunction);
+
+      webGLState.restore();
+    }
+  });
+};
 
 
 /**

@@ -41,6 +41,24 @@ goog.inherits(wtf.replay.graphics.HighlightVisualizer,
 
 
 /**
+ * Returns whether the visualization for a target substep is stored.
+ * @param {number} targetSubStepIndex Target substep.
+ * @return {boolean} Whether the visualization is stored for a target substep.
+ * @protected
+ */
+wtf.replay.graphics.HighlightVisualizer.prototype.visualizationStored =
+    function(targetSubStepIndex) {
+  // Highlight requires both the target and current substeps to match.
+  var currentStepIndex = this.playback.getCurrentStepIndex();
+  var currentSubStepIndex = this.playback.getSubStepEventIndex();
+
+  return currentStepIndex == this.latestStepIndex &&
+      targetSubStepIndex == this.latestTargetSubStepIndex &&
+      currentSubStepIndex == this.latestSubStepIndex;
+};
+
+
+/**
  * Creates an OverdrawSurface and adds it to this.visualizerSurfaces.
  * @param {number|string} contextHandle Context handle from event arguments.
  * @param {!WebGLRenderingContext} gl The context.
