@@ -511,7 +511,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.onClick =
       }
     } else if (x > highlightLeft && x <= highlightRight) {
       if (playback.isDrawCall(it)) {
-        playback.triggerHighlight(it.getIndex());
+        playback.visualizeSubStep('highlight', it.getIndex());
       }
     } else if (x > gotoLeft && x <= gotoRight) {
       // Goto button.

@@ -25,7 +25,6 @@ goog.require('goog.object');
 goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
-goog.require('wtf.replay.graphics.Highlight');
 goog.require('wtf.replay.graphics.Step');
 goog.require('wtf.timing.util');
 
@@ -125,35 +124,18 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.programs_ = {};
 
   /**
-   * The program handle from event arguments for the latest used program.
-   * @type {number}
+   * Array of Visualizers. Add these using addVisualizer.
+   * @type {!Array.<wtf.replay.graphics.Visualizer>}
    * @private
    */
-  this.latestProgramHandle_ = 0;
+  this.visualizers_ = [];
 
   /**
-   * Draw call highlighting visualizer.
-   * @type {!wtf.replay.graphics.Highlight}
+   * Array of Visualizer names corresponding to entries in this.visualizers_.
+   * @type {!Array.<string>}
    * @private
    */
-  this.highlightVisualizer_ = new wtf.replay.graphics.Highlight(this);
-  this.registerDisposable(this.highlightVisualizer_);
-
-  // TODO(scotttodd): Replace type with Visualizer parent class.
-  /**
-   * The active visualizer, or null if no visualizer is active.
-   * @type {wtf.replay.graphics.Highlight}
-   * @private
-   */
-  this.activeVisualizer_ = null;
-
-  // TODO(scotttodd): Replace type with Visualizer parent class.
-  /**
-   * A finished visualizer. Call finishVisualization before advancing playback.
-   * @type {wtf.replay.graphics.Highlight}
-   * @private
-   */
-  this.finishedVisualizer_ = null;
+  this.visualizerNames_ = [];
 
   /**
    * Whether resources have finished loading. Set to true after a
@@ -228,13 +210,6 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
   this.currentContext_ = null;
 
   /**
-   * The current context handle from event arguments.
-   * @type {?number}
-   * @private
-   */
-  this.currentContextHandle_ = null;
-
-  /**
    * Attribute values that override those of created contexts.
    * For example, setting 'preserveDrawingBuffer: true' will force the value to
    * true regardless of what the original recording specified.
@@ -300,10 +275,20 @@ wtf.replay.graphics.Playback.EventType = {
   CONTEXT_SET: goog.events.getUniqueId('context_set'),
 
   /**
+   * Programs were cleared.
+   */
+  CLEAR_PROGRAMS: goog.events.getUniqueId('clear_programs'),
+
+  /**
    * Playing stopped. Could be due to finishing the animation, pausing,
    * or resetting.
    */
-  PLAY_STOPPED: goog.events.getUniqueId('play_stopped')
+  PLAY_STOPPED: goog.events.getUniqueId('play_stopped'),
+
+  /**
+   * A context message was changed.
+   */
+  CONTEXT_MESSAGE_CHANGED: goog.events.getUniqueId('context_message_changed')
 };
 
 
@@ -514,33 +499,58 @@ wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
 
 
 /**
- * Sets the active visualizer.
- * @param {wtf.replay.graphics.Highlight} visualizer The Visualizer.
+ * Adds a new visualizer. The name provided is used by getVisualizer.
+ * @param {!wtf.replay.graphics.Visualizer} visualizer The Visualizer.
+ * @param {string} name The name for this Visualizer.
  */
-wtf.replay.graphics.Playback.prototype.setActiveVisualizer = function(
-    visualizer) {
-  this.activeVisualizer_ = visualizer;
+wtf.replay.graphics.Playback.prototype.addVisualizer = function(
+    visualizer, name) {
+  this.visualizers_.push(visualizer);
+  this.visualizerNames_.push(name);
+  this.registerDisposable(visualizer);
 };
 
 
 /**
- * Sets the finished visualizer.
- * @param {wtf.replay.graphics.Highlight} visualizer The Visualizer.
+ * Gets a visualizer by the name used to add it with addVisualizer.
+ * @param {string} name The name of the Visualizer.
+ * @return {?wtf.replay.graphics.Visualizer} The Visualizer.
  */
-wtf.replay.graphics.Playback.prototype.setFinishedVisualizer = function(
-    visualizer) {
-  this.finishedVisualizer_ = visualizer;
+wtf.replay.graphics.Playback.prototype.getVisualizer = function(name) {
+  for (var i = 0; i < this.visualizers_.length; ++i) {
+    if (this.visualizerNames_[i] == name) {
+      return this.visualizers_[i];
+    }
+  }
+  goog.global.console.log('Could not find a visualizer with name \'' + name +
+      '\'.');
+  return null;
 };
 
 
 /**
- * Triggers highlight visualization for a target substep index.
- * @param {!number} index The substep index to highlight. Should be a draw call.
+ * Runs a Visualizer with the given name at a substep of the current step.
+ * @param {string} name Visualizer name.
+ * @param {number=} opt_subStepIndex Target substep, or the current by default.
  */
-wtf.replay.graphics.Playback.prototype.triggerHighlight = function(index) {
-  this.highlightVisualizer_.triggerVisualization(this.currentContextHandle_,
-      index);
-  return;
+wtf.replay.graphics.Playback.prototype.visualizeSubStep = function(
+    name, opt_subStepIndex) {
+  var visualizer = this.getVisualizer(name);
+  if (visualizer) {
+    visualizer.applyToSubStep(opt_subStepIndex);
+  }
+};
+
+
+/**
+ * Signals that the message for a context should be changed.
+ * @param {string} contextHandle Context handle matching the context to update.
+ * @param {string} message New message for the context.
+ */
+wtf.replay.graphics.Playback.prototype.changeContextMessage = function(
+    contextHandle, message) {
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_MESSAGE_CHANGED,
+      contextHandle, message);
 };
 
 
@@ -554,10 +564,6 @@ wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
     opt_clearCached) {
   if (this.isPlaying()) {
     this.pause();
-  }
-
-  if (opt_clearCached) {
-    this.highlightVisualizer_.clearPrograms();
   }
 
   // Clear resources on the GPU.
@@ -576,6 +582,8 @@ wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
     this.contextPool_.releaseContext(ctx);
   }
   this.contexts_ = {};
+
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CLEAR_PROGRAMS);
 };
 
 
@@ -588,8 +596,9 @@ wtf.replay.graphics.Playback.prototype.clearProgramsCache = function() {
     this.clearGpuResource_(programs[handle]);
     delete this.objects_[handle];
   }
-  this.highlightVisualizer_.clearPrograms();
   this.programs_ = {};
+
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CLEAR_PROGRAMS);
 };
 
 
@@ -700,7 +709,6 @@ wtf.replay.graphics.Playback.prototype.resetProgramUniforms_ = function(
   }
 
   context.useProgram(null);
-  this.latestProgramHandle_ = 0;
 };
 
 
@@ -1194,14 +1202,14 @@ wtf.replay.graphics.Playback.prototype.getCurrentStepIndex = function() {
  * @private
  */
 wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
+  var i;
+  for (i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].handlePreEvent(it, this.currentContext_);
+  }
+
   var associatedFunction = this.callLookupTable_[it.getTypeId()];
   if (associatedFunction) {
     try {
-      if (this.finishedVisualizer_) {
-        this.finishedVisualizer_.finishVisualization(
-            this.currentContextHandle_);
-        this.finishedVisualizer_ = null;
-      }
       associatedFunction.call(null, it.getId(), this, this.currentContext_,
           it.getArguments(), this.objects_);
     } catch (e) {
@@ -1211,27 +1219,10 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
           ': ' + e);
     }
   }
-};
 
-
-/**
- * Calls the drawFunction and handles usage of variant programs.
- * @param {function()} drawFunction The draw function to call.
- */
-wtf.replay.graphics.Playback.prototype.performDraw = function(drawFunction) {
-  var gl = this.currentContext_;
-
-  var originalFramebuffer = /** @type {WebGLFramebuffer} */ (
-      gl.getParameter(goog.webgl.FRAMEBUFFER_BINDING));
-
-  // Do not edit calls where the target is not the visible framebuffer.
-  if (!this.activeVisualizer_ || originalFramebuffer != null) {
-    drawFunction();
-  } else {
-    this.activeVisualizer_.processPerformDraw(this.currentContextHandle_,
-        this.latestProgramHandle_, drawFunction);
+  for (i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].handlePostEvent(it, this.currentContext_);
   }
-  return;
 };
 
 
@@ -1267,6 +1258,16 @@ wtf.replay.graphics.Playback.prototype.getContext = function(contextHandle) {
 wtf.replay.graphics.Playback.prototype.getContextAttributes = function(
     contextHandle) {
   return this.contextAttributes_[contextHandle] || null;
+};
+
+
+/**
+ * Gets an object associated with an event handle.
+ * @param {string|number} objectHandle Object handle.
+ * @return {Object} The object, or null if not found.
+ */
+wtf.replay.graphics.Playback.prototype.getObject = function(objectHandle) {
+  return this.objects_[objectHandle] || null;
 };
 
 
@@ -1415,7 +1416,6 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#clear': function(
       eventId, playback, gl, args, objs) {
     gl.clear(args['mask']);
-    // TODO(scotttodd): Call clear within visualizers?
   },
   'WebGLRenderingContext#clearColor': function(
       eventId, playback, gl, args, objs) {
@@ -1526,7 +1526,6 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#deleteProgram': function(
       eventId, playback, gl, args, objs) {
     var programHandle = args['program'];
-    playback.highlightVisualizer_.deleteProgram(programHandle);
     gl.deleteProgram(
         /** @type {WebGLProgram} */ (objs[programHandle]));
     delete objs[programHandle];
@@ -1574,16 +1573,14 @@ wtf.replay.graphics.Playback.CALLS_ = {
   },
   'WebGLRenderingContext#drawArrays': function(
       eventId, playback, gl, args, objs) {
-    playback.performDraw(function() {
-      gl.drawArrays(args['mode'], args['first'], args['count']);
-    });
+    gl.drawArrays(
+        args['mode'], args['first'], args['count']);
   },
   'WebGLRenderingContext#drawElements': function(
       eventId, playback, gl, args, objs) {
-    playback.performDraw(function() {
-      gl.drawElements(args['mode'], args['count'], args['type'],
-          args['offset']);
-    });
+    gl.drawElements(
+        args['mode'], args['count'], args['type'],
+        args['offset']);
   },
   'WebGLRenderingContext#enable': function(
       eventId, playback, gl, args, objs) {
@@ -1803,9 +1800,6 @@ wtf.replay.graphics.Playback.CALLS_ = {
       // Link the program only if the program was not cached.
       gl.linkProgram(
           /** @type {WebGLProgram} */ (objs[args['program']]));
-      playback.highlightVisualizer_.processLinkProgram(gl,
-          /** @type {WebGLProgram} */ (objs[args['program']]),
-          /** @type {number} */ (args['program']));
     }
   },
   'WebGLRenderingContext#pixelStorei': function(
@@ -2087,7 +2081,6 @@ wtf.replay.graphics.Playback.CALLS_ = {
   'WebGLRenderingContext#useProgram': function(
       eventId, playback, gl, args, objs) {
     gl.useProgram(/** @type {WebGLProgram} */ (objs[args['program']]));
-    playback.latestProgramHandle_ = args['program'];
   },
   'WebGLRenderingContext#validateProgram': function(
       eventId, playback, gl, args, objs) {
@@ -2142,21 +2135,16 @@ wtf.replay.graphics.Playback.CALLS_ = {
       eventId, playback, gl, args, objs) {
     // TODO(benvanik): optimize extension fetch.
     var ext = gl.getExtension('ANGLE_instanced_arrays');
-
-    playback.performDraw(function() {
-      ext['drawArraysInstancedANGLE'](args['mode'], args['first'],
-          args['count'], args['primcount']);
-    });
+    ext['drawArraysInstancedANGLE'](
+        args['mode'], args['first'], args['count'], args['primcount']);
   },
   'ANGLEInstancedArrays#drawElementsInstancedANGLE': function(
       eventId, playback, gl, args, objs) {
     // TODO(benvanik): optimize extension fetch.
     var ext = gl.getExtension('ANGLE_instanced_arrays');
-
-    playback.performDraw(function() {
-      ext['drawElementsInstancedANGLE'](args['mode'], args['count'],
-          args['type'], args['offset'], args['primcount']);
-    });
+    ext['drawElementsInstancedANGLE'](
+        args['mode'], args['count'], args['type'], args['offset'],
+        args['primcount']);
   },
   'ANGLEInstancedArrays#vertexAttribDivisorANGLE': function(
       eventId, playback, gl, args, objs) {
@@ -2257,11 +2245,7 @@ wtf.replay.graphics.Playback.CALLS_ = {
     }
 
     playback.currentContext_ = gl;
-    playback.currentContextHandle_ = contextHandle;
     gl.viewport(0, 0, width, height);
-
-    playback.highlightVisualizer_.processSetContext(gl, contextHandle,
-        width, height);
 
     playback.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_SET,
         gl, contextHandle);
