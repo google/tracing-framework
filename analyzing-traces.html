@@ -13,6 +13,7 @@
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <script src="resources/all-animations.js"></script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -83,21 +84,67 @@
       <div class="row">
         <div class="span3 bs-docs-sidebar">
           <ul class="nav nav-list bs-docs-sidenav">
-            <li><a href="#todo"><i class="icon-chevron-right"></i> TODO</a></li>
+            <li><a href="#webgl"><i class="icon-chevron-right"></i> WebGL</a></li>
           </ul>
         </div>
         <div class="span9">
 
 
 
-<!-- TODO
+<!-- WebGL
 ================================================== -->
-<section id="todo">
+<section id="webgl">
   <div class="page-header">
-    <h1>1. TODO!</h1>
+    <h1>1. WebGL</h1>
   </div>
-  <p class="lead">More to come!</p>
-  <p>:)</p>
+
+  <h2>Getting Set Up</h2>
+  <p>Once you have recorded a trace with the <a href="./event-providers.html#webgl">WebGL provider</a> enabled, open up the WebGL tab and use the playback controls to find an area of the trace that you wish to learn more about.</p>
+
+  <h2>Showing Overdraw</h2>
+  <p>Some platforms, particularly mobile devices, are fillrate-limited. As screen size increases or layers of pixels are drawn, graphics applications that are fillrate-limited will slow down. The tracing framework provides a few tools to help investigate overdraw - a computation of the number of times each pixel is drawn during the rendering of a frame.</p>
+
+  <p>The 'Toggle overdraw' button shows overdraw from the start of the current frame up to the currently selected call. The value reported is the average number of times that each pixel was drawn over. Values between 1 and 4 are typical.</p>
+
+  <p><span class="label label-info">NOTE:</span> The overdraw visualization includes <code>clear</code> calls and calls made with the <code>colorMask</code> changed.</p>
+
+  <p>Overdraw colors:
+    <span class="label" style="background-color: #000000">0</span>
+    <span class="label" style="background-color: #145B0C">1</span>
+    <span class="label" style="background-color: #4C993F">2</span>
+    <span class="label" style="background-color: #75C663">3</span>
+    <span class="label" style="background-color: #D3D354">4</span>
+    <span class="label" style="background-color: #ED9128">5</span>
+    <span class="label" style="background-color: #F23838">6</span>
+    <span class="label" style="background-color: #991E1E">7</span>
+    <span class="label" style="background-color: #262626">8</span>
+    <span class="label" style="background-color: #595959">9</span>
+    <span class="label" style="background-color: #8C8C8C">10</span>
+    <span class="label" style="background-color: #D8D8D8">11+</span>
+  </p>
+
+  <p>
+    <animation src="resources/anim_overdraw"></animation>
+    <p class="text-center">
+      <small>Screenshot showing how to toggle overdraw display.</small>
+    </p>
+  </p>
+
+  <h2>Highlighting Draw Calls</h2>
+  <p>Clicking the 'Highlight this draw call' button next to any draw call will highlight that draw call and show overdraw between that call and the currently selected call.</p>
+
+  <p>The overdraw number reported under each context represents how much overdraw occured for only the pixels that were affected by the target draw call. The screen percentage tells you how much of the screen was affected by that call.</p>
+
+  <p><span class="label label-info">TIP:</span> try highlighting the same call from a few points in the same frame to see which calls contribute to overdraw.</p>
+
+  <p>Notice that the same call (#101) is highlighted twice in the screenshot below. The first highlight shows no overdraw, since no other draw calls were included. The second highlight shows overdraw from all calls between the target call (#101) and the selected call (#105).</p>
+
+  <p>
+    <animation src="resources/anim_highlight" speed="0.7" repeatdelay="2"></animation>
+    <p class="text-center">
+      <small>Screenshot showing how to highlight a draw call.</small>
+    </p>
+  </p>
 </section>
 
 
