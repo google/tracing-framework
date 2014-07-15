@@ -543,6 +543,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTextureInternal = function(
   gl.disable(goog.webgl.SCISSOR_TEST);
   gl.disable(goog.webgl.STENCIL_TEST);
   gl.colorMask(true, true, true, true);
+  gl.viewport(0, 0, this.width, this.height);
 
   if (opt_blend) {
     gl.enable(goog.webgl.BLEND);
