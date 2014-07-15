@@ -11,8 +11,6 @@
  * @author scotttodd@google.com (Scott Todd)
  */
 
-goog.require('goog.asserts');
-goog.require('goog.object');
 goog.require('wtf.events.EventEmitter');
 goog.provide('wtf.replay.graphics.Visualizer');
 
@@ -35,6 +33,13 @@ wtf.replay.graphics.Visualizer = function(playback) {
   this.playback = playback;
 
   /**
+   * The playback's EventList. Used to construct the mutators array.
+   * @type {!wtf.db.EventList}
+   * @private
+   */
+  this.eventList_ = playback.getEventList();
+
+  /**
    * Whether this Visualizer is active.
    * @type {boolean}
    * @protected
@@ -42,11 +47,11 @@ wtf.replay.graphics.Visualizer = function(playback) {
   this.active = false;
 
   /**
-   * Mapping from event names to Mutators. Shallow clone to support overrides.
-   * @type {!Object.<wtf.replay.graphics.Visualizer.Mutator>}
-   * @protected
+   * Mapping from event ids to lists of Mutators.
+   * @type {!Array.<!Array.<wtf.replay.graphics.Visualizer.Mutator>>}
+   * @private
    */
-  this.mutators = goog.object.clone(wtf.replay.graphics.Visualizer.MUTATORS_);
+  this.mutators_ = [];
 
   this.setupMutators();
 };
@@ -68,12 +73,13 @@ wtf.replay.graphics.Visualizer.prototype.applyToSubStep = goog.nullFunction;
  */
 wtf.replay.graphics.Visualizer.prototype.registerMutator = function(name,
     mutator) {
-  // TODO(scotttodd): Replace this assert with a list of mutators to call.
-  //   and handle adding a pre or a post without overwriting.
-  goog.asserts.assert(!this.mutators[name],
-      'A mutator named \'' + name + '\' already exists.');
+  var eventTypeId = this.eventList_.getEventTypeId(name);
 
-  this.mutators[name] = mutator;
+  if (eventTypeId >= 0) {
+    var mutatorsForEvent = this.mutators_[eventTypeId] || [];
+    mutatorsForEvent.push(mutator);
+    this.mutators_[eventTypeId] = mutatorsForEvent;
+  }
 };
 
 
@@ -94,11 +100,26 @@ wtf.replay.graphics.Visualizer.prototype.handlePreEvent = function(it, gl) {
     return;
   }
 
-  var associatedFunction = this.mutators[it.getName()];
-  if (associatedFunction && associatedFunction.pre) {
-    associatedFunction.pre.call(null, this, gl, it.getArguments());
+  this.anyPreEvent(it, gl);
+
+  var mutatorsForEvent = this.mutators_[it.getTypeId()];
+  if (mutatorsForEvent) {
+    for (var i = 0; i < mutatorsForEvent.length; ++i) {
+      if (mutatorsForEvent[i].pre) {
+        mutatorsForEvent[i].pre.call(null, this, gl, it.getArguments());
+      }
+    }
   }
 };
+
+
+/**
+ * Handles operations that should occur before any event.
+ * @param {!wtf.db.EventIterator} it Event iterator.
+ * @param {WebGLRenderingContext} gl The context.
+ * @protected
+ */
+wtf.replay.graphics.Visualizer.prototype.anyPreEvent = goog.nullFunction;
 
 
 /**
@@ -111,11 +132,26 @@ wtf.replay.graphics.Visualizer.prototype.handlePostEvent = function(it, gl) {
     return;
   }
 
-  var associatedFunction = this.mutators[it.getName()];
-  if (associatedFunction && associatedFunction.post) {
-    associatedFunction.post.call(null, this, gl, it.getArguments());
+  this.anyPostEvent(it, gl);
+
+  var mutatorsForEvent = this.mutators_[it.getTypeId()];
+  if (mutatorsForEvent) {
+    for (var i = 0; i < mutatorsForEvent.length; ++i) {
+      if (mutatorsForEvent[i].post) {
+        mutatorsForEvent[i].post.call(null, this, gl, it.getArguments());
+      }
+    }
   }
 };
+
+
+/**
+ * Handles operations that should occur after any event.
+ * @param {!wtf.db.EventIterator} it Event iterator.
+ * @param {WebGLRenderingContext} gl The context.
+ * @protected
+ */
+wtf.replay.graphics.Visualizer.prototype.anyPostEvent = goog.nullFunction;
 
 
 /**
@@ -131,11 +167,3 @@ wtf.replay.graphics.Visualizer.MutatorHandler;
  *   post: (wtf.replay.graphics.Visualizer.MutatorHandler|undefined)}}
  */
 wtf.replay.graphics.Visualizer.Mutator;
-
-
-/**
- * A mapping from event names to pre/post event MutatorHandlers.
- * @type {!Object.<wtf.replay.graphics.Visualizer.Mutator>}
- * @private
- */
-wtf.replay.graphics.Visualizer.MUTATORS_ = {};
