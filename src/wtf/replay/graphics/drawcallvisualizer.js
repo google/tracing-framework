@@ -280,12 +280,13 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.isVisible = function() {
 
 
 /**
- * Handles operations that should occur before the provided event.
+ * Handles operations that should occur before any event.
  * @param {!wtf.db.EventIterator} it Event iterator.
  * @param {WebGLRenderingContext} gl The context.
+ * @protected
  * @override
  */
-wtf.replay.graphics.DrawCallVisualizer.prototype.handlePreEvent = function(
+wtf.replay.graphics.DrawCallVisualizer.prototype.anyPreEvent = function(
     it, gl) {
   if (this.completed) {
     this.restoreState();
@@ -293,8 +294,6 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.handlePreEvent = function(
   if (!this.active) {
     this.previousVisibility_ = false;
   }
-
-  goog.base(this, 'handlePreEvent', it, gl);
 };
 
 
