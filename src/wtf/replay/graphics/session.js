@@ -18,6 +18,7 @@ goog.require('goog.dom.DomHelper');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ContextPool');
 goog.require('wtf.replay.graphics.FrameOverdrawVisualizer');
+goog.require('wtf.replay.graphics.FrameTimeVisualizer');
 goog.require('wtf.replay.graphics.HighlightVisualizer');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.GraphicsPanel');
@@ -78,6 +79,11 @@ wtf.replay.graphics.Session = function(db, parentElement, opt_domHelper) {
   var overdrawVisualizer = new wtf.replay.graphics.FrameOverdrawVisualizer(
       this.playback_);
   this.playback_.addVisualizer(overdrawVisualizer, 'overdraw');
+
+  var frameTimeVisualizer = new wtf.replay.graphics.FrameTimeVisualizer(
+      this.playback_);
+  this.playback_.addVisualizer(frameTimeVisualizer, 'frameTime');
+  this.playback_.visualizeContinuous('frameTime');
 
   /**
    * A panel for controlling graphics replay.
