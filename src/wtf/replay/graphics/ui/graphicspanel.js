@@ -208,10 +208,15 @@ wtf.replay.graphics.ui.GraphicsPanel.prototype.layoutInternal = function() {
 wtf.replay.graphics.ui.GraphicsPanel.prototype.createRangeSeeker_ =
     function() {
   var playback = this.playback_;
+
+  var frameTimeVisualizer =
+      /** @type {wtf.replay.graphics.FrameTimeVisualizer} */ (
+      playback.getVisualizer('frameTime'));
+
   var slider = new wtf.replay.graphics.ui.RangeSeeker(
       0, playback.getStepCount() - 1,
       this.getChildElement(goog.getCssName('rangeSeeker')),
-      this.getDom());
+      this.getDom(), frameTimeVisualizer);
 
   // Enable the slider only after the playback has loaded.
   this.loadDeferred_.addCallback(function() {

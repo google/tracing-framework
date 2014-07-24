@@ -543,6 +543,18 @@ wtf.replay.graphics.Playback.prototype.visualizeSubStep = function(
 
 
 /**
+ * Runs a Visualizer with the given name in continuous mode.
+ * @param {string} name Visualizer name.
+ */
+wtf.replay.graphics.Playback.prototype.visualizeContinuous = function(name) {
+  var visualizer = this.getVisualizer(name);
+  if (visualizer) {
+    visualizer.startContinuous();
+  }
+};
+
+
+/**
  * Signals that the message for a context should be changed.
  * @param {string} contextHandle Context handle matching the context to update.
  * @param {string} message New message for the context.

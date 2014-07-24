@@ -59,6 +59,22 @@ goog.inherits(wtf.replay.graphics.Visualizer, wtf.events.EventEmitter);
 
 
 /**
+ * Starts running this visualization without a specific target.
+ */
+wtf.replay.graphics.Visualizer.prototype.startContinuous = function() {
+  this.active = true;
+};
+
+
+/**
+ * Stops running this visualization.
+ */
+wtf.replay.graphics.Visualizer.prototype.stopContinuous = function() {
+  this.active = false;
+};
+
+
+/**
  * Runs this visualization on a substep of the current step.
  * @param {number=} opt_subStepIndex Target substep, or the current by default.
  */
