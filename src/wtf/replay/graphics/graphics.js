@@ -19,6 +19,7 @@ goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('wtf.db');
 goog.require('wtf.db.Database');
+goog.require('wtf.events.CommandManager');
 goog.require('wtf.replay.graphics.Session');
 
 
@@ -74,6 +75,10 @@ wtf.replay.graphics.setupWithUrl = function(
       }
 
       goog.asserts.assert(db instanceof wtf.db.Database);
+
+      var commandManager = new wtf.events.CommandManager();
+      wtf.events.CommandManager.setShared(commandManager);
+
       var session = wtf.replay.graphics.setup(db, parentElement, opt_dom);
       if (opt_callback) {
         opt_callback(session);

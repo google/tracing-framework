@@ -99,6 +99,7 @@ wtf.replay.graphics.ui.RangeSeeker =
    * @private
    */
   this.framePainter_ = this.createFramePainter_();
+  this.registerDisposable(this.framePainter_);
   this.setValue(min);
 
   /**

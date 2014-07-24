@@ -18,7 +18,6 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.style');
 goog.require('wtf.events');
-goog.require('wtf.events.CommandManager');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.CanvasesArea');
 goog.require('wtf.replay.graphics.ui.EventNavigator');
@@ -70,13 +69,6 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
   this.getHandler().listen(
       this.viewportSizeMonitor_,
       goog.events.EventType.RESIZE, this.layout, false, this);
-
-  // Create shared CommandManager if it does not already exist.
-  var commandManager = wtf.events.getCommandManager();
-  if (!commandManager) {
-    commandManager = new wtf.events.CommandManager();
-    wtf.events.CommandManager.setShared(commandManager);
-  }
 
   /**
    * The toolbar for the graphics panel. Has widgets such as main buttons.
