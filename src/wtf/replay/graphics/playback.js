@@ -255,6 +255,11 @@ wtf.replay.graphics.Playback.EventType = {
   PLAY_BEGAN: goog.events.getUniqueId('play_began'),
 
   /**
+   * A new step started during continuous playback.
+   */
+  STEP_STARTED: goog.events.getUniqueId('step_started'),
+
+  /**
    * The current step changed.
    */
   STEP_CHANGED: goog.events.getUniqueId('step_changed'),
@@ -924,6 +929,7 @@ wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
   var stepToPlayFrom = this.steps_[this.currentStepIndex_];
   var self = this;
   var handler = function() {
+    self.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_STARTED);
     self.subStepId_ = -1;
     for (var it = stepToPlayFrom.getEventIterator(); !it.done(); it.next()) {
       self.realizeEvent_(it);
