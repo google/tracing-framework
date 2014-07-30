@@ -128,12 +128,12 @@ wtf.replay.graphics.ui.ReplayFramePainter.COLORS_ = {
   /**
    * The background color of the currently selected frame.
    */
-  CURRENT_BACKGROUND: '#B6CCEF',
+  CURRENT_BACKGROUND: '#466CBF',
 
   /**
    * The background color of the currently selected frame.
    */
-  HOVER_BACKGROUND: '#DCDCDC',
+  HOVER_BACKGROUND: '#777777',
 
   /**
    * The color for lines at the 17ms and 33ms heights.
@@ -163,16 +163,21 @@ wtf.replay.graphics.ui.ReplayFramePainter.COLORS_ = {
   /**
    * The color for frames whose average duration is greater than 50ms.
    */
-  FRAME_TIME_50_PLUS: '#991E1E'
+  FRAME_TIME_50_PLUS: '#991E1E',
+
+  /**
+   * The color for the time between frames.
+   */
+  BETWEEN_FRAMES_TIME: '#BBBBBB'
 };
 
 
 /**
- * Hover border size in pixels. Used to highlight bars in the bar graph.
+ * Outline size in pixels. Used to draw outlined bars in the bar graph.
  * @type {number}
  * @const
  */
-wtf.replay.graphics.ui.ReplayFramePainter.HOVER_BORDER_SIZE = 2;
+wtf.replay.graphics.ui.ReplayFramePainter.OUTLINE_SIZE = 2;
 
 
 /**
@@ -182,10 +187,9 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
     ctx, bounds) {
   // The x-axis is frame number, the y-axis is frame duration.
   var yScale = 1 / wtf.math.remap(45, 0, bounds.height, 0, 1);
-  var frameWidth = bounds.width / (this.max_ - this.min_);
 
   var colors = wtf.replay.graphics.ui.ReplayFramePainter.COLORS_;
-  var leftX, topY, duration;
+  var topY, duration;
 
   var hoverIndex = 0;
   if (this.hoverX_) {
@@ -194,23 +198,26 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
 
   // Draw background bars in alternating shades of grey.
   for (var i = this.min_; i < this.max_; ++i) {
-    leftX = wtf.math.remap(i - 0.5, this.min_, this.max_, 0, bounds.width);
-    if (i == this.currentFrame_) {
-      ctx.fillStyle = colors.CURRENT_BACKGROUND;
-    } else if (hoverIndex && i == hoverIndex) {
-      ctx.fillStyle = colors.HOVER_BACKGROUND;
-    } else if (i % 2 == 0) {
+    if (i % 2 == 0) {
       ctx.fillStyle = colors.EVEN_ROW_BACKGROUND;
     } else {
       ctx.fillStyle = colors.ODD_ROW_BACKGROUND;
     }
-    ctx.fillRect(leftX, 0, frameWidth, bounds.height);
+    this.drawBar_(ctx, bounds, i, 0, bounds.height);
   }
 
   // Draw lines at 17ms and 33ms.
   ctx.fillStyle = colors.TIME_MARKERS;
   ctx.fillRect(bounds.left, bounds.height - 17 * yScale, bounds.width, 1);
   ctx.fillRect(bounds.left, bounds.height - 33 * yScale, bounds.width, 1);
+
+  // Draw current and hover bars above the lines and background bars.
+  ctx.fillStyle = colors.CURRENT_BACKGROUND;
+  this.drawBar_(ctx, bounds, this.currentFrame_, 0, bounds.height);
+  if (hoverIndex) {
+    ctx.fillStyle = colors.HOVER_BACKGROUND;
+    this.drawBar_(ctx, bounds, hoverIndex, 0, bounds.height);
+  }
 
   // Draw the frame times in a colored bar graph.
   if (this.frameTimeVisualizer_) {
@@ -220,11 +227,9 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
       var frame = frames[i];
       if (frame) {
         duration = frame.getAverageDuration();
-        leftX = wtf.math.remap(i - 0.5, this.min_, this.max_,
-            0, bounds.width);
         topY = Math.max(bounds.height - duration * yScale, 0);
 
-        // Draw a bar for this frame.
+        // Draw a bar for this frame's duration.
         if (duration < 17) {
           ctx.fillStyle = colors.FRAME_TIME_17;
         } else if (duration < 33) {
@@ -234,7 +239,13 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
         } else {
           ctx.fillStyle = colors.FRAME_TIME_50_PLUS;
         }
-        ctx.fillRect(leftX, topY, frameWidth, duration * yScale);
+        this.drawBar_(ctx, bounds, i, topY, duration * yScale);
+
+        // Draw a stacked bar for the time between this frame and the next.
+        var timeBetween = frame.getAverageBetween();
+        topY = bounds.height - (duration + timeBetween) * yScale;
+        ctx.fillStyle = colors.BETWEEN_FRAMES_TIME;
+        this.drawBar_(ctx, bounds, i, topY, timeBetween * yScale);
       }
     }
 
@@ -243,20 +254,40 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
       var hoverFrame = frames[hoverIndex];
       if (hoverFrame) {
         duration = hoverFrame.getAverageDuration();
-        leftX = wtf.math.remap(hoverIndex - 0.5, this.min_, this.max_,
-            0, bounds.width);
         topY = Math.max(bounds.height - duration * yScale, 0);
 
-        var borderSize =
-            wtf.replay.graphics.ui.ReplayFramePainter.HOVER_BORDER_SIZE;
-
-        // Draw the outer hover border.
-        ctx.lineWidth = borderSize;
         ctx.strokeStyle = colors.HOVER_BORDER;
-        ctx.strokeRect(leftX - borderSize / 2, topY - borderSize / 2,
-            frameWidth + borderSize, duration * yScale + borderSize);
+        this.drawBar_(ctx, bounds, hoverIndex, topY, duration * yScale, true);
       }
     }
+  }
+};
+
+
+/**
+ * Draws a bar on the canvas for a frame, handles computing the frame width.
+ * @param {!CanvasRenderingContext2D} ctx Canvas render context.
+ * @param {!goog.math.Rect} bounds Draw bounds.
+ * @param {number} frameNumber The frame number, used for the x location.
+ * @param {number} topY The highest point on the canvas to draw at (top is 0).
+ * @param {number} height The height of the bar to draw.
+ * @param {boolean=} opt_outline If true, draw only an outline.
+ * @private
+ */
+wtf.replay.graphics.ui.ReplayFramePainter.prototype.drawBar_ = function(
+    ctx, bounds, frameNumber, topY, height, opt_outline) {
+  var leftX = wtf.math.remap(frameNumber - 0.5, this.min_, this.max_, 0,
+      bounds.width);
+  var frameWidth = bounds.width / (this.max_ - this.min_);
+
+  if (opt_outline) {
+    var borderSize = wtf.replay.graphics.ui.ReplayFramePainter.OUTLINE_SIZE;
+    ctx.lineWidth = wtf.replay.graphics.ui.ReplayFramePainter.OUTLINE_SIZE;
+
+    ctx.strokeRect(leftX - borderSize / 2, topY - borderSize / 2,
+        frameWidth + borderSize, height + borderSize);
+  } else {
+    ctx.fillRect(leftX, topY, frameWidth, height);
   }
 };
 

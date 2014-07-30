@@ -14,6 +14,7 @@
 goog.provide('wtf.replay.graphics.FrameTimeVisualizer');
 
 goog.require('goog.events');
+goog.require('goog.webgl');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ReplayFrame');
 goog.require('wtf.replay.graphics.Visualizer');
@@ -44,8 +45,11 @@ wtf.replay.graphics.FrameTimeVisualizer = function(playback) {
    */
   this.frames_ = [];
 
+  playback.addListener(wtf.replay.graphics.Playback.EventType.STEP_STARTED,
+      this.recordStart_, this);
+
   playback.addListener(wtf.replay.graphics.Playback.EventType.STEP_CHANGED,
-      this.recordTimes_, this);
+      this.recordStop_, this);
 
   playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
       function() {
@@ -153,28 +157,47 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.updateStepIndex_ =
 
 
 /**
- * Records frame times. Call when the step changes.
+ * Records start frame times. Call when a new step begins.
  * @private
  */
-wtf.replay.graphics.FrameTimeVisualizer.prototype.recordTimes_ = function() {
+wtf.replay.graphics.FrameTimeVisualizer.prototype.recordStart_ = function() {
+  if (this.playback.isPlaying()) {
+    var previousFrame = this.getPreviousFrame_();
+    if (previousFrame) {
+      previousFrame.startNext();
+    }
+
+    this.updateStepIndex_();
+
+    var currentFrame = this.getCurrentFrame_();
+    currentFrame.startTiming();
+  }
+};
+
+
+/**
+ * Records end frame times. Call when the step changes.
+ * @private
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.recordStop_ = function() {
   if (this.playback.isPlaying()) {
     // Finish rendering in all contexts.
     for (var contextHandle in this.contexts_) {
-      this.contexts_[contextHandle].finish();
+      // gl.finish() does not actually wait for operations to complete.
+      // gl.readPixels() requires all operations to finish, so use it instead.
+      var pixelContents = new Uint8Array(4);
+      var context = this.contexts_[contextHandle];
+      context.readPixels(0, 0, 1, 1, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE,
+          pixelContents);
     }
 
     // Record the end time for the previous step.
     var previousFrame = this.getPreviousFrame_();
     if (previousFrame) {
       previousFrame.stopTiming();
+
+      this.emitEvent(
+          wtf.replay.graphics.FrameTimeVisualizer.EventType.FRAMES_UPDATED);
     }
-
-    var currentFrame = this.getCurrentFrame_();
-    currentFrame.startTiming();
-
-    this.emitEvent(
-        wtf.replay.graphics.FrameTimeVisualizer.EventType.FRAMES_UPDATED);
   }
-
-  this.updateStepIndex_();
 };
