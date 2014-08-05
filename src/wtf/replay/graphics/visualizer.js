@@ -178,6 +178,46 @@ wtf.replay.graphics.Visualizer.prototype.anyPreEvent = goog.nullFunction;
 
 
 /**
+ * Handles operations that could occur in place of an event.
+ * @param {!wtf.db.EventIterator} it Event iterator.
+ * @param {WebGLRenderingContext} gl The context.
+ * @return {boolean} Whether the event should be skipped in playback.
+ */
+wtf.replay.graphics.Visualizer.prototype.handleReplaceEvent = function(it, gl) {
+  if (!this.active) {
+    return false;
+  }
+
+  var skip = false;
+  skip = skip || this.anyReplaceEvent(it, gl);
+
+  var mutatorsForEvent = this.mutators_[it.getTypeId()];
+  if (mutatorsForEvent) {
+    for (var i = 0; i < mutatorsForEvent.length; ++i) {
+      if (mutatorsForEvent[i].replace) {
+        skip = skip ||
+            mutatorsForEvent[i].replace.call(null, this, gl, it.getArguments());
+      }
+    }
+  }
+
+  return skip;
+};
+
+
+/**
+ * Handles operations that could occur in place of any event.
+ * @param {!wtf.db.EventIterator} it Event iterator.
+ * @param {WebGLRenderingContext} gl The context.
+ * @return {boolean} Whether the event should be skipped in playback.
+ * @protected
+ */
+wtf.replay.graphics.Visualizer.prototype.anyReplaceEvent = function(it, gl) {
+  return false;
+};
+
+
+/**
  * Handles operations that should occur after the provided event.
  * @param {!wtf.db.EventIterator} it Event iterator.
  * @param {WebGLRenderingContext} gl The context.
@@ -218,7 +258,9 @@ wtf.replay.graphics.Visualizer.MutatorHandler;
 
 
 /**
- * @typedef {{pre: (wtf.replay.graphics.Visualizer.MutatorHandler|undefined),
+ * @typedef {{
+ *   pre: (wtf.replay.graphics.Visualizer.MutatorHandler|undefined),
+ *   replace: (wtf.replay.graphics.Visualizer.MutatorHandler|undefined),
  *   post: (wtf.replay.graphics.Visualizer.MutatorHandler|undefined)}}
  */
 wtf.replay.graphics.Visualizer.Mutator;
