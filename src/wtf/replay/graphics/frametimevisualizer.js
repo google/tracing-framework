@@ -15,8 +15,8 @@ goog.provide('wtf.replay.graphics.FrameTimeVisualizer');
 
 goog.require('goog.events');
 goog.require('goog.webgl');
+goog.require('wtf.replay.graphics.Experiment');
 goog.require('wtf.replay.graphics.Playback');
-goog.require('wtf.replay.graphics.ReplayFrame');
 goog.require('wtf.replay.graphics.Visualizer');
 
 
@@ -39,11 +39,27 @@ wtf.replay.graphics.FrameTimeVisualizer = function(playback) {
   this.latestStepIndex_ = -1;
 
   /**
-   * Array of frames recorded.
-   * @type {!Array.<!wtf.replay.graphics.ReplayFrame>}
+   * Array of experiments. Each experiment contains recorded frames.
+   * @type {!Array.<!wtf.replay.graphics.Experiment>}
    * @private
    */
-  this.frames_ = [];
+  this.experiments_ = [];
+
+  /**
+   * Mapping from experiment hashes to indeces in the experiments array.
+   * Keys are visualizer state hashes, compiled from all active visualizers.
+   * @type {!Object.<number>}
+   * @private
+   */
+  this.experimentHashes_ = {};
+
+  /**
+   * The hash of the latest experiment.
+   * @type {string}
+   * @private
+   */
+  this.latestExperimentHash_ = '';
+  this.updateExperimentHash_();
 
   playback.addListener(wtf.replay.graphics.Playback.EventType.STEP_STARTED,
       this.recordStart_, this);
@@ -53,8 +69,15 @@ wtf.replay.graphics.FrameTimeVisualizer = function(playback) {
 
   playback.addListener(wtf.replay.graphics.Playback.EventType.PLAY_STOPPED,
       function() {
-        this.getPreviousFrame_().cancelTiming();
+        var previousFrame = this.getPreviousFrame_();
+        if (previousFrame) {
+          previousFrame.cancelTiming();
+        }
       }, this);
+
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED,
+      this.updateExperimentHash_, this);
 
   /**
    * A mapping of handles to contexts.
@@ -100,21 +123,30 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.setupMutators = function() {
 
 
 /**
- * Gets all frames.
- * @return {!Array.<!wtf.replay.graphics.ReplayFrame>} The recorded frames.
+ * Gets an experiment, creating it if it does not already exist.
+ * @param {string} stateHash Hash of the visualizer state.
+ * @return {!wtf.replay.graphics.Experiment} The experiment.
  */
-wtf.replay.graphics.FrameTimeVisualizer.prototype.getFrames = function() {
-  return this.frames_;
+wtf.replay.graphics.FrameTimeVisualizer.prototype.getExperiment = function(
+    stateHash) {
+  var index = this.experimentHashes_[stateHash];
+
+  if (index === undefined) {
+    index = this.experiments_.length;
+    var experiment = new wtf.replay.graphics.Experiment(this.playback);
+    this.experiments_.push(experiment);
+    this.experimentHashes_[stateHash] = index;
+  }
+  return this.experiments_[index];
 };
 
 
 /**
- * Gets a specific frame.
- * @param {number} number The frame number.
- * @return {wtf.replay.graphics.ReplayFrame} The requested frame, if it exists.
+ * Gets all experiments.
+ * @return {!Array.<!wtf.replay.graphics.Experiment>} All experiments.
  */
-wtf.replay.graphics.FrameTimeVisualizer.prototype.getFrame = function(number) {
-  return this.frames_[number] || null;
+wtf.replay.graphics.FrameTimeVisualizer.prototype.getExperiments = function() {
+  return this.experiments_;
 };
 
 
@@ -125,12 +157,9 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.getFrame = function(number) {
  */
 wtf.replay.graphics.FrameTimeVisualizer.prototype.getCurrentFrame_ =
     function() {
+  var experiment = this.getExperiment(this.latestExperimentHash_);
   var currentStepIndex = this.playback.getCurrentStepIndex();
-  if (!this.frames_[currentStepIndex]) {
-    this.frames_[currentStepIndex] = new wtf.replay.graphics.ReplayFrame(
-        currentStepIndex);
-  }
-  return this.frames_[currentStepIndex];
+  return experiment.getFrame(currentStepIndex);
 };
 
 
@@ -141,7 +170,8 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.getCurrentFrame_ =
  */
 wtf.replay.graphics.FrameTimeVisualizer.prototype.getPreviousFrame_ =
     function() {
-  return this.frames_[this.latestStepIndex_];
+  var experiment = this.getExperiment(this.latestExperimentHash_);
+  return experiment.getFrame(this.latestStepIndex_);
 };
 
 
@@ -157,6 +187,17 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.updateStepIndex_ =
 
 
 /**
+ * Updates the latest experiment state hash.
+ * @private
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.updateExperimentHash_ =
+    function() {
+  this.latestExperimentHash_ =
+      wtf.replay.graphics.Experiment.constructStateHash(this.playback);
+};
+
+
+/**
  * Records start frame times. Call when a new step begins.
  * @private
  */
@@ -165,6 +206,9 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.recordStart_ = function() {
     var previousFrame = this.getPreviousFrame_();
     if (previousFrame) {
       previousFrame.startNext();
+
+      this.emitEvent(
+          wtf.replay.graphics.FrameTimeVisualizer.EventType.FRAMES_UPDATED);
     }
 
     this.updateStepIndex_();
@@ -195,9 +239,6 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.recordStop_ = function() {
     var previousFrame = this.getPreviousFrame_();
     if (previousFrame) {
       previousFrame.stopTiming();
-
-      this.emitEvent(
-          wtf.replay.graphics.FrameTimeVisualizer.EventType.FRAMES_UPDATED);
     }
   }
 };

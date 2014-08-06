@@ -18,6 +18,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('wtf.events');
 goog.require('wtf.events.KeyboardScope');
+goog.require('wtf.replay.graphics.Experiment');
 goog.require('wtf.replay.graphics.Playback');
 goog.require('wtf.replay.graphics.ui.graphicsToolbar');
 goog.require('wtf.ui.Control');
@@ -86,6 +87,14 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
   this.forwardButton_ =
       this.getChildElement(goog.getCssName('forwardButton'));
 
+  /**
+   * The reset visualizers button.
+   * @type {!Element}
+   * @private
+   */
+  this.resetVisualizersButton_ =
+      this.getChildElement(goog.getCssName('resetVisualizersButton'));
+
   // Only enable this toolbar after the playback has loaded.
   deferred.addCallback(function() {
     this.setReady_();
@@ -126,6 +135,11 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
         this.setPlayButtonState_(false);
         this.setEnabled_(true);
       }, this);
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED,
+      function() {
+        this.setEnabled_(true);
+      }, this);
   this.setPlayButtonState_(false);
 
   // Handle button clicks.
@@ -146,6 +160,10 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
       this.forwardButton_,
       goog.events.EventType.CLICK,
       this.forwardClickHandler_, false, this);
+  eh.listen(
+      this.resetVisualizersButton_,
+      goog.events.EventType.CLICK,
+      this.resetVisualizersClickHandler_, false, this);
 
   // Setup keyboard shortcuts.
   var keyboard = wtf.events.getWindowKeyboard(this.getDom());
@@ -162,6 +180,9 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
   }, this);
   keyboardScope.addShortcut('ctrl+right', function() {
     this.forwardClickHandler_();
+  }, this);
+  keyboardScope.addShortcut('r', function() {
+    this.resetVisualizersClickHandler_();
   }, this);
 
   this.setEnabled_(true);
@@ -180,6 +201,8 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setEnabled_ =
   this.toggleButton(goog.getCssName('backButton'), this.canMoveBack_());
   this.toggleButton(goog.getCssName('playButton'), this.canPlay_());
   this.toggleButton(goog.getCssName('forwardButton'), this.canMoveForward_());
+  this.toggleButton(goog.getCssName('resetVisualizersButton'),
+      this.canResetVisualizers_());
 };
 
 
@@ -294,4 +317,33 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.forwardClickHandler_ =
         'Can\'t seek beyond last step index of ' + lastStepIndex + '.');
   }
   playback.seekStep(currentStepIndex + 1);
+};
+
+
+/**
+ * @return {boolean} True if the reset visualizers button can be used.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.canResetVisualizers_ =
+    function() {
+  var currentHash =
+      wtf.replay.graphics.Experiment.constructStateHash(this.playback_);
+  var defaultHash = wtf.replay.graphics.Experiment.DEFAULT_HASH;
+
+  return this.enabled_ && currentHash != defaultHash;
+};
+
+
+/**
+ * Handles clicks of the reset visualizers button.
+ * @private
+ */
+wtf.replay.graphics.ui.GraphicsToolbar.prototype.resetVisualizersClickHandler_ =
+    function() {
+  if (!this.canResetVisualizers_()) {
+    return;
+  }
+
+  var playback = this.playback_;
+  playback.resetVisualizers();
 };

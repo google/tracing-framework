@@ -146,6 +146,11 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
    * @private
    */
   this.previousVisibility_ = false;
+
+  // Visualizer state changing can invalidate saved visualization data.
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED,
+      this.invalidateStored_, this);
 };
 goog.inherits(wtf.replay.graphics.DrawCallVisualizer,
     wtf.replay.graphics.Visualizer);
@@ -452,6 +457,18 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.visualizationStored = function(
 
   return currentStepIndex == this.latestStepIndex &&
       targetSubStepIndex == this.latestTargetSubStepIndex;
+};
+
+
+/**
+ * Invalidates the stored visualization data.
+ * @private
+ */
+wtf.replay.graphics.DrawCallVisualizer.prototype.invalidateStored_ =
+    function() {
+  this.latestStepIndex = -1;
+  this.latestSubStepIndex = -1;
+  this.latestTargetSubStepIndex = -1;
 };
 
 

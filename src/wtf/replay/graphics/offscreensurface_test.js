@@ -110,7 +110,7 @@ wtf.replay.graphics.OffscreenSurface_test =
     goog.dispose(offscreenSurface);
   });
 
-  test('#framebufferRendering', function() {
+  test('framebufferRendering', function() {
     var offscreenSurface = new wtf.replay.graphics.OffscreenSurface(context,
         1, 1);
     var pixelContents = new Uint8Array(4);
