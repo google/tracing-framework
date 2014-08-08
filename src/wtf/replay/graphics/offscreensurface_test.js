@@ -60,7 +60,7 @@ wtf.replay.graphics.OffscreenSurface_test =
     goog.dispose(offscreenSurface);
   });
 
-  test('#captureAndDrawTexture', function() {
+  test('#captureTexture', function() {
     var offscreenSurface = new wtf.replay.graphics.OffscreenSurface(context,
         1, 1);
     var pixelContents = new Uint8Array(4);
@@ -73,6 +73,21 @@ wtf.replay.graphics.OffscreenSurface_test =
     // Call captureTexture and ensure that red is still in the framebuffer.
     offscreenSurface.captureTexture();
     checkColor(pixelContents, 255, 0, 0);
+
+    goog.dispose(offscreenSurface);
+  });
+
+  test('#drawTexture', function() {
+    var offscreenSurface = new wtf.replay.graphics.OffscreenSurface(context,
+        1, 1);
+    var pixelContents = new Uint8Array(4);
+
+    // Write red into the framebuffer.
+    context.clearColor(1.0, 0.0, 0.0, 1.0);
+    context.clear(goog.webgl.COLOR_BUFFER_BIT);
+    checkColor(pixelContents, 255, 0, 0);
+
+    offscreenSurface.captureTexture();
 
     // Change the framebuffer contents to blue.
     context.clearColor(0.0, 0.0, 1.0, 1.0);

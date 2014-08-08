@@ -181,7 +181,7 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
   keyboardScope.addShortcut('ctrl+right', function() {
     this.forwardClickHandler_();
   }, this);
-  keyboardScope.addShortcut('r', function() {
+  keyboardScope.addShortcut('c', function() {
     this.resetVisualizersClickHandler_();
   }, this);
 

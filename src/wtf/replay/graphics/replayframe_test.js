@@ -54,26 +54,34 @@ wtf.replay.graphics.ReplayFrame_test =
     assert.equal(replayFrame.getCount(), 0);
   });
 
-  test('#getAverageDuration', function() {
+  test('#getAverageDuration', function(done) {
     var replayFrame = new wtf.replay.graphics.ReplayFrame(0);
 
     assert.isFalse(replayFrame.getAverageDuration() > 0);
 
     replayFrame.startTiming();
-    replayFrame.stopTiming();
 
-    assert.isTrue(replayFrame.getAverageDuration() > 0);
+    // Wait at least 10 milliseconds before recording the next time.
+    setTimeout(function() {
+      replayFrame.stopTiming();
+      assert.isTrue(replayFrame.getAverageDuration() > 0);
+      done();
+    }, 10);
   });
 
-  test('#getAverageBetween', function() {
+  test('#getAverageBetween', function(done) {
     var replayFrame = new wtf.replay.graphics.ReplayFrame(0);
 
     assert.isFalse(replayFrame.getAverageBetween() > 0);
 
     replayFrame.startTiming();
     replayFrame.stopTiming();
-    replayFrame.startNext();
 
-    assert.isTrue(replayFrame.getAverageBetween() > 0);
+    // Wait at least 10 milliseconds before recording the next time.
+    setTimeout(function() {
+      replayFrame.startNext();
+      assert.isTrue(replayFrame.getAverageBetween() > 0);
+      done();
+    }, 10);
   });
 });

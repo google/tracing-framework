@@ -399,7 +399,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.paintRowRange =
           // Draw the highlight button using the unicode 'position indicator'.
           ctx.fillText('\u2316', lengths.HIGHLIGHT_LEFT, y + rowHeight);
 
-          // Draw the skip buttonusing the unicode 'x in a box' character.
+          // Draw the skip button using the unicode 'x in a box' character.
           ctx.fillText('\u2327', lengths.SKIP_LEFT, y + rowHeight);
 
           ctx.font = fonts.DEFAULT;
