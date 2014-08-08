@@ -21,6 +21,7 @@ goog.require('wtf.replay.graphics.FrameOverdrawVisualizer');
 goog.require('wtf.replay.graphics.FrameTimeVisualizer');
 goog.require('wtf.replay.graphics.HighlightVisualizer');
 goog.require('wtf.replay.graphics.Playback');
+goog.require('wtf.replay.graphics.SkipCallsVisualizer');
 goog.require('wtf.replay.graphics.ui.GraphicsPanel');
 
 
@@ -84,6 +85,11 @@ wtf.replay.graphics.Session = function(db, parentElement, opt_domHelper) {
       this.playback_);
   this.playback_.addVisualizer(frameTimeVisualizer, 'frameTime');
   this.playback_.visualizeContinuous('frameTime');
+
+  var skipCallsVisualizer = new wtf.replay.graphics.SkipCallsVisualizer(
+      this.playback_);
+  this.playback_.addVisualizer(skipCallsVisualizer, 'skipCalls');
+  this.playback_.visualizeContinuous('skipCalls');
 
   /**
    * A panel for controlling graphics replay.

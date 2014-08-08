@@ -127,7 +127,9 @@ goog.inherits(wtf.replay.graphics.ui.RangeSeeker, wtf.ui.Control);
  */
 wtf.replay.graphics.ui.RangeSeeker.prototype.disposeInternal = function() {
   var commandManager = wtf.events.getCommandManager();
-  commandManager.unregisterCommand('goto_replay_frame');
+  if (commandManager) {
+    commandManager.unregisterCommand('goto_replay_frame');
+  }
 
   wtf.events.releaseViewportSizeMonitor(this.viewportSizeMonitor_);
 
@@ -170,12 +172,14 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.createFramePainter_ = function() {
   this.setPaintContext(replayFramePainter);
 
   var commandManager = wtf.events.getCommandManager();
-  commandManager.registerSimpleCommand(
-      'goto_replay_frame', function(source, target, frame) {
-        this.setValue(frame);
-        this.emitEvent(
-            wtf.replay.graphics.ui.RangeSeeker.EventType.VALUE_CHANGED);
-      }, this);
+  if (commandManager) {
+    commandManager.registerSimpleCommand(
+        'goto_replay_frame', function(source, target, frame) {
+          this.setValue(frame);
+          this.emitEvent(
+              wtf.replay.graphics.ui.RangeSeeker.EventType.VALUE_CHANGED);
+        }, this);
+  }
 
   return replayFramePainter;
 };

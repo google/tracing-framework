@@ -26,6 +26,7 @@ goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
 goog.require('wtf.replay.graphics.Step');
+goog.require('wtf.replay.graphics.Visualizer');
 goog.require('wtf.timing.util');
 
 
@@ -293,7 +294,12 @@ wtf.replay.graphics.Playback.EventType = {
   /**
    * A context message was changed.
    */
-  CONTEXT_MESSAGE_CHANGED: goog.events.getUniqueId('context_message_changed')
+  CONTEXT_MESSAGE_CHANGED: goog.events.getUniqueId('context_message_changed'),
+
+  /**
+   * A Visualizer's continuous playback affecting state changed.
+   */
+  VISUALIZER_STATE_CHANGED: goog.events.getUniqueId('visualizer_state_changed')
 };
 
 
@@ -513,6 +519,21 @@ wtf.replay.graphics.Playback.prototype.addVisualizer = function(
   this.visualizers_.push(visualizer);
   this.visualizerNames_.push(name);
   this.registerDisposable(visualizer);
+
+  visualizer.addListener(wtf.replay.graphics.Visualizer.EventType.STATE_CHANGED,
+      function() {
+        this.emitEvent(
+            wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED);
+      }, this);
+};
+
+
+/**
+ * Gets all visualizers that have been added.
+ * @return {!Array.<wtf.replay.graphics.Visualizer>} All visualizers.
+ */
+wtf.replay.graphics.Playback.prototype.getVisualizers = function() {
+  return this.visualizers_;
 };
 
 
@@ -560,6 +581,18 @@ wtf.replay.graphics.Playback.prototype.visualizeContinuous = function(name) {
 
 
 /**
+ * Resets all visualizers.
+ */
+wtf.replay.graphics.Playback.prototype.resetVisualizers = function() {
+  for (var i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].reset();
+  }
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED);
+};
+
+
+/**
  * Signals that the message for a context should be changed.
  * @param {string} contextHandle Context handle matching the context to update.
  * @param {string} message New message for the context.
@@ -599,8 +632,6 @@ wtf.replay.graphics.Playback.prototype.clearWebGlObjects_ = function(
     this.contextPool_.releaseContext(ctx);
   }
   this.contexts_ = {};
-
-  this.emitEvent(wtf.replay.graphics.Playback.EventType.CLEAR_PROGRAMS);
 };
 
 
@@ -1228,8 +1259,17 @@ wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
   var associatedFunction = this.callLookupTable_[it.getTypeId()];
   if (associatedFunction) {
     try {
-      associatedFunction.call(null, it.getId(), this, this.currentContext_,
-          it.getArguments(), this.objects_);
+      // If any handleReplaceEvent returns true, do not call the function.
+      var skipCall = false;
+      for (i = 0; i < this.visualizers_.length; ++i) {
+        skipCall = skipCall ||
+            this.visualizers_[i].handleReplaceEvent(it, this.currentContext_);
+      }
+
+      if (!skipCall) {
+        associatedFunction.call(null, it.getId(), this, this.currentContext_,
+            it.getArguments(), this.objects_);
+      }
     } catch (e) {
       // TODO(benvanik): log to status bar? this usually happens with
       //     cross-origin texture uploads.

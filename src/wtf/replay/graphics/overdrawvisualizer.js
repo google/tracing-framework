@@ -137,7 +137,11 @@ wtf.replay.graphics.OverdrawVisualizer.prototype.handleDrawCall = function(
   var webGLState = this.webGLStates[contextHandle];
   webGLState.backup();
 
-  this.drawToSurface(drawToSurfaceFunction);
+  var skipCallsVisualizer = this.playback.getVisualizer('skipCalls');
+  if (!skipCallsVisualizer ||
+      !skipCallsVisualizer.isProgramSkipped(programHandle)) {
+    this.drawToSurface(drawToSurfaceFunction);
+  }
 
   webGLState.restore();
 };

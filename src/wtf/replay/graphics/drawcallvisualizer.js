@@ -140,12 +140,10 @@ wtf.replay.graphics.DrawCallVisualizer = function(playback) {
    */
   this.visible_ = false;
 
-  /**
-   * The previous this.visible_ value, used for toggling for the same substep.
-   * @type {boolean}
-   * @private
-   */
-  this.previousVisibility_ = false;
+  // Visualizer state changing can invalidate saved visualization data.
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED,
+      this.invalidateStored_, this);
 };
 goog.inherits(wtf.replay.graphics.DrawCallVisualizer,
     wtf.replay.graphics.Visualizer);
@@ -271,6 +269,19 @@ wtf.replay.graphics.DrawCallVisualizer.EventType = {
 
 
 /**
+ * Sets the visibility.
+ * @param {boolean} visible Whether this Visualizer is now visible.
+ * @private
+ */
+wtf.replay.graphics.DrawCallVisualizer.prototype.setVisible_ = function(
+    visible) {
+  this.visible_ = visible;
+  this.emitEvent(
+      wtf.replay.graphics.DrawCallVisualizer.EventType.VISIBILITY_CHANGED);
+};
+
+
+/**
  * Returns whether this Visualizer is currently visible.
  * @return {boolean} Whether this Visualizer is visible.
  */
@@ -290,9 +301,6 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.anyPreEvent = function(
     it, gl) {
   if (this.completed) {
     this.restoreState();
-  }
-  if (!this.active) {
-    this.previousVisibility_ = false;
   }
 };
 
@@ -386,9 +394,7 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.restoreState = function() {
     this.playback.changeContextMessage(contextHandle, ' ');
   }
 
-  this.visible_ = false;
-  this.emitEvent(
-      wtf.replay.graphics.DrawCallVisualizer.EventType.VISIBILITY_CHANGED);
+  this.setVisible_(false);
 
   this.active = false;
   this.modifyDraws = false;
@@ -410,33 +416,28 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.applyToSubStep = function(
 
   // If the visualization is stored for this target, toggle between views.
   if (this.visualizationStored(targetSubStepIndex)) {
-    if (this.previousVisibility_) {
+    if (this.visible_) {
       this.restoreState();
-      this.previousVisibility_ = false;
+      return;
     } else {
       for (var contextHandle in this.contexts) {
         this.drawVisualization(contextHandle);
-        this.visible_ = true;
-        this.emitEvent(
-            wtf.replay.graphics.DrawCallVisualizer.EventType.VISIBILITY_CHANGED
-        );
 
         var message = this.latestMessages[contextHandle] || ' ';
-
         playback.changeContextMessage(contextHandle, message);
       }
-      this.previousVisibility_ = true;
+      this.setVisible_(true);
+      this.completed = true;
+      return;
     }
-    this.completed = true;
-    return;
   }
 
   this.trigger(targetSubStepIndex);
+  this.setVisible_(true);
 
   this.latestStepIndex = currentStepIndex;
   this.latestSubStepIndex = currentSubStepIndex;
   this.latestTargetSubStepIndex = targetSubStepIndex;
-  this.previousVisibility_ = true;
 };
 
 
@@ -456,12 +457,23 @@ wtf.replay.graphics.DrawCallVisualizer.prototype.visualizationStored = function(
 
 
 /**
+ * Invalidates the stored visualization data.
+ * @private
+ */
+wtf.replay.graphics.DrawCallVisualizer.prototype.invalidateStored_ =
+    function() {
+  this.latestStepIndex = -1;
+  this.latestSubStepIndex = -1;
+  this.latestTargetSubStepIndex = -1;
+};
+
+
+/**
  * Runs visualization, manipulating playback and surfaces as needed.
  * @param {number} targetSubStepIndex Target subStep event index.
  * @protected
  */
-wtf.replay.graphics.DrawCallVisualizer.prototype.trigger =
-    goog.nullFunction;
+wtf.replay.graphics.DrawCallVisualizer.prototype.trigger = goog.nullFunction;
 
 
 /**
