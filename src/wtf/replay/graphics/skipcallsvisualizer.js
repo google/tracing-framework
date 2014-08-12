@@ -107,14 +107,13 @@ wtf.replay.graphics.SkipCallsVisualizer.prototype.setupMutators = function() {
 
 
 /**
- * Returns a hash of the current playback-affecting states.
- * @return {string} Hash of the current playback-affecting states.
- * @protected
+ * Returns the current playback-affecting state.
+ * @return {wtf.replay.graphics.Visualizer.State} The current state.
  * @override
  */
-wtf.replay.graphics.SkipCallsVisualizer.prototype.getStateHash = function() {
+wtf.replay.graphics.SkipCallsVisualizer.prototype.getState = function() {
   if (!this.active) {
-    return '';
+    return null;
   }
 
   var skipped = [];
@@ -123,14 +122,35 @@ wtf.replay.graphics.SkipCallsVisualizer.prototype.getStateHash = function() {
       skipped.push(i);
     }
   }
-  return skipped.join(',');
+
+  if (skipped.length > 0) {
+    var state = {'scv': JSON.stringify(skipped)};
+    return state;
+  }
+  return null;
+};
+
+
+/**
+ * Sets playback-affecting state.
+ * @param {wtf.replay.graphics.Visualizer.State} state The new state.
+ */
+wtf.replay.graphics.SkipCallsVisualizer.prototype.setState = function(state) {
+  for (var i = 0; i < this.skippedProgramHandles_.length; ++i) {
+    this.skippedProgramHandles_[i] = false;
+  }
+  if (state && state['scv']) {
+    var skipped = JSON.parse(state['scv']);
+    for (var i = 0; i < skipped.length; ++i) {
+      this.skippedProgramHandles_[skipped[i]] = true;
+    }
+  }
 };
 
 
 /**
  * Returns a nicely formatted version of the current playback-affecting state.
  * @return {string} Formatted version of the current playback-affecting state.
- * @protected
  * @override
  */
 wtf.replay.graphics.SkipCallsVisualizer.prototype.getStateName = function() {

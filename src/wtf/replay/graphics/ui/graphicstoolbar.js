@@ -95,6 +95,13 @@ wtf.replay.graphics.ui.GraphicsToolbar = function(
   this.resetVisualizersButton_ =
       this.getChildElement(goog.getCssName('resetVisualizersButton'));
 
+  /**
+   * The current visualizer state.
+   * @type {wtf.replay.graphics.Visualizer.State}
+   * @private
+   */
+  this.currentVisualizerState_ = null;
+
   // Only enable this toolbar after the playback has loaded.
   deferred.addCallback(function() {
     this.setReady_();
@@ -138,6 +145,8 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
   playback.addListener(
       wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED,
       function() {
+        this.currentVisualizerState_ =
+            wtf.replay.graphics.Experiment.constructState(this.playback_);
         this.setEnabled_(true);
       }, this);
   this.setPlayButtonState_(false);
@@ -326,11 +335,9 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.forwardClickHandler_ =
  */
 wtf.replay.graphics.ui.GraphicsToolbar.prototype.canResetVisualizers_ =
     function() {
-  var currentHash =
-      wtf.replay.graphics.Experiment.constructStateHash(this.playback_);
-  var defaultHash = wtf.replay.graphics.Experiment.DEFAULT_HASH;
+  var defaultState = wtf.replay.graphics.Experiment.DEFAULT_STATE;
 
-  return this.enabled_ && currentHash != defaultHash;
+  return this.enabled_ && this.currentVisualizerState_ != defaultState;
 };
 
 

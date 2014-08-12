@@ -13,9 +13,9 @@
 
 goog.provide('wtf.replay.graphics.ui.ReplayFramePainter');
 
+goog.require('goog.dom.classes');
 goog.require('wtf.events');
 goog.require('wtf.math');
-goog.require('wtf.replay.graphics.Experiment');
 goog.require('wtf.replay.graphics.FrameTimeVisualizer');
 goog.require('wtf.ui.Painter');
 
@@ -66,7 +66,19 @@ wtf.replay.graphics.ui.ReplayFramePainter = function(canvas, min, max,
   if (this.frameTimeVisualizer_) {
     this.frameTimeVisualizer_.addListener(
         wtf.replay.graphics.FrameTimeVisualizer.EventType.FRAMES_UPDATED,
-        this.requestRepaint, this);
+        function() {
+          if (this.selectedExperiment_ == null) {
+            this.updateExperiments_();
+          }
+          this.requestRepaint();
+        }, this);
+
+    this.frameTimeVisualizer_.addListener(
+        wtf.replay.graphics.FrameTimeVisualizer.EventType.EXPERIMENTS_UPDATED,
+        function() {
+          this.updateExperiments_();
+          this.requestRepaint();
+        }, this);
   }
 
   /**
@@ -84,6 +96,13 @@ wtf.replay.graphics.ui.ReplayFramePainter = function(canvas, min, max,
    * @private
    */
   this.hoverY_ = 0;
+
+  /**
+   * The currently selected experiment.
+   * @type {?number}
+   * @private
+   */
+  this.selectedExperiment_ = 0;
 };
 goog.inherits(wtf.replay.graphics.ui.ReplayFramePainter, wtf.ui.Painter);
 
@@ -106,6 +125,17 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.setCurrentFrame = function(
     frameNumber) {
   this.currentFrame_ = frameNumber;
   this.requestRepaint();
+};
+
+
+/**
+ * Updates experiments data.
+ * @private
+ */
+wtf.replay.graphics.ui.ReplayFramePainter.prototype.updateExperiments_ =
+    function() {
+  var experimentIndex = this.frameTimeVisualizer_.getCurrentExperimentIndex();
+  this.selectedExperiment_ = experimentIndex;
 };
 
 
@@ -169,7 +199,22 @@ wtf.replay.graphics.ui.ReplayFramePainter.COLORS_ = {
   /**
    * The color for the time between frames.
    */
-  BETWEEN_FRAMES_TIME: '#BBBBBB'
+  BETWEEN_FRAMES_TIME: '#BBBBBB',
+
+  /**
+   * The control background color.
+   */
+  CONTROL_BACKGROUND: '#CCCCCC',
+
+  /**
+   * The control border color.
+   */
+  CONTROL_BORDER: '#222222',
+
+  /**
+   * The control selected color.
+   */
+  CONTROL_SELECTED: '#466CBF'
 };
 
 
@@ -188,7 +233,37 @@ wtf.replay.graphics.ui.ReplayFramePainter.SIZES_ = {
   /**
    * Line graph stroke size.
    */
-  LINE_GRAPH: 1.5
+  LINE_GRAPH: 2,
+
+  /**
+   * Experiment controls x offset from the left of the canvas.
+   */
+  CONTROLS_X_OFFSET: 4,
+
+  /**
+   * Experiment controls y offset from the bottom of the canvas.
+   */
+  CONTROLS_Y_OFFSET: 4,
+
+  /**
+   * Experiment control square width.
+   */
+  CONTROL: 12,
+
+  /**
+   * Experiment control square border width.
+   */
+  CONTROL_BORDER: 2,
+
+  /**
+   * Experiment control square width.
+   */
+  CONTROL_SELECTED: 6,
+
+  /**
+   * Experiment control x padding between squares.
+   */
+  CONTROL_PADDING: 6
 };
 
 
@@ -237,15 +312,16 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
     this.drawBar_(ctx, bounds, hoverIndex, 0, bounds.height);
   }
 
-  // Draw the frame times in a colored bar graph.
+  // Draw the frame times for the selected experiment and standard playback.
   if (this.frameTimeVisualizer_) {
     var experiments = this.frameTimeVisualizer_.getExperiments();
-    var defaultHash = wtf.replay.graphics.Experiment.DEFAULT_HASH;
-    var frames, frame;
+    var experiment, frames, frame;
 
-    // Draw frame bar graph for the default experiment (no updated state).
-    frames = this.frameTimeVisualizer_.getExperiment(defaultHash).getFrames();
-    if (frames) {
+    // Draw a colored bar graph for the currently selected experiment.
+    experiment = experiments[this.selectedExperiment_];
+    if (experiment && experiment.getFrames()) {
+      frames = experiment.getFrames();
+
       for (i = this.min_; i < this.max_; ++i) {
         frame = frames[i];
         if (frame) {
@@ -274,40 +350,37 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
       }
     }
 
-    // Draw a line graph for each experiment.
-    for (i = 0; i < experiments.length; ++i) {
-      if (experiments[i].getStateHash() == defaultHash) {
-        continue;
-      }
-      frames = experiments[i].getFrames();
+    // Draw a tick at each frame for standard playback (if it is not selected).
+    if (this.selectedExperiment_ != 0) {
+      experiment = experiments[0];
+      frames = experiment.getFrames();
 
       ctx.strokeStyle = colors.HOVER_BORDER;
       ctx.lineWidth = sizes.LINE_GRAPH;
 
-      ctx.beginPath();
-      ctx.moveTo(0, bounds.height);
       for (var j = this.min_; j < this.max_; ++j) {
         frame = frames[j];
         if (frame) {
           duration = frame.getAverageDuration();
-          var lineX = wtf.math.remap(j, this.min_, this.max_, 0, bounds.width);
           var lineY = bounds.height - duration * yScale;
 
-          if (!frames[j - 1]) {
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(lineX, lineY);
-          }
+          var startX = wtf.math.remap(j - 0.5, this.min_, this.max_,
+              0, bounds.width);
+          var endX = wtf.math.remap(j + 0.5, this.min_, this.max_,
+              0, bounds.width);
 
-          ctx.lineTo(lineX, lineY);
+          ctx.beginPath();
+          ctx.moveTo(startX, lineY);
+          ctx.lineTo(endX, lineY);
+          ctx.stroke();
         }
       }
-      ctx.stroke();
     }
 
     // Draw a highlight border for the frame that is hovered over.
     if (hoverIndex) {
-      frames = this.frameTimeVisualizer_.getExperiment(defaultHash).getFrames();
+      experiment = experiments[this.selectedExperiment_];
+      frames = experiment.getFrames();
       if (frames && frames[hoverIndex]) {
         duration = frames[hoverIndex].getAverageDuration();
         topY = Math.max(bounds.height - duration * yScale, 0);
@@ -315,6 +388,32 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
         ctx.strokeStyle = colors.HOVER_BORDER;
         this.drawBar_(ctx, bounds, hoverIndex, topY, duration * yScale, true);
       }
+    }
+  }
+
+  // Draw a control box for each experiment.
+  for (i = 0; i < experiments.length; ++i) {
+    ctx.fillStyle = colors.CONTROL_BACKGROUND;
+
+    leftX = sizes.CONTROLS_X_OFFSET +
+        i * (sizes.CONTROL + sizes.CONTROL_PADDING);
+    topY = bounds.height - (sizes.CONTROLS_Y_OFFSET + sizes.CONTROL);
+    ctx.fillRect(leftX, topY, sizes.CONTROL, sizes.CONTROL);
+
+    ctx.strokeStyle = colors.CONTROL_BORDER;
+    ctx.lineWidth = sizes.CONTROL_BORDER;
+    ctx.strokeRect(leftX, topY, sizes.CONTROL, sizes.CONTROL);
+
+    // Draw a smaller square inside the control box for the selected experiment.
+    if (i == this.selectedExperiment_) {
+      ctx.fillStyle = colors.CONTROL_SELECTED;
+
+      var centerX = leftX + sizes.CONTROL / 2;
+      var centerY = topY + sizes.CONTROL / 2;
+      leftX = centerX - sizes.CONTROL_SELECTED / 2;
+      topY = centerY - sizes.CONTROL_SELECTED / 2;
+
+      ctx.fillRect(leftX, topY, sizes.CONTROL_SELECTED, sizes.CONTROL_SELECTED);
     }
   }
 };
@@ -356,6 +455,16 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.onMouseMoveInternal =
     function(x, y, modifiers, bounds) {
   this.hoverX_ = x;
   this.hoverY_ = y;
+
+  var controlHit = this.hitControlTest_(x, y, bounds);
+  var cssName = goog.getCssName('canvasPointer');
+  var canvas = this.getCanvas();
+  if (controlHit !== undefined) {
+    goog.dom.classes.add(canvas, cssName);
+  } else {
+    goog.dom.classes.remove(canvas, cssName);
+  }
+
   this.requestRepaint();
 };
 
@@ -376,6 +485,18 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.onMouseOutInternal =
  */
 wtf.replay.graphics.ui.ReplayFramePainter.prototype.onClickInternal =
     function(x, y, modifiers, bounds) {
+  var controlHit = this.hitControlTest_(x, y, bounds);
+  if (controlHit !== undefined) {
+    this.selectedExperiment_ = controlHit;
+
+    var experiments = this.frameTimeVisualizer_.getExperiments();
+    var experiment = experiments[this.selectedExperiment_];
+    experiment.applyState();
+
+    this.requestRepaint();
+    return false;
+  }
+
   var frameHit = this.hitTest_(x, y, bounds);
   if (!frameHit) {
     return false;
@@ -395,6 +516,17 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.onClickInternal =
  */
 wtf.replay.graphics.ui.ReplayFramePainter.prototype.getInfoStringInternal =
     function(x, y, bounds) {
+
+  var controlHit = this.hitControlTest_(x, y, bounds);
+  if (controlHit !== undefined) {
+    var experiments = this.frameTimeVisualizer_.getExperiments();
+    var experiment = experiments[controlHit];
+
+    var controlLabel = experiment.getName() + '\n';
+    controlLabel += 'Average FPS: ' + experiment.getAverageFPS().toFixed(2);
+    return controlLabel;
+  }
+
   var frameHit = this.hitTest_(x, y, bounds);
   if (!frameHit) {
     return undefined;
@@ -410,7 +542,7 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.getInfoStringInternal =
     for (var i = 0; i < experiments.length; ++i) {
       var frames = experiments[i].getFrames();
 
-      if (frames[frameHit]) {
+      if (frames[frameHit] && (i == this.selectedExperiment_ || i == 0)) {
         var name = experiments[i].getName() + '\n';
         var tooltip = frames[frameHit].getTooltip();
         if (tooltip) {
@@ -440,4 +572,37 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.hitTest_ = function(
     x, y, bounds) {
   return Math.round(wtf.math.remap(x, bounds.left, bounds.left + bounds.width,
       this.min_, this.max_));
+};
+
+
+/**
+ * Finds the experiment control at the given point.
+ * @param {number} x X coordinate, relative to canvas.
+ * @param {number} y Y coordinate, relative to canvas.
+ * @param {!goog.math.Rect} bounds Draw bounds.
+ * @return {number|undefined} Experiment control at the given point
+ *   Returns undefined if there is no experiment control at the point.
+ * @private
+ */
+wtf.replay.graphics.ui.ReplayFramePainter.prototype.hitControlTest_ = function(
+    x, y, bounds) {
+  if (!this.frameTimeVisualizer_) {
+    return undefined;
+  }
+
+  var experiments = this.frameTimeVisualizer_.getExperiments();
+  var sizes = wtf.replay.graphics.ui.ReplayFramePainter.SIZES_;
+
+  for (var i = 0; i < experiments.length; ++i) {
+    var leftX = sizes.CONTROLS_X_OFFSET +
+        i * (sizes.CONTROL + sizes.CONTROL_PADDING);
+    var topY = bounds.height - (sizes.CONTROLS_Y_OFFSET + sizes.CONTROL);
+
+    if (x > leftX && x < leftX + sizes.CONTROL &&
+        y > topY && y < topY + sizes.CONTROL) {
+      return i;
+    }
+  }
+
+  return undefined;
 };

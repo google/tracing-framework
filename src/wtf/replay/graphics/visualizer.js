@@ -128,11 +128,53 @@ wtf.replay.graphics.Visualizer.prototype.setupMutators = goog.nullFunction;
 
 
 /**
- * Returns a hash of the current playback-affecting states.
- * @return {string} Hash of the current playback-affecting states.
+ * Each Visualizer may have its own state.
+ * {@see wtf.replay.graphics.Experiment} Merges these into one state object.
+ * @typedef {?Object.<string, string>}
  */
-wtf.replay.graphics.Visualizer.prototype.getStateHash = function() {
-  return '';
+wtf.replay.graphics.Visualizer.State;
+
+
+/**
+ * Returns the current playback-affecting state.
+ * @return {wtf.replay.graphics.Visualizer.State} The current state.
+ */
+wtf.replay.graphics.Visualizer.prototype.getState = function() {
+  return null;
+};
+
+
+/**
+ * Sets playback-affecting state.
+ * @param {wtf.replay.graphics.Visualizer.State} state The new state.
+ */
+wtf.replay.graphics.Visualizer.prototype.setState = goog.nullFunction;
+
+
+/**
+ * Returns whether two states are equal.
+ * @param {wtf.replay.graphics.Visualizer.State} state1 The first state.
+ * @param {wtf.replay.graphics.Visualizer.State} state2 The second state.
+ * @return {boolean} Whether the states are equal.
+ */
+wtf.replay.graphics.Visualizer.equalStates = function(state1, state2) {
+  if (state1 == null && state2 == null) {
+    return true;
+  }
+  if (state1 == null || state2 == null) {
+    return false;
+  }
+  for (var name in state1) {
+    if (state1[name] != state2[name]) {
+      return false;
+    }
+  }
+  for (var name in state2) {
+    if (state2[name] != state1[name]) {
+      return false;
+    }
+  }
+  return true;
 };
 
 

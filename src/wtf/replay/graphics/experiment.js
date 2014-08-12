@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.Experiment');
 
+goog.require('goog.object');
 goog.require('wtf.replay.graphics.ReplayFrame');
 
 
@@ -26,11 +27,18 @@ goog.require('wtf.replay.graphics.ReplayFrame');
  */
 wtf.replay.graphics.Experiment = function(playback) {
   /**
-   * The state hash of this experiment.
-   * @type {string}
+   * The playback instance.
+   * @type {!wtf.replay.graphics.Playback}
    * @private
    */
-  this.stateHash_ = wtf.replay.graphics.Experiment.constructStateHash(playback);
+  this.playback_ = playback;
+
+  /**
+   * The state of this experiment.
+   * @type {wtf.replay.graphics.Visualizer.State}
+   * @private
+   */
+  this.state_ = wtf.replay.graphics.Experiment.constructState(playback);
 
   /**
    * The name of this experiment.
@@ -49,11 +57,25 @@ wtf.replay.graphics.Experiment = function(playback) {
 
 
 /**
- * Gets the state hash of this experiment.
- * @return {string} The state hash of this experiment.
+ * Gets the state of this experiment.
+ * @return {wtf.replay.graphics.Visualizer.State} The state of this experiment.
  */
-wtf.replay.graphics.Experiment.prototype.getStateHash = function() {
-  return this.stateHash_;
+wtf.replay.graphics.Experiment.prototype.getState = function() {
+  return this.state_;
+};
+
+
+/**
+ * Applies the visualizer state.
+ */
+wtf.replay.graphics.Experiment.prototype.applyState = function() {
+  var visualizers = this.playback_.getVisualizers();
+
+  for (var i = 0; i < visualizers.length; ++i) {
+    visualizers[i].setState(this.state_);
+  }
+
+  this.playback_.triggerVisualizerChange();
 };
 
 
@@ -125,30 +147,35 @@ wtf.replay.graphics.Experiment.prototype.getAverageFPS = function() {
 
 
 /**
- * The default state hash.
- * @type {string}
+ * The default state.
+ * @type {wtf.replay.graphics.Visualizer.State}
  * @const
  */
-wtf.replay.graphics.Experiment.DEFAULT_HASH = 'default';
+wtf.replay.graphics.Experiment.DEFAULT_STATE = null;
 
 
 /**
- * Constructs the state hash for the current Visualizer states.
+ * Constructs the combined state from the current Visualizer states.
  * @param {!wtf.replay.graphics.Playback} playback The playback instance.
- * @return {string} The state hash of this experiment.
+ * @return {wtf.replay.graphics.Visualizer.State} The current state.
  */
-wtf.replay.graphics.Experiment.constructStateHash = function(playback) {
+wtf.replay.graphics.Experiment.constructState = function(playback) {
   var visualizers = playback.getVisualizers();
 
-  var hash = '';
+  var state = {};
   for (var i = 0; i < visualizers.length; ++i) {
-    hash += visualizers[i].getStateHash();
+    var visualizerState = visualizers[i].getState();
+    if (visualizerState) {
+      for (var name in visualizerState) {
+        state[name] = visualizerState[name];
+      }
+    }
   }
 
-  if (!hash) {
-    return wtf.replay.graphics.Experiment.DEFAULT_HASH;
+  if (goog.object.isEmpty(state)) {
+    return wtf.replay.graphics.Experiment.DEFAULT_STATE;
   }
-  return hash;
+  return state;
 };
 
 
