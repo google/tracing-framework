@@ -581,6 +581,15 @@ wtf.replay.graphics.Playback.prototype.visualizeContinuous = function(name) {
 
 
 /**
+ * Signals that visualizer state was changed.
+ */
+wtf.replay.graphics.Playback.prototype.triggerVisualizerChange = function() {
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED);
+};
+
+
+/**
  * Resets all visualizers.
  */
 wtf.replay.graphics.Playback.prototype.resetVisualizers = function() {

@@ -45,21 +45,24 @@ wtf.replay.graphics.FrameTimeVisualizer = function(playback) {
    */
   this.experiments_ = [];
 
-  /**
-   * Mapping from experiment hashes to indeces in the experiments array.
-   * Keys are visualizer state hashes, compiled from all active visualizers.
-   * @type {!Object.<number>}
-   * @private
-   */
-  this.experimentHashes_ = {};
+  // Initialize with the default experiment.
+  this.createExperiment_(wtf.replay.graphics.Experiment.DEFAULT_STATE);
 
   /**
-   * The hash of the latest experiment.
-   * @type {string}
+   * The state of the current experiment.
+   * @type {wtf.replay.graphics.Visualizer.State}
    * @private
    */
-  this.latestExperimentHash_ = '';
-  this.updateExperimentHash_();
+  this.currentExperimentState_ = null;
+
+  /**
+   * The index of the current experiment, or null if not created yet.
+   * @type {?number}
+   * @private
+   */
+  this.currentExperimentIndex_ = null;
+
+  this.updateCurrentExperiment_();
 
   playback.addListener(wtf.replay.graphics.Playback.EventType.STEP_STARTED,
       this.recordStart_, this);
@@ -77,7 +80,7 @@ wtf.replay.graphics.FrameTimeVisualizer = function(playback) {
 
   playback.addListener(
       wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED,
-      this.updateExperimentHash_, this);
+      this.updateCurrentExperiment_, this);
 
   /**
    * A mapping of handles to contexts.
@@ -99,7 +102,12 @@ wtf.replay.graphics.FrameTimeVisualizer.EventType = {
   /**
    * Frame times changed.
    */
-  FRAMES_UPDATED: goog.events.getUniqueId('frames_updated')
+  FRAMES_UPDATED: goog.events.getUniqueId('frames_updated'),
+
+  /**
+   * Experiments were updated.
+   */
+  EXPERIMENTS_UPDATED: goog.events.getUniqueId('experiments_updated')
 };
 
 
@@ -123,21 +131,95 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.setupMutators = function() {
 
 
 /**
+ * Creates an experiment, appending it to the experiments array.
+ * @param {wtf.replay.graphics.Visualizer.State} state The visualizer state.
+ * @private
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.createExperiment_ = function(
+    state) {
+  var experiment = new wtf.replay.graphics.Experiment(this.playback);
+  this.experiments_.push(experiment);
+
+  this.emitEvent(
+      wtf.replay.graphics.FrameTimeVisualizer.EventType.EXPERIMENTS_UPDATED);
+};
+
+
+/**
  * Gets an experiment, creating it if it does not already exist.
- * @param {string} stateHash Hash of the visualizer state.
+ * @param {wtf.replay.graphics.Visualizer.State} state The visualizer state.
  * @return {!wtf.replay.graphics.Experiment} The experiment.
  */
 wtf.replay.graphics.FrameTimeVisualizer.prototype.getExperiment = function(
-    stateHash) {
-  var index = this.experimentHashes_[stateHash];
-
-  if (index === undefined) {
-    index = this.experiments_.length;
-    var experiment = new wtf.replay.graphics.Experiment(this.playback);
-    this.experiments_.push(experiment);
-    this.experimentHashes_[stateHash] = index;
+    state) {
+  var index = this.getExperimentIndex(state);
+  if (index == null) {
+    this.createExperiment_(state);
+    index = this.experiments_.length - 1;
   }
   return this.experiments_[index];
+};
+
+
+/**
+ * Gets an experiment's index, or null if it does not exist.
+ * @param {wtf.replay.graphics.Visualizer.State} state The visualizer state.
+ * @return {?number} The experiment's index or null if it does not exist.
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.getExperimentIndex = function(
+    state) {
+  for (var i = 0; i < this.experiments_.length; ++i) {
+    var experimentState = this.experiments_[i].getState();
+    if (wtf.replay.graphics.Visualizer.equalStates(state, experimentState)) {
+      return i;
+    }
+  }
+
+  return null;
+};
+
+
+/**
+ * Gets the current experiment.
+ * @return {!wtf.replay.graphics.Experiment} The experiment.
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.getCurrentExperiment =
+    function() {
+  if (this.currentExperimentIndex_ == null) {
+    this.createExperiment_(this.currentExperimentState_);
+    this.currentExperimentIndex_ = this.experiments_.length - 1;
+  }
+  return this.experiments_[this.currentExperimentIndex_];
+};
+
+
+/**
+ * Gets the current experiment index.
+ * @return {?number} The experiment's index.
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.getCurrentExperimentIndex =
+    function() {
+  if (this.currentExperimentIndex_ == null) {
+    this.updateCurrentExperiment_();
+  }
+  return this.currentExperimentIndex_;
+};
+
+
+/**
+ * Updates the current experiment.
+ * @private
+ */
+wtf.replay.graphics.FrameTimeVisualizer.prototype.updateCurrentExperiment_ =
+    function() {
+  var state = wtf.replay.graphics.Experiment.constructState(this.playback);
+  this.currentExperimentState_ = state;
+  this.currentExperimentIndex_ = this.getExperimentIndex(state);
+
+  if (this.currentExperimentIndex_ != null) {
+    this.emitEvent(
+        wtf.replay.graphics.FrameTimeVisualizer.EventType.EXPERIMENTS_UPDATED);
+  }
 };
 
 
@@ -157,7 +239,7 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.getExperiments = function() {
  */
 wtf.replay.graphics.FrameTimeVisualizer.prototype.getCurrentFrame_ =
     function() {
-  var experiment = this.getExperiment(this.latestExperimentHash_);
+  var experiment = this.getCurrentExperiment();
   var currentStepIndex = this.playback.getCurrentStepIndex();
   return experiment.getFrame(currentStepIndex);
 };
@@ -170,7 +252,7 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.getCurrentFrame_ =
  */
 wtf.replay.graphics.FrameTimeVisualizer.prototype.getPreviousFrame_ =
     function() {
-  var experiment = this.getExperiment(this.latestExperimentHash_);
+  var experiment = this.getCurrentExperiment();
   return experiment.getFrame(this.latestStepIndex_);
 };
 
@@ -183,17 +265,6 @@ wtf.replay.graphics.FrameTimeVisualizer.prototype.updateStepIndex_ =
     function() {
   var currentStepIndex = this.playback.getCurrentStepIndex();
   this.latestStepIndex_ = currentStepIndex;
-};
-
-
-/**
- * Updates the latest experiment state hash.
- * @private
- */
-wtf.replay.graphics.FrameTimeVisualizer.prototype.updateExperimentHash_ =
-    function() {
-  this.latestExperimentHash_ =
-      wtf.replay.graphics.Experiment.constructStateHash(this.playback);
 };
 
 
