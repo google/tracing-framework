@@ -101,10 +101,66 @@
   <h2>Getting Set Up</h2>
   <p>Once you have recorded a trace with the <a href="./event-providers.html#webgl">WebGL provider</a> enabled, open up the WebGL tab and use the playback controls to find an area of the trace that you wish to learn more about.</p>
 
+  <h2>Replay Frame Timing</h2>
+  <p>As you play through a WebGL trace, WTF records the time taken to render each frame, as well as the time elapsed between frames (waiting for requestAnimationFrame callbacks).</p>
+
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_frame_timing.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot of a frame timing graph.</small>
+    </p>
+  </p>
+
+  <p>Frame time colors:
+    <span class="label" style="background-color: #4C993F">time &#60; 17ms</span>
+    <span class="label" style="background-color: #ED9128">17ms &#60; time &#60; 33ms</span>
+    <span class="label" style="background-color: #F23838">33ms &#60; time &#60; 50ms</span>
+    <span class="label" style="background-color: #991E1E">50ms &#60; time</span>
+    <span class="label" style="background-color: #BBBBBB">between frames</span>
+  </p>
+
+  <p>Each time a frame is rendered, a new timing is collected and averaged into the graph. Mouseover the graph to see each timing for a target frame. Play through the trace multiple times to increase your sample size.</p>
+
+  <p><span class="label label-warning">WARNING:</span> some overhead is involved in playing back the recorded events, so timings should be treated as approximate. The amount of overhead increases with the number of events per frame.</p>
+
+  <p>With a reasonable sample size, relative times within a trace can be compared to help identify sections where rendering may be a bottleneck.</p>
+
+  <p><span class="label label-info">TIP:</span> watch for repeated recordings having high variance, as this can indicate poor recording conditions.</p>
+
+  <p><span class="label label-info">TIP:</span> step through outlier frames call by call to help identify costly operations.</p>
+
+  <h2>Replay Experiments</h2>
+  <p>An experiment within WTF is a set of alterations made during playback.</p>
+
+  <p>
+    <div class="text-center">
+      <img class="img-polaroid" src="resources/shot_call_skipping.png">
+    </div>
+    <p class="text-center">
+      <small>Screenshot of a frame timing graph with an experiment.</small>
+    </p>
+  </p>
+
+  <p>The experiment controls let you switch easily between experiments, updating the graph and re-applying any alterations associated with that experiment. When an experiment is selected, times collected for the standard playback are shown as a baseline using tick marks.</p>
+
+  <h2>Draw Call Skipping</h2>
+  <p>All draw calls associated with a shader program can be disabled. Each disabled program counts as an experiment alteration, so you can record frame timings both with and without certain shaders.</p>
+
+  <p>
+    <animation src="resources/anim_skip" speed="0.8" repeatdelay="2"></animation>
+    <p class="text-center">
+      <small>Screenshot showing how to skip a shader program, such as the walls shader within the <a href="http://media.tojicode.com/q3bsp/">Quake 3 WebGL Demo</a>.</small>
+    </p>
+  </p>
+
+  <p><span class="label label-info">TIP:</span> use draw call skipping to see the impact of your different shader programs on overdraw and rendering time.</p>
+
   <h2>Showing Overdraw</h2>
   <p>Some platforms, particularly mobile devices, are fillrate-limited. As screen size increases or layers of pixels are drawn, graphics applications that are fillrate-limited will slow down. The tracing framework provides a few tools to help investigate overdraw - a computation of the number of times each pixel is drawn during the rendering of a frame.</p>
 
-  <p>The 'Toggle overdraw' button shows overdraw from the start of the current frame up to the currently selected call. The value reported is the average number of times that each pixel was drawn over. Values between 1 and 4 are typical.</p>
+  <p>The 'Overdraw' button shows overdraw from the start of the current frame up to the currently selected call. The value reported is the average number of times that each pixel was drawn over. Values between 1 and 4 are typical.</p>
 
   <p><span class="label label-info">NOTE:</span> The overdraw visualization includes <code>clear</code> calls and calls made with the <code>colorMask</code> changed.</p>
 
