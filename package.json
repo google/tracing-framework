@@ -43,6 +43,7 @@
     "bin/",
     "bin/cpp_src/",
     "docs/",
+    "extensions/wtf-injector-chrome/wtf-process.js",
     "extensions/wtf-instrument-proxy/",
     "AUTHORS",
     "CONTRIBUTORS.md",
