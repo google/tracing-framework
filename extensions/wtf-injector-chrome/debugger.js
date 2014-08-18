@@ -213,7 +213,11 @@ Debugger.prototype.dispose = function() {
 
   if (this.attached_) {
     this.attached_ = false;
-    chrome.debugger.detach(this.debugee_);
+    try {
+      chrome.debugger.detach(this.debugee_);
+    } catch (e) {
+      // We'll likely get this if the tab has closed before we get here.
+    }
   }
 
   Debugger.dispatchTable_.unregister(this.tabId_);
@@ -335,6 +339,20 @@ Debugger.TIMELINE_DISPATCH_ = (function() {
   };
 
   var dispatch = {};
+
+  // Watch for time sync events. The script will use this to match debugger
+  // event time with its own.
+  dispatch['TimeStamp'] = function(record) {
+    var prefix = 'WTFTimeSync:';
+    if (record.data.message.indexOf(prefix) == 0) {
+      var localTime = Number(record.data.message.substring(prefix.length));
+      return [
+        'WTFTimeSync',
+        record.startTime,
+        localTime
+      ];
+    }
+  };
 
   // GCEvent: garbage collections.
   dispatch['GCEvent'] = function(record) {
@@ -526,7 +544,10 @@ Debugger.prototype.processTimelineRecord_ = function(record) {
   // Handle the record.
   var dispatch = Debugger.TIMELINE_DISPATCH_[record.type];
   if (dispatch) {
-    this.records_.push(dispatch(record));
+    var record = dispatch(record);
+    if (record) {
+      this.records_.push(record);
+    }
   }
 
   // Recursively check children.

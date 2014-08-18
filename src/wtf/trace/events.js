@@ -40,7 +40,7 @@ wtf.trace.events.create_ = function(signature, eventClass, flags) {
   if (existingEventType) {
     // TODO(benvanik): assert the same event type (not a redefinition).
     goog.global.console.log(
-        'Attempting to redifine ' + name + ', using first definition');
+        'Attempting to redefine ' + name + ', using first definition');
     return existingEventType;
   }
 
