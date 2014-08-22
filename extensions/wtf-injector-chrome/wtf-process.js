@@ -97,20 +97,6 @@ global['wtfi']['process'] = function(
         return cleanupName(left.name);
       }
       log('unknown assignment LHS', left);
-
-      // Recognize dart2js names.
-      var ret = null;
-      while (node.parent != null) {
-        node = node.parent;
-        if (node.type == 'Property') {
-          if (!ret) {
-            ret = node.key.name;
-          } else {
-            ret = node.key.name + '.' + ret;
-          }
-        }
-      }
-      return ret;
     }
 
     //log('unknown fn construct', node);
@@ -120,7 +106,19 @@ global['wtfi']['process'] = function(
     // ...
     // _.$JSCompiler_prototypeAlias$$.$unnamed = function() {};
 
-    return null;
+    // Recognize dart2js names.
+    var ret = null;
+    while (node.parent != null) {
+      node = node.parent;
+      if (node.type == 'Property') {
+        if (!ret) {
+          ret = node.key.name;
+        } else {
+          ret = node.key.name + '.' + ret;
+        }
+      }
+    }
+    return ret;
   };
 
   function isFunctionBlock(node) {
