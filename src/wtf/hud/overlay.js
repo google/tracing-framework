@@ -21,6 +21,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.BrowserEvent');
 goog.require('goog.fs');
+goog.require('goog.result.SimpleResult');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
