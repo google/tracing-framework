@@ -724,9 +724,22 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
   var targetIsExtension =
       goog.string.startsWith(endpoint, 'chrome-extension://');
 
+  // Only used in the !targetIsExtension case.
+  var childChannelResult;
+
   // Open the target window now (if not an extension), so that we avoid the
   // popup blocker.
   if (!targetIsExtension) {
+    childChannelResult = new goog.result.SimpleResult();
+
+    // Wait for the child to connect. It's important to start waiting before
+    // opening the child window so that we can be sure to have the onmessage
+    // eventhandler set up before the child is able to open and send us a
+    // message.
+    wtf.ipc.waitForChildWindow(function(channel) {
+      childChannelResult.setValue(channel);
+    });
+
     // Create window and show.
     var windowName = this.lastWindowName_;
     if (opt_newWindow) {
@@ -790,10 +803,9 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
         blob.readAsArrayBuffer(function(value) {
           contentBuffers[n] = value;
           if (!--remainingReads) {
-            // Wait for the child to connect.
-            wtf.ipc.waitForChildWindow(function(channel) {
+            childChannelResult.wait(function(result) {
               // Post now. Whew.
-              channel.postMessage({
+              result.getValue().postMessage({
                 'command': 'snapshot',
                 'content_types': contentTypes,
                 'content_sources': contentSources,
