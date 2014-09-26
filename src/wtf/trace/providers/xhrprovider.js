@@ -211,7 +211,12 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     var tracker = function(e) {
       var retargettedEvent = Object.create(e, {
         'target': {
-          'value': self
+          'value': self,
+          'writable': false
+        },
+        'type': {
+          'value': e.type,
+          'writable': false
         }
       });
       self['dispatchEvent'](retargettedEvent);
