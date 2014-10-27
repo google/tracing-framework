@@ -30,7 +30,7 @@ Just want the extension as fast as possible?
 
 ```bash
 umask 0022
-git clone git@github.com:google/tracing-framework.git
+git clone https://github.com/google/tracing-framework.git
 cd tracing-framework/
 ./scripts/setup.sh # or setup.bat on Windows
 source wtfrc && deployext
