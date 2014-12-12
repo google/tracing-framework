@@ -84,7 +84,7 @@ wtf.trace.events.create_ = function(signature, eventClass, flags) {
  *
  * @param {string} signature Event signature.
  * @param {number=} opt_flags A bitmask of {@see wtf.data.EventFlag} values.
- * @return {Function} New event type.
+ * @return {!Function} New event type.
  */
 wtf.trace.events.createInstance = function(signature, opt_flags) {
   var eventType = wtf.trace.events.create_(
@@ -124,7 +124,7 @@ wtf.trace.events.createInstance = function(signature, opt_flags) {
  *
  * @param {string} signature Event signature.
  * @param {number=} opt_flags A bitmask of {@see wtf.data.EventFlag} values.
- * @return {Function} New event type.
+ * @return {!Function} New event type.
  */
 wtf.trace.events.createScope = function(signature, opt_flags) {
   var eventType = wtf.trace.events.create_(
