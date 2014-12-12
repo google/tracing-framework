@@ -79,6 +79,11 @@ global['wtfi']['process'] = function(
       return null;
     }
 
+    // {foo: function() {}}
+    if (node.parent.type == 'Property') {
+      return cleanupName(node.parent.key.name);
+    }
+
     // foo = function() {};
     // Bar.foo = function() {};
     if (node.parent.type == 'AssignmentExpression') {
