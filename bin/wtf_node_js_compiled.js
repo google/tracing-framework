@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 14083488E5;
+  return 14205348E5;
 };
 wtf.version.getCommit = function() {
-  return "6f553b4b1a08b46371b041bbe6170ed17e377a1d";
+  return "79dcf8e8bed21cd62d19c0108e6627617fa05b74";
 };
 wtf.version.toString = function() {
-  return "2014.8.18-1";
+  return "2015.1.6-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -3029,6 +3029,7 @@ goog.exportSymbol("wtf.version.toString", wtf.version.toString);
 // Input 25
 wtf.NODE = !0;
 wtf.MIN_BUILD = !1;
+wtf.PROD_BUILD = !1;
 wtf.CHROME_EXTENSION = goog.global.chrome && chrome.runtime && chrome.runtime.id;
 wtf.dummyStore_ = [];
 wtf.preventInlining = function(a) {
@@ -14164,6 +14165,9 @@ wtf.trace.createTransport_ = function(a, b, c) {
   throw "Invalid transport specified.";
 };
 wtf.trace.createStreamTarget_ = function(a, b) {
+  if (wtf.PROD_BUILD) {
+    return new wtf.io.cff.JsonStreamTarget(b, wtf.io.cff.JsonStreamTarget.Mode.COMPLETE);
+  }
   if (wtf.MIN_BUILD) {
     return new wtf.io.cff.BinaryStreamTarget(b);
   }
@@ -15187,26 +15191,17 @@ wtf.ipc.MessageChannel.prototype.postMessage = function(a, b) {
 };
 // Input 177
 wtf.ipc.connectToParentWindow = function(a, b) {
-  var c = goog.global.chrome;
-  if (c && c.runtime && c.runtime.getBackgroundPage) {
-    c.runtime.getBackgroundPage(function(c) {
-      c = new wtf.ipc.MessageChannel(window, c);
-      c.postMessage({hello:!0});
-      a.call(b, c);
-    });
-  } else {
-    if (window.opener) {
-      var d = new wtf.ipc.MessageChannel(window, window.opener);
-      d.postMessage({hello:!0});
-      wtf.timing.setImmediate(function() {
-        a.call(b, d);
-      });
-    } else {
-      wtf.timing.setImmediate(function() {
-        a.call(b, null);
-      });
-    }
+  function c(c) {
+    var d = null;
+    c && (d = new wtf.ipc.MessageChannel(window, c), d.postMessage({hello:!0}));
+    a.call(b, d);
   }
+  var d = goog.global.chrome;
+  d && d.runtime && d.runtime.getBackgroundPage ? d.runtime.getBackgroundPage(function(a) {
+    c(a);
+  }) : wtf.timing.setImmediate(function() {
+    c(window.opener);
+  });
 };
 wtf.ipc.waitForChildWindow = function(a, b) {
   var c = wtf.trace.util.ignoreListener(function(d) {
@@ -17414,7 +17409,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   e.prototype.DONE = 4;
   e.prototype.beginTrackingEvent = function(a) {
     var b = this, c = function(a) {
-      a = Object.create(a, {target:{value:b}});
+      a = Object.create(a, {target:{value:b, writable:!1}, type:{value:a.type, writable:!1}});
       b.dispatchEvent(a);
     };
     this.trackers_[a] = c;
