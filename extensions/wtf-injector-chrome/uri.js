@@ -20,12 +20,13 @@ var URI = function() {};
 
 
 /**
- * Douglas Crockford's URL regex from JavaScript: The Good Parts.
+ * Douglas Crockford's URL regex from JavaScript: The Good Parts (modified to
+ * support ipv6 address host names).
  * @const
  * @type {RegExp}
  * @private
  */
-URI.regex_ = /^(?:([A-Za-z-]+):)?(\/{0,3})([0-9.\-A-Za-z]+)(?::(\d+))?(?:\/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
+URI.regex_ = /^(?:([A-Za-z-]+):)?(\/{0,3})([0-9.\-A-Za-z]+|\[[:0-9A-Za-z]+\])(?::(\d+))?(?:\/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
 
 
 /**
