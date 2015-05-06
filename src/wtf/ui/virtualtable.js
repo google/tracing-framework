@@ -74,21 +74,21 @@ wtf.ui.VirtualTable = function(parentElement, opt_dom) {
   this.scrollTrackEl_ = this.getChildElement(goog.getCssName('scrollTrack'));
 
   /**
-   * Current scroll top Y (out of {@see scrollHeight_}), in pixels.
+   * Current scroll top Y (out of {@see scrollHeight_}), in CSS pixels.
    * @type {number}
    * @private
    */
   this.scrollTop_ = 0;
 
   /**
-   * Height of the scrollable area, in pixels.
+   * Height of the scrollable area, in CSS pixels.
    * @type {number}
    * @private
    */
   this.scrollHeight_ = 0;
 
   /**
-   * Height of the scroll thumb, in pixels.
+   * Height of the scroll thumb, in CSS pixels.
    * @type {number}
    * @private
    */
@@ -483,7 +483,6 @@ wtf.ui.VirtualTable.Painter_.prototype.repaintInternal = function(ctx, bounds) {
   if (!source) {
     return false;
   }
-  var scaleRatio = this.getScaleRatio();
   var rowHeight = source.getRowHeight();
   var rowCount = source.getRowCount();
   var scrollHeight = rowHeight * rowCount;
@@ -491,7 +490,7 @@ wtf.ui.VirtualTable.Painter_.prototype.repaintInternal = function(ctx, bounds) {
 
   // Create scrolled bounding region.
   var scrollBounds = bounds.clone();
-  scrollBounds.top += scrollTop / scaleRatio;
+  scrollBounds.top += scrollTop;
 
   // Clamp bounds to height of the control.
   scrollBounds.height = Math.min(
@@ -572,7 +571,6 @@ wtf.ui.VirtualTable.Painter_.prototype.hitTest_ = function(x, y, bounds) {
   if (!source) {
     return undefined;
   }
-  var scaleRatio = this.getScaleRatio();
   var rowHeight = source.getRowHeight();
   var rowCount = source.getRowCount();
   var scrollTop = this.table_.getScrollTop();
@@ -581,7 +579,7 @@ wtf.ui.VirtualTable.Painter_.prototype.hitTest_ = function(x, y, bounds) {
     return undefined;
   }
 
-  var row = Math.floor((y + scrollTop / scaleRatio) / rowHeight);
+  var row = Math.floor((y + scrollTop) / rowHeight);
   if (row >= rowCount) {
     return undefined;
   }
