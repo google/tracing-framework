@@ -24,6 +24,7 @@ var path = require('path');
 var querystring = require('querystring');
 var url = require('url');
 var hash = require('string-hash');
+var vm = require('vm');
 
 var falafel = require('falafel');
 
@@ -33,6 +34,16 @@ var falafel = require('falafel');
  */
 var transformMap = {}
 
+
+var ctx = {
+  'ENABLE_LOGGING': true,
+  'wtfi': {
+    'falafel': falafel
+  }
+};
+var processScriptPath = 'extensions/wtf-injector-chrome/wtf-process.js';
+vm.runInNewContext(fs.readFileSync(processScriptPath), ctx, processScriptPath);
+var processScript = ctx['wtfi']['process'];
 
 
 /**
@@ -47,7 +58,6 @@ function transformCode(moduleId, url, sourceCode, argv) {
   console.log('Instrumenting ' + url + ' (' + sourceCode.length + 'b)...');
   var startTime = Date.now();
 
-  var trackHeap = argv['track-heap'];
   var key = hash(sourceCode);
   if (key in transformMap) {
     var transformBucket = transformMap[key];
@@ -60,13 +70,21 @@ function transformCode(moduleId, url, sourceCode, argv) {
     transformMap[key] = {};
   }
 
+  var instrumentationType = argv['type'];
+  if (argv['track-calls']) {
+    instrumentationType = 'calls';
+  } else if (argv['track-memory']) {
+    instrumentationType = 'memory';
+  } else if (argv['track-time']) {
+    instrumentationType = 'time';
+  }
 
   // This code is stringified and then embedded in each output file.
   // It's ok if multiple are present on the page.
   // It cannot capture any state.
   // TODO(benvanik): clean up, make support nodejs too.
   // TODO(benvanik): put in an external file, have a HUD, etc.
-  var sharedInitCode = '(' + (function(global, trackHeap) {
+  var sharedInitCode = '(' + (function(global, instrumentationType) {
     // Add a global tag to let WTF know we are on the page. The extension can
     // then yell at the user for trying to use both at the same time.
     var firstBlock = !global.__wtfInstrumentationPresent;
@@ -127,7 +145,17 @@ function transformCode(moduleId, url, sourceCode, argv) {
     global.__wtfm = global.__wtfm || {};
     global.__wtfd = global.__wtfd || new Int32Array(1 << dataMagnitude);
     global.__wtfi = global.__wtfi || 0;
-    if (trackHeap) {
+    switch (instrumentationType) {
+    default:
+    case 'calls':
+      global.__wtfEnter = function(id) {
+        __wtfd[__wtfi++ & dataMask] = id;
+      };
+      global.__wtfExit = function(id) {
+        __wtfd[__wtfi++ & dataMask] = -id;
+      };
+      break;
+    case 'memory':
       var getHeapUsage = null;
       try {
         getHeapUsage = new Function('return %GetHeapUsage()');
@@ -142,14 +170,22 @@ function transformCode(moduleId, url, sourceCode, argv) {
         __wtfd[__wtfi++ & dataMask] = -id;
         __wtfd[__wtfi++ & dataMask] = getHeapUsage();
       };
-    } else {
+      break;
+    case 'time':
       global.__wtfEnter = function(id) {
         __wtfd[__wtfi++ & dataMask] = id;
+        __wtfd[__wtfi++ & dataMask] = targetWindow.performance.now() * 1000;
       };
       global.__wtfExit = function(id) {
         __wtfd[__wtfi++ & dataMask] = -id;
+        __wtfd[__wtfi++ & dataMask] = targetWindow.performance.now() * 1000;
       };
+      break;
     }
+    global.__wtfw = function(__wtfb, f) {
+      f['__src'] = __wtfb;
+      return f;
+    };
     global.__resetTrace = function() {
       global.__wtfi = 0;
     };
@@ -157,7 +193,18 @@ function transformCode(moduleId, url, sourceCode, argv) {
       var euri = window.location.href;
       var etitle =
           window.document.title.replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
-      var attributes = trackHeap ? '[{"name": "heapSize", "units": "bytes"}]' : '[]';
+      var attributes = '[]';
+      switch (instrumentationType) {
+      default:
+      case 'calls':
+        break;
+      case 'memory':
+        attributes = '[{"name": "heapSize", "units": "bytes"}]';
+        break;
+      case 'time':
+        attributes = '[{"name": "time", "units": "us"}]';
+        break;
+      }
       var headerText = '{' +
           '"version": 1,' +
           '"context": {"uri": "' + euri + '", "title": "' + etitle + '"},' +
@@ -251,201 +298,19 @@ function transformCode(moduleId, url, sourceCode, argv) {
           false, false, false, false, 0, null);
       a.dispatchEvent(e);
     };
-  }).toString() + ')(window, ' + trackHeap + ');';
+  }).toString() + ')(window, \"' + instrumentationType + '\");';
 
-  // Attempt to guess the names of functions.
-  function getFunctionName(node) {
-    function cleanupName(name) {
-      return name.replace(/[ \n]/g, '');
-    };
-
-    // Simple case of:
-    // function foo() {}
-    if (node.id) {
-      return cleanupName(node.id.name);
-    }
-
-    // var foo = function() {};
-    if (node.parent.type == 'VariableDeclarator') {
-      if (node.parent.id) {
-        return cleanupName(node.parent.id.name);
-      }
-      console.log('unknown var decl', node.parent);
-      return null;
-    }
-
-    // foo = function() {};
-    // Bar.foo = function() {};
-    //
-    if (node.parent.type == 'AssignmentExpression') {
-      // We are the RHS, LHS is something else.
-      var left = node.parent.left;
-      if (left.type == 'MemberExpression') {
-        // Bar.foo = function() {};
-        // left.object {type: 'Identifier', name: 'Bar'}
-        // left.property {type: 'Identifier', name: 'foo'}
-        // Object can be recursive MemberExpression's:
-        // Bar.prototype.foo = function() {};
-        // left.object {type: 'MemberExpression', ...}
-        // left.property {type: 'Identifier', name: 'foo'}
-        return cleanupName(left.source());
-      } else if (left.type == 'Identifier') {
-        return cleanupName(left.name);
-      }
-      console.log('unknown assignment LHS', left);
-      return null;
-    }
-
-    //console.log('unknown fn construct', node);
-
-    // TODO(benvanik): support jscompiler prototype alias:
-    // _.$JSCompiler_prototypeAlias$$ = _.$something;
-    // ...
-    // _.$JSCompiler_prototypeAlias$$.$unnamed = function() {};
-
-    return null;
+  var options = {
+    'type': instrumentationType,
+    'moduleId': moduleId,
+    'ignore': argv['ignore'],
+    'ignore-pattern': argv['ignore-regexp'],
+    'sourcePrefix': sharedInitCode,
   };
 
-  function isFunctionBlock(node) {
-    var parent = node.parent;
+  var transformedCode = processScript(sourceCode, options, url);
 
-    // function foo() {}
-    var isDecl = parent.type == 'FunctionDeclaration';
-    // = function [optional]() {}
-    var isExpr = parent.type == 'FunctionExpression';
-
-    return isDecl || isExpr;
-  }
-
-  // Compute an ignore map for fast checks.
-  var ignores = {};
-  var anyIgnores = false;
-  var ignoreArg = argv['ignore'];
-  if (ignoreArg) {
-    if (Array.isArray(ignoreArg)) {
-      for (var n = 0; n < ignoreArg.length; n++) {
-        ignores[ignoreArg[n]] = true;
-        anyIgnores = true;
-      }
-    } else {
-      ignores[ignoreArg] = true;
-      anyIgnores = true;
-    }
-  }
-
-  // Compute ignore pattern.
-  var ignorePatternArg = argv['ignore-pattern'];
-  var ignorePattern = null;
-  if (ignorePatternArg) {
-    anyIgnores = true;
-    ignorePattern = new RegExp(ignorePatternArg);
-  }
-
-  // Walk the entire document instrumenting functions.
-  var nextFnId = (moduleId << 24) + 1;
-  var nextAnonymousName = 0;
-  var fns = [];
-  // We have two modes of rewriting - wrapping the whole function in a try/catch
-  // and explicitly handling all return statements. The try/catch mode is more
-  // generally correct (since it means we'll always have an "exit" entry), but
-  // can't be used in heap tracking mode because try/catch disables
-  // optimization, which drammatically changes memory generation behavior.
-  var tryCatchMode = !trackHeap;
-  var targetCode = falafel(sourceCode, function(node) {
-    if (node.type == 'BlockStatement') {
-      var parent = node.parent;
-      if (!isFunctionBlock(node)) {
-        return;
-      }
-
-      // Guess function name or set to some random one.
-      var name = getFunctionName(parent);
-      if (!name || !name.length) {
-        name = 'anon' + moduleId + '$' + nextAnonymousName++;
-      }
-
-      // Check ignore list.
-      if (ignores[name]) {
-        return;
-      }
-
-      if (ignorePattern && ignorePattern.test(name)) {
-        return;
-      }
-
-      var fnId = nextFnId++;
-      fns.push(fnId);
-      fns.push('"' + name.replace(/\"/g, '\\"') + '"');
-      fns.push(node.range[0]);
-      fns.push(node.range[1]);
-
-      if (tryCatchMode) {
-        node.update([
-          '{',
-          '__wtfEnter(' + fnId + ');',
-          'try{' + node.source() + '}finally{',
-          '__wtfExit(' + fnId + ');',
-          '}}'
-        ].join(''));
-      } else {
-        node.update([
-          '{',
-          'var __wtfId=' + fnId + ',__wtfRet;__wtfEnter(__wtfId);',
-          node.source(),
-          '__wtfExit(__wtfId);',
-          '}'
-        ].join(''));
-      }
-    } else if (!tryCatchMode && node.type == 'ReturnStatement') {
-      // Walk up to see if this function is ignored.
-      if (anyIgnores) {
-        var testNode = node.parent;
-        while (testNode) {
-          if (testNode.type == 'BlockStatement') {
-            if (isFunctionBlock(testNode)) {
-              var testName = getFunctionName(testNode.parent);
-              if (testName && ignores[testName]) {
-                return;
-              }
-              if (testName && ignorePattern && ignorePattern.test(testName)) {
-                return;
-              }
-              break;
-            }
-          }
-          testNode = testNode.parent;
-        }
-      }
-
-      if (node.argument) {
-        node.update([
-          '{__wtfRet=(',
-          node.argument.source(),
-          '); __wtfExit(__wtfId);',
-          'return __wtfRet;}'
-        ].join(''));
-      } else {
-        node.update('{__wtfExit(__wtfId); return;}');
-      }
-    } else if (node.type == 'Program') {
-      node.update([
-        node.source(),
-        //'\n//@ sourceMappingURL=' + url
-        //'\n//@ sourceURL=' + url
-      ].join(''))
-    }
-  });
-
-  var endTime = Date.now() - startTime;
-  var transformedCode = [
-    sharedInitCode,
-    '__wtfm[' + moduleId + '] = {' +
-        '"src": "' + url + '",' +
-        '"fns": [' + fns.join(',\n') + ']};',
-    targetCode.toString()
-  ].join('');
   transformMap[key][sourceCode] = transformedCode;
-  console.log('  ' + endTime + 'ms');
   return transformedCode;
 };
 
@@ -698,11 +563,34 @@ main(optimist
       default: 8082,
       desc: 'HTTPS proxy listen port.'
     })
+    .options('T', {
+      alias: 'type',
+      type: 'string',
+      default: 'calls',
+      desc: 'Tracking type (calls, memory, time).'
+    })
+    .options('c', {
+      alias: 'track-calls',
+      type: 'boolean',
+      default: false,
+      desc: 'Enable call tracking (--type=calls).'
+    })
     .options('h', {
       alias: 'track-heap',
       type: 'boolean',
       default: false,
-      desc: 'Enable heap size tracking.'
+      desc: 'Enable heap size tracking (--type=memory).'
+    })
+    .options('t', {
+      alias: 'track-time',
+      type: 'boolean',
+      default: false,
+      desc: 'Enable call time tracking (--type=time).'
+    })
+    .options('m', {
+      alias: 'module',
+      type: 'number',
+      desc: 'Module ID (0-255) to differentiate instrumented scripts.'
     })
     .options('i', {
       alias: 'ignore',

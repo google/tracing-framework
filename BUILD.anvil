@@ -352,6 +352,58 @@ file_set(
 
 
 # ------------------------------------------------------------------------------
+# JavaScript : trace_prod
+# ------------------------------------------------------------------------------
+
+WTF_TRACE_PROD_JS_FLAGS=[
+    '--language_in=ECMASCRIPT5_STRICT',
+    '--define=wtf.MIN_BUILD=true',
+    '--define=wtf.PROD_BUILD=true',
+    '--define=wtf.trace.exports.ENABLE_EXPORTS=true',
+    '--output_wrapper="if(!this.wtf){(function(){%output%}).call(this);}"',
+    ]
+# wtf_trace_prod_js_compiled_debug js
+closure_js_library(
+    name='wtf_trace_prod_js_compiled_debug',
+    deps_out='wtf_trace_prod_js',
+    mode='ADVANCED',
+    pretty_print=True,
+    entry_points=WTF_TRACE_MIN_ENTRY_POINTS,
+    srcs=':all_trace_min_uncompiled_js',
+    externs=[':all_externs'],
+    compiler_jar=JS_COMPILER_JAR,
+    compiler_flags=SHARED_JS_FLAGS +
+        WTF_TRACE_PROD_JS_FLAGS + [
+            '--debug',
+            '--create_name_map_files',
+            ])
+# wtf_trace_prod_js_compiled js
+closure_js_library(
+    name='wtf_trace_prod_js_compiled',
+    deps_out='wtf_trace_prod_js',
+    mode='ADVANCED',
+    entry_points=WTF_TRACE_MIN_ENTRY_POINTS,
+    srcs=':all_trace_min_compiled_js',
+    externs=[':all_externs'],
+    compiler_jar=JS_COMPILER_JAR,
+    compiler_flags=SHARED_JS_FLAGS + RELEASE_JS_FLAGS +
+        WTF_TRACE_PROD_JS_FLAGS + [
+            ])
+
+file_set(
+    name='wtf_trace_prod_debug',
+    srcs=[
+        ':wtf_trace_prod_js_compiled_debug',
+        ])
+file_set(
+    name='wtf_trace_prod_release',
+    srcs=[
+        ':wtf_trace_prod_js_compiled',
+        ],
+    src_exclude_filter='*-deps.js')
+
+
+# ------------------------------------------------------------------------------
 # JavaScript : node
 # ------------------------------------------------------------------------------
 

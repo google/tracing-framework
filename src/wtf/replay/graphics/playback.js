@@ -26,6 +26,7 @@ goog.require('goog.webgl');
 goog.require('wtf.events.EventEmitter');
 goog.require('wtf.replay.graphics.ExtensionManager');
 goog.require('wtf.replay.graphics.Step');
+goog.require('wtf.replay.graphics.Visualizer');
 goog.require('wtf.timing.util');
 
 
@@ -122,6 +123,20 @@ wtf.replay.graphics.Playback = function(eventList, frameList, contextPool) {
    * @private
    */
   this.programs_ = {};
+
+  /**
+   * Array of Visualizers. Add these using addVisualizer.
+   * @type {!Array.<wtf.replay.graphics.Visualizer>}
+   * @private
+   */
+  this.visualizers_ = [];
+
+  /**
+   * Array of Visualizer names corresponding to entries in this.visualizers_.
+   * @type {!Array.<string>}
+   * @private
+   */
+  this.visualizerNames_ = [];
 
   /**
    * Whether resources have finished loading. Set to true after a
@@ -241,6 +256,11 @@ wtf.replay.graphics.Playback.EventType = {
   PLAY_BEGAN: goog.events.getUniqueId('play_began'),
 
   /**
+   * A new step started during continuous playback.
+   */
+  STEP_STARTED: goog.events.getUniqueId('step_started'),
+
+  /**
    * The current step changed.
    */
   STEP_CHANGED: goog.events.getUniqueId('step_changed'),
@@ -261,10 +281,25 @@ wtf.replay.graphics.Playback.EventType = {
   CONTEXT_SET: goog.events.getUniqueId('context_set'),
 
   /**
+   * Programs were cleared.
+   */
+  CLEAR_PROGRAMS: goog.events.getUniqueId('clear_programs'),
+
+  /**
    * Playing stopped. Could be due to finishing the animation, pausing,
    * or resetting.
    */
-  PLAY_STOPPED: goog.events.getUniqueId('play_stopped')
+  PLAY_STOPPED: goog.events.getUniqueId('play_stopped'),
+
+  /**
+   * A context message was changed.
+   */
+  CONTEXT_MESSAGE_CHANGED: goog.events.getUniqueId('context_message_changed'),
+
+  /**
+   * A Visualizer's continuous playback affecting state changed.
+   */
+  VISUALIZER_STATE_CHANGED: goog.events.getUniqueId('visualizer_state_changed')
 };
 
 
@@ -475,6 +510,110 @@ wtf.replay.graphics.Playback.prototype.setToInitialState_ = function() {
 
 
 /**
+ * Adds a new visualizer. The name provided is used by getVisualizer.
+ * @param {!wtf.replay.graphics.Visualizer} visualizer The Visualizer.
+ * @param {string} name The name for this Visualizer.
+ */
+wtf.replay.graphics.Playback.prototype.addVisualizer = function(
+    visualizer, name) {
+  this.visualizers_.push(visualizer);
+  this.visualizerNames_.push(name);
+  this.registerDisposable(visualizer);
+
+  visualizer.addListener(wtf.replay.graphics.Visualizer.EventType.STATE_CHANGED,
+      function() {
+        this.emitEvent(
+            wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED);
+      }, this);
+};
+
+
+/**
+ * Gets all visualizers that have been added.
+ * @return {!Array.<wtf.replay.graphics.Visualizer>} All visualizers.
+ */
+wtf.replay.graphics.Playback.prototype.getVisualizers = function() {
+  return this.visualizers_;
+};
+
+
+/**
+ * Gets a visualizer by the name used to add it with addVisualizer.
+ * @param {string} name The name of the Visualizer.
+ * @return {?wtf.replay.graphics.Visualizer} The Visualizer.
+ */
+wtf.replay.graphics.Playback.prototype.getVisualizer = function(name) {
+  for (var i = 0; i < this.visualizers_.length; ++i) {
+    if (this.visualizerNames_[i] == name) {
+      return this.visualizers_[i];
+    }
+  }
+  goog.global.console.log('Could not find a visualizer with name \'' + name +
+      '\'.');
+  return null;
+};
+
+
+/**
+ * Runs a Visualizer with the given name at a substep of the current step.
+ * @param {string} name Visualizer name.
+ * @param {number=} opt_subStepIndex Target substep, or the current by default.
+ */
+wtf.replay.graphics.Playback.prototype.visualizeSubStep = function(
+    name, opt_subStepIndex) {
+  var visualizer = this.getVisualizer(name);
+  if (visualizer) {
+    visualizer.applyToSubStep(opt_subStepIndex);
+  }
+};
+
+
+/**
+ * Runs a Visualizer with the given name in continuous mode.
+ * @param {string} name Visualizer name.
+ */
+wtf.replay.graphics.Playback.prototype.visualizeContinuous = function(name) {
+  var visualizer = this.getVisualizer(name);
+  if (visualizer) {
+    visualizer.startContinuous();
+  }
+};
+
+
+/**
+ * Signals that visualizer state was changed.
+ */
+wtf.replay.graphics.Playback.prototype.triggerVisualizerChange = function() {
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED);
+};
+
+
+/**
+ * Resets all visualizers.
+ */
+wtf.replay.graphics.Playback.prototype.resetVisualizers = function() {
+  for (var i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].reset();
+  }
+  this.emitEvent(
+      wtf.replay.graphics.Playback.EventType.VISUALIZER_STATE_CHANGED);
+};
+
+
+/**
+ * Signals that the message for a context should be changed.
+ * @param {string} contextHandle Context handle matching the context to update.
+ * @param {string} message New message for the context.
+ */
+wtf.replay.graphics.Playback.prototype.changeContextMessage = function(
+    contextHandle, message) {
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CONTEXT_MESSAGE_CHANGED,
+      contextHandle, message);
+};
+
+
+/**
  * Clears WebGL objects.
  * @param {boolean=} opt_clearCached True if cached programs should be cleared
  *     too. False by default.
@@ -515,6 +654,8 @@ wtf.replay.graphics.Playback.prototype.clearProgramsCache = function() {
     delete this.objects_[handle];
   }
   this.programs_ = {};
+
+  this.emitEvent(wtf.replay.graphics.Playback.EventType.CLEAR_PROGRAMS);
 };
 
 
@@ -828,6 +969,7 @@ wtf.replay.graphics.Playback.prototype.issueStep_ = function() {
   var stepToPlayFrom = this.steps_[this.currentStepIndex_];
   var self = this;
   var handler = function() {
+    self.emitEvent(wtf.replay.graphics.Playback.EventType.STEP_STARTED);
     self.subStepId_ = -1;
     for (var it = stepToPlayFrom.getEventIterator(); !it.done(); it.next()) {
       self.realizeEvent_(it);
@@ -1012,6 +1154,16 @@ wtf.replay.graphics.Playback.prototype.seekToLastCall = function() {
 
 
 /**
+ * Returns whether a given EventIterator is at a draw call.
+ * @param {!wtf.db.EventIterator} it Event iterator.
+ * @return {boolean} True if 'it' is a draw call, false otherwise.
+ */
+wtf.replay.graphics.Playback.prototype.isDrawCall = function(it) {
+  return this.drawCallIds_[it.getTypeId()];
+};
+
+
+/**
  * Seeks to the previous draw call within the current step. If no draw call is
  * before the current call within the step, seeks to the start of the step.
  */
@@ -1033,7 +1185,7 @@ wtf.replay.graphics.Playback.prototype.seekToPreviousDrawCall = function() {
   --eventJustFinishedIndex;
   while (eventJustFinishedIndex >= 0) {
     it.seek(eventJustFinishedIndex);
-    if (this.drawCallIds_[it.getTypeId()]) {
+    if (this.isDrawCall(it)) {
       // Found a previous draw call. Seek to it.
       this.seekSubStepEvent(eventJustFinishedIndex);
       return;
@@ -1066,7 +1218,7 @@ wtf.replay.graphics.Playback.prototype.seekToNextDrawCall = function() {
   it.seek(eventJustFinished + 1);
   while (!it.done()) {
     this.realizeEvent_(it);
-    if (this.drawCallIds_[it.getTypeId()]) {
+    if (this.isDrawCall(it)) {
       this.subStepId_ = it.getIndex();
       this.emitEvent(
           wtf.replay.graphics.Playback.EventType.SUB_STEP_EVENT_CHANGED);
@@ -1108,17 +1260,35 @@ wtf.replay.graphics.Playback.prototype.getCurrentStepIndex = function() {
  * @private
  */
 wtf.replay.graphics.Playback.prototype.realizeEvent_ = function(it) {
+  var i;
+  for (i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].handlePreEvent(it, this.currentContext_);
+  }
+
   var associatedFunction = this.callLookupTable_[it.getTypeId()];
   if (associatedFunction) {
     try {
-      associatedFunction.call(null, it.getId(), this, this.currentContext_,
-          it.getArguments(), this.objects_);
+      // If any handleReplaceEvent returns true, do not call the function.
+      var skipCall = false;
+      for (i = 0; i < this.visualizers_.length; ++i) {
+        skipCall = skipCall ||
+            this.visualizers_[i].handleReplaceEvent(it, this.currentContext_);
+      }
+
+      if (!skipCall) {
+        associatedFunction.call(null, it.getId(), this, this.currentContext_,
+            it.getArguments(), this.objects_);
+      }
     } catch (e) {
       // TODO(benvanik): log to status bar? this usually happens with
       //     cross-origin texture uploads.
       goog.global.console.log('Error realizing event ' + it.getLongString() +
           ': ' + e);
     }
+  }
+
+  for (i = 0; i < this.visualizers_.length; ++i) {
+    this.visualizers_[i].handlePostEvent(it, this.currentContext_);
   }
 };
 
@@ -1155,6 +1325,16 @@ wtf.replay.graphics.Playback.prototype.getContext = function(contextHandle) {
 wtf.replay.graphics.Playback.prototype.getContextAttributes = function(
     contextHandle) {
   return this.contextAttributes_[contextHandle] || null;
+};
+
+
+/**
+ * Gets an object associated with an event handle.
+ * @param {string|number} objectHandle Object handle.
+ * @return {Object} The object, or null if not found.
+ */
+wtf.replay.graphics.Playback.prototype.getObject = function(objectHandle) {
+  return this.objects_[objectHandle] || null;
 };
 
 

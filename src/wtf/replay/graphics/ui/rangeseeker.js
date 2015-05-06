@@ -19,8 +19,12 @@ goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.soy');
 goog.require('goog.string');
+goog.require('wtf.events');
+goog.require('wtf.replay.graphics.ui.ReplayFramePainter');
 goog.require('wtf.replay.graphics.ui.graphicsRangeSeeker');
+goog.require('wtf.timing');
 goog.require('wtf.ui.Control');
+goog.require('wtf.ui.Tooltip');
 
 
 
@@ -31,11 +35,13 @@ goog.require('wtf.ui.Control');
  * @param {number} max The largest value for the range.
  * @param {!Element} parentElement The parent element.
  * @param {goog.dom.DomHelper=} opt_domHelper The DOM Helper.
+ * @param {wtf.replay.graphics.FrameTimeVisualizer=} opt_frameTimeVis The
+ *     frame time visualizer that collects replay time data.
  * @constructor
  * @extends {wtf.ui.Control}
  */
 wtf.replay.graphics.ui.RangeSeeker =
-    function(min, max, parentElement, opt_domHelper) {
+    function(min, max, parentElement, opt_domHelper, opt_frameTimeVis) {
   goog.base(this, parentElement, opt_domHelper);
 
   /**
@@ -53,23 +59,47 @@ wtf.replay.graphics.ui.RangeSeeker =
   this.max_ = max;
 
   /**
-   * The range input element.
-   * @type {!Element}
+   * The viewport size monitor.
+   * @type {!goog.dom.ViewportSizeMonitor}
    * @private
    */
-  this.rangeElement_ = this.createSlider_();
-  this.getChildElement(goog.getCssName('graphicsReplayRangeSeekerSlider'))
-      .appendChild(this.rangeElement_);
+  this.viewportSizeMonitor_ = wtf.events.acquireViewportSizeMonitor();
+
+  var tooltip = new wtf.ui.Tooltip(this.getDom());
+  this.registerDisposable(tooltip);
+  this.setTooltip(tooltip);
 
   /**
    * A widget that displays the value.
    * @type {!Element}
    * @private
    */
-  this.valueDisplayer_ = this.createValueDisplayer_(this.rangeElement_);
+  this.valueDisplayer_ = this.createValueDisplayer_();
   this.getChildElement(goog.getCssName('graphicsReplayRangeSeekerDisplayer'))
       .appendChild(this.valueDisplayer_);
 
+  /**
+   * The frame time visualizer.
+   * @type {?wtf.replay.graphics.FrameTimeVisualizer}
+   * @private
+   */
+  this.frameTimeVisualizer_ = opt_frameTimeVis || null;
+
+  /**
+   * The range seeker canvas.
+   * @type {!HTMLCanvasElement}
+   * @private
+   */
+  this.seekerCanvas_ = /** @type {!HTMLCanvasElement} */ (
+      this.getChildElement(goog.getCssName('canvas')));
+
+  /**
+   * The frame painter with seeking controls.
+   * @type {!wtf.replay.graphics.ui.ReplayFramePainter}
+   * @private
+   */
+  this.framePainter_ = this.createFramePainter_();
+  this.registerDisposable(this.framePainter_);
   this.setValue(min);
 
   /**
@@ -79,8 +109,32 @@ wtf.replay.graphics.ui.RangeSeeker =
    */
   this.enabled_ = false;
   this.setEnabled(false);
+
+  // Relayout as required.
+  this.getHandler().listen(
+      this.viewportSizeMonitor_,
+      goog.events.EventType.RESIZE,
+      this.layout, false);
+
+  wtf.timing.setImmediate(this.layout, this);
+  this.requestRepaint();
 };
 goog.inherits(wtf.replay.graphics.ui.RangeSeeker, wtf.ui.Control);
+
+
+/**
+ * @override
+ */
+wtf.replay.graphics.ui.RangeSeeker.prototype.disposeInternal = function() {
+  var commandManager = wtf.events.getCommandManager();
+  if (commandManager) {
+    commandManager.unregisterCommand('goto_replay_frame');
+  }
+
+  wtf.events.releaseViewportSizeMonitor(this.viewportSizeMonitor_);
+
+  goog.base(this, 'disposeInternal');
+};
 
 
 /**
@@ -89,7 +143,7 @@ goog.inherits(wtf.replay.graphics.ui.RangeSeeker, wtf.ui.Control);
  */
 wtf.replay.graphics.ui.RangeSeeker.EventType = {
   /**
-   * The value of the slider changed. The change was not caused by
+   * The value of the seeker changed. The change was not caused by
    * {@see setValue}.
    */
   VALUE_CHANGED: goog.events.getUniqueId('value_changed')
@@ -107,41 +161,42 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.createDom = function(dom) {
 
 
 /**
- * Creates the slider.
- * @return {!Element} A slider.
+ * Creates the frame painter with seeking controls.
+ * @return {!wtf.replay.graphics.ui.ReplayFramePainter} The frame painter.
  * @private
  */
-wtf.replay.graphics.ui.RangeSeeker.prototype.createSlider_ = function() {
-  var slider = this.getDom().createElement(goog.dom.TagName.INPUT);
-  slider.type = 'range';
-  slider.step = 1;
-  slider.min = this.min_;
-  slider.max = this.max_;
-  slider.value = this.min_;
+wtf.replay.graphics.ui.RangeSeeker.prototype.createFramePainter_ = function() {
+  var replayFramePainter = new wtf.replay.graphics.ui.ReplayFramePainter(
+      this.seekerCanvas_, this.min_, this.max_,
+      this.frameTimeVisualizer_);
+  this.setPaintContext(replayFramePainter);
 
-  // Listen to when the value changes.
-  this.getHandler().listen(slider, goog.events.EventType.CHANGE, function() {
-    this.emitEvent(
-        wtf.replay.graphics.ui.RangeSeeker.EventType.VALUE_CHANGED);
-  }, undefined, this);
+  var commandManager = wtf.events.getCommandManager();
+  if (commandManager) {
+    commandManager.registerSimpleCommand(
+        'goto_replay_frame', function(source, target, frame) {
+          this.setValue(frame);
+          this.emitEvent(
+              wtf.replay.graphics.ui.RangeSeeker.EventType.VALUE_CHANGED);
+        }, this);
+  }
 
-  return slider;
+  return replayFramePainter;
 };
 
 
 /**
  * Creates the value displayer.
- * @param {!Element} slider The slider for this displayer.
  * @return {!Element} A widget that displays the current value.
  * @private
  */
 wtf.replay.graphics.ui.RangeSeeker.prototype.createValueDisplayer_ =
-    function(slider) {
+    function() {
   var valueDisplayer = this.getDom().createElement(goog.dom.TagName.INPUT);
   goog.dom.classes.add(valueDisplayer, goog.getCssName('kTextField'));
   valueDisplayer.type = 'text';
 
-  // Update the slider if displayer changes.
+  // Update the seeker if displayer changes.
   this.getHandler().listen(valueDisplayer,
       goog.events.EventType.CHANGE, function() {
         var newValue = goog.string.parseInt(valueDisplayer.value);
@@ -157,12 +212,6 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.createValueDisplayer_ =
         this.emitEvent(
             wtf.replay.graphics.ui.RangeSeeker.EventType.VALUE_CHANGED);
       }, undefined, this);
-
-  // Update the displayer if the slider changes.
-  this.getHandler().listen(slider, goog.events.EventType.CHANGE, function() {
-    valueDisplayer.value = slider.value;
-  });
-
   return valueDisplayer;
 };
 
@@ -183,11 +232,9 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.isEnabled = function() {
 wtf.replay.graphics.ui.RangeSeeker.prototype.setEnabled = function(enabled) {
   if (enabled) {
     // Enable.
-    this.rangeElement_.removeAttribute('disabled');
     this.valueDisplayer_.removeAttribute('disabled');
   } else {
     // Disable.
-    this.rangeElement_.disabled = 'disabled';
     this.valueDisplayer_.disabled = 'disabled';
   }
   this.enabled_ = enabled;
@@ -199,8 +246,7 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.setEnabled = function(enabled) {
  * @return {number} The current value.
  */
 wtf.replay.graphics.ui.RangeSeeker.prototype.getValue = function() {
-  // The value is a string by default.
-  return goog.string.parseInt(this.rangeElement_.value);
+  return this.framePainter_.getCurrentFrame();
 };
 
 
@@ -209,6 +255,6 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.getValue = function() {
  * @param {number} value The new value.
  */
 wtf.replay.graphics.ui.RangeSeeker.prototype.setValue = function(value) {
-  this.rangeElement_.value = value;
+  this.framePainter_.setCurrentFrame(value);
   this.valueDisplayer_.value = value;
 };

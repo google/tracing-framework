@@ -31,30 +31,28 @@ goog.require('wtf.util');
  * @template T
  */
 wtf.ipc.connectToParentWindow = function(callback, opt_scope) {
+  function connectTo(sendPort) {
+    var channel = null;
+    if (sendPort) {
+      channel = new wtf.ipc.MessageChannel(window, sendPort);
+      channel.postMessage({
+        'hello': true
+      });
+    }
+    callback.call(opt_scope, channel);
+  }
+
   var chrome = goog.global['chrome'];
   if (chrome && chrome['runtime'] &&
       chrome['runtime']['getBackgroundPage']) {
     chrome['runtime']['getBackgroundPage'](function(backgroundPage) {
-      var channel = new wtf.ipc.MessageChannel(window, backgroundPage);
-      channel.postMessage({
-        'hello': true
-      });
-      callback.call(opt_scope, channel);
+      connectTo(backgroundPage);
     });
   } else {
-    if (!window.opener) {
-      wtf.timing.setImmediate(function() {
-        callback.call(opt_scope, null);
-      });
-      return;
-    }
-
-    var channel = new wtf.ipc.MessageChannel(window, window.opener);
-    channel.postMessage({
-      'hello': true
-    });
+    // Connect to our opener (asynchronously for consistency with the background
+    // page case). Opener my be undefined.
     wtf.timing.setImmediate(function() {
-      callback.call(opt_scope, channel);
+      connectTo(window.opener);
     });
   }
 };

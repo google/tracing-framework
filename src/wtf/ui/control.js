@@ -242,6 +242,20 @@ wtf.ui.Control.prototype.toggleButton = function(cssName, enabled) {
 
 
 /**
+ * Toggles a button selected or not.
+ * @param {string} cssName CSS name of the button.
+ * @param {boolean} selected Whether the button is selected.
+ * @protected
+ */
+wtf.ui.Control.prototype.toggleSelected = function(cssName, selected) {
+  var el = this.dom_.getElementByClass(cssName, this.getRootElement());
+  if (el) {
+    goog.dom.classes.enable(el, goog.getCssName('kSelected'), selected);
+  }
+};
+
+
+/**
  * Sets up a button as a dropdown button.
  * @param {string} buttonStyle CSS style name of the main button.
  * @param {string} disclosureStyle CSS style name of the disclosure button.

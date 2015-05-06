@@ -44,6 +44,14 @@ wtf.replay.graphics.ui.ContextBox = function(
       goog.getCssName('replayGraphicsContextBoxHandleLabel'));
 
   /**
+   * Message element.
+   * @type {!Element}
+   * @private
+   */
+  this.messageArea_ = this.getChildElement(
+      goog.getCssName('replayGraphicsContextBoxMessage'));
+
+  /**
    * Context handle used to identify the context to the user.
    * @type {string}
    * @private
@@ -147,6 +155,16 @@ wtf.replay.graphics.ui.ContextBox.prototype.updateLabel_ = function() {
       'Context ' + this.contextHandle_ + ' (' + this.nativeWidth_ + 'x' +
           this.nativeHeight_ + '): ' + shrinkPercent + '%';
   goog.dom.setTextContent(this.label_, label);
+};
+
+
+/**
+ * Updates the message of the context.
+ * @param {string} message The new message.
+ */
+wtf.replay.graphics.ui.ContextBox.prototype.updateMessage = function(message) {
+  message = message || ' ';
+  goog.dom.setTextContent(this.messageArea_, message);
 };
 
 

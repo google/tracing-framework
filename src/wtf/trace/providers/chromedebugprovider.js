@@ -17,7 +17,6 @@ goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
-goog.require('goog.userAgent.product.isVersion');
 goog.require('wtf');
 goog.require('wtf.data.EventFlag');
 goog.require('wtf.data.Variable');
@@ -60,26 +59,13 @@ wtf.trace.providers.ChromeDebugProvider = function(traceManager, options) {
     return;
   }
 
-  // Chrome 29-30 started using page-load relative times. Unfortunately they
-  // are broken and don't match navigation start, so there's no way to line them
-  // up. Chrome 31+ uses wall-times again, so we can line them up right.
-  // Since 29-30 are just broken, we shift them off so that aggregate times
-  // are still understandable.
-  var timebase = wtf.timebase();
-  if (!goog.userAgent.product.isVersion(31)) {
-    // Chrome 31+ needs adjustment. Chrome 30- is hosed.
-    timebase = -(30) * 10 * 1000;
-    goog.global.console.log(
-        'WARNING: upgrade to Chrome 31+ to get synced debug events!');
-  }
-
   /**
    * Dispatch table for each event type that comes from the extension.
    * @type {!Object.<function(!Array)>}
    * @private
    */
   this.timelineDispatch_ = {};
-  this.setupTimelineDispatch_(timebase);
+  this.setupTimelineDispatch_();
 
   /**
    * The next ID used when making an async data request to the extension.
@@ -290,6 +276,9 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ =
     function(records) {
   for (var n = 0; n < records.length; n++) {
     var record = records[n];
+    if (!record || !record[0]) {
+      goog.global.console.log('record bad');
+    }
     var dispatch = this.timelineDispatch_[record[0]];
     if (dispatch) {
       dispatch(record);
@@ -300,21 +289,64 @@ wtf.trace.providers.ChromeDebugProvider.prototype.processDebuggerRecords_ =
 
 /**
  * Sets up the record dispatch table.
- * @param {number} timebase Timebase for events.
  * @private
  */
 wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
-    function(timebase) {
+    function() {
   // This table should match the one in
   // extensions/wtf-injector-chrome/debugger.js
+  var self = this;
+
+  // Chrome seems to change its mind about what the timebase for events should
+  // be, and there's no nice way to get what the latest format is (browser start
+  // relative). We poke an event into the timeline and wait for it to come back
+  // and use that to synchronize.
+  var timebase = {
+    value: 0,
+    intervalId: -1,
+    translate: function(t) {
+      return t - this.value;
+    }
+  };
+  // If we don't have a timebase when a record arrives we queue it and replay
+  // again.
+  var pendingQueue = [];
+  this.timelineDispatch_['WTFTimeSync'] = function(record) {
+    if (timebase.value) {
+      // Already got what we needed.
+      return;
+    }
+    goog.global.clearInterval['raw'].call(goog.global, timebase.intervalId);
+
+    var remoteTime = record[1];
+    var localTime = record[2];
+    timebase.value = remoteTime - localTime;
+
+    // Process the backlog of events.
+    if (pendingQueue.length) {
+      self.processDebuggerRecords_(pendingQueue);
+      pendingQueue = [];
+    }
+  };
+  var timeStamp = goog.global.console.timeStamp['raw']['raw'] ||
+      goog.global.console.timeStamp['raw'] || goog.global.console.timeStamp;
+  timeStamp.call(goog.global.console, 'WTFTimeSync:' + wtf.now());
+  timebase.intervalId = goog.global.setInterval['raw'].call(goog.global,
+      function() {
+        timeStamp.call(goog.global.console, 'WTFTimeSync:' + wtf.now());
+      }, 10);
 
   // GCEvent: garbage collections.
   var gcEvent = wtf.trace.events.createScope(
       'javascript#gc(uint32 usedHeapSize, uint32 usedHeapSizeDelta)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['GCEvent'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = gcEvent(record[3], record[4], startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
@@ -325,8 +357,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
           'ascii url, uint32 lineNumber)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['EvaluateScript'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = evalScriptEvent(record[3], record[4], record[5], record[6],
         startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
@@ -337,8 +373,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#parseHtml()',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['ParseHTML'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = parseHtmlEvent(startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
@@ -348,7 +388,11 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#domContentReady(bool isMainFrame)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['MarkDOMContent'] = function(record) {
-    var startTime = record[1] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
     domContentReadyEvent(record[2], startTime);
   };
 
@@ -357,7 +401,11 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
   var invalidateStylesEvent = wtf.trace.events.createInstance(
       'browser#invalidateStyles()');
   this.timelineDispatch_['ScheduleStyleRecalculation'] = function(record) {
-    var startTime = record[1] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
     invalidateStylesEvent(startTime);
   };
 
@@ -366,8 +414,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#recalculateStyles(uint32 elementCount)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['RecalculateStyles'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = record[1] - timebase.value;
+    var endTime = record[2] - timebase.value;
     var scope = recalculateStylesEvent(record[3], startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
@@ -376,7 +428,11 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
   var invalidateLayoutEvent = wtf.trace.events.createInstance(
       'browser#invalidateLayout()');
   this.timelineDispatch_['InvalidateLayout'] = function(record) {
-    var startTime = record[1] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
     invalidateLayoutEvent(startTime);
   };
 
@@ -386,8 +442,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
           'bool partialLayout, int32 x, int32 y, int32 width, int32 height)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['Layout'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = layoutEvent(
         record[3], record[4], record[5],
         record[6], record[7], record[8], record[9],
@@ -400,8 +460,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#paintSetup()',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['PaintSetup'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = paintSetupEvent(startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
@@ -411,8 +475,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#paint(int32 x, int32 y, int32 width, int32 height)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['Paint'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = paintEvent(
         record[3], record[4], record[5], record[6], startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
@@ -423,8 +491,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#compositeLayers()',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['CompositeLayers'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = compositeLayersEvent(startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
@@ -434,8 +506,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#decodeImage(ascii imageType)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['DecodeImage'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = decodeImageEvent(record[3], startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };
@@ -445,8 +521,12 @@ wtf.trace.providers.ChromeDebugProvider.prototype.setupTimelineDispatch_ =
       'browser#resizeImage(bool cached)',
       wtf.data.EventFlag.SYSTEM_TIME);
   this.timelineDispatch_['ResizeImage'] = function(record) {
-    var startTime = record[1] - timebase;
-    var endTime = record[2] - timebase;
+    if (!timebase.value) {
+      pendingQueue.push(record);
+      return;
+    }
+    var startTime = timebase.translate(record[1]);
+    var endTime = timebase.translate(record[2]);
     var scope = resizeImageEvent(record[3], startTime);
     wtf.trace.leaveScope(scope, undefined, endTime);
   };

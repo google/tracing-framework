@@ -21,6 +21,7 @@ goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.events.BrowserEvent');
 goog.require('goog.fs');
+goog.require('goog.result.SimpleResult');
 goog.require('goog.soy');
 goog.require('goog.string');
 goog.require('goog.style');
@@ -234,7 +235,17 @@ wtf.hud.Overlay.DockPosition_ = {
   /**
    * Dock at the bottom-right of the screen.
    */
-  BOTTOM_RIGHT: 'br'
+  BOTTOM_RIGHT: 'br',
+
+  /**
+   * Dock at the top-middle of the screen.
+   */
+  TOP_MIDDLE: 'tm',
+
+  /**
+   * Dock at the bottom-middle of the screen.
+   */
+  BOTTOM_MIDDLE: 'bm'
 };
 
 
@@ -282,6 +293,12 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
     case 'br':
       this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_RIGHT;
       break;
+    case 'tm':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.TOP_MIDDLE;
+      break;
+    case 'bm':
+      this.dockPosition_ = wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE;
+      break;
   }
 
   // Adjust position on page.
@@ -293,7 +310,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': 0,
         'bottom': null,
         'left': 0,
-        'right': null
+        'right': null,
+        'margin-right': 'auto'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
@@ -302,7 +320,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': null,
         'bottom': 0,
         'left': 0,
-        'right': null
+        'right': null,
+        'margin-right': 'auto'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
@@ -311,7 +330,8 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': 0,
         'bottom': null,
         'left': null,
-        'right': 0
+        'right': 0,
+        'margin-right': '3px'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
       break;
@@ -320,9 +340,34 @@ wtf.hud.Overlay.prototype.reloadOptions_ = function(opt_changedKeys) {
         'top': null,
         'bottom': 0,
         'left': null,
-        'right': 0
+        'right': 0,
+        'margin-right': '3px'
       });
       this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.BOTTOM_RIGHT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.TOP_MIDDLE:
+      var halfWidth = this.getSplitterSize() / 2.0;
+      var marginString = goog.string.buildString('-', halfWidth, 'px');
+      goog.style.setStyle(rootElement, {
+        'top': 0,
+        'bottom': null,
+        'left': null,
+        'right': '50%',
+        'margin-right': marginString
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
+      break;
+    case wtf.hud.Overlay.DockPosition_.BOTTOM_MIDDLE:
+      var halfWidth = this.getSplitterSize() / 2.0;
+      var marginString = goog.string.buildString('-', halfWidth, 'px');
+      goog.style.setStyle(rootElement, {
+        'top': null,
+        'bottom': 0,
+        'left': null,
+        'right': '50%',
+        'margin-right': marginString
+      });
+      this.setSizeFrom(wtf.ui.ResizableControl.SizeFrom.TOP_LEFT);
       break;
   }
 
@@ -558,8 +603,10 @@ wtf.hud.Overlay.prototype.settingsClicked_ = function(opt_e) {
               'title': 'Dock at:',
               'options': [
                 {'value': 'tl', 'title': 'Top Left'},
+                {'value': 'tm', 'title': 'Top Middle'},
                 {'value': 'tr', 'title': 'Top Right'},
                 {'value': 'bl', 'title': 'Bottom Left'},
+                {'value': 'bm', 'title': 'Bottom Middle'},
                 {'value': 'br', 'title': 'Bottom Right'}
               ],
               'default': 'br'
@@ -678,9 +725,22 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
   var targetIsExtension =
       goog.string.startsWith(endpoint, 'chrome-extension://');
 
+  // Only used in the !targetIsExtension case.
+  var childChannelResult;
+
   // Open the target window now (if not an extension), so that we avoid the
   // popup blocker.
   if (!targetIsExtension) {
+    childChannelResult = new goog.result.SimpleResult();
+
+    // Wait for the child to connect. It's important to start waiting before
+    // opening the child window so that we can be sure to have the onmessage
+    // eventhandler set up before the child is able to open and send us a
+    // message.
+    wtf.ipc.waitForChildWindow(function(channel) {
+      childChannelResult.setValue(channel);
+    });
+
     // Create window and show.
     var windowName = this.lastWindowName_;
     if (opt_newWindow) {
@@ -744,10 +804,9 @@ wtf.hud.Overlay.prototype.sendSnapshotToPage_ = function(
         blob.readAsArrayBuffer(function(value) {
           contentBuffers[n] = value;
           if (!--remainingReads) {
-            // Wait for the child to connect.
-            wtf.ipc.waitForChildWindow(function(channel) {
+            childChannelResult.wait(function(result) {
               // Post now. Whew.
-              channel.postMessage({
+              result.getValue().postMessage({
                 'command': 'snapshot',
                 'content_types': contentTypes,
                 'content_sources': contentSources,

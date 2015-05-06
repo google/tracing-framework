@@ -1,6 +1,6 @@
 {
   "name": "tracing-framework",
-  "version": "2014.1.23-1",
+  "version": "2015.1.6-1",
   "description": "Web Tracing Framework instrumentation and analysis library.",
   "keywords": [
     "javascript",
@@ -43,6 +43,7 @@
     "bin/",
     "bin/cpp_src/",
     "docs/",
+    "extensions/wtf-injector-chrome/wtf-process.js",
     "extensions/wtf-instrument-proxy/",
     "AUTHORS",
     "CONTRIBUTORS.md",

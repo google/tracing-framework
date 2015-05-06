@@ -302,6 +302,9 @@ wtf.ui.VirtualTable.prototype.setupScrolling_ = function() {
   eh.listen(this.scrollTrackEl_, goog.events.EventType.MOUSEUP, function(e) {
     wtf.timing.clearInterval(this.repeatInterval_);
   });
+  eh.listen(this.scrollTrackEl_, goog.events.EventType.MOUSEOUT, function(e) {
+    wtf.timing.clearInterval(this.repeatInterval_);
+  });
 
   // Mouse wheel support. This could use tweaking on OSX where scroll
   // direction is reversed.

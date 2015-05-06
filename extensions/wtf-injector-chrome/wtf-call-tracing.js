@@ -26,6 +26,14 @@ var warn = global.console && global.console.warn ?
 
 var ENABLE_CACHING = false;
 
+var SUPPORTED_SCRIPT_TYPES = {
+  '': 1,
+  'text/javascript': 1,
+  'text/ecmascript': 1,
+  'application/javascript': 1,
+  'application/ecmascript': 1
+};
+
 
 global['wtfi'] = global['wtfi'] || {};
 
@@ -214,6 +222,8 @@ function processOrCacheAsync(sourceText, moduleId, options, opt_url, callback) {
  *      input element.
  */
 function processScript(el, opt_synchronous, opt_baseUrl) {
+  if (!(el.type in SUPPORTED_SCRIPT_TYPES)) return el;
+  
   var doc = el.ownerDocument;
   if (el.text || el.innerText) {
     // Synchronous block.
@@ -251,6 +261,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
           src);
       el['__wtfi__'] = true;
       el.src = null;
+      el.removeAttribute('src');
       el.text = resultText;
       var loadEvent = new Event('load');
       loadEvent.target = el;
@@ -279,6 +290,7 @@ function processScript(el, opt_synchronous, opt_baseUrl) {
       src: opt_baseUrl ? resolveUrl(opt_baseUrl, el.getAttribute('src')) : el.src
     };
     el.src = null;
+    el.removeAttribute('src');
 
     // TODO(benvanik): dispatch to web worker.
     var xhr = new XMLHttpRequest();

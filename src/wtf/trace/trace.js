@@ -227,7 +227,11 @@ wtf.trace.createStreamTarget_ = function(options, transport) {
   // Switch based on format.
   // Note that some formats may not be ideal for certain transports.
 
-  if (wtf.MIN_BUILD) {
+  if (wtf.PROD_BUILD) {
+    // JSON only in build mode.
+    return new wtf.io.cff.JsonStreamTarget(
+        transport, wtf.io.cff.JsonStreamTarget.Mode.COMPLETE);
+  } else if (wtf.MIN_BUILD) {
     // Binary only in min mode.
     return new wtf.io.cff.BinaryStreamTarget(transport);
   } else {

@@ -15,7 +15,7 @@
 (function(global) {
 
 // console.log utility that doesn't explode when it's not present.
-var ENABLE_LOGGING = false;
+var ENABLE_LOGGING = global['ENABLE_LOGGING'] || false;
 var log = (ENABLE_LOGGING && global.console) ?
     global.console.log.bind(global.console) : function() {};
 var info = global.console && global.console.log ?
@@ -39,6 +39,8 @@ global['wtfi']['process'] = function(
   var instrumentationType = options['type'] || 'calls';
   var trackHeap = instrumentationType == 'memory';
   var trackTime = instrumentationType == 'time';
+  var moduleId = options['moduleId'];
+  var sourcePrefix = options['sourcePrefix'] || '';
 
   var falafel = global['wtfi']['falafel'];
   if (!falafel) {
@@ -77,9 +79,13 @@ global['wtfi']['process'] = function(
       return null;
     }
 
+    // {foo: function() {}}
+    if (node.parent.type == 'Property') {
+      return cleanupName(node.parent.key.name);
+    }
+
     // foo = function() {};
     // Bar.foo = function() {};
-    //
     if (node.parent.type == 'AssignmentExpression') {
       // We are the RHS, LHS is something else.
       var left = node.parent.left;
@@ -96,7 +102,6 @@ global['wtfi']['process'] = function(
         return cleanupName(left.name);
       }
       log('unknown assignment LHS', left);
-      return null;
     }
 
     //log('unknown fn construct', node);
@@ -106,7 +111,19 @@ global['wtfi']['process'] = function(
     // ...
     // _.$JSCompiler_prototypeAlias$$.$unnamed = function() {};
 
-    return null;
+    // Recognize dart2js names.
+    var ret = null;
+    while (node.parent != null) {
+      node = node.parent;
+      if (node.type == 'Property') {
+        if (!ret) {
+          ret = node.key.name;
+        } else {
+          ret = node.key.name + '.' + ret;
+        }
+      }
+    }
+    return ret;
   };
 
   function isFunctionBlock(node) {
@@ -260,12 +277,18 @@ global['wtfi']['process'] = function(
   var sourceUrl = url == 'inline' ? url + '__WTFMID__' : url;
   var transformedText = [
     '//# sourceURL=' + sourceUrl,
+    sourcePrefix,
     'var __wtfb = "' + (opt_url ? opt_url : '') + '"',
     '__wtfm[__WTFMID__] = {' +
         '"src": "' + url + '",' +
         '"fns": [' + fns.join(',') + ']};',
     targetCode.toString()
   ].join('\n');
+
+  // If we were given a module ID swap it in now.
+  if (moduleId !== undefined) {
+    transformedText = transformedText.replace(/__WTFMID__/g, moduleId << 24);
+  }
 
   var totalTime = Date.now() - startTime;
   info('  completed in ' + totalTime + 'ms');

@@ -32,6 +32,13 @@ wtf.MIN_BUILD = false;
 
 
 /**
+ * @define {boolean} True to enable a 'prod' build, which essentially uses min
+ * build, except that JSON format is used.
+ */
+wtf.PROD_BUILD = false;
+
+
+/**
  * Whether the current code is running inside of a Chrome extension.
  * @type {boolean}
  */

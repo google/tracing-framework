@@ -274,6 +274,15 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.trackDisplayingOfContexts_ =
           }
         }
       }, this);
+
+  // Update context messages.
+  playback.addListener(
+      wtf.replay.graphics.Playback.EventType.CONTEXT_MESSAGE_CHANGED,
+      function(contextHandle, message) {
+        if (this.displayedContexts_[contextHandle]) {
+          this.displayedContexts_[contextHandle].updateMessage(message);
+        }
+      }, this);
 };
 
 
