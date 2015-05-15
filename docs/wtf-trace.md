@@ -1,5 +1,7 @@
 # wtf-trace File Format
 
+***WARNING: the JSON format is not yet implemented!***
+
 Also known as the Chunked File Format. Code for this lives in wtf.io.cff.
 
 The Chunked File Format (CFF) is an extensible, versioned skeleton that allows
