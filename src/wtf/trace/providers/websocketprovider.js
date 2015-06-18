@@ -160,8 +160,8 @@ wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
     var eventInfo = eventInfos[n];
     Object.defineProperty(ProxyWebSocket.prototype,
         'on' + eventInfo.name, {
-          'configurable': false,
-          'enumerable': false,
+          'configurable': true,
+          'enumerable': true,
           'get': eventInfo.getter,
           'set': eventInfo.setter
         });

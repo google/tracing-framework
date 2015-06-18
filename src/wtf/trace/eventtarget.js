@@ -55,7 +55,7 @@ wtf.trace.eventtarget.DEFINE_SUPPORT = (function() {
     var propertyValue = 123;
     Object.defineProperty(proto, eventName, {
       'configurable': true,
-      'enumerable': false,
+      'enumerable': true,
       'get': function() { return propertyValue; },
       'set': function(value) { propertyValue = value; }
     });
@@ -301,8 +301,8 @@ wtf.trace.eventtarget.setEventProperties = function(descriptor, target) {
     var eventInfo = eventInfos[n];
     try {
       Object.defineProperty(target, 'on' + eventInfo.name, {
-        'configurable': false,
-        'enumerable': false,
+        'configurable': true,
+        'enumerable': true,
         'get': eventInfo.getter,
         'set': eventInfo.setter
       });
