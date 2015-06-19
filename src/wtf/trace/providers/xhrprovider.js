@@ -235,8 +235,8 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     var eventInfo = eventInfos[n];
     Object.defineProperty(ProxyXMLHttpRequest.prototype,
         'on' + eventInfo.name, {
-          'configurable': false,
-          'enumerable': false,
+          'configurable': true,
+          'enumerable': true,
           'get': eventInfo.getter,
           'set': eventInfo.setter
         });
