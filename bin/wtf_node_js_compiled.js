@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 14205348E5;
+  return 14361696E5;
 };
 wtf.version.getCommit = function() {
-  return "79dcf8e8bed21cd62d19c0108e6627617fa05b74";
+  return "00dd4408984ffb5b73794c4b1d29e23701e77c5b";
 };
 wtf.version.toString = function() {
-  return "2015.1.6-1";
+  return "2015.7.6-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -13847,7 +13847,7 @@ wtf.trace.eventtarget.DEFINE_SUPPORT = function() {
   var a = !1, b = !1;
   try {
     var c = goog.global.HTMLHeadElement.prototype, d = 123;
-    Object.defineProperty(c, "onmousemove", {configurable:!0, enumerable:!1, get:function() {
+    Object.defineProperty(c, "onmousemove", {configurable:!0, enumerable:!0, get:function() {
       return d;
     }, set:function(a) {
       d = a;
@@ -13946,7 +13946,7 @@ wtf.trace.eventtarget.setEventProperties = function(a, b) {
     for (var c = a.eventInfos, d = 0;d < c.length;d++) {
       var e = c[d];
       try {
-        Object.defineProperty(b, "on" + e.name, {configurable:!1, enumerable:!1, get:e.getter, set:e.setter});
+        Object.defineProperty(b, "on" + e.name, {configurable:!0, enumerable:!0, get:e.getter, set:e.setter});
       } catch (f) {
         goog.DEBUG && goog.global.console.log("Unable to define property " + e.name + " on " + a.prefix);
       }
@@ -17077,7 +17077,7 @@ wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
   };
   for (var f = c.eventInfos, g = 0;g < f.length;g++) {
     var k = f[g];
-    Object.defineProperty(e.prototype, "on" + k.name, {configurable:!1, enumerable:!1, get:k.getter, set:k.setter});
+    Object.defineProperty(e.prototype, "on" + k.name, {configurable:!0, enumerable:!0, get:k.getter, set:k.setter});
   }
   a("url", !0);
   a("readyState");
@@ -17421,7 +17421,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   };
   for (var f = c.eventInfos, g = 0;g < f.length;g++) {
     var k = f[g];
-    Object.defineProperty(e.prototype, "on" + k.name, {configurable:!1, enumerable:!1, get:k.getter, set:k.setter});
+    Object.defineProperty(e.prototype, "on" + k.name, {configurable:!0, enumerable:!0, get:k.getter, set:k.setter});
   }
   a("readyState");
   a("timeout", !0);
