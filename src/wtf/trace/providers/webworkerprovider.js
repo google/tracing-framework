@@ -225,6 +225,12 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectMessagePort_ =
       var channel = new originalMessageChannel();
       wtf.trace.eventtarget.initializeEventProperties(channel.port1);
       wtf.trace.eventtarget.initializeEventProperties(channel.port2);
+      // The MessagePort spec only initializes message queues when the
+      // onmessage IDL attribute is set; however, we override onmessage with a
+      // setter that uses addEventListener so we must explictly call start()
+      // to ensure the queues are initialized.
+      channel.port1.start();
+      channel.port2.start();
       return channel;
     };
   }
