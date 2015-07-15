@@ -3015,13 +3015,13 @@ goog.result.DependentResultImpl_.prototype.getParentResults = function() {
 // Input 24
 wtf.version = {};
 wtf.version.getValue = function() {
-  return 14361696E5;
+  return 14369472E5;
 };
 wtf.version.getCommit = function() {
-  return "00dd4408984ffb5b73794c4b1d29e23701e77c5b";
+  return "b42eb485660d79fd6756d34835427a8b39170227";
 };
 wtf.version.toString = function() {
-  return "2015.7.6-1";
+  return "2015.7.15-1";
 };
 goog.exportSymbol("wtf.version.getValue", wtf.version.getValue);
 goog.exportSymbol("wtf.version.getCommit", wtf.version.getCommit);
@@ -17172,6 +17172,8 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectMessagePort_ = function() 
     var a = new m;
     wtf.trace.eventtarget.initializeEventProperties(a.port1);
     wtf.trace.eventtarget.initializeEventProperties(a.port2);
+    a.port1.start();
+    a.port2.start();
     return a;
   });
 };
