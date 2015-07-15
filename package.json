@@ -36,7 +36,7 @@
     "wd": "0.0.32"
   },
   "optionalDependencies": {
-    "microtime": "0.3.3"
+    "microtime": "1.4.2"
   },
   "files": [
     "build-out/wtf_node_js_compiled.js",
