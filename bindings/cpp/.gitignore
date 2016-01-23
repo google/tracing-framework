@@ -1,0 +1,5 @@
+*.o
+*.a
+*.so
+*_test
+tmp*.wtf-trace
