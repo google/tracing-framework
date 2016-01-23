@@ -222,7 +222,7 @@ function main(argv) {
   console.log('  http://' + os.hostname() + ':' + argv['http-port']);
   console.log('');
   console.log('Add this to your page <head> BEFORE anything else:');
-  console.log('<script src="http://google.github.io/tracing-framework/bin/wtf_trace_web_js_compiled.js"></script>');
+  console.log('<script src="//google.github.io/tracing-framework/bin/wtf_trace_web_js_compiled.js"></script>');
   console.log('<script>');
   console.log('  wtf.remote.connect({');
   console.log('    \'wtf.remote.target\': \'' + uri + '\'');
