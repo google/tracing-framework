@@ -52,7 +52,7 @@ class Runtime {
   Runtime();
   Runtime(const Runtime&) = delete;
   void operator=(const Runtime&) = delete;
-  
+
   // Creates an EventBuffer bound for a thread local, and adds it to the list
   // of owned instances.
   EventBuffer* CreateThreadEventBuffer();

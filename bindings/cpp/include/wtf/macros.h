@@ -58,10 +58,10 @@
 //
 // Example:
 //   WTF_EVENT("MyClass#stuff", int, uint32_t)(1, 2);
-#define WTF_EVENT(name_spec, ...)                                   \
-  static __INTERNAL_WTF_NAMESPACE::EventIf<kWtfEnabledForNamespace, \
-                                           __VA_ARGS__>             \
-      __wtf_eventn__##__LINE__{name_spec};                          \
+#define WTF_EVENT(name_spec, ...)                                     \
+  static __INTERNAL_WTF_NAMESPACE::EventIf<                           \
+      kWtfEnabledForNamespace, __VA_ARGS__> __wtf_eventn__##__LINE__{ \
+      name_spec};                                                     \
   __wtf_eventn__##__LINE__.Invoke
 
 // Shortcut to trace a no-arg scope.
@@ -88,9 +88,9 @@
 // Example:
 //   WTF_SCOPE0("MyClass#MyMethod", int, uint32_t)(1, 2);
 #define WTF_SCOPE(name_spec, ...)                                             \
-  static __INTERNAL_WTF_NAMESPACE::ScopedEventIf<kWtfEnabledForNamespace,     \
-                                                 __VA_ARGS__>                 \
-      __wtf_scope_eventn_##__LINE__{name_spec};                               \
+  static __INTERNAL_WTF_NAMESPACE::ScopedEventIf<                             \
+      kWtfEnabledForNamespace, __VA_ARGS__> __wtf_scope_eventn_##__LINE__{    \
+      name_spec};                                                             \
   __INTERNAL_WTF_NAMESPACE::AutoScopeIf<kWtfEnabledForNamespace, __VA_ARGS__> \
       __wtf_scopen_##__LINE__{__wtf_scope_eventn_##__LINE__};                 \
   __wtf_scopen_##__LINE__.Enter
