@@ -179,10 +179,10 @@ bool Runtime::Save(std::ostream* out) {
 
   // And write each part. Order must match header order in part_headers.
   bool success = true;
-  success = shared_string_table_.WriteTo(strings_header, &output_buffer) &&
-            success;
-  success = event_def_buffer.WriteTo(&event_def_header, &output_buffer)
-            && success;
+  success =
+      shared_string_table_.WriteTo(strings_header, &output_buffer) && success;
+  success =
+      event_def_buffer.WriteTo(&event_def_header, &output_buffer) && success;
   for (size_t i = 0; i < local_thread_event_buffers.size(); i++) {
     success = local_thread_event_buffers[i]->WriteTo(&thread_part_headers[i],
                                                      &output_buffer) &&
