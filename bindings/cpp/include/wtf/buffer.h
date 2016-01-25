@@ -145,7 +145,7 @@ class EventBuffer {
 
     // The size as visible to readers.
     // Access: Written by writer, read by reader.
-    std::atomic<size_t> published_size{0};
+    platform::atomic<size_t> published_size{0};
 
     // The array of slots (allocated 'limit' entries).
     // Access: Reader and writer threads.
@@ -156,7 +156,7 @@ class EventBuffer {
     // The next chunk, if any.
     // Access: Written by writer as the last step of initializing a new
     // chunk. Read by reader when dumping the buffer.
-    std::atomic<Chunk*> next{nullptr};
+    platform::atomic<Chunk*> next{nullptr};
   };
 
   // Disallow copy/assignment.
