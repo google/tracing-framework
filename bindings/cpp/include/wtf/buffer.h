@@ -111,23 +111,95 @@ class StringTable {
 };
 
 // Buffer for raw event data.
-// These buffers are not thread safe: It is expected that there will be one
-// per thread.
+// These buffers are safe for at most one thread to write and one thread to
+// read.
+// TODO(laurenzo): Extend with async reset support.
 class EventBuffer {
  public:
+  // Default and minimum chunk sizes in bytes. We set the minimum conservatively
+  // as it is impossible to write a single transaction that spans chunks (i.e.
+  // an event with lots of arguments).
+  static constexpr size_t kDefaultChunkSizeBytes = 16 * 1024;
+  static constexpr size_t kMinimumChunkSizeBytes = 1024;
+
+  // The maximum number of slots that can be satisfied by a call to AddSlots().
+  static constexpr size_t kMaximumAddSlotsCount =
+      kMinimumChunkSizeBytes / sizeof(uint32_t);
+
+  // Singly linked list of chunks. A chunk is a sequence of 32bit slots that
+  // keeps track of its fill level. Writing is always assumed to happen from
+  // a single thread. Reading is expected to happen from at most one thread
+  // at a time and can only "see" as far into the linked list as is published
+  // in the shared reader_chunk_slots_available_.
+  struct Chunk {
+    explicit Chunk(size_t limit) : limit(limit), slots(new uint32_t[limit]) {}
+    ~Chunk() { delete[] slots; }
+
+    // The number of slots that are allocated.
+    // Access: Any thread.
+    const size_t limit;
+
+    // The number of slots that have been filled.
+    // Access: Writer thread only.
+    size_t size = 0;
+
+    // The size as visible to readers.
+    // Access: Written by writer, read by reader.
+    std::atomic<size_t> published_size{0};
+
+    // The array of slots (allocated 'limit' entries).
+    // Access: Reader and writer threads.
+    // Guarantees: All indices reported by published_size are consistent for
+    // access from the reader thread.
+    uint32_t* slots;
+
+    // The next chunk, if any.
+    // Access: Written by writer as the last step of initializing a new
+    // chunk. Read by reader when dumping the buffer.
+    std::atomic<Chunk*> next{nullptr};
+  };
+
   // Disallow copy/assignment.
   EventBuffer(const EventBuffer&) = delete;
   void operator=(const EventBuffer&) = delete;
 
-  // Initialize the EventBuffer with a shared string table (must remain valid
-  // through the life of the instance).
-  explicit EventBuffer(StringTable* string_table);
+  // Initializes the event buffer with a shared string table (which must
+  // remain valid through the life of the instance) and custom chunk size,
+  // which specifies how much space is reserved and how much the buffer
+  // expands by on overflow.
+  EventBuffer(StringTable* string_table, size_t chunk_size_bytes);
 
-  // Adds an entry to the end of the deque.
-  // TODO(laurenzo): This will need to change to an atomic operation/data
-  // structure before it is useful for any level of concurrency without
-  // hazzards trying to dump the data.
-  void AddEntry(uint32_t entry) { entries_.push_back(entry); }
+  // Initialize with a StringTable and defaults.
+  explicit EventBuffer(StringTable* string_table)
+      : EventBuffer(string_table, kDefaultChunkSizeBytes) {}
+  ~EventBuffer();
+
+  // Gets a pointer to a location where 'count' slots can be written, increasing
+  // the writer-visible size accordingly. It is expected that the caller
+  // populate the slots prior to calling Flush() or performing another call
+  // to WriteSlots().
+  // Note that it is expected that this function will be inlined in many
+  // contexts. We bail to an opaque function call for exceptional cases.
+  // It is illegal to call with count > kMaximumAddSlotsCount.
+  // Access: Writer thread.
+  uint32_t* AddSlots(size_t count) {
+    Chunk* chunk = current_;
+    size_t new_size = chunk->size + count;
+    if (new_size > chunk->limit) {
+      return ExpandAndAddSlots(count);
+    }
+    uint32_t* slots = chunk->slots + chunk->size;
+    chunk->size = new_size;
+    return slots;
+  }
+
+  // Flushes all pending calls to WriteSlots once data has been written. Note
+  // that certain operations (i.e. chunk overflow) can cause flushing to
+  // happen earlier.
+  void Flush() {
+    // Publish the size (atomic release).
+    current_->published_size = current_->size;
+  }
 
   // Gets the string table for this buffer.
   StringTable* string_table() { return string_table_; }
@@ -150,19 +222,39 @@ class EventBuffer {
   bool WriteTo(OutputBuffer::PartHeader* header, OutputBuffer* output_buffer);
 
   // Whether the event buffer is empty. It is only valid to call this from the
-  // hosting thread. Mainly for testing.
-  bool empty() { return entries_.empty(); }
+  // hosting thread.
+  // Access: Testing only.
+  bool empty() { return head_->size == 0; }
 
   // Clears the event buffer. This will most likely corrupt the WTF output
-  // but can be useful for testing. It is only valid to call this from the
-  // hosting thread.
-  void clear() { entries_.clear(); }
+  // but can be useful for testing.
+  // Access: Testing Only.
+  void clear() {
+    for (Chunk* chunk = head_; chunk; chunk = chunk->next) {
+      chunk->size = 0;
+      chunk->published_size = 0;
+    }
+  }
 
  private:
-  static constexpr size_t kInitialSize = 1024;
+  // Expands the buffer by adding a new chunk and returning 'count' slots
+  // from it. This has the side effect of publishing the current buffer.
+  // This is only called in the overflow case of AddSlots().
+  uint32_t* ExpandAndAddSlots(size_t count);
+
   StringTable* string_table_;
-  std::deque<uint32_t> entries_{kInitialSize};
+  size_t chunk_limit_;
   platform::atomic<bool> out_of_scope_{false};
+
+  // The head chunk. This is set at allocation time prior to the instance
+  // becoming shared. The last chunk in the list is the only one that will
+  // ever be touched by the writer thread.
+  // Access: Reader thread.
+  Chunk* head_;
+
+  // The current chunk that is being written.
+  // Access: Writer thread only.
+  Chunk* current_;
 };
 
 }  // namespace wtf

@@ -33,32 +33,85 @@ struct ArgTypeDef {};
 template <>
 struct ArgTypeDef<const char*> {
   static const char* name;
-  static void Emit(EventBuffer* b, const char* value) {
+  static const size_t kSlotCount = 1;
+  static void Emit(EventBuffer* b, uint32_t* slots, const char* value) {
     int string_id = value ? b->string_table()->GetStringId(value)
                           : StringTable::kEmptyStringId;
-    b->AddEntry(string_id);
+    slots[0] = string_id;
   }
 };
 template <>
 struct ArgTypeDef<uint16_t> {
   static const char* name;
-  static void Emit(EventBuffer* b, uint16_t value) { b->AddEntry(value); }
+  static const size_t kSlotCount = 1;
+  static void Emit(EventBuffer* b, uint32_t* slots, uint16_t value) {
+    slots[0] = value;
+  }
 };
 template <>
 struct ArgTypeDef<uint32_t> {
   static const char* name;
-  static void Emit(EventBuffer* b, uint32_t value) { b->AddEntry(value); }
+  static const size_t kSlotCount = 1;
+  static void Emit(EventBuffer* b, uint32_t* slots, uint32_t value) {
+    slots[0] = value;
+  }
 };
 template <>
 struct ArgTypeDef<int16_t> {
   static const char* name;
-  static void Emit(EventBuffer* b, uint16_t value) { b->AddEntry(value); }
+  static const size_t kSlotCount = 1;
+  static void Emit(EventBuffer* b, uint32_t* slots, uint16_t value) {
+    slots[0] = value;
+  }
 };
 template <>
 struct ArgTypeDef<int32_t> {
   static const char* name;
-  static void Emit(EventBuffer* b, uint32_t value) { b->AddEntry(value); }
+  static const size_t kSlotCount = 1;
+  static void Emit(EventBuffer* b, uint32_t* slots, uint32_t value) {
+    slots[0] = value;
+  }
 };
+
+// Helper for counting the number of slots required to serialize a template
+// pack of types.
+// Counts the number of slots needed to store the arguments by recursing
+// over the list of types. Unlike with argument signature generation, this
+// doesn't need to be in order, so we use a simpler form of recursion.
+template <size_t k, typename Enable = void>
+struct CountArgSlotsHelper {
+  template <typename T, typename... ArgTypes>
+  static constexpr size_t Count() {
+    return ArgTypeDef<T>::kSlotCount +
+           CountArgSlotsHelper<k - 1>::template Count<ArgTypes...>();
+  }
+};
+template <size_t k>
+struct CountArgSlotsHelper<k, typename std::enable_if<k == 0>::type> {
+  template <typename... ArgTypes>
+  static constexpr size_t Count() {
+    static_assert(sizeof...(ArgTypes) == 0,
+                  "Should be the terminal specialization.");
+    return 0;
+  }
+};
+template <typename... ArgTypes>
+constexpr size_t CountArgSlots() {
+  return CountArgSlotsHelper<sizeof...(
+      ArgTypes)>::template Count<ArgTypes...>();
+}
+
+// Emits a variable list of arguments for which an ArgTypeDef exists for each.
+// The slots array must contain at least as many slots as reported required by
+// CountArgSlots<ArgTypes...>().
+inline void EmitArguments(EventBuffer* event_buffer, uint32_t* slots) {}
+template <typename T, typename... RestArgTypes>
+void EmitArguments(EventBuffer* event_buffer, uint32_t* slots, T first,
+                   RestArgTypes... rest) {
+  using Def = ArgTypeDef<T>;
+  Def::Emit(event_buffer, slots, first);
+  EmitArguments(event_buffer, slots + Def::kSlotCount, rest...);
+}
 
 // Value type that can be used to generate an event argument signature. This
 // defers the entire cost of generating the signature until it is needed and
@@ -218,6 +271,11 @@ template <bool kEnable, typename... ArgTypes>
 class EventIf {
  public:
   static constexpr int kArgCount = sizeof...(ArgTypes);
+  static constexpr size_t kEventPrefixSlotCount = 2;
+  static constexpr size_t kArgSlotCount = CountArgSlots<ArgTypes...>();
+  static_assert((kArgSlotCount + kEventPrefixSlotCount) <=
+                    EventBuffer::kMaximumAddSlotsCount,
+                "Arguments to event are too large to be allocated.");
 
   // Disallow copy and assign.
   EventIf(const EventIf&) = delete;
@@ -242,9 +300,12 @@ class EventIf {
 
   // Invokes the event with a specific EventBuffer.
   void InvokeSpecific(EventBuffer* event_buffer, ArgTypes... args) {
-    event_buffer->AddEntry(wire_id_);
-    event_buffer->AddEntry(PlatformGetTimestampMicros32());
-    EmitArguments(event_buffer, args...);
+    const size_t kSlotCount = kEventPrefixSlotCount + kArgSlotCount;
+    uint32_t* slots = event_buffer->AddSlots(kSlotCount);
+    slots[0] = wire_id_;
+    slots[1] = PlatformGetTimestampMicros32();
+    EmitArguments(event_buffer, slots + kEventPrefixSlotCount, args...);
+    event_buffer->Flush();
   }
 
   // Invokes the event against the current thread (if it has been enabled).
@@ -256,15 +317,6 @@ class EventIf {
   }
 
  private:
-  // Emitters for a variable list of arguments.
-  void EmitArguments(EventBuffer* event_buffer) {}
-
-  template <typename T, typename... RestArgTypes>
-  void EmitArguments(EventBuffer* event_buffer, T first, RestArgTypes... rest) {
-    ArgTypeDef<T>::Emit(event_buffer, first);
-    EmitArguments(event_buffer, rest...);
-  }
-
   int wire_id_;
 };
 
@@ -348,8 +400,10 @@ class ScopedEventIf : private EventIf<kEnable, ArgTypes...> {
   // Emits a leave event against a specific EventBuffer.
   void LeaveSpecific(EventBuffer* event_buffer) {
     // We directly emit the scope leave event to avoid some overhead.
-    event_buffer->AddEntry(StandardEvents::kScopeLeaveEventId);
-    event_buffer->AddEntry(PlatformGetTimestampMicros32());
+    uint32_t* slots = event_buffer->AddSlots(2);
+    slots[0] = StandardEvents::kScopeLeaveEventId;
+    slots[1] = PlatformGetTimestampMicros32();
+    event_buffer->Flush();
   }
 
   // Emits an enter event against the current thread's EventBuffer (if enabled).
