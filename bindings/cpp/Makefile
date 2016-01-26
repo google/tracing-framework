@@ -88,7 +88,7 @@ test: macros_test runtime_test
 	./runtime_test
 
 gtest.o: $(GTEST_ALL_CC)
-	$(CXX) $(CXXFLAGS) -iquote $(GTEST_DIR) -o $@ -c $+
+	$(CXX) $(CXXFLAGS) -Wno-unused-private-field -iquote $(GTEST_DIR) -o $@ -c $+
 
 macros_test: macros_test.o gtest.o libwtf.a
 	$(CXX) -o $@ $+ $(LDLIBS)
