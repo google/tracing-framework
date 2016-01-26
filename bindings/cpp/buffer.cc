@@ -103,22 +103,70 @@ void StringTable::Clear() {
   strings_to_id_.clear();
 }
 
-EventBuffer::EventBuffer(StringTable* string_table)
+EventBuffer::EventBuffer(StringTable* string_table, size_t chunk_size_bytes)
     : string_table_(string_table) {
-  entries_.clear();
+  if (chunk_size_bytes < kMinimumChunkSizeBytes) {
+    chunk_size_bytes = kMinimumChunkSizeBytes;
+  }
+  chunk_limit_ = chunk_size_bytes / sizeof(uint32_t);
+
+  head_ = current_ = new Chunk(chunk_limit_);
+}
+
+EventBuffer::~EventBuffer() {
+  Chunk* chunk = head_;
+  while (chunk) {
+    Chunk* next_chunk = chunk->next;
+    delete chunk;
+    chunk = next_chunk;
+  }
+}
+
+uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
+  Chunk* new_chunk = new Chunk(chunk_limit_);
+  new_chunk->size = count;
+
+  // Publish the final size of the old chunk (atomic release).
+  current_->published_size = current_->size;
+
+  // Publish that we have a new zero sized chunk (atomic release).
+  current_->next = new_chunk;
+
+  // Make new chunk current (does not modify shared state).
+  current_ = new_chunk;
+
+  return new_chunk->slots;
 }
 
 void EventBuffer::PopulateHeader(OutputBuffer::PartHeader* header) {
+  size_t published_slot_count = 0;
+  for (Chunk* chunk = head_; chunk; chunk = chunk->next /* acquire */) {
+    published_slot_count += chunk->published_size;  // Acquire.
+  }
+
   header->type = 0x20002;
   header->offset = 0;
-  header->length = entries_.size() * sizeof(uint32_t);
+  header->length = published_slot_count * sizeof(uint32_t);
 }
 
 bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
                           OutputBuffer* output_buffer) {
+  Chunk* chunk = head_;
   size_t count = header->length / sizeof(uint32_t);
-  for (size_t i = 0; i < count; i++) {
-    output_buffer->AppendUint32(entries_[i]);
+  while (count > 0) {
+    if (!chunk) {
+      // Size mismatch.
+      return false;
+    }
+
+    size_t published_size = chunk->published_size;  // Acquire.
+    size_t append_count = std::min(count, published_size);
+    count -= append_count;
+    for (size_t i = 0; i < append_count; i++) {
+      output_buffer->AppendUint32(chunk->slots[i]);
+    }
+
+    chunk = chunk->next;  // Acquire.
   }
   return true;
 }
