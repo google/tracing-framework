@@ -20,13 +20,20 @@ atomics are used (as introduced in C++11).
 In addition to a C++ compiler and GNU make, the following libraries are
 required:
 
-* libjsoncpp:
-* gtest (for building tests only):
+* libjsoncpp
+* gtest (for building tests only)
 
 *On Ubuntu:*
 
 ```
+# Install library prerequisites.
 sudo apt-get install libjsoncpp-dev libgtest-dev
+
+# Install clang.
+sudo apt-get install clang
+
+# Or gcc, if you prefer.
+sudo apt-get install g++
 ```
 
 ### Building
@@ -43,6 +50,22 @@ make install [PREFIX=/usr/local]
 
 # Cleans all generated files.
 make clean
+```
+
+### Switching Compilers
+
+Standard GNU make configuration variables drive compiler selection. Change
+the value of CXX to customize:
+
+```
+# Select clang.
+export CXX=clang++
+
+# Select gcc.
+export CXX=g++
+
+# Override on the command line.
+make test CXX=clang++
 ```
 
 ### Customizing
