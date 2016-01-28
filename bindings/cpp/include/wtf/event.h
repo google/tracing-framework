@@ -1,9 +1,7 @@
 #ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_EVENT_H_
 #define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_EVENT_H_
 
-#include <atomic>
 #include <functional>
-#include <mutex>
 #include <string>
 
 #include "wtf/buffer.h"
@@ -164,7 +162,7 @@ class EventDefinition {
                           const char* next_arg_type, const char** arg_names);
 
   // Hands out event ids.
-  static std::atomic<int> next_event_id_;
+  static platform::atomic<int> next_event_id_;
 
   int wire_id_ = 0;
   EventClass event_class_ = EventClass::kInstance;
@@ -191,7 +189,7 @@ class EventRegistry {
   std::vector<EventDefinition> GetEventDefinitions();
 
  private:
-  std::mutex mu_;
+  platform::mutex mu_;
   std::deque<EventDefinition> event_definitions_;
   EventRegistry();
   EventRegistry(const EventRegistry&) = delete;

@@ -1,13 +1,13 @@
 #ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_BUFFER_H_
 #define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_BUFFER_H_
 
-#include <atomic>
 #include <deque>
 #include <iostream>
-#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "wtf/platform.h"
 
 namespace wtf {
 
@@ -105,7 +105,7 @@ class StringTable {
   void Clear();
 
  private:
-  std::mutex mu_;
+  platform::mutex mu_;
   std::vector<std::string> strings_;
   std::unordered_map<std::string, int> strings_to_id_;
 };
@@ -162,7 +162,7 @@ class EventBuffer {
   static constexpr size_t kInitialSize = 1024;
   StringTable* string_table_;
   std::deque<uint32_t> entries_{kInitialSize};
-  std::atomic<bool> out_of_scope_{false};
+  platform::atomic<bool> out_of_scope_{false};
 };
 
 }  // namespace wtf

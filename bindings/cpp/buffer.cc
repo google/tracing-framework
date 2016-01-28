@@ -47,7 +47,7 @@ void OutputBuffer::StartChunk(ChunkHeader header, PartHeader* parts,
 StringTable::StringTable() = default;
 
 int StringTable::GetStringId(const std::string& str) {
-  std::lock_guard<std::mutex> lock{mu_};
+  platform::lock_guard<platform::mutex> lock{mu_};
   auto it = strings_to_id_.find(str);
   if (it == strings_to_id_.end()) {
     // New string.
@@ -61,7 +61,7 @@ int StringTable::GetStringId(const std::string& str) {
 }
 
 void StringTable::PopulateHeader(OutputBuffer::PartHeader* header) {
-  std::lock_guard<std::mutex> lock{mu_};
+  platform::lock_guard<platform::mutex> lock{mu_};
 
   // Compute size.
   size_t raw_length = 0;
@@ -76,7 +76,7 @@ void StringTable::PopulateHeader(OutputBuffer::PartHeader* header) {
 
 bool StringTable::WriteTo(OutputBuffer::PartHeader* header,
                           OutputBuffer* output_buffer) {
-  std::lock_guard<std::mutex> lock{mu_};
+  platform::lock_guard<platform::mutex> lock{mu_};
 
   // Output up to the previously noted size.
   size_t raw_length = 0;
@@ -98,7 +98,7 @@ bool StringTable::WriteTo(OutputBuffer::PartHeader* header,
 }
 
 void StringTable::Clear() {
-  std::lock_guard<std::mutex> lock{mu_};
+  platform::lock_guard<platform::mutex> lock{mu_};
   strings_.clear();
   strings_to_id_.clear();
 }
