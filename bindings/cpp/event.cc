@@ -13,7 +13,7 @@ const char* ArgTypeDef<uint32_t>::name = "uint32";
 const char* ArgTypeDef<int16_t>::name = "int16";
 const char* ArgTypeDef<int32_t>::name = "int32";
 
-std::atomic<int> EventDefinition::next_event_id_{
+platform::atomic<int> EventDefinition::next_event_id_{
     StandardEvents::kScopeLeaveEventId + 1};
 
 namespace {
@@ -104,12 +104,12 @@ EventRegistry* EventRegistry::GetInstance() {
 
 void EventRegistry::AddEventDefinition(EventDefinition event_definition) {
   EventRegistry* instance = GetInstance();
-  std::lock_guard<std::mutex> lock{instance->mu_};
+  platform::lock_guard<platform::mutex> lock{instance->mu_};
   instance->event_definitions_.push_back(event_definition);
 }
 
 std::vector<EventDefinition> EventRegistry::GetEventDefinitions() {
-  std::lock_guard<std::mutex> lock{mu_};
+  platform::lock_guard<platform::mutex> lock{mu_};
   std::vector<EventDefinition> r;
   r.reserve(event_definitions_.size());
   std::copy(event_definitions_.begin(), event_definitions_.end(),
@@ -140,7 +140,7 @@ void StandardEvents::ScopeLeave(EventBuffer* event_buffer) {
 
 int StandardEvents::CreateZone(EventBuffer* event_buffer, const char* name,
                                const char* type, const char* location) {
-  static std::atomic<int> next_zone_id{1};
+  static platform::atomic<int> next_zone_id{1};
   static EventEnabled<uint16_t, const char*, const char*, const char*> event{
       EventClass::kInstance, EventFlags::kBuiltin | EventFlags::kInternal,
       "wtf.zone#create:zoneId,name,type,location"};

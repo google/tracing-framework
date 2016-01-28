@@ -38,7 +38,7 @@ void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
   }
   EventBuffer* event_buffer;
   {
-    std::lock_guard<std::mutex> lock{mu_};
+    platform::lock_guard<platform::mutex> lock{mu_};
     event_buffer = CreateThreadEventBuffer();
   }
 
@@ -112,7 +112,7 @@ bool Runtime::Save(std::ostream* out) {
   // lock free.
   std::vector<EventBuffer*> local_thread_event_buffers;
   {
-    std::lock_guard<std::mutex> lock{mu_};
+    platform::lock_guard<platform::mutex> lock{mu_};
     local_thread_event_buffers.reserve(thread_event_buffers_.size());
     for (auto& event_buffer : thread_event_buffers_) {
       local_thread_event_buffers.push_back(event_buffer.get());
