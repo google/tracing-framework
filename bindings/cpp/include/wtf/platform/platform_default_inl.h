@@ -3,8 +3,6 @@
 
 #include <time.h>
 
-#include "wtf/platform/platform_aux_pthread_inl.h"
-
 namespace wtf {
 
 namespace internal {
