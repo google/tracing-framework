@@ -27,7 +27,9 @@ void PlatformSetThreadLocalEventBuffer(EventBuffer* event_buffer);
 }  // namespace wtf
 
 // Branch to for specific platform implementations.
-#if defined(__myriad2__)
+#if defined(WTF_SINGLE_THREADED)
+#include "wtf/platform/platform_single_threaded_inl.h"
+#elif defined(__myriad2__)
 #include "wtf/platform/platform_myriad2_inl.h"
 #else
 // Default POSIX platform.

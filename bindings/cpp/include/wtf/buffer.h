@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+// FIXME stuff in platform.h needs to know about StringTable and EventBuffer,
+// but this file needs to know about stuff in the platform, like mutexes.
 #include "wtf/platform.h"
 
 namespace wtf {
