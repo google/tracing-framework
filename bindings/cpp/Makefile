@@ -9,13 +9,26 @@
 #     Cleans all generated files.
 
 # Flag defaults. Can be overriden.
-CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC
-LDLIBS = -ljsoncpp -lpthread
+THREADING = multi
+# TODO(laurenzo): Figure out why myriad2 needs __STRICT_ANSI__ and remove it.
+CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC -U__STRICT_ANSI__
+LDLIBS = -ljsoncpp
 SOEXT = so
 GTEST_DIR = /usr/src/gtest
 GTEST_ALL_CC = $(GTEST_DIR)/src/gtest-all.cc
 PREFIX=/usr/local
 INSTALL=install
+
+# Threading customizations.
+ifeq "$(THREADING)" "multi"
+CPPFLAGS += -DGTEST_HAS_PTHREAD=1
+LDLIBS += -pthread
+else ifeq "$(THREADING)" "single"
+CPPFLAGS += -DGTEST_HAS_PTHREAD=0
+CPPFLAGS += -DWTF_SINGLE_THREADED
+else
+$(error Expected value of THREADING to be "single" or "multi")
+endif
 
 # Required flag customizations.
 CPPFLAGS += -Iinclude
@@ -56,11 +69,12 @@ LIBRARY_OBJECTS := $(LIBRARY_SOURCES:%.cc=%.o)
 
 all: libwtf.a libwtf.$(SOEXT)
 
-### RULES.
-%_test.o: %_test.cc $(ALL_HEADERS)
+### RULES (for full compatibility with Make<3.8.2, most specific must come
+### first and additional dependencies cannot be introduced.
+%_test.o: %_test.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DWTF_ENABLE -o $@ -c $<
 
-%.o: %.cc $(ALL_HEADERS)
+%.o: %.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c $<
 
 ### LIBRARIES.
@@ -88,7 +102,8 @@ test: macros_test runtime_test
 	./runtime_test
 
 gtest.o: $(GTEST_ALL_CC)
-	$(CXX) $(CXXFLAGS) -Wno-unused-private-field -iquote $(GTEST_DIR) -o $@ -c $+
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wno-unused-private-field \
+		-iquote $(GTEST_DIR) -o $@ -c $+
 
 macros_test: macros_test.o gtest.o libwtf.a
 	$(CXX) -o $@ $+ $(LDLIBS)

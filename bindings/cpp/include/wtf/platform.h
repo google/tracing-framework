@@ -12,6 +12,10 @@ class EventBuffer;
 // Initializes platform specific machinery.
 void PlatformInitialize();
 
+// Called by the Runtime to initialize the platform. Internally calls
+// PlatformInitialize() if needed.
+void PlatformInitializeThreading();
+
 // Gets the timestamp in micro-seconds from the epoch start time that results
 // from the call to PlatformSetTimestampEpoch().
 uint32_t PlatformGetTimestampMicros32();
@@ -27,13 +31,19 @@ void PlatformSetThreadLocalEventBuffer(EventBuffer* event_buffer);
 }  // namespace wtf
 
 // Branch to for specific platform implementations.
-#if defined(WTF_SINGLE_THREADED)
-#include "wtf/platform/platform_single_threaded_inl.h"
-#elif defined(__myriad2__)
-#include "wtf/platform/platform_myriad2_inl.h"
+// This must match the checks in platform.cc.
+#if defined(__myriad2__) && defined(__sparc__)
+#include "wtf/platform/platform_myriad2sparc_inl.h"
 #else
 // Default POSIX platform.
 #include "wtf/platform/platform_default_inl.h"
+#endif
+
+// Select threading library.
+#if defined(WTF_SINGLE_THREADED)
+#include "wtf/platform/platform_aux_single_threaded_inl.h"
+#else
+#include "wtf/platform/platform_aux_std_threaded_inl.h"
 #endif
 
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_H_

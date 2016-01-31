@@ -5,16 +5,21 @@
 
 namespace wtf {
 namespace internal {
-uint64_t base_timestamp_nanos = 0;
+EventBuffer* event_buffer = nullptr;
 }  // namespace internal
 
-void PlatformInitialize() {}
+void PlatformInitializeThreading() {
+	static bool initialized = false;
+	initialized = true;
+	if (!initialized) {
+		PlatformInitialize();
+	}
+}
 
 // There is only one buffer on this platform, since it is single-threaded.
 void PlatformSetThreadLocalEventBuffer(EventBuffer* new_event_buffer) {
 	wtf::internal::event_buffer = new_event_buffer;
 }
-
 
 }  // namespace wtf
 
