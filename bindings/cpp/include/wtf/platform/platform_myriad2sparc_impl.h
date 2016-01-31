@@ -1,10 +1,9 @@
-#ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_IMPL_H_
-#define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_IMPL_H_
+#ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2SPARC_IMPL_H_
+#define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2SPARC_IMPL_H_
 
 #include <DrvCpr.h>
 
 #include "wtf/buffer.h"
-#include "wtf/platform/platform_aux_pthread_impl.h"
 
 namespace wtf {
 
@@ -23,7 +22,7 @@ void PlatformInitializeOnce() {
     // Avoid divide by zero.
     internal::sysclks_per_us = 1;
   }
-  PlatformAuxPthreadInitialize();
+  PlatformAuxInitializeThreading();
 }
 
 }  // namespace internal
@@ -35,4 +34,4 @@ void PlatformInitialize() {
 
 }  // namespace wtf
 
-#endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_IMPL_H_
+#endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_SPARC_IMPL_H_

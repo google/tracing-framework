@@ -5,8 +5,8 @@
 //     time APIs.
 //   - This implementation can be extended to support tracing buffers on
 //     SHAVEs.
-#ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_INL_H_
-#define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_INL_H_
+#ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2SPARC_INL_H_
+#define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2SPARC_INL_H_
 
 #include <DrvRegUtils.h>
 #include <registersMyriad.h>
@@ -43,4 +43,4 @@ __attribute__((always_inline)) inline uint32_t PlatformGetTimestampMicros32() {
 
 }  // namespace wtf
 
-#endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2_INL_H_
+#endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_MYRIAD2SPARC_INL_H_

@@ -8,7 +8,7 @@
 namespace wtf {
 
 Runtime::Runtime() {
-  PlatformInitialize();
+  PlatformInitializeThreading();
 
   // Force reference event types that we inline manually.
   StandardEvents::GetScopeLeaveEvent();

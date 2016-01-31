@@ -9,6 +9,47 @@ C++ codebase. APIs and macros exist for:
 * Enabling WTF for threads
 * Saving traces to files or memory
 
+## General Usage By Example
+
+See comments in macro.h and runtime.h. Some brief examples are below.
+
+```
+#include <wtf/macros.h>
+
+// Enable tracing for a thread. This usually goes at the top of your thread's
+// Run() method.
+WTF_THREAD_ENABLE("MyThreadName");
+
+// Trace a scope. This will nest properly and show up as a horizontal bar for
+// the duration. We also log a singleton event at the mid point of some work.
+void ClassName::Process() {
+  WTF_SCOPE0("ClassName#Process");
+  for (int i = 0; i < 5; i++) {
+    if (i == 3) {
+      WTF_EVENT0("ClassName#ProcessMidPoint");
+    }
+  }
+}
+
+// The above outputs a scope with no arguments. If you have simple arguments,
+// they are sometimes useful in a trace. We also want to log a singleton
+// event when something goes wrong.
+void ClassName::ProcessRange(int start, int end) {
+  WTF_SCOPE("ClassName#ProcessRange: start, end", int32_t, int32_t)(start, end);
+  for (int i = start; i <= end; i++) {
+    if (!ProcessFrame(i)) {
+      WTF_EVENT("ClassName#ProcessFrameFailed: index", int32_t)(i);
+    }
+  }
+}
+
+// Save a trace.
+if (!wtf::Runtime::GetInstance()->SaveToFile(local_file_name)) {
+  std::cerr << "Error saving file: " << local_file_name;
+  return;
+}
+```
+
 ## Installing
 
 ### Prerequisites
@@ -68,48 +109,32 @@ export CXX=g++
 make test CXX=clang++
 ```
 
+### Testing
+
+#### Linux/GCC:
+
+```
+make clean && make test THREADING=multi CXX=g++
+make clean && make test THREADING=single CXX=g++
+```
+
+#### Linux/clang:
+
+```
+make clean && make test THREADING=multi CXX=clang++
+make clean && make test THREADING=single CXX=clang++
+```
+
+#### Myriad2 (compile only - still a work in progress):
+
+```
+export MDK_HOME=...
+export CXX="$(which $MDK_HOME/tools/*/linux64/sparc-myriad-elf-*/bin/sparc-myriad-elf-g++)"
+
+make clean && make event.o platform.o event.o THREADING=single
+```
+
 ### Customizing
 
 See the variables at the top of the Makefile for what can be overriden.
 Overriding can be done by appending VAR=value to the make command line.
-
-## General Usage By Example
-
-See comments in macro.h and runtime.h. Some brief examples are below.
-
-```
-#include <wtf/macros.h>
-
-// Enable tracing for a thread. This usually goes at the top of your thread's
-// Run() method.
-WTF_THREAD_ENABLE("MyThreadName");
-
-// Trace a scope. This will nest properly and show up as a horizontal bar for
-// the duration. We also log a singleton event at the mid point of some work.
-void ClassName::Process() {
-  WTF_SCOPE0("ClassName#Process");
-  for (int i = 0; i < 5; i++) {
-    if (i == 3) {
-      WTF_SCOPE0("ClassName#ProcessMidPoint");
-    }
-  }
-}
-
-// The above outputs a scope with no arguments. If you have simple arguments,
-// they are sometimes useful in a trace. We also want to log a singleton
-// event when something goes wrong.
-void ClassName::ProcessRange(int start, int end) {
-  WTF_SCOPE("ClassName#ProcessRange: start, end", int32_t, int32_t)(start, end);
-  for (int i = start; i <= end; i++) {
-    if (!ProcessFrame(i)) {
-      WTF_EVENT("ClassName#ProcessFrameFailed: index", int32_t)(i);
-    }
-  }
-}
-
-// Save a trace.
-if (!wtf::Runtime::GetInstance()->SaveToFile(local_file_name)) {
-  std::cerr << "Error saving file: " << local_file_name;
-  return;
-}
-```

@@ -1,11 +1,10 @@
-#ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_SINGLE_THREADED_INL_H_
-#define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_SINGLE_THREADED_INL_H_
-
-#include "wtf/platform/platform_default_inl.h"
+#ifndef TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_AUX_SINGLE_THREADED_INL_H_
+#define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_AUX_SINGLE_THREADED_INL_H_
 
 namespace wtf {
 
-// On this single-threaded platform, atomics and mutexes are no-ops.
+// In this configuration, we provide skeletons of atomics and mutexes that
+// no-op.
 namespace platform {
 struct mutex {};
 
@@ -39,4 +38,4 @@ inline EventBuffer* PlatformGetThreadLocalEventBuffer() {
 
 }  // namespace wtf
 
-#endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_SINGLE_THREADED_INL_H_
+#endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_AUX_SINGLE_THREADED_INL_H_
