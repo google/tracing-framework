@@ -37,7 +37,7 @@ if [ ! -d "build-test" ]; then
 fi
 cd build-test/
 if [ ! -e "Sauce-Connect.jar" ]; then
-  curl -O http://saucelabs.com/downloads/Sauce-Connect-latest.zip
+  curl -O https://saucelabs.com/downloads/Sauce-Connect-latest.zip
   unzip Sauce-Connect-latest.zip
 fi
 if [ -e "sauce_connect.log" ]; then
