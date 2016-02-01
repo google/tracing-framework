@@ -61,7 +61,6 @@ atomics are used (as introduced in C++11).
 In addition to a C++ compiler and GNU make, the following libraries are
 required:
 
-* libjsoncpp
 * gtest (for building tests only)
 
 *On Ubuntu:*
@@ -111,6 +110,8 @@ make test CXX=clang++
 
 ### Testing
 
+TODO: Automate more of this.
+
 #### Linux/GCC:
 
 ```
@@ -124,6 +125,9 @@ make clean && make test THREADING=single CXX=g++
 make clean && make test THREADING=multi CXX=clang++
 make clean && make test THREADING=single CXX=clang++
 ```
+
+Make sure to load the tmptestbuf.wtf-trace file in the viewer and ensure it
+works.
 
 #### Myriad2 (compile only - still a work in progress):
 

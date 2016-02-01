@@ -2,8 +2,7 @@
 
 #include <cstdint>
 #include <fstream>
-
-#include "jsoncpp/json/json.h"
+#include <sstream>
 
 namespace wtf {
 
@@ -63,21 +62,18 @@ void Runtime::WriteHeaderChunk(OutputBuffer* output_buffer) {
   output_buffer->AppendUint32(kFormatVersion);
 
   // Header chunk.
-  Json::Value flags(Json::arrayValue);
-  flags.append("has_high_resolution_times");
+  std::stringstream json_stream;
+  json_stream << "{";
+  json_stream << "\"type\": \"file_header\",";
+  json_stream << "\"timebase\": 0,";  // We reset the platform to a 0 time base.
+  json_stream << "\"flags\": [\"has_high_resolution_times\"],";
+  json_stream << "\"contextInfo\": {";
+  json_stream << "\"contextType\": \"script\",";
+  json_stream << "\"title\": \"C++ Trace\"";
+  json_stream << "}";  // contextInfo
+  json_stream << "}";
 
-  Json::Value context(Json::objectValue);
-  context["contextType"] = "script";
-  context["title"] = "Generic Trace";
-
-  Json::Value json;
-  json["type"] = "file_header";
-  json["flags"] = flags;
-  json["timebase"] = 0;  // We reset the platform to a 0 time base ourselves.
-  json["contextInfo"] = context;
-
-  Json::FastWriter json_writer;
-  auto json_string = json_writer.write(json);
+  auto json_string = json_stream.str();
 
   OutputBuffer::PartHeader part_header{
       0x10000,  // Type.
