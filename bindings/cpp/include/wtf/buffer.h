@@ -197,8 +197,9 @@ class EventBuffer {
   // that certain operations (i.e. chunk overflow) can cause flushing to
   // happen earlier.
   void Flush() {
-    // Publish the size (atomic release).
-    current_->published_size = current_->size;
+    // Publish the size.
+    current_->published_size.store(current_->size,
+                                   platform::memory_order_release);
   }
 
   // Gets the string table for this buffer.

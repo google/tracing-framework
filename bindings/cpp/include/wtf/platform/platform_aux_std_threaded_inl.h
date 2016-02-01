@@ -21,6 +21,16 @@ using lock_guard = std::lock_guard<T>;
 
 template <typename T>
 using atomic = std::atomic<T>;
+
+// Since memory_order is an old-school enum, it needs to be imported
+// individually.
+using std::memory_order;
+using std::memory_order_relaxed;
+using std::memory_order_consume;
+using std::memory_order_acquire;
+using std::memory_order_release;
+using std::memory_order_acq_rel;
+using std::memory_order_seq_cst;
 }  // namespace platform
 
 namespace internal {

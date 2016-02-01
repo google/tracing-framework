@@ -15,16 +15,35 @@ struct lock_guard {
   T& mutex;
 };
 
+enum memory_order {
+  memory_order_relaxed,
+  memory_order_consume,
+  memory_order_acquire,
+  memory_order_release,
+  memory_order_acq_rel,
+  memory_order_seq_cst
+};
+
 template <typename T>
 struct atomic {
+  T value;
+
   T fetch_add(T increment) {
     value = value + increment;
     return value;
   }
 
-  void store(T new_value) { value = new_value; }
+  void store(T new_value, memory_order order = memory_order_seq_cst) {
+    value = new_value;
+  }
+  T load(memory_order order = memory_order_seq_cst) { return value; }
 
-  T value;
+  // Assignment conversion.
+  void operator=(T& other) { value = other; }
+  void operator=(const T& other) { value = other; }
+
+  // Implicit cast to T.
+  operator T() { return value; }
 };
 }  // namespace platform
 

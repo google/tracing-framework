@@ -126,11 +126,12 @@ uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
   Chunk* new_chunk = new Chunk(chunk_limit_);
   new_chunk->size = count;
 
-  // Publish the final size of the old chunk (atomic release).
-  current_->published_size = current_->size;
+  // Publish the final size of the old chunk.
+  current_->published_size.store(current_->size,
+                                 platform::memory_order_release);
 
-  // Publish that we have a new zero sized chunk (atomic release).
-  current_->next = new_chunk;
+  // Publish that we have a new zero sized chunk.
+  current_->next.store(new_chunk, platform::memory_order_release);
 
   // Make new chunk current (does not modify shared state).
   current_ = new_chunk;
@@ -140,8 +141,10 @@ uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
 
 void EventBuffer::PopulateHeader(OutputBuffer::PartHeader* header) {
   size_t published_slot_count = 0;
-  for (Chunk* chunk = head_; chunk; chunk = chunk->next /* acquire */) {
-    published_slot_count += chunk->published_size;  // Acquire.
+  for (Chunk* chunk = head_; chunk;
+       chunk = chunk->next.load(platform::memory_order_acquire)) {
+    published_slot_count +=
+        chunk->published_size.load(platform::memory_order_acquire);
   }
 
   header->type = 0x20002;
@@ -159,14 +162,15 @@ bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
       return false;
     }
 
-    size_t published_size = chunk->published_size;  // Acquire.
+    size_t published_size =
+        chunk->published_size.load(platform::memory_order_acquire);
     size_t append_count = std::min(count, published_size);
     count -= append_count;
     for (size_t i = 0; i < append_count; i++) {
       output_buffer->AppendUint32(chunk->slots[i]);
     }
 
-    chunk = chunk->next;  // Acquire.
+    chunk = chunk->next.load(platform::memory_order_acquire);
   }
   return true;
 }
