@@ -10,8 +10,7 @@
 
 # Flag defaults. Can be overriden.
 THREADING = multi
-# TODO(laurenzo): Figure out why myriad2 needs __STRICT_ANSI__ and remove it.
-CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC -U__STRICT_ANSI__
+CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC
 LDLIBS = -ljsoncpp
 SOEXT = so
 GTEST_DIR = /usr/src/gtest
@@ -21,18 +20,18 @@ INSTALL=install
 
 # Threading customizations.
 ifeq "$(THREADING)" "multi"
-CPPFLAGS += -DGTEST_HAS_PTHREAD=1
-LDLIBS += -pthread
+override CPPFLAGS += -DGTEST_HAS_PTHREAD=1
+override LDLIBS += -pthread
 else ifeq "$(THREADING)" "single"
-CPPFLAGS += -DGTEST_HAS_PTHREAD=0
-CPPFLAGS += -DWTF_SINGLE_THREADED
+override CPPFLAGS += -DGTEST_HAS_PTHREAD=0
+override CPPFLAGS += -DWTF_SINGLE_THREADED
 else
 $(error Expected value of THREADING to be "single" or "multi")
 endif
 
 # Required flag customizations.
-CPPFLAGS += -Iinclude
-CPPFLAGS += -I$(GTEST_DIR)/include
+override CPPFLAGS += -Iinclude
+override CPPFLAGS += -I$(GTEST_DIR)/include
 	# If system installed, headers will come from system include paths.
 
 LIBRARY_HEADERS := \

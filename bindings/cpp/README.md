@@ -129,9 +129,15 @@ make clean && make test THREADING=single CXX=clang++
 
 ```
 export MDK_HOME=...
-export CXX="$(which $MDK_HOME/tools/*/linux64/sparc-myriad-elf-*/bin/sparc-myriad-elf-g++)"
 
-make clean && make event.o platform.o event.o THREADING=single
+make clean && make buffer.o event.o platform.o \
+  THREADING=single \
+  CXX="$(which $MDK_HOME/tools/*/linux64/sparc-myriad-elf-*/bin/sparc-myriad-elf-g++)" \
+  CPPFLAGS+=-DMA2150 \
+  CPPFLAGS+=-U__STRICT_ANSI__ \
+  CPPFLAGS+=-I$MDK_HOME/mdk/common/drivers/myriad2/socDrivers/leon/bm/include \
+  CPPFLAGS+=-I$MDK_HOME/mdk/common/drivers/myriad2/socDrivers/leon/bm/arch/ma2x5x/include \
+  CPPFLAGS+=-I$MDK_HOME/mdk/common/shared/include
 ```
 
 ### Customizing

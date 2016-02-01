@@ -32,7 +32,7 @@ void PlatformSetThreadLocalEventBuffer(EventBuffer* event_buffer);
 
 // Branch to for specific platform implementations.
 // This must match the checks in platform.cc.
-#if defined(__myriad2__) && defined(__sparc__)
+#if defined(__myriad__) && defined(__sparc__)
 #include "wtf/platform/platform_myriad2sparc_inl.h"
 #else
 // Default POSIX platform.

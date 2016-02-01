@@ -8,11 +8,11 @@
 namespace wtf {
 
 namespace internal {
-pthread_once_t platform_initialize_once_key = PTHREAD_ONCE_INIT;
 uint64_t base_ticks = 0;
 uint64_t sysclks_per_us = 1;  // Avoid divide by zero.
+}  // namespace internal
 
-void PlatformInitializeOnce() {
+void PlatformInitialize() {
   // Initialize timer.
   // TODO(laurenzo): This does not support a changing clock speed. Fall back
   // to POSIX time if this is an issue.
@@ -22,14 +22,6 @@ void PlatformInitializeOnce() {
     // Avoid divide by zero.
     internal::sysclks_per_us = 1;
   }
-  PlatformAuxInitializeThreading();
-}
-
-}  // namespace internal
-
-void PlatformInitialize() {
-  pthread_once(&internal::platform_initialize_once_key,
-               internal::PlatformInitializeOnce);
 }
 
 }  // namespace wtf

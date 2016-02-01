@@ -1,7 +1,7 @@
 #include "wtf/platform.h"
 
 // Branch to for specific platform implementations.
-#if defined(__myriad2__) && defined(__sparc__)
+#if defined(__myriad__) && defined(__sparc__)
 #include "wtf/platform/platform_myriad2sparc_impl.h"
 #else
 // Default POSIX platform.
