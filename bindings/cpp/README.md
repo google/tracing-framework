@@ -134,7 +134,7 @@ works.
 ```
 export MDK_HOME=...
 
-make clean && make buffer.o event.o platform.o \
+make clean && make libwtf.a \
   THREADING=single \
   CXX="$(which $MDK_HOME/tools/*/linux64/sparc-myriad-elf-*/bin/sparc-myriad-elf-g++)" \
   CPPFLAGS+=-DMA2150 \
