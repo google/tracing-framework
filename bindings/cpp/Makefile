@@ -11,7 +11,7 @@
 # Flag defaults. Can be overriden.
 THREADING = multi
 CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC
-LDLIBS = -ljsoncpp
+LDLIBS =
 SOEXT = so
 GTEST_DIR = /usr/src/gtest
 GTEST_ALL_CC = $(GTEST_DIR)/src/gtest-all.cc
@@ -25,6 +25,7 @@ override LDLIBS += -pthread
 else ifeq "$(THREADING)" "single"
 override CPPFLAGS += -DGTEST_HAS_PTHREAD=0
 override CPPFLAGS += -DWTF_SINGLE_THREADED
+.PHONY: threaded_torture_test
 else
 $(error Expected value of THREADING to be "single" or "multi")
 endif
@@ -60,7 +61,8 @@ LIBRARY_SOURCES := \
 
 TEST_SOURCES := \
 	macros_test.cc \
-	runtime_test.cc
+	runtime_test.cc \
+	threaded_torture_test.cc
 
 LIBRARY_OBJECTS := $(LIBRARY_SOURCES:%.cc=%.o)
 
@@ -94,11 +96,15 @@ clean:
 		$(wildcard tmp*.wtf-trace)
 
 ### TESTING.
-test: macros_test runtime_test
+test: macros_test runtime_test threaded_torture_test
 	@echo "Running macros_test"
 	./macros_test
 	@echo "Running runtime_test"
 	./runtime_test
+ifeq "$(THREADING)" "multi"
+	@echo "Running threaded_torture_test"
+	./threaded_torture_test
+endif
 
 gtest.o: $(GTEST_ALL_CC)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wno-unused-private-field \
@@ -109,6 +115,12 @@ macros_test: macros_test.o gtest.o libwtf.a
 
 runtime_test: runtime_test.o gtest.o libwtf.a
 	$(CXX) -o $@ $+ $(LDLIBS)
+
+### THREADED TORTURE TEST
+ifeq "$(THREADING)" "multi"
+threaded_torture_test: threaded_torture_test.o libwtf.a
+	$(CXX) -o $@ $+ $(LDLIBS)
+endif
 
 ### INSTALL.
 install: libwtf.a libwtf.$(SOEXT)

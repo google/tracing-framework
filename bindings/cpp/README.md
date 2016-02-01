@@ -126,8 +126,14 @@ make clean && make test THREADING=multi CXX=clang++
 make clean && make test THREADING=single CXX=clang++
 ```
 
-Make sure to load the tmptestbuf.wtf-trace file in the viewer and ensure it
+TODO: The following is hoaky but is where we are at while building out the
+test suite:
+
+* Make sure to load the tmptestbuf.wtf-trace file in the viewer and ensure it
 works.
+* If running a threaded build, load the largest of the
+tmp_threaded_torture_test*.wtf-trace files you can and verify that the
+SaveToFile scope looks reasonable.
 
 #### Myriad2 (compile only - still a work in progress):
 
