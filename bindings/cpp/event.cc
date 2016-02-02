@@ -57,8 +57,12 @@ bool PeelArgName(const char** arg_names, const char** out_arg_name,
 }  // namespace
 
 void EventDefinition::AppendName(std::string* output) const {
-  const char* colon = strchrnul(name_spec_, ':');
-  output->append(name_spec_, 0, (colon - name_spec_));
+  const char* colon = strchr(name_spec_, ':');
+  if (colon) {
+    output->append(name_spec_, (colon - name_spec_));
+  } else {
+    output->append(name_spec_);
+  }
 }
 
 void EventDefinition::AppendArguments(std::string* output) const {
