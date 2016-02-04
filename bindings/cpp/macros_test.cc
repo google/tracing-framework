@@ -81,7 +81,7 @@ TEST_F(MacrosTest, EventsShouldBeEnabled) {
   EXPECT_TRUE(EventsHaveBeenLogged());
   ClearEventBuffer();
 
-  { WTF_SCOPE("ShouldBeEnabled#InnerLoop1", int32_t)(1); }
+  { WTF_SCOPE("ShouldBeEnabled#InnerLoop1", double)(1); }
   EXPECT_TRUE(EventsHaveBeenLogged());
   ClearEventBuffer();
 }

@@ -15,7 +15,7 @@ template <typename ArgType>
 struct ArgTypeDef {
   static const size_t kSlotCount = 0;
   static const char* type_name() { return "unknown"; }
-  static void Emit(EventBuffer* b, uint32_t* slots, const char* value) {}
+  static void Emit(EventBuffer* b, uint32_t* slots, ArgType value) {}
 };
 
 // const char* -> ascii
