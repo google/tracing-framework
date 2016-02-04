@@ -96,7 +96,7 @@ struct Base64BitIntegralArgTypeDef {
 // uint64_t -> uint32
 template <>
 struct ArgTypeDef<uint64_t> : Base64BitIntegralArgTypeDef<uint64_t> {
-  static const char* type_name() { return "int32"; }
+  static const char* type_name() { return "uint32"; }
 };
 
 // int64_t -> int32
