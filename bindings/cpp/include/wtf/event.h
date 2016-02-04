@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 
+#include "wtf/argtypes.h"
 #include "wtf/buffer.h"
 #include "wtf/config.h"
 #include "wtf/platform.h"
@@ -26,53 +27,6 @@ struct EventFlags {
   static constexpr int kBuiltin = 1 << 5;
 };
 
-// ArgTypeDef for each supported type provides the WTF type name and a
-// function for emitting values of the type.
-template <typename ArgType>
-struct ArgTypeDef {};
-template <>
-struct ArgTypeDef<const char*> {
-  static const char* name;
-  static const size_t kSlotCount = 1;
-  static void Emit(EventBuffer* b, uint32_t* slots, const char* value) {
-    int string_id = value ? b->string_table()->GetStringId(value)
-                          : StringTable::kEmptyStringId;
-    slots[0] = string_id;
-  }
-};
-template <>
-struct ArgTypeDef<uint16_t> {
-  static const char* name;
-  static const size_t kSlotCount = 1;
-  static void Emit(EventBuffer* b, uint32_t* slots, uint16_t value) {
-    slots[0] = value;
-  }
-};
-template <>
-struct ArgTypeDef<uint32_t> {
-  static const char* name;
-  static const size_t kSlotCount = 1;
-  static void Emit(EventBuffer* b, uint32_t* slots, uint32_t value) {
-    slots[0] = value;
-  }
-};
-template <>
-struct ArgTypeDef<int16_t> {
-  static const char* name;
-  static const size_t kSlotCount = 1;
-  static void Emit(EventBuffer* b, uint32_t* slots, uint16_t value) {
-    slots[0] = value;
-  }
-};
-template <>
-struct ArgTypeDef<int32_t> {
-  static const char* name;
-  static const size_t kSlotCount = 1;
-  static void Emit(EventBuffer* b, uint32_t* slots, uint32_t value) {
-    slots[0] = value;
-  }
-};
-
 // Helper for counting the number of slots required to serialize a template
 // pack of types.
 // Counts the number of slots needed to store the arguments by recursing
@@ -82,7 +36,7 @@ template <size_t k, typename Enable = void>
 struct CountArgSlotsHelper {
   template <typename T, typename... ArgTypes>
   static constexpr size_t Count() {
-    return ArgTypeDef<T>::kSlotCount +
+    return types::ArgTypeDef<T>::kSlotCount +
            CountArgSlotsHelper<k - 1>::template Count<ArgTypes...>();
   }
 };
@@ -108,7 +62,7 @@ inline void EmitArguments(EventBuffer* event_buffer, uint32_t* slots) {}
 template <typename T, typename... RestArgTypes>
 void EmitArguments(EventBuffer* event_buffer, uint32_t* slots, T first,
                    RestArgTypes... rest) {
-  using Def = ArgTypeDef<T>;
+  using Def = types::ArgTypeDef<T>;
   Def::Emit(event_buffer, slots, first);
   EmitArguments(event_buffer, slots + Def::kSlotCount, rest...);
 }
@@ -190,7 +144,7 @@ class EventDefinition {
   struct ZipArgumentsHelper {
     template <typename FirstType, typename... ArgTypes>
     static void Zip(std::string* output, const char** arg_names) {
-      const char* arg_type_name = ArgTypeDef<FirstType>::name;
+      const char* arg_type_name = types::ArgTypeDef<FirstType>::type_name();
       ZipArgument(output, k, arg_type_name, arg_names);
       ZipArgumentsHelper<k + 1, kSize>::template Zip<ArgTypes...>(output,
                                                                   arg_names);
