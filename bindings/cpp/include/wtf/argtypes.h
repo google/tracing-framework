@@ -12,7 +12,11 @@ namespace types {
 // ArgTypeDef for each supported type provides the WTF type name and a
 // function for emitting values of the type.
 template <typename ArgType>
-struct ArgTypeDef {};
+struct ArgTypeDef {
+  static const size_t kSlotCount = 0;
+  static const char* type_name() { return "unknown"; }
+  static void Emit(EventBuffer* b, uint32_t* slots, const char* value) {}
+};
 
 // const char* -> ascii
 template <>
@@ -127,6 +131,16 @@ struct ArgTypeDef<bool> {
   static const size_t kSlotCount = 1;
   static void Emit(EventBuffer* b, uint32_t* slots, bool value) {
     slots[0] = value ? 1 : 0;
+  }
+};
+
+// Does a compile time assert that the type is supported.
+template <typename T>
+struct AssertTypeDef {
+  static constexpr bool Assert() {
+    static_assert(ArgTypeDef<T>::kSlotCount > 0,
+                  "WTF does not support arguments of this type");
+    return true;
   }
 };
 

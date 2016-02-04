@@ -63,6 +63,7 @@ template <typename T, typename... RestArgTypes>
 void EmitArguments(EventBuffer* event_buffer, uint32_t* slots, T first,
                    RestArgTypes... rest) {
   using Def = types::ArgTypeDef<T>;
+  types::AssertTypeDef<T>::Assert();
   Def::Emit(event_buffer, slots, first);
   EmitArguments(event_buffer, slots + Def::kSlotCount, rest...);
 }
@@ -144,6 +145,7 @@ class EventDefinition {
   struct ZipArgumentsHelper {
     template <typename FirstType, typename... ArgTypes>
     static void Zip(std::string* output, const char** arg_names) {
+      types::AssertTypeDef<FirstType>::Assert();
       const char* arg_type_name = types::ArgTypeDef<FirstType>::type_name();
       ZipArgument(output, k, arg_type_name, arg_names);
       ZipArgumentsHelper<k + 1, kSize>::template Zip<ArgTypes...>(output,
