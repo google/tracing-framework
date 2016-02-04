@@ -6,13 +6,6 @@
 
 namespace wtf {
 
-// Definitions for static type names.
-const char* ArgTypeDef<const char*>::name = "ascii";
-const char* ArgTypeDef<uint16_t>::name = "uint16";
-const char* ArgTypeDef<uint32_t>::name = "uint32";
-const char* ArgTypeDef<int16_t>::name = "int16";
-const char* ArgTypeDef<int32_t>::name = "int32";
-
 platform::atomic<int> EventDefinition::next_event_id_{
     StandardEvents::kScopeLeaveEventId + 1};
 
