@@ -48,6 +48,12 @@ TEST_F(MacrosTest, EventsShouldBeDisabled) {
   WTF_THREAD_ENABLE_IF(true, "ShouldBeDisabled");
   // Enabling a thread scribbles into the buffer.
   ClearEventBuffer();
+  WTF_EVENT0(
+      "ShouldBeDisabled#Dup1");  // Make sure can exist in the same scope.
+  WTF_EVENT("ShouldBeDisalbed#Dup1", int32_t)(0);
+  WTF_SCOPE0("ShouldBeDisabled#Dup1");
+  WTF_SCOPE("ShouldBeDisabled#Dup1", int32_t)(1);
+
   WTF_EVENT0("ShouldBeDisabled#E0");
   WTF_EVENT("ShouldBeDisalbed#E1", int32_t)(0);
   { WTF_SCOPE0("ShouldBeDisabled#InnerLoop0"); }
