@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -40,20 +41,20 @@ void SaveThread() {
 void NoiseMaker1(int thread_number) {
   WTF_THREAD_ENABLE(thread_names[thread_number].c_str());
   for (int i = 0;; i++) {
-    WTF_EVENT("NoiseMaker1#Loop: thread_number, i", int32_t, int32_t)(
-        thread_number, i);
+    WTF_EVENT("NoiseMaker1#Loop: thread_number, i", int32_t, int32_t)
+    (thread_number, i);
     std::this_thread::sleep_for(std::chrono::microseconds(5));
     if ((i % 100) == 0) {
-      WTF_SCOPE("NoiseMaker1#Scope100: thread_number, i", int32_t, int32_t)(
-          thread_number, i);
+      WTF_SCOPE("NoiseMaker1#Scope100: thread_number, i", int32_t, int32_t)
+      (thread_number, i);
       std::this_thread::sleep_for(std::chrono::microseconds(10));
       if ((i % 400) == 0) {
-        WTF_SCOPE("NoiseMaker1#Scope400: thread_number, i", int32_t, int32_t)(
-            thread_number, i);
+        WTF_SCOPE("NoiseMaker1#Scope400: thread_number, i", int32_t, int32_t)
+        (thread_number, i);
         std::this_thread::sleep_for(std::chrono::microseconds(10));
         if ((i % 1600) == 0) {
-          WTF_SCOPE("NoiseMaker1#Scope1600: thread_number, i", int32_t,
-                    int32_t)(thread_number, i);
+          WTF_SCOPE("NoiseMaker1#Scope1600: thread_number, i", int32_t, int32_t)
+          (thread_number, i);
           std::this_thread::sleep_for(std::chrono::microseconds(10));
         }
       }
@@ -68,7 +69,7 @@ extern "C" int main(int argc, char** argv) {
   std::thread save_thread(SaveThread);
 
   std::vector<std::thread> threads;
-  int thread_count = std::thread::hardware_concurrency();
+  int thread_count = std::min(std::thread::hardware_concurrency(), 4u);
   if (thread_count > 1) {
     thread_count -= 1;  // Give one to the save thread if we have it.
   }

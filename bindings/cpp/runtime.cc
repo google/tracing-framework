@@ -44,6 +44,7 @@ void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
   int zone_id =
       StandardEvents::CreateZone(event_buffer, thread_name, type, location);
   StandardEvents::SetZone(event_buffer, zone_id);
+  event_buffer->FreezePrefixSlots();
   PlatformSetThreadLocalEventBuffer(event_buffer);
 }
 

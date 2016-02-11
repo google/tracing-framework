@@ -122,6 +122,16 @@ EventBuffer::~EventBuffer() {
   }
 }
 
+void EventBuffer::FreezePrefixSlots() {
+  Chunk* chunk = current_;
+  frozen_prefix_slots_.resize(chunk->size);
+  for (size_t i = 0; i < frozen_prefix_slots_.size(); i++) {
+    frozen_prefix_slots_[i] = chunk->slots[i];
+  }
+  chunk->size = 0;
+  chunk->published_size = 0;
+}
+
 uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
   Chunk* new_chunk = new Chunk(chunk_limit_);
   new_chunk->size = count;
@@ -149,13 +159,25 @@ void EventBuffer::PopulateHeader(OutputBuffer::PartHeader* header) {
 
   header->type = 0x20002;
   header->offset = 0;
-  header->length = published_slot_count * sizeof(uint32_t);
+  header->length =
+      (frozen_prefix_slots().size() + published_slot_count) * sizeof(uint32_t);
 }
 
 bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
                           OutputBuffer* output_buffer) {
   Chunk* chunk = head_;
   size_t count = header->length / sizeof(uint32_t);
+
+  // Write the frozen prefix.
+  if (count < frozen_prefix_slots().size()) {
+    return false;
+  }
+  count -= frozen_prefix_slots_.size();
+  for (uint32_t prefix_value : frozen_prefix_slots_) {
+    output_buffer->AppendUint32(prefix_value);
+  }
+
+  // Write the main part of the buffer chunk by chunk.
   while (count > 0) {
     if (!chunk) {
       // Size mismatch.

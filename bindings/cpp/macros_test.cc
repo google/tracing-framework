@@ -28,6 +28,14 @@ class MacrosTest : public ::testing::Test {
     }
     return !event_buffer->empty();
   }
+
+  bool PrefixEventsHaveBeenLogged() {
+    auto event_buffer = PlatformGetThreadLocalEventBuffer();
+    if (!event_buffer) {
+      return false;
+    }
+    return !event_buffer->frozen_prefix_slots().empty();
+  }
 };
 
 TEST_F(MacrosTest, AssertMasterEnabled) {
@@ -46,8 +54,8 @@ TEST_F(MacrosTest, ThreadShouldBeDisabled) {
 
 TEST_F(MacrosTest, EventsShouldBeDisabled) {
   WTF_THREAD_ENABLE_IF(true, "ShouldBeDisabled");
-  // Enabling a thread scribbles into the buffer.
-  ClearEventBuffer();
+  EXPECT_TRUE(PrefixEventsHaveBeenLogged());
+
   WTF_EVENT0(
       "ShouldBeDisabled#Dup1");  // Make sure can exist in the same scope.
   WTF_EVENT("ShouldBeDisalbed#Dup1", int32_t)(0);
@@ -67,13 +75,14 @@ WTF_NAMESPACE_ENABLE();
 TEST_F(MacrosTest, ThreadShouldBeEnabled) {
   WTF_THREAD_ENABLE("ShouldBeEnabled");
   // Enabling a thread scribbles into the buffer.
-  EXPECT_TRUE(EventsHaveBeenLogged());
+  EXPECT_TRUE(PrefixEventsHaveBeenLogged());
 }
 
 TEST_F(MacrosTest, EventsShouldBeEnabled) {
   WTF_THREAD_ENABLE_IF(true, "ShouldBeEnabled");
-  // Enabling a thread scribbles into the buffer.
-  ClearEventBuffer();
+  // Enabling a thread should only write prefix events.
+  EXPECT_TRUE(PrefixEventsHaveBeenLogged());
+  EXPECT_FALSE(EventsHaveBeenLogged());
 
   WTF_EVENT0("ShouldBeEnabled#E0");
   EXPECT_TRUE(EventsHaveBeenLogged());

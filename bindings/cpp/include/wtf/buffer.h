@@ -193,6 +193,18 @@ class EventBuffer {
     return slots;
   }
 
+  // To be called after initial slots have been added. They will be transferred
+  // to frozen_prefix_slots_ and cleared from the EventBuffer proper. This
+  // must be done prior to ordinary use of the EventBuffer. It is not possible
+  // to freeze a prefix that spans beyond one chunk.
+  void FreezePrefixSlots();
+
+  // Gets the frozen prefix slots that must be appended whenever the EventBuffer
+  // is serialized.
+  const std::vector<uint32_t>& frozen_prefix_slots() {
+    return frozen_prefix_slots_;
+  }
+
   // Flushes all pending calls to WriteSlots once data has been written. Note
   // that certain operations (i.e. chunk overflow) can cause flushing to
   // happen earlier.
@@ -246,6 +258,11 @@ class EventBuffer {
   StringTable* string_table_;
   size_t chunk_limit_;
   platform::atomic<bool> out_of_scope_{false};
+
+  // Frozen slots that must be prepended whenever the EventBuffer is written
+  // out. This contains any setup events that are needed when writing out
+  // an EventBuffer and will be set at initialization time.
+  std::vector<uint32_t> frozen_prefix_slots_;
 
   // The head chunk. This is set at allocation time prior to the instance
   // becoming shared. The last chunk in the list is the only one that will

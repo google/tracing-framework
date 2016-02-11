@@ -103,7 +103,7 @@ test: macros_test runtime_test threaded_torture_test
 	./runtime_test
 ifeq "$(THREADING)" "multi"
 	@echo "Running threaded_torture_test"
-	./threaded_torture_test
+	time ./threaded_torture_test
 endif
 
 gtest.o: $(GTEST_ALL_CC)
