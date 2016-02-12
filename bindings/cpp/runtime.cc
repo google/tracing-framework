@@ -125,6 +125,21 @@ void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
   PlatformSetThreadLocalEventBuffer(event_buffer);
 }
 
+EventBuffer* Runtime::RegisterExternalThread(const char* thread_name,
+                                             const char* type,
+                                             const char* location) {
+  EventBuffer* event_buffer;
+  {
+    platform::lock_guard<platform::mutex> lock{mu_};
+    event_buffer = CreateThreadEventBuffer();
+  }
+  int zone_id =
+      StandardEvents::CreateZone(event_buffer, thread_name, type, location);
+  StandardEvents::SetZone(event_buffer, zone_id);
+  event_buffer->FreezePrefixSlots();
+  return event_buffer;
+}
+
 void Runtime::DisableCurrentThread() {
   PlatformSetThreadLocalEventBuffer(nullptr);
 }
