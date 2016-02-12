@@ -80,11 +80,7 @@ class Runtime {
   // of owned instances.
   EventBuffer* CreateThreadEventBuffer();
 
-  // Writes the header chunk.
-  void WriteHeaderChunk(OutputBuffer* output_buffer);
-
   platform::mutex mu_;
-  StringTable shared_string_table_;
   std::vector<std::unique_ptr<EventBuffer>> thread_event_buffers_;
 };
 

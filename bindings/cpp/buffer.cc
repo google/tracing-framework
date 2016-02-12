@@ -103,8 +103,7 @@ void StringTable::Clear() {
   strings_to_id_.clear();
 }
 
-EventBuffer::EventBuffer(StringTable* string_table, size_t chunk_size_bytes)
-    : string_table_(string_table) {
+EventBuffer::EventBuffer(size_t chunk_size_bytes) {
   if (chunk_size_bytes < kMinimumChunkSizeBytes) {
     chunk_size_bytes = kMinimumChunkSizeBytes;
   }

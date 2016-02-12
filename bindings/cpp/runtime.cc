@@ -9,53 +9,14 @@ namespace wtf {
 const Runtime::SaveOptions Runtime::kSaveOptionsDefault{};
 const Runtime::SaveOptions Runtime::kSaveOptionsClearThreadData{true};
 
-Runtime::Runtime() {
-  PlatformInitializeThreading();
-
-  // Force reference event types that we inline manually.
-  StandardEvents::GetScopeLeaveEvent();
-}
-
-Runtime* Runtime::GetInstance() {
-  static Runtime runtime;
-  return &runtime;
-}
-
-void Runtime::ResetForTesting() {
-  thread_event_buffers_.clear();
-  shared_string_table_.Clear();
-}
-
-EventBuffer* Runtime::CreateThreadEventBuffer() {
-  EventBuffer* r;
-  thread_event_buffers_.emplace_back(
-      r = new EventBuffer(&shared_string_table_));
-  return r;
-}
-
-void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
-                                  const char* location) {
-  if (PlatformGetThreadLocalEventBuffer()) {
-    return;
-  }
+namespace {
+struct EventSnapshot {
   EventBuffer* event_buffer;
-  {
-    platform::lock_guard<platform::mutex> lock{mu_};
-    event_buffer = CreateThreadEventBuffer();
-  }
+  OutputBuffer::PartHeader string_table_header;
+  OutputBuffer::PartHeader event_buffer_header;
+};
 
-  int zone_id =
-      StandardEvents::CreateZone(event_buffer, thread_name, type, location);
-  StandardEvents::SetZone(event_buffer, zone_id);
-  event_buffer->FreezePrefixSlots();
-  PlatformSetThreadLocalEventBuffer(event_buffer);
-}
-
-void Runtime::DisableCurrentThread() {
-  PlatformSetThreadLocalEventBuffer(nullptr);
-}
-
-void Runtime::WriteHeaderChunk(OutputBuffer* output_buffer) {
+void WriteFileHeaderChunk(OutputBuffer* output_buffer) {
   static const uint32_t kMagicNumber = 0xdeadbeef;
   static const uint32_t kWtfVersion = 0xe8214400;
   static const uint32_t kFormatVersion = 10;
@@ -96,6 +57,78 @@ void Runtime::WriteHeaderChunk(OutputBuffer* output_buffer) {
   output_buffer->Align();
 }
 
+bool WriteEventChunk(OutputBuffer* output_buffer, EventSnapshot* snapshot,
+                     bool clear_event_buffer) {
+  // There will be two parts: string and event. The event part is actually
+  // a merged combination of the meta event + each thread event.
+  const size_t kPartCount = 2;
+  OutputBuffer::PartHeader part_headers[kPartCount] = {
+      snapshot->string_table_header, snapshot->event_buffer_header,
+  };
+
+  // Setup the chunk.
+  // TODO(laurenzo): Get timestamps from the EventBuffer based on what it
+  // has logged.
+  OutputBuffer::ChunkHeader chunk_header{
+      2,                               // Id.
+      0x2,                             // Type = Events.
+      0,                               // Start time.
+      PlatformGetTimestampMicros32(),  // End time.
+  };
+  output_buffer->StartChunk(chunk_header, part_headers, kPartCount);
+  bool success =
+      snapshot->event_buffer->string_table()->WriteTo(
+          &snapshot->string_table_header, output_buffer) &&
+      snapshot->event_buffer->WriteTo(&snapshot->event_buffer_header,
+                                      output_buffer, clear_event_buffer);
+
+  return success;
+}
+
+}  // namespace
+
+Runtime::Runtime() {
+  PlatformInitializeThreading();
+
+  // Force reference event types that we inline manually.
+  StandardEvents::GetScopeLeaveEvent();
+}
+
+Runtime* Runtime::GetInstance() {
+  static Runtime runtime;
+  return &runtime;
+}
+
+void Runtime::ResetForTesting() { thread_event_buffers_.clear(); }
+
+EventBuffer* Runtime::CreateThreadEventBuffer() {
+  EventBuffer* r;
+  thread_event_buffers_.emplace_back(r = new EventBuffer());
+  return r;
+}
+
+void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
+                                  const char* location) {
+  if (PlatformGetThreadLocalEventBuffer()) {
+    return;
+  }
+  EventBuffer* event_buffer;
+  {
+    platform::lock_guard<platform::mutex> lock{mu_};
+    event_buffer = CreateThreadEventBuffer();
+  }
+
+  int zone_id =
+      StandardEvents::CreateZone(event_buffer, thread_name, type, location);
+  StandardEvents::SetZone(event_buffer, zone_id);
+  event_buffer->FreezePrefixSlots();
+  PlatformSetThreadLocalEventBuffer(event_buffer);
+}
+
+void Runtime::DisableCurrentThread() {
+  PlatformSetThreadLocalEventBuffer(nullptr);
+}
+
 bool Runtime::SaveToFile(const std::string& file_name,
                          const SaveOptions& save_options) {
   std::fstream out;
@@ -121,30 +154,28 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
   }
 
   OutputBuffer output_buffer{out};
-  WriteHeaderChunk(&output_buffer);
-
-  // There will be two parts: string and event. The event part is actually
-  // a merged combination of the meta event + each thread event.
-  const size_t kPartCount = 2;
-  OutputBuffer::PartHeader part_headers[kPartCount];
-  OutputBuffer::PartHeader* strings_header = &part_headers[0];
-  OutputBuffer::PartHeader* events_header = &part_headers[1];
+  WriteFileHeaderChunk(&output_buffer);
 
   // Accumulate headers for each thread.
-  std::vector<OutputBuffer::PartHeader> thread_part_headers;
-  thread_part_headers.resize(local_thread_event_buffers.size());
-  size_t thread_parts_length = 0;
+  std::vector<EventSnapshot> thread_snapshots;
+  thread_snapshots.resize(local_thread_event_buffers.size());
   for (size_t i = 0; i < local_thread_event_buffers.size(); i++) {
-    auto thread_part_header = &thread_part_headers[i];
-    local_thread_event_buffers[i]->PopulateHeader(thread_part_header);
-    thread_parts_length += thread_part_header->length;
+    auto& snapshot = thread_snapshots[i];
+    snapshot.event_buffer = local_thread_event_buffers[i];
+    snapshot.event_buffer->PopulateHeader(&snapshot.event_buffer_header);
+    // String table must be snapshotted after the EventBuffer so that it
+    // contains at least as many strings have been referenced.
+    snapshot.event_buffer->string_table()->PopulateHeader(
+        &snapshot.string_table_header);
   }
 
   // Populate the EventBuffer of event registrations. This is done after all
   // events have been snapshotted to make sure we got everything.
-  OutputBuffer::PartHeader event_def_header;
+  EventSnapshot definition_snapshot;
+  EventBuffer definition_buffer;
+  definition_snapshot.event_buffer = &definition_buffer;
+
   auto event_definitions = EventRegistry::GetInstance()->GetEventDefinitions();
-  EventBuffer event_def_buffer{&shared_string_table_};
   std::string tmp_name;
   std::string tmp_arguments;
   for (auto& event_definition : event_definitions) {
@@ -153,44 +184,19 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
     event_definition.AppendName(&tmp_name);
     event_definition.AppendArguments(&tmp_arguments);
     StandardEvents::DefineEvent(
-        &event_def_buffer, event_definition.wire_id(),
+        &definition_buffer, event_definition.wire_id(),
         static_cast<uint16_t>(event_definition.event_class()),
         event_definition.flags(), tmp_name.c_str(), tmp_arguments.c_str());
   }
-  event_def_buffer.PopulateHeader(&event_def_header);
+  definition_buffer.PopulateHeader(&definition_snapshot.event_buffer_header);
+  definition_buffer.string_table()->PopulateHeader(
+      &definition_snapshot.string_table_header);
 
-  // Create the combined events header that consists of the event definition
-  // buffer + each thread buffer.
-  *events_header = event_def_header;
-  events_header->length += thread_parts_length;
-
-  // Must populate the strings header last so that we get all strings that
-  // may have been referenced (note specifically that processing event
-  // registrations adds strings).
-  shared_string_table_.PopulateHeader(strings_header);
-
-  // Setup the chunk.
-  OutputBuffer::ChunkHeader chunk_header{
-      2,                               // Id.
-      0x2,                             // Type = Events.
-      0,                               // Start time.
-      PlatformGetTimestampMicros32(),  // End time.
-  };
-  output_buffer.StartChunk(chunk_header, part_headers, kPartCount);
-
-  // And write each part. Order must match header order in part_headers.
-  bool success = true;
-  success =
-      shared_string_table_.WriteTo(strings_header, &output_buffer) && success;
-  success =
-      event_def_buffer.WriteTo(&event_def_header, &output_buffer, false) &&
-      success;
-  for (size_t i = 0; i < local_thread_event_buffers.size(); i++) {
-    auto thread_part_header = &thread_part_headers[i];
-    success = local_thread_event_buffers[i]->WriteTo(
-                  thread_part_header, &output_buffer,
-                  save_options.clear_thread_data) &&
-              success;
+  // Write the definition snapshot followed by each thread.
+  bool success = WriteEventChunk(&output_buffer, &definition_snapshot, false);
+  for (auto& thread_snapshot : thread_snapshots) {
+    success = success && WriteEventChunk(&output_buffer, &thread_snapshot,
+                                         save_options.clear_thread_data);
   }
 
   return success && !out->fail();
