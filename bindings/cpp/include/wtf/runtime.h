@@ -44,6 +44,18 @@ class Runtime {
   void EnableCurrentThread(const char* thread_name, const char* type = nullptr,
                            const char* location = nullptr);
 
+  // Registers an external thread returning an EventBuffer that will be
+  // retained for the life of the Runtime. This is useful for merging
+  // event-like constructs from entities other than threads (other cores, ISR,
+  // etc). With great power comes great responsibility: it is up to you to
+  // obey all of the rules of writing to an EventBuffer, the most important
+  // of which is to only write from one thread concurrently. You must also
+  // make sure that any timestamps or event ids that you add are consistent
+  // with the overall system.
+  EventBuffer* RegisterExternalThread(const char* thread_name,
+                                      const char* type = nullptr,
+                                      const char* location = nullptr);
+
   // Disables WTF data collection for this thread. Note that any collected
   // data will still be present. This is largely intended for testing.
   void DisableCurrentThread();
