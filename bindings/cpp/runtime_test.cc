@@ -9,6 +9,10 @@ namespace {
 
 class RuntimeTest : public ::testing::Test {
  protected:
+  void TearDown() override {
+    Runtime::GetInstance()->DisableCurrentThread();
+    Runtime::GetInstance()->ResetForTesting();
+  }
 };
 
 TEST_F(RuntimeTest, BasicEndToEnd) {
@@ -30,6 +34,38 @@ TEST_F(RuntimeTest, BasicEndToEnd) {
   out.open("tmptestbuf.wtf-trace", std::ios_base::out | std::ios_base::trunc);
   Runtime::GetInstance()->Save(&out);
   out.close();
+}
+
+// Tests asynchronous save and clear. The before and after files should be
+// completely disjoint.
+TEST_F(RuntimeTest, SaveAndClear) {
+  Runtime::GetInstance()->EnableCurrentThread("TestThread");
+  static Event<uint32_t, uint32_t> event1{"#OuterEvent: a, b"};
+
+  // Let's make sure to fill up a few chunks of data.
+  event1.Invoke(1, 1);
+  for (size_t i = 0; i < 13333; i++) {
+    static ScopedEvent<uint32_t> s{"#Scope1: iteration"};
+    s.Enter(i);
+    usleep(1);
+    event1.Invoke(3, i);
+    s.Leave();
+  }
+  EXPECT_TRUE(
+      Runtime::GetInstance()->SaveToFile("tmptestbuf_clearbefore.wtf-trace",
+                                         Runtime::kSaveOptionsClearThreadData));
+
+  // And fill it up again with some different values.
+  event1.Invoke(2, 2);
+  for (size_t i = 0; i < 13333; i++) {
+    static ScopedEvent<uint32_t> s{"#Scope2: iteration"};
+    s.Enter(i);
+    usleep(1);
+    event1.Invoke(3, i);
+    s.Leave();
+  }
+  EXPECT_TRUE(Runtime::GetInstance()->SaveToFile(
+      "tmptestbuf_clearafter.wtf-trace", Runtime::kSaveOptionsClearThreadData));
 }
 
 }  // namespace
