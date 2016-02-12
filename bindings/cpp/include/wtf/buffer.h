@@ -143,20 +143,24 @@ class EventBuffer {
     // Access: Writer thread only.
     size_t size = 0;
 
-    // The size as visible to readers.
-    // Access: Written by writer, read by reader.
-    platform::atomic<size_t> published_size{0};
-
     // The array of slots (allocated 'limit' entries).
     // Access: Reader and writer threads.
     // Guarantees: All indices reported by published_size are consistent for
     // access from the reader thread.
     uint32_t* slots;
 
+    // The size as visible to readers.
+    // Access: Written by writer, read by reader.
+    platform::atomic<size_t> published_size{0};
+
     // The next chunk, if any.
     // Access: Written by writer as the last step of initializing a new
     // chunk. Read by reader when dumping the buffer.
     platform::atomic<Chunk*> next{nullptr};
+
+    // The number of slots that the reader should skip.
+    // Access: Read and written by reader.
+    size_t skip_count = 0;
   };
 
   // Disallow copy/assignment.
@@ -228,11 +232,15 @@ class EventBuffer {
   // populated via PopulateHeader(). Note that the buffer may have grown
   // since the time of PopulateHeader() and only the amount noted there will
   // be written.
+  // This method can optionally clear data as it is writing. In this mode,
+  // it is valid to pass output_buffer == nullptr, which does a dummy write
+  // and clears.
   // NOTE: No verification is done to ensure that the buffer is in a
   // consistent state. In general, it should be assumed that full transactions
   // are present but there may be unbalanced enter/leaves.
   // Returns: Whether the buffer was serialized properly.
-  bool WriteTo(OutputBuffer::PartHeader* header, OutputBuffer* output_buffer);
+  bool WriteTo(OutputBuffer::PartHeader* header, OutputBuffer* output_buffer,
+               bool clear_written_data);
 
   // Whether the event buffer is empty. It is only valid to call this from the
   // hosting thread.

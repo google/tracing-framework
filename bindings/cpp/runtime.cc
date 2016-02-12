@@ -6,6 +6,9 @@
 
 namespace wtf {
 
+const Runtime::SaveOptions Runtime::kSaveOptionsDefault{};
+const Runtime::SaveOptions Runtime::kSaveOptionsClearThreadData{true};
+
 Runtime::Runtime() {
   PlatformInitializeThreading();
 
@@ -93,18 +96,19 @@ void Runtime::WriteHeaderChunk(OutputBuffer* output_buffer) {
   output_buffer->Align();
 }
 
-bool Runtime::SaveToFile(const std::string& file_name) {
+bool Runtime::SaveToFile(const std::string& file_name,
+                         const SaveOptions& save_options) {
   std::fstream out;
   out.open(file_name, std::ios_base::out | std::ios_base::trunc);
   if (out.fail()) {
     return false;
   }
-  bool success = wtf::Runtime::GetInstance()->Save(&out);
+  bool success = wtf::Runtime::GetInstance()->Save(&out, save_options);
   out.close();
   return success && !out.fail();
 }
 
-bool Runtime::Save(std::ostream* out) {
+bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
   // Make a copy of the thread event buffers in a lock. The rest can run
   // lock free.
   std::vector<EventBuffer*> local_thread_event_buffers;
@@ -179,14 +183,37 @@ bool Runtime::Save(std::ostream* out) {
   success =
       shared_string_table_.WriteTo(strings_header, &output_buffer) && success;
   success =
-      event_def_buffer.WriteTo(&event_def_header, &output_buffer) && success;
+      event_def_buffer.WriteTo(&event_def_header, &output_buffer, false) &&
+      success;
   for (size_t i = 0; i < local_thread_event_buffers.size(); i++) {
-    success = local_thread_event_buffers[i]->WriteTo(&thread_part_headers[i],
-                                                     &output_buffer) &&
+    auto thread_part_header = &thread_part_headers[i];
+    success = local_thread_event_buffers[i]->WriteTo(
+                  thread_part_header, &output_buffer,
+                  save_options.clear_thread_data) &&
               success;
   }
 
   return success && !out->fail();
+}
+
+void Runtime::ClearThreadData() {
+  // Make a copy of the thread event buffers in a lock. The rest can run
+  // lock free.
+  std::vector<EventBuffer*> local_thread_event_buffers;
+  {
+    platform::lock_guard<platform::mutex> lock{mu_};
+    local_thread_event_buffers.reserve(thread_event_buffers_.size());
+    for (auto& event_buffer : thread_event_buffers_) {
+      local_thread_event_buffers.push_back(event_buffer.get());
+    }
+  }
+
+  for (auto event_buffer : local_thread_event_buffers) {
+    // Do a dummy write and clear.
+    OutputBuffer::PartHeader header;
+    event_buffer->PopulateHeader(&header);
+    event_buffer->WriteTo(&header, nullptr, true);
+  }
 }
 
 }  // namespace wtf

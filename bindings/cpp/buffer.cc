@@ -155,6 +155,7 @@ void EventBuffer::PopulateHeader(OutputBuffer::PartHeader* header) {
        chunk = chunk->next.load(platform::memory_order_acquire)) {
     published_slot_count +=
         chunk->published_size.load(platform::memory_order_acquire);
+    published_slot_count -= chunk->skip_count;
   }
 
   header->type = 0x20002;
@@ -164,7 +165,8 @@ void EventBuffer::PopulateHeader(OutputBuffer::PartHeader* header) {
 }
 
 bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
-                          OutputBuffer* output_buffer) {
+                          OutputBuffer* output_buffer,
+                          bool clear_written_data) {
   Chunk* chunk = head_;
   size_t count = header->length / sizeof(uint32_t);
 
@@ -174,7 +176,9 @@ bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
   }
   count -= frozen_prefix_slots_.size();
   for (uint32_t prefix_value : frozen_prefix_slots_) {
-    output_buffer->AppendUint32(prefix_value);
+    if (output_buffer) {
+      output_buffer->AppendUint32(prefix_value);
+    }
   }
 
   // Write the main part of the buffer chunk by chunk.
@@ -184,15 +188,33 @@ bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
       return false;
     }
 
+    size_t skip_count = chunk->skip_count;
     size_t published_size =
         chunk->published_size.load(platform::memory_order_acquire);
-    size_t append_count = std::min(count, published_size);
+    size_t append_count = std::min(count, published_size - skip_count);
     count -= append_count;
     for (size_t i = 0; i < append_count; i++) {
-      output_buffer->AppendUint32(chunk->slots[i]);
+      if (output_buffer) {
+        output_buffer->AppendUint32(chunk->slots[skip_count + i]);
+      }
     }
 
-    chunk = chunk->next.load(platform::memory_order_acquire);
+    Chunk* next_chunk = chunk->next.load(platform::memory_order_acquire);
+
+    if (clear_written_data) {
+      chunk->skip_count += append_count;
+      if (next_chunk && chunk->skip_count == published_size) {
+        // If there is a next chunk, then the writer thread is appending to
+        // it. If we have fully read this one, then we recycle it as no one is
+        // going to come back calling on it.
+        // TODO(laurenzo): Put these back into a thread local pool and re-use
+        // them.
+        delete head_;
+        head_ = next_chunk;
+      }
+    }
+
+    chunk = next_chunk;
   }
   return true;
 }
