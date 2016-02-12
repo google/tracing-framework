@@ -171,11 +171,10 @@ class EventBuffer {
   // remain valid through the life of the instance) and custom chunk size,
   // which specifies how much space is reserved and how much the buffer
   // expands by on overflow.
-  EventBuffer(StringTable* string_table, size_t chunk_size_bytes);
+  EventBuffer(size_t chunk_size_bytes);
 
   // Initialize with a StringTable and defaults.
-  explicit EventBuffer(StringTable* string_table)
-      : EventBuffer(string_table, kDefaultChunkSizeBytes) {}
+  explicit EventBuffer() : EventBuffer(kDefaultChunkSizeBytes) {}
   ~EventBuffer();
 
   // Gets a pointer to a location where 'count' slots can be written, increasing
@@ -219,7 +218,7 @@ class EventBuffer {
   }
 
   // Gets the string table for this buffer.
-  StringTable* string_table() { return string_table_; }
+  StringTable* string_table() { return &string_table_; }
 
   // When the thread owning an EventBuffer dies, it may call this method,
   // which will allow the system to release the EventBuffer.
@@ -263,7 +262,7 @@ class EventBuffer {
   // This is only called in the overflow case of AddSlots().
   uint32_t* ExpandAndAddSlots(size_t count);
 
-  StringTable* string_table_;
+  StringTable string_table_;
   size_t chunk_limit_;
   platform::atomic<bool> out_of_scope_{false};
 
