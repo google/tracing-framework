@@ -4,6 +4,10 @@
 
 #include "gtest/gtest.h"
 
+#ifndef TMP_PREFIX
+#define TMP_PREFIX ""
+#endif
+
 namespace wtf {
 namespace {
 
@@ -31,7 +35,8 @@ TEST_F(RuntimeTest, BasicEndToEnd) {
   }
 
   std::fstream out;
-  out.open("tmptestbuf.wtf-trace", std::ios_base::out | std::ios_base::trunc);
+  out.open(TMP_PREFIX "tmptestbuf.wtf-trace",
+           std::ios_base::out | std::ios_base::trunc);
   Runtime::GetInstance()->Save(&out);
   out.close();
 }
@@ -51,9 +56,9 @@ TEST_F(RuntimeTest, SaveAndClear) {
     event1.Invoke(3, i);
     s.Leave();
   }
-  EXPECT_TRUE(
-      Runtime::GetInstance()->SaveToFile("tmptestbuf_clearbefore.wtf-trace",
-                                         Runtime::kSaveOptionsClearThreadData));
+  EXPECT_TRUE(Runtime::GetInstance()->SaveToFile(
+      TMP_PREFIX "tmptestbuf_clearbefore.wtf-trace",
+      Runtime::SaveOptions::ForClear()));
 
   // And fill it up again with some different values.
   event1.Invoke(2, 2);
@@ -65,7 +70,8 @@ TEST_F(RuntimeTest, SaveAndClear) {
     s.Leave();
   }
   EXPECT_TRUE(Runtime::GetInstance()->SaveToFile(
-      "tmptestbuf_clearafter.wtf-trace", Runtime::kSaveOptionsClearThreadData));
+      TMP_PREFIX "tmptestbuf_clearafter.wtf-trace",
+      Runtime::SaveOptions::ForClear()));
 }
 
 }  // namespace

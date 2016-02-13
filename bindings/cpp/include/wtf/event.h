@@ -195,7 +195,8 @@ class EventRegistry {
 
   // Makes a copy of all event definitions. This is potentially expensive but
   // is not deadlock or iteration invalidation prone.
-  std::vector<EventDefinition> GetEventDefinitions();
+  // from_index specifies the index from which copies should begin.
+  std::vector<EventDefinition> GetEventDefinitions(size_t from_index);
 
  private:
   platform::mutex mu_;

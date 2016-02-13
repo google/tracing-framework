@@ -5,6 +5,10 @@
 
 #include "wtf/macros.h"
 
+#ifndef TMP_PREFIX
+#define TMP_PREFIX ""
+#endif
+
 std::atomic<bool> had_error;
 std::atomic<bool> stop;
 
@@ -12,14 +16,16 @@ std::vector<std::string> thread_names;
 
 void SaveThread() {
   WTF_THREAD_ENABLE("SaveThread");
+  wtf::Runtime::SaveCheckpoint checkpoint;
   for (int i = 0; i < 1001; i++) {
     if (i > 0 && (i % 250) == 0) {
       // Actually save to a file.
       WTF_SCOPE("SaveThread#ToFile: i", int32_t)(i);
       std::stringstream name;
-      name << "tmp_threaded_torture_test_" << i << ".wtf-trace";
+      name << TMP_PREFIX "tmp_threaded_torture_test_streamed.wtf-trace";
       if (!wtf::Runtime::GetInstance()->SaveToFile(
-              name.str(), wtf::Runtime::kSaveOptionsClearThreadData)) {
+              name.str(),
+              wtf::Runtime::SaveOptions::ForStreamingFile(&checkpoint))) {
         std::cerr << "SaveToFile() failed" << std::endl;
         had_error = true;
       }
