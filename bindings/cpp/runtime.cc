@@ -6,8 +6,7 @@
 
 namespace wtf {
 
-const Runtime::SaveOptions Runtime::kSaveOptionsDefault{};
-const Runtime::SaveOptions Runtime::kSaveOptionsClearThreadData{true};
+const Runtime::SaveOptions Runtime::SaveOptions::kDefault{};
 
 namespace {
 struct EventSnapshot {
@@ -147,16 +146,34 @@ void Runtime::DisableCurrentThread() {
 bool Runtime::SaveToFile(const std::string& file_name,
                          const SaveOptions& save_options) {
   std::fstream out;
-  out.open(file_name, std::ios_base::out | std::ios_base::trunc);
+  auto mode = save_options.open_mode | std::ios_base::out;
+  out.open(file_name, mode);
   if (out.fail()) {
     return false;
   }
+
+  bool append = (mode & std::ios_base::app);
+
+  // If the file was deleted out from under us, reset the checkpoint.
+  if (append && save_options.checkpoint && out.tellp() == 0) {
+    std::cout << "Reset checkpoint" << std::endl;
+    *save_options.checkpoint = SaveCheckpoint{};
+  }
+
   bool success = wtf::Runtime::GetInstance()->Save(&out, save_options);
   out.close();
   return success && !out.fail();
 }
 
 bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
+  SaveCheckpoint* checkpoint = save_options.checkpoint;
+  bool needs_file_header = true;
+
+  if (checkpoint) {
+    needs_file_header = checkpoint->needs_file_header;
+    checkpoint->needs_file_header = false;
+  }
+
   // Make a copy of the thread event buffers in a lock. The rest can run
   // lock free.
   std::vector<EventBuffer*> local_thread_event_buffers;
@@ -169,7 +186,10 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
   }
 
   OutputBuffer output_buffer{out};
-  WriteFileHeaderChunk(&output_buffer);
+
+  if (needs_file_header) {
+    WriteFileHeaderChunk(&output_buffer);
+  }
 
   // Accumulate headers for each thread.
   std::vector<EventSnapshot> thread_snapshots;
@@ -190,7 +210,10 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
   EventBuffer definition_buffer;
   definition_snapshot.event_buffer = &definition_buffer;
 
-  auto event_definitions = EventRegistry::GetInstance()->GetEventDefinitions();
+  size_t event_definition_from_index =
+      checkpoint ? checkpoint->event_definition_from_index_ : 0;
+  auto event_definitions = EventRegistry::GetInstance()->GetEventDefinitions(
+      event_definition_from_index);
   std::string tmp_name;
   std::string tmp_arguments;
   for (auto& event_definition : event_definitions) {
@@ -214,7 +237,17 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
                                          save_options.clear_thread_data);
   }
 
-  return success && !out->fail();
+  if (out->fail()) {
+    success = false;
+  }
+
+  // Advance the checkpoint, if available.
+  if (success && checkpoint) {
+    checkpoint->event_definition_from_index_ =
+        event_definition_from_index + event_definitions.size();
+  }
+
+  return success;
 }
 
 void Runtime::ClearThreadData() {

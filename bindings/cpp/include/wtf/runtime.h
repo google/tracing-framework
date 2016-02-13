@@ -15,24 +15,113 @@ namespace wtf {
 // functionality.
 //
 // All functionality of this class is thread safe.
+//
+// Saving:
+// -------
+// The most common interaction that most parties will have with the Runtime
+// class will be to save trace files. There are several ways that this can
+// be done.
+//
+// Saving a Full File:
+// -------------------
+// Save and do not clear:
+//   assert(Runtime::GetRuntime()::SaveToFile("filename.wtf-trace"));
+// Save and and clear:
+//   assert(Runtime::GetRuntime()::SaveToFile("filename.wtf-trace"),
+//              Runtime::SaveOptions::ForClear());
+//
+// Incrementally Saving:
+// ---------------------
+// In this mode, something in the process is expected to repeatedly call
+// SaveToFile in a way that causes it to append new data. Internal state is
+// recorded in a SaveCheckpoint so that writing can resume with a minimum
+// of repeated data on the next call to save.
+//
+// In this mode, thread data is destructively cleared upon write and only new
+// metadata will be written on each call to save. If using SaveToFile()
+// (versus passing an ostream directly), the system will detect if the file
+// exists. If so, it assumes that it is continuing a save. If not, it will
+// reset its checkpoint, starting a new file. In this way, the file can be
+// externally deleted without further intervention.
+//
+// Example:
+//   Runtime::SaveCheckpoint checkpoint;
+//   while (true) {
+//     assert(Runtime::GetRuntime()::SaveToFile(
+//                "streaming.wtf-trace",
+//                Runtime::SaveOptions::ForStreamingFile(&checkpoint)));
+//     sleep(5);
+//   }
 class Runtime {
  public:
+  // A pointer to a SaveCheckpoint can be set in SaveOptions. Passing the
+  // SaveCheckpoint from a previous save iteration to a future one will cause
+  // only updates to be streamed out. This is really only valid when appending
+  // or concatenating output trace files since subsequent chunks do not have
+  // all data that they need to function.
+  class SaveCheckpoint {
+   public:
+    SaveCheckpoint() = default;
+
+   private:
+    // Whether this is still the first save operation.
+    bool needs_file_header = true;
+
+    // The index of the first event definition that needs to be written out.
+    size_t event_definition_from_index_ = 0;
+    friend class Runtime;
+  };
+
   // Options controlling save.
   struct SaveOptions {
-    SaveOptions() : clear_thread_data(false) {}
-    SaveOptions(bool clear_thread_data)
-        : clear_thread_data(clear_thread_data) {}
+    static const SaveOptions kDefault;
+
+    SaveOptions() = default;
+
+    // Creates options configured to clear thread data on save.
+    static SaveOptions ForClear() {
+      SaveOptions options;
+      options.clear_thread_data = true;
+      return options;
+    }
+
+    // Creates options configured for streaming to a single file that is
+    // opened for append.
+    // The checkpoint should be retained until the file is no longer being
+    // saved to.
+    static SaveOptions ForStreamingFile(SaveCheckpoint* checkpoint) {
+      SaveOptions options;
+      options.checkpoint = checkpoint;
+      options.clear_thread_data = true;
+      options.open_mode = std::ios_base::app;
+      return options;
+    }
+
+    // Creates options configured for streaming to multiple files that will
+    // be externally concatenated in some way.
+    // The checkpoint should be retained until the file is no longer being
+    // saved to.
+    static SaveOptions ForStreamingMulti(SaveCheckpoint* checkpoint) {
+      SaveOptions options;
+      options.checkpoint = checkpoint;
+      options.clear_thread_data = true;
+      return options;
+    }
+
+    // If set, a checkpointed save will be done. Only updates from the last
+    // save will be written and this field will be updated to reflect the
+    // current state. This implies clear_thread_data and is generally best
+    // used with open_for_append.
+    SaveCheckpoint* checkpoint = nullptr;
 
     // Clear saved thread data. Note that this will not clear shared data,
     // which currently includes the string table and event registration buffers.
-    bool clear_thread_data;
+    bool clear_thread_data = false;
+
+    // The open mode to use if a file is being opened. Defaults to trunc.
+    // out is implied.
+    std::ios_base::openmode open_mode = std::ios_base::trunc;
   };
-
-  // Default save options.
-  static const SaveOptions kSaveOptionsDefault;
-
-  // Save options that clear thread data.
-  static const SaveOptions kSaveOptionsClearThreadData;
 
   // Gets the singleton instance.
   // Note that calling through to the instance is reserved for "heavy-weight"
@@ -66,13 +155,13 @@ class Runtime {
   // Returns: Whether the trace was saved properly (covers both logical and
   // IO errors).
   bool Save(std::ostream* out,
-            const SaveOptions& save_options = kSaveOptionsDefault);
+            const SaveOptions& save_options = SaveOptions::kDefault);
 
   // Shortcut to Save(ostream) that saves to a file.
   // Returns: Whether the trace was saved properly (covers both logical and
   // IO errors).
   bool SaveToFile(const std::string& file_name,
-                  const SaveOptions& save_options = kSaveOptionsDefault);
+                  const SaveOptions& save_options = SaveOptions::kDefault);
 
   // Asynchronously clears thread data. This is similar to passing
   // a clear_thread_data option to a Save() method, except that when doing it

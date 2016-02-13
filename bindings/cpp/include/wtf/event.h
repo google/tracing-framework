@@ -113,8 +113,11 @@ class EventDefinition {
     return output;
   }
 
-  // Returns the next event id.
+  // Returns unallocated event ids, either singly or as a batch.
+  // This is used internally but can also be used externally if manually
+  // bridging third party event data into the system.
   static int NextEventId() { return next_event_id_.fetch_add(1); }
+  static int NextEventIds(int count) { return next_event_id_.fetch_add(count); }
 
   int wire_id() const { return wire_id_; }
   EventClass event_class() const { return event_class_; }
@@ -195,7 +198,8 @@ class EventRegistry {
 
   // Makes a copy of all event definitions. This is potentially expensive but
   // is not deadlock or iteration invalidation prone.
-  std::vector<EventDefinition> GetEventDefinitions();
+  // from_index specifies the index from which copies should begin.
+  std::vector<EventDefinition> GetEventDefinitions(size_t from_index);
 
  private:
   platform::mutex mu_;

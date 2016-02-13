@@ -105,11 +105,16 @@ void EventRegistry::AddEventDefinition(EventDefinition event_definition) {
   instance->event_definitions_.push_back(event_definition);
 }
 
-std::vector<EventDefinition> EventRegistry::GetEventDefinitions() {
+std::vector<EventDefinition> EventRegistry::GetEventDefinitions(
+    size_t from_index) {
   platform::lock_guard<platform::mutex> lock{mu_};
+  if (from_index >= event_definitions_.size()) {
+    return std::vector<EventDefinition>{};
+  }
+
   std::vector<EventDefinition> r;
-  r.reserve(event_definitions_.size());
-  std::copy(event_definitions_.begin(), event_definitions_.end(),
+  r.reserve(event_definitions_.size() - from_index);
+  std::copy(event_definitions_.begin() + from_index, event_definitions_.end(),
             std::back_inserter(r));
   return r;
 }

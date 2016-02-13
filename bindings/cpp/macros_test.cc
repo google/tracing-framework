@@ -4,6 +4,10 @@
 
 #include "gtest/gtest.h"
 
+#ifndef TMP_PREFIX
+#define TMP_PREFIX ""
+#endif
+
 namespace wtf {
 namespace {
 
@@ -159,7 +163,8 @@ TEST_F(MacrosTest, BasicEndToEnd) {
     EXPECT_TRUE(EventsHaveBeenLogged());
   }
 
-  EXPECT_TRUE(Runtime::GetInstance()->SaveToFile("/tmp/macrobuf.wtf-trace"));
+  EXPECT_TRUE(
+      Runtime::GetInstance()->SaveToFile(TMP_PREFIX "tmpmacrobuf.wtf-trace"));
 }
 
 }  // namespace
