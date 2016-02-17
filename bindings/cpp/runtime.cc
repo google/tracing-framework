@@ -156,7 +156,6 @@ bool Runtime::SaveToFile(const std::string& file_name,
 
   // If the file was deleted out from under us, reset the checkpoint.
   if (append && save_options.checkpoint && out.tellp() == 0) {
-    std::cout << "Reset checkpoint" << std::endl;
     *save_options.checkpoint = SaveCheckpoint{};
   }
 
