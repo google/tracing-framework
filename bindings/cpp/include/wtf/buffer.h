@@ -68,8 +68,6 @@ class OutputBuffer {
  private:
   size_t written_ = 0;
   std::ostream* out_;
-
-  friend class BufferTest;
 };
 
 // Maintains canonical strings.
