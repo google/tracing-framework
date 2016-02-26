@@ -47,6 +47,10 @@ void OutputBuffer::StartChunk(ChunkHeader header, PartHeader* parts,
 StringTable::StringTable() = default;
 
 int StringTable::GetStringId(const std::string& str) {
+  if (str.empty()) {
+    return kEmptyStringId;
+  }
+
   platform::lock_guard<platform::mutex> lock{mu_};
   auto it = strings_to_id_.find(str);
   if (it == strings_to_id_.end()) {
