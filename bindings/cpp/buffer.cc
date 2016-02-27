@@ -136,16 +136,14 @@ void EventBuffer::FreezePrefixSlots() {
 }
 
 uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
-  Chunk* new_chunk = new Chunk(chunk_limit_);
-  new_chunk->size = count;
-
   // Publish the final size of the old chunk.
-  current_->published_size.store(current_->size,
-                                 platform::memory_order_release);
+  Flush();
 
   // Publish that we have a new 'count' sized chunk.
   // This must come after the store to published_size as it signifies that no
   // further updates will be made to published_size.
+  Chunk* new_chunk = new Chunk(chunk_limit_);
+  new_chunk->size = count;
   current_->next.store(new_chunk, platform::memory_order_release);
 
   // Make new chunk current (does not modify shared state).
