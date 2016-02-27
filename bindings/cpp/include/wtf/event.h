@@ -209,6 +209,36 @@ class EventRegistry {
   void operator=(const EventRegistry&) = delete;
 };
 
+// Singleton registry of all Zones.
+// The registry is thread safe.
+class ZoneRegistry {
+ public:
+  // Gets the lone singleton instance.
+  static ZoneRegistry* GetInstance();
+
+  // Creates a new zone, returning the id for it.
+  int CreateZone(const char* name, const char* type, const char* location);
+
+  // Registers all zones starting from the given from_index into EventBuffer.
+  // Returns: The 1 + the index of the last written zone.
+  int EmitZones(EventBuffer* event_buffer, size_t from_index);
+
+ private:
+  struct ZoneDefinition {
+    int id;
+    std::string name;
+    std::string type;
+    std::string location;
+  };
+  platform::mutex mu_;
+  platform::atomic<int> next_zone_id_{1};
+  std::deque<ZoneDefinition> zone_definitions_;
+
+  ZoneRegistry();
+  ZoneRegistry(const ZoneRegistry&) = delete;
+  void operator=(const ZoneRegistry&) = delete;
+};
+
 // An Event that can be invoked with arbitrary arguments.
 //
 // There are a number of constructors for events, but most are only used
@@ -310,21 +340,27 @@ using EventEnabled = EventIf<true, ArgTypes...>;
 // Container for standard event instantes.
 class StandardEvents {
  public:
+  using ScopeLeaveEventType = EventEnabled<>;
+  using CreateZoneEventType =
+      EventEnabled<uint16_t, const char*, const char*, const char*>;
+
   // The Scope leave event is special because some code will emit it directly,
   // avoiding the overhead of calling it here. It is arranged to always be
   // registered with a fixed id, but when serializing is must be guaranteed
   // to have been referenced.
   static constexpr int kScopeLeaveEventId = 2;
-  static EventEnabled<>& GetScopeLeaveEvent();
+  static ScopeLeaveEventType& GetScopeLeaveEvent();
+  static CreateZoneEventType& GetCreateZoneEvent();
 
   static void DefineEvent(EventBuffer* event_buffer, uint16_t wire_id,
                           uint16_t event_class, uint32_t flags,
                           const char* name, const char* args);
   static void ScopeLeave(EventBuffer* event_buffer);
 
-  // Creates a new zone, returning the zone id.
-  static int CreateZone(EventBuffer* event_buffer, const char* name,
-                        const char* type, const char* location);
+  // Creates a new zone with an explicit zone id.
+  static void CreateZone(EventBuffer* event_buffer, int zone_id,
+                         const char* name, const char* type,
+                         const char* location);
 
   // Sets a zone.
   static void SetZone(EventBuffer* event_buffer, int zoneId);

@@ -91,6 +91,11 @@ Runtime::Runtime() {
 
   // Force reference event types that we inline manually.
   StandardEvents::GetScopeLeaveEvent();
+
+  // Force registration of the create zone event (or else we race in saving,
+  // not declaring it for the first time until after we have emitted
+  // definitions).
+  StandardEvents::GetCreateZoneEvent();
 }
 
 Runtime* Runtime::GetInstance() {
@@ -118,7 +123,7 @@ void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
   }
 
   int zone_id =
-      StandardEvents::CreateZone(event_buffer, thread_name, type, location);
+      ZoneRegistry::GetInstance()->CreateZone(thread_name, type, location);
   StandardEvents::SetZone(event_buffer, zone_id);
   event_buffer->FreezePrefixSlots();
   PlatformSetThreadLocalEventBuffer(event_buffer);
@@ -133,7 +138,7 @@ EventBuffer* Runtime::RegisterExternalThread(const char* thread_name,
     event_buffer = CreateThreadEventBuffer();
   }
   int zone_id =
-      StandardEvents::CreateZone(event_buffer, thread_name, type, location);
+      ZoneRegistry::GetInstance()->CreateZone(thread_name, type, location);
   StandardEvents::SetZone(event_buffer, zone_id);
   event_buffer->FreezePrefixSlots();
   return event_buffer;
@@ -209,6 +214,7 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
   EventBuffer definition_buffer;
   definition_snapshot.event_buffer = &definition_buffer;
 
+  // Write new event definitions.
   size_t event_definition_from_index =
       checkpoint ? checkpoint->event_definition_from_index_ : 0;
   auto event_definitions = EventRegistry::GetInstance()->GetEventDefinitions(
@@ -225,6 +231,14 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
         static_cast<uint16_t>(event_definition.event_class()),
         event_definition.flags(), tmp_name.c_str(), tmp_arguments.c_str());
   }
+
+  // Write new zone definitions.
+  size_t zone_definition_from_index =
+      checkpoint ? checkpoint->zone_definition_from_index_ : 0;
+  zone_definition_from_index = ZoneRegistry::GetInstance()->EmitZones(
+      &definition_buffer, zone_definition_from_index);
+
+  // Populate the header for the definition buffer.
   definition_buffer.PopulateHeader(&definition_snapshot.event_buffer_header);
   definition_buffer.string_table()->PopulateHeader(
       &definition_snapshot.string_table_header);
@@ -244,6 +258,7 @@ bool Runtime::Save(std::ostream* out, const SaveOptions& save_options) {
   if (success && checkpoint) {
     checkpoint->event_definition_from_index_ =
         event_definition_from_index + event_definitions.size();
+    checkpoint->zone_definition_from_index_ = zone_definition_from_index;
   }
 
   return success;

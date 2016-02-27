@@ -69,6 +69,10 @@ class Runtime {
 
     // The index of the first event definition that needs to be written out.
     size_t event_definition_from_index_ = 0;
+
+    // The index of the first zone registration that needs to be written out.
+    size_t zone_definition_from_index_ = 0;
+
     friend class Runtime;
   };
 
