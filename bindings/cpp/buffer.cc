@@ -144,6 +144,8 @@ uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
                                  platform::memory_order_release);
 
   // Publish that we have a new 'count' sized chunk.
+  // This must come after the store to published_size as it signifies that no
+  // further updates will be made to published_size.
   current_->next.store(new_chunk, platform::memory_order_release);
 
   // Make new chunk current (does not modify shared state).
