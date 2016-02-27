@@ -97,7 +97,7 @@ clean:
 		$(wildcard tmp*.wtf-trace)
 
 ### TESTING.
-test: macros_test runtime_test threaded_torture_test
+test: buffer_test macros_test runtime_test threaded_torture_test
 	@echo "Running buffer_test"
 	./buffer_test
 	@echo "Running macros_test"

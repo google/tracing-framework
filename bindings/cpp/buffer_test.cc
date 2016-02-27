@@ -139,7 +139,7 @@ TEST_F(BufferTest, Serialization_StringTable1_EmptyEventBuffer) {
                 0,        // Part length.
                 // -- String table payload.
                 0x00ee,  // String char ee + nul (LE).
-                // -- Event buffer payload.
+                         // -- Event buffer payload.
             }),
             slots);
 }

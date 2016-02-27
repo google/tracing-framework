@@ -143,7 +143,7 @@ uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
   current_->published_size.store(current_->size,
                                  platform::memory_order_release);
 
-  // Publish that we have a new zero sized chunk.
+  // Publish that we have a new 'count' sized chunk.
   current_->next.store(new_chunk, platform::memory_order_release);
 
   // Make new chunk current (does not modify shared state).
@@ -174,7 +174,7 @@ bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
   size_t count = header->length / sizeof(uint32_t);
 
   // Write the frozen prefix.
-  if (count < frozen_prefix_slots().size()) {
+  if (count < frozen_prefix_slots_.size()) {
     return false;
   }
   count -= frozen_prefix_slots_.size();
@@ -191,25 +191,34 @@ bool EventBuffer::WriteTo(OutputBuffer::PartHeader* header,
       return false;
     }
 
-    size_t skip_count = chunk->skip_count;
+    // Load the next chunk in the list early. If this is not null, it is
+    // absolutely guaranteed that the writer will not make any further
+    // updates to this chunk. Switching these loads weakens the guarantee.
+    Chunk* next_chunk = chunk->next.load(platform::memory_order_acquire);
     size_t published_size =
         chunk->published_size.load(platform::memory_order_acquire);
-    size_t append_count = std::min(count, published_size - skip_count);
-    count -= append_count;
-    for (size_t i = 0; i < append_count; i++) {
+
+    size_t skip_count = chunk->skip_count;
+    size_t remaining = published_size - skip_count;
+    if (remaining > count) {
+      remaining = count;
+    }
+
+    // Write the remaining slots.
+    for (size_t i = 0; i < remaining; i++) {
       if (output_buffer) {
         output_buffer->AppendUint32(chunk->slots[skip_count + i]);
       }
     }
+    count -= remaining;
 
-    Chunk* next_chunk = chunk->next.load(platform::memory_order_acquire);
-
+    // Clear data and reset head if applicable.
     if (clear_written_data) {
-      chunk->skip_count += append_count;
-      if (next_chunk && chunk->skip_count == published_size) {
-        // If there is a next chunk, then the writer thread is appending to
-        // it. If we have fully read this one, then we recycle it as no one is
-        // going to come back calling on it.
+      chunk->skip_count += remaining;
+      // If the writer is done with this one (next_chunk != nullptr),
+      // we are moving on to the next chunk (count > 0), and we are on the
+      // head_, then kill it and reset the head.
+      if (next_chunk && count > 0 && chunk == head_) {
         // TODO(laurenzo): Put these back into a thread local pool and re-use
         // them.
         delete head_;
