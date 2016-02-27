@@ -154,11 +154,19 @@ uint32_t* EventBuffer::ExpandAndAddSlots(size_t count) {
 
 void EventBuffer::PopulateHeader(OutputBuffer::PartHeader* header) {
   size_t published_slot_count = 0;
-  for (Chunk* chunk = head_; chunk;
-       chunk = chunk->next.load(platform::memory_order_acquire)) {
+  Chunk* chunk = head_;
+  while (chunk) {
+    // The next chunk must be loaded prior to loading the published size of
+    // the current chunk, otherwise, there is the potential for an asynchronous
+    // writer to overflow to the next chunk in a way that the reader skips
+    // final updates to published_size on this chunk prior to that being
+    // visible.
+    Chunk* next_chunk = chunk->next.load(platform::memory_order_acquire);
     published_slot_count +=
-        chunk->published_size.load(platform::memory_order_acquire);
-    published_slot_count -= chunk->skip_count;
+        chunk->published_size.load(platform::memory_order_acquire) -
+        chunk->skip_count;
+
+    chunk = next_chunk;
   }
 
   header->type = 0x20002;
