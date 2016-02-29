@@ -95,8 +95,8 @@ void EventDefinition::ZipArgument(std::string* output, size_t index,
 EventRegistry::EventRegistry() = default;
 
 EventRegistry* EventRegistry::GetInstance() {
-  static EventRegistry* instance = new EventRegistry();
-  return instance;
+  static EventRegistry instance;
+  return &instance;
 }
 
 void EventRegistry::AddEventDefinition(EventDefinition event_definition) {
@@ -119,10 +119,49 @@ std::vector<EventDefinition> EventRegistry::GetEventDefinitions(
   return r;
 }
 
-EventEnabled<>& StandardEvents::GetScopeLeaveEvent() {
-  static EventEnabled<> event{kScopeLeaveEventId, EventClass::kInstance,
-                              EventFlags::kBuiltin | EventFlags::kInternal,
-                              "wtf.scope#leave"};
+ZoneRegistry::ZoneRegistry() = default;
+
+ZoneRegistry* ZoneRegistry::GetInstance() {
+  static ZoneRegistry instance;
+  return &instance;
+}
+
+int ZoneRegistry::CreateZone(const char* name, const char* type,
+                             const char* location) {
+  platform::lock_guard<platform::mutex> lock{mu_};
+  int id = next_zone_id_.fetch_add(1);
+  zone_definitions_.push_back(ZoneDefinition{
+      id, name ? name : "", type ? type : "", location ? location : ""});
+  return id;
+}
+
+int ZoneRegistry::EmitZones(EventBuffer* event_buffer, size_t from_index) {
+  platform::lock_guard<platform::mutex> lock{mu_};
+  size_t size = zone_definitions_.size();
+  if (from_index >= size) {
+    return size;
+  }
+  for (size_t i = from_index; i < size; i++) {
+    auto& definition = zone_definitions_[i];
+    StandardEvents::CreateZone(event_buffer, definition.id,
+                               definition.name.c_str(), definition.type.c_str(),
+                               definition.location.c_str());
+  }
+
+  return size;
+}
+
+StandardEvents::ScopeLeaveEventType& StandardEvents::GetScopeLeaveEvent() {
+  static ScopeLeaveEventType event{kScopeLeaveEventId, EventClass::kInstance,
+                                   EventFlags::kBuiltin | EventFlags::kInternal,
+                                   "wtf.scope#leave"};
+  return event;
+}
+
+StandardEvents::CreateZoneEventType& StandardEvents::GetCreateZoneEvent() {
+  static CreateZoneEventType event{EventClass::kInstance,
+                                   EventFlags::kBuiltin | EventFlags::kInternal,
+                                   "wtf.zone#create:zoneId,name,type,location"};
   return event;
 }
 
@@ -140,15 +179,11 @@ void StandardEvents::ScopeLeave(EventBuffer* event_buffer) {
   GetScopeLeaveEvent().InvokeSpecific(event_buffer);
 }
 
-int StandardEvents::CreateZone(EventBuffer* event_buffer, const char* name,
-                               const char* type, const char* location) {
-  static platform::atomic<int> next_zone_id{1};
-  static EventEnabled<uint16_t, const char*, const char*, const char*> event{
-      EventClass::kInstance, EventFlags::kBuiltin | EventFlags::kInternal,
-      "wtf.zone#create:zoneId,name,type,location"};
-  int zone_id = next_zone_id.fetch_add(1);
-  event.InvokeSpecific(event_buffer, zone_id, name, type, location);
-  return zone_id;
+void StandardEvents::CreateZone(EventBuffer* event_buffer, int zone_id,
+                                const char* name, const char* type,
+                                const char* location) {
+  GetCreateZoneEvent().InvokeSpecific(event_buffer, zone_id, name, type,
+                                      location);
 }
 
 void StandardEvents::SetZone(EventBuffer* event_buffer, int zone_id) {

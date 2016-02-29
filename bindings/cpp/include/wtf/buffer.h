@@ -113,7 +113,6 @@ class StringTable {
 // Buffer for raw event data.
 // These buffers are safe for at most one thread to write and one thread to
 // read.
-// TODO(laurenzo): Extend with async reset support.
 class EventBuffer {
  public:
   // Default and minimum chunk sizes in bytes. We set the minimum conservatively
@@ -167,14 +166,12 @@ class EventBuffer {
   EventBuffer(const EventBuffer&) = delete;
   void operator=(const EventBuffer&) = delete;
 
-  // Initializes the event buffer with a shared string table (which must
-  // remain valid through the life of the instance) and custom chunk size,
-  // which specifies how much space is reserved and how much the buffer
-  // expands by on overflow.
-  EventBuffer(size_t chunk_size_bytes);
+  // Initializes with a custom chunk size, which specifies how much space
+  // is reserved and how much the buffer expands by on overflow.
+  explicit EventBuffer(size_t chunk_size_bytes);
 
   // Initialize with a StringTable and defaults.
-  explicit EventBuffer() : EventBuffer(kDefaultChunkSizeBytes) {}
+  EventBuffer() : EventBuffer(kDefaultChunkSizeBytes) {}
   ~EventBuffer();
 
   // Gets a pointer to a location where 'count' slots can be written, increasing

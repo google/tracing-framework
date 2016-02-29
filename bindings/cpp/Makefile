@@ -60,6 +60,7 @@ LIBRARY_SOURCES := \
 	runtime.cc
 
 TEST_SOURCES := \
+	buffer_test.cc \
 	macros_test.cc \
 	runtime_test.cc \
 	threaded_torture_test.cc
@@ -96,7 +97,9 @@ clean:
 		$(wildcard tmp*.wtf-trace)
 
 ### TESTING.
-test: macros_test runtime_test threaded_torture_test
+test: buffer_test macros_test runtime_test threaded_torture_test
+	@echo "Running buffer_test"
+	./buffer_test
 	@echo "Running macros_test"
 	./macros_test
 	@echo "Running runtime_test"
@@ -109,6 +112,9 @@ endif
 gtest.o: $(GTEST_ALL_CC)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wno-unused-private-field \
 		-iquote $(GTEST_DIR) -o $@ -c $+
+
+buffer_test: buffer_test.o gtest.o libwtf.a
+	$(CXX) -o $@ $+ $(LDLIBS)
 
 macros_test: macros_test.o gtest.o libwtf.a
 	$(CXX) -o $@ $+ $(LDLIBS)
