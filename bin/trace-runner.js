@@ -84,6 +84,7 @@ var context = vm.createContext({
   require: relativeRequire,
   console: console,
   module: module,
+  process: process,
   wtf: wtf
 });
 
