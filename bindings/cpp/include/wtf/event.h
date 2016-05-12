@@ -288,6 +288,9 @@ class EventIf {
       : EventIf(EventDefinition::NextEventId(), event_class, flags, name_spec) {
   }
 
+  // ID of the event in the trace buffer.
+  inline int wire_id() const { return wire_id_; }
+
   // Invokes the event with a specific EventBuffer.
   void InvokeSpecific(EventBuffer* event_buffer, ArgTypes... args) {
     const size_t kSlotCount = kEventPrefixSlotCount + kArgSlotCount;
