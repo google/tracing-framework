@@ -6,7 +6,7 @@
  */
 
 /**
- * @fileoverview Replay Javascript event provider.
+ * @fileoverview Replay JavaScript event provider.
  *
  * @author benvanik@google.com (Ben Vanik)
  */

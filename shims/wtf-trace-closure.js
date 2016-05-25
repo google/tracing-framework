@@ -211,14 +211,14 @@ WTF.data.EventFlag = {
 WTF.data.ZoneType = {
   /**
    * Primary script context.
-   * Usually just user Javascript scopes. This is the default scope created for
+   * Usually just user JavaScript scopes. This is the default scope created for
    * all traces.
    */
   SCRIPT: 'script',
 
   /**
    * Native script context.
-   * Native runtime scopes, such as the C++ calls above the Javascript.
+   * Native runtime scopes, such as the C++ calls above the JavaScript.
    */
   NATIVE_SCRIPT: 'native_script',
 
@@ -551,7 +551,7 @@ WTF.trace.timeStamp = WTF.PRESENT ?
 /**
  * Begins an async time range.
  * This tracks time outside of normal scope flow control, and should be limited
- * to only those events that span frames or Javascript ticks.
+ * to only those events that span frames or JavaScript ticks.
  * If you're trying to track call flow instead use {@see #traceMethods}.
  *
  * A limited number of active timers will be displayed in the UI. Do not abuse

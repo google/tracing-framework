@@ -25,7 +25,7 @@ goog.require('wtf.db.EventTypeBuilder');
  * be generated to efficiently read or write the events.
  *
  * @param {string} name A machine-friendly name used to uniquely identify the
- *     event. It should be a valid Javascript literal (no spaces/etc).
+ *     event. It should be a valid JavaScript literal (no spaces/etc).
  * @param {wtf.data.EventClass} eventClass Event class.
  * @param {number} flags A bitmask of {@see wtf.data.EventFlag}.
  * @param {!Array.<!wtf.data.Variable>} args Additional arguments encoded
@@ -42,7 +42,7 @@ wtf.db.EventType = function(name, eventClass, flags, args) {
 
   /**
    * A machine-friendly name used to uniquely identify the event. It should be a
-   * valid Javascript literal (no spaces/etc).
+   * valid JavaScript literal (no spaces/etc).
    * @type {string}
    */
   this.name = name;

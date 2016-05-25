@@ -8,7 +8,7 @@
 /**
  * @fileoverview Web Tracing Framework shim, hardcoded to disabled.
  * Use this file to allow a page to use the 'WTF' namespace safely but in
- * a disabled form. Javascript engines will be pretty smart about the WTF calls
+ * a disabled form. JavaScript engines will be pretty smart about the WTF calls
  * and add very little overhead.
  *
  * Original source: https://www.github.com/google/tracing-framework/

@@ -6,7 +6,7 @@
  */
 
 /**
- * @fileoverview Console Javascript event provider.
+ * @fileoverview Console JavaScript event provider.
  *
  * @author benvanik@google.com (Ben Vanik)
  */

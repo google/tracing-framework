@@ -97,7 +97,7 @@ of events to include in the stream or the fidelity of the events added.
 #### wtf.trace.provider.chromeDebug
 
 Set `wtf.trace.provider.chromeDebug` to 1+ to enable the events. This will
-use a variety of means to attempt to gather Javascript runtime events, such as
+use a variety of means to attempt to gather JavaScript runtime events, such as
 garbage collections, JIT activity, etc. This functionality relies on the
 injector extension or custom builds of Chromium. It introduces some overhead,
 such as an additional 0.1ms per XHR open/send.

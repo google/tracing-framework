@@ -6,7 +6,7 @@
  */
 
 /**
- * @fileoverview Built-in Javascript event definitions.
+ * @fileoverview Built-in JavaScript event definitions.
  *
  * @author benvanik@google.com (Ben Vanik)
  */

@@ -6,7 +6,7 @@
  */
 
 /**
- * @fileoverview Timing Javascript event provider.
+ * @fileoverview Timing JavaScript event provider.
  *
  * @author benvanik@google.com (Ben Vanik)
  */

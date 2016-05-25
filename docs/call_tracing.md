@@ -15,7 +15,7 @@ So the call tracing feature is implemented entirely differently. It is **not for
 timing** - you will not be able to get function times from this! What you will
 be seeing in the user interface is counts, based on the mode you're running in.
 
-The `wtf-instrument` command line tool runs over your Javascript to produce
+The `wtf-instrument` command line tool runs over your JavaScript to produce
 an instrumented file that can be run in the browser. Unlike the normal
 instrumentation that normal WTF does, this process performs code transformation
 and results in a different kind of file: `.wtf-calls`.
@@ -71,7 +71,7 @@ npm install -g tracing-framework
 
 ## Manual Instrumentation
 
-If you have a Javascript file you'd like to instrument the easiest way to get
+If you have a JavaScript file you'd like to instrument the easiest way to get
 started is by using the `wtf-instrument` tool included in the npm package
 (aka `./bin/instrument.js` in the repo).
 
@@ -88,13 +88,13 @@ version. That's it! See below for how to actually use the instrumented page.
 
 Caveats:
 
-* Only one Javascript file on a page can be instrumented this way right now. If
+* Only one JavaScript file on a page can be instrumented this way right now. If
 you need more use the proxy below.
 
 ## Automatic Instrumentation
 
 By running a tiny proxy server and using a Chrome extension it's possible to
-automatically instrument all Javascript sources on a page automatically.
+automatically instrument all JavaScript sources on a page automatically.
 
 Flow:
 
@@ -127,7 +127,7 @@ page is fully loaded you can disable the extension.
 
 ## Capturing Call Traces
 
-Once you've instrumented your Javascript with one of the above methods, you can
+Once you've instrumented your JavaScript with one of the above methods, you can
 capture your data.
 
 TODO: future versions will have a fancy UI, maybe.
