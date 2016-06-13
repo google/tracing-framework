@@ -177,6 +177,12 @@ wtf.io.Blob.toNativeParts = function(parts) {
         }
         part = part.buffer;
       }
+
+      // Some arbitrary combo of types can cause Chrome to sad tab. Converting
+      // buffers to blobs may prevent this.
+      // TODO(chihuahua): Remove this patch once this is resolved:
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=619217
+      part = new Blob([part]);
     }
     result[n] = part;
   }

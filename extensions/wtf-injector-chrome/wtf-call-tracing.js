@@ -223,7 +223,7 @@ function processOrCacheAsync(sourceText, moduleId, options, opt_url, callback) {
  */
 function processScript(el, opt_synchronous, opt_baseUrl) {
   if (!(el.type in SUPPORTED_SCRIPT_TYPES)) return el;
-  
+
   var doc = el.ownerDocument;
   if (el.text || el.innerText) {
     // Synchronous block.
@@ -779,7 +779,16 @@ function runSharedInitCode(targetWindow, options) {
   targetWindow.__saveTrace = function(opt_filename) {
     // Grab trace blob URL.
     var buffers = targetWindow.__grabTrace();
-    var blob = new Blob(buffers, {
+
+    // Some arbitrary combo of types can cause Chrome to sad tab. Converting
+    // buffers to blobs may prevent this.
+    // TODO(chihuahua): Remove this patch once this is resolved:
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=619217
+    var parts = buffers.map(function(buffer) {
+      return buffer instanceof Blob ? buffer : new Blob([buffer]);
+    });
+
+    var blob = new Blob(parts, {
       type: 'application/octet-stream'
     });
     var url = URL.createObjectURL(blob);

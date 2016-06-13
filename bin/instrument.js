@@ -282,7 +282,16 @@ function transformCode(moduleId, url, sourceCode, argv) {
     global.__saveTrace = function(opt_filename) {
       // Grab trace blob URL.
       var buffers = global.__grabTrace();
-      var blob = new Blob(buffers, {
+
+      // Some arbitrary combo of types can cause Chrome to sad tab. Converting
+      // buffers to blobs may prevent this.
+      // TODO(chihuahua): Remove this patch once this is resolved:
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=619217
+      var parts = buffers.map(function(buffer) {
+        return buffer instanceof Blob ? buffer : new Blob([buffer]);
+      });
+
+      var blob = new Blob(parts, {
         type: 'application/octet-stream'
       });
       var url = URL.createObjectURL(blob);
