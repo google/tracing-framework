@@ -116,16 +116,8 @@ void Runtime::EnableCurrentThread(const char* thread_name, const char* type,
   if (PlatformGetThreadLocalEventBuffer()) {
     return;
   }
-  EventBuffer* event_buffer;
-  {
-    platform::lock_guard<platform::mutex> lock{mu_};
-    event_buffer = CreateThreadEventBuffer();
-  }
-
-  int zone_id =
-      ZoneRegistry::GetInstance()->CreateZone(thread_name, type, location);
-  StandardEvents::SetZone(event_buffer, zone_id);
-  event_buffer->FreezePrefixSlots();
+  EventBuffer* event_buffer =
+      RegisterExternalThread(thread_name, type, location);
   PlatformSetThreadLocalEventBuffer(event_buffer);
 }
 
@@ -133,12 +125,19 @@ EventBuffer* Runtime::RegisterExternalThread(const char* thread_name,
                                              const char* type,
                                              const char* location) {
   EventBuffer* event_buffer;
+  int unique_id;
   {
     platform::lock_guard<platform::mutex> lock{mu_};
     event_buffer = CreateThreadEventBuffer();
+    unique_id = uniquifier_++;
   }
-  int zone_id =
-      ZoneRegistry::GetInstance()->CreateZone(thread_name, type, location);
+  // Add uniquifier to the provided thread name to make sure that
+  // different threads don't get attributed to the same zone.
+  std::ostringstream ss;
+  ss << unique_id << ":" << thread_name;
+  std::string unique_name = ss.str();
+  int zone_id = ZoneRegistry::GetInstance()->CreateZone(unique_name.c_str(),
+                                                        type, location);
   StandardEvents::SetZone(event_buffer, zone_id);
   event_buffer->FreezePrefixSlots();
   return event_buffer;
@@ -157,10 +156,10 @@ bool Runtime::SaveToFile(const std::string& file_name,
     return false;
   }
 
-  bool append = (mode & std::ios_base::app);
+  bool append = (mode & std::ios_base::app) ? true : false;
 
   // If the file was deleted out from under us, reset the checkpoint.
-  if (append && save_options.checkpoint && out.tellp() == 0) {
+  if (append && save_options.checkpoint && out.tellp() == std::streampos(0)) {
     *save_options.checkpoint = SaveCheckpoint{};
   }
 

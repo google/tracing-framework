@@ -41,9 +41,14 @@ void PlatformSetThreadLocalEventBuffer(EventBuffer* event_buffer);
 
 // Select threading library.
 #if defined(WTF_SINGLE_THREADED)
+// Process is single threaded so avoid TLS.
 #include "wtf/platform/platform_aux_single_threaded_inl.h"
-#else
+#elif defined(WIN32)
+// Modern VC++ supports C++11 std threading.
 #include "wtf/platform/platform_aux_std_threaded_inl.h"
+#else
+// Other platforms default to pthreads.
+#include "wtf/platform/platform_aux_pthreads_threaded_inl.h"
 #endif
 
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_H_

@@ -14,7 +14,8 @@ disposed of in favor of C++ standard library calls.
 
 Threading models:
 
-* std_threaded (default): Uses C++ std threading library.
+* pthreads_threaded (default): Uses pthreads threading library.
+* std_threaded: Uses C++ std threading library.
 * single_threaded: Uses dummy threading constructs.
 
 Platforms can force a single threaded model, or it is selectable via

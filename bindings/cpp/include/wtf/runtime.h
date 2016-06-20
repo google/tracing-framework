@@ -187,6 +187,7 @@ class Runtime {
 
   platform::mutex mu_;
   std::vector<std::unique_ptr<EventBuffer>> thread_event_buffers_;
+  int uniquifier_ = 0;
 };
 
 }  // namespace wtf
