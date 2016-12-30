@@ -2,6 +2,7 @@
 #define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_MACROS_H_
 
 #include "wtf/runtime.h"
+#include <thread>
 
 #define __INTERNAL_WTF_NAMESPACE ::wtf
 
@@ -43,6 +44,19 @@
 // is enabled.
 #define WTF_THREAD_ENABLE(name) \
   WTF_THREAD_ENABLE_IF(kWtfEnabledForNamespace, name)
+
+// Enables WTF tracing for any thread based on whether the current namespace
+// is enabled. Thread name will be auto-generated.
+#define WTF_ALL_THREADS_ENABLE() \
+  do { \
+    thread_local bool enabled = false; \
+    if (!enabled) \
+    { \
+      std::size_t this_id = std::hash<std::thread::id>{}(std::this_thread::get_id()); \
+      WTF_THREAD_ENABLE_IF(kWtfEnabledForNamespace, std::to_string(this_id).c_str()); \
+      enabled = true; \
+    } \
+  } while(0)
 
 // Shortcut to trace a no-arg event.
 // Allowed Scopes: Within a function.
