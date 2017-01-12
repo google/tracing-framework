@@ -56,6 +56,12 @@ TEST_F(MacrosTest, ThreadShouldBeDisabled) {
   EXPECT_FALSE(EventsHaveBeenLogged());
 }
 
+TEST_F(MacrosTest, AutoThreadShouldBeDisabled) {
+  WTF_AUTO_THREAD_ENABLE();
+  // Enabling a thread scribbles into the buffer.
+  EXPECT_FALSE(EventsHaveBeenLogged());
+}
+
 TEST_F(MacrosTest, EventsShouldBeDisabled) {
   WTF_THREAD_ENABLE_IF(true, "ShouldBeDisabled");
   EXPECT_TRUE(PrefixEventsHaveBeenLogged());
@@ -78,6 +84,12 @@ namespace enabled {
 WTF_NAMESPACE_ENABLE();
 TEST_F(MacrosTest, ThreadShouldBeEnabled) {
   WTF_THREAD_ENABLE("ShouldBeEnabled");
+  // Enabling a thread scribbles into the buffer.
+  EXPECT_TRUE(PrefixEventsHaveBeenLogged());
+}
+
+TEST_F(MacrosTest, AutoThreadShouldBeEnabled) {
+  WTF_AUTO_THREAD_ENABLE();
   // Enabling a thread scribbles into the buffer.
   EXPECT_TRUE(PrefixEventsHaveBeenLogged());
 }

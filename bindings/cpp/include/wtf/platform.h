@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+#include <string>
+
 namespace wtf {
 
 // Forward declare the event buffer.
@@ -28,6 +30,10 @@ EventBuffer* PlatformGetThreadLocalEventBuffer();
 // true because EventBuffers are never deleted.
 void PlatformSetThreadLocalEventBuffer(EventBuffer* event_buffer);
 
+// Uses platform specific means to get a thread name for the current thread.
+// Depending on platform, this name may be synthetic or completely non-unique.
+std::string PlatformGetThreadName();
+
 }  // namespace wtf
 
 // Branch to for specific platform implementations.
@@ -43,12 +49,12 @@ void PlatformSetThreadLocalEventBuffer(EventBuffer* event_buffer);
 #if defined(WTF_SINGLE_THREADED)
 // Process is single threaded so avoid TLS.
 #include "wtf/platform/platform_aux_single_threaded_inl.h"
-#elif defined(WIN32)
-// Modern VC++ supports C++11 std threading.
-#include "wtf/platform/platform_aux_std_threaded_inl.h"
-#else
-// Other platforms default to pthreads.
+#elif defined(WTF_PTHREAD_THREADED)
+// Explicitly use pthreads instead of std::thread.
 #include "wtf/platform/platform_aux_pthreads_threaded_inl.h"
+#else
+// Default to std::thread and friends.
+#include "wtf/platform/platform_aux_std_threaded_inl.h"
 #endif
 
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_H_

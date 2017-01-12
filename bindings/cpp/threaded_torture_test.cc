@@ -15,7 +15,7 @@ std::atomic<bool> stop;
 std::vector<std::string> thread_names;
 
 void SaveThread() {
-  WTF_THREAD_ENABLE("SaveThread");
+  WTF_AUTO_THREAD_ENABLE();
   wtf::Runtime::SaveCheckpoint checkpoint;
   for (int i = 0; i < 1001; i++) {
     if (i > 0 && (i % 250) == 0) {

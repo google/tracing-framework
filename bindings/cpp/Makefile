@@ -7,9 +7,16 @@
 #     Installs headers and libraies to PREFIX
 #   make clean
 #     Cleans all generated files.
+#
+# Note that the threading library can be defined via:
+#   THREADING=pthread|std|single
+# It defaults to pthread, which is lowest-common-denominator for non Windows.
+# In theory on platforms that implement it well, std can be more efficient.
+# However, many platforms silently don't implement std threading or support
+# it badly (cough. Android).
 
 # Flag defaults. Can be overriden.
-THREADING = multi
+THREADING ?= pthread
 CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC
 LDLIBS =
 SOEXT = so
@@ -19,7 +26,10 @@ PREFIX=/usr/local
 INSTALL=install
 
 # Threading customizations.
-ifeq "$(THREADING)" "multi"
+ifeq "$(THREADING)" "pthread"
+override CPPFLAGS += -DGTEST_HAS_PTHREAD=1 -DWTF_PTHREAD_THREADED
+override LDLIBS += -pthread
+else ifeq "$(THREADING)" "std"
 override CPPFLAGS += -DGTEST_HAS_PTHREAD=1
 override LDLIBS += -pthread
 else ifeq "$(THREADING)" "single"
@@ -27,7 +37,7 @@ override CPPFLAGS += -DGTEST_HAS_PTHREAD=0
 override CPPFLAGS += -DWTF_SINGLE_THREADED
 .PHONY: threaded_torture_test
 else
-$(error Expected value of THREADING to be "single" or "multi")
+$(error Expected value of THREADING to be single/pthread/std)
 endif
 
 # Required flag customizations.
@@ -104,7 +114,7 @@ test: buffer_test macros_test runtime_test threaded_torture_test
 	./macros_test
 	@echo "Running runtime_test"
 	./runtime_test
-ifeq "$(THREADING)" "multi"
+ifneq "$(THREADING)" "single"
 	@echo "Running threaded_torture_test"
 	time ./threaded_torture_test
 endif
@@ -123,7 +133,7 @@ runtime_test: runtime_test.o gtest.o libwtf.a
 	$(CXX) -o $@ $+ $(LDLIBS)
 
 ### THREADED TORTURE TEST
-ifeq "$(THREADING)" "multi"
+ifneq "$(THREADING)" "single"
 threaded_torture_test: threaded_torture_test.o libwtf.a
 	$(CXX) -o $@ $+ $(LDLIBS)
 endif

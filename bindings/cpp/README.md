@@ -115,14 +115,14 @@ TODO: Automate more of this.
 #### Linux/GCC:
 
 ```
-make clean && make test THREADING=multi CXX=g++
+make clean && make test THREADING=pthread CXX=g++
 make clean && make test THREADING=single CXX=g++
 ```
 
 #### Linux/clang:
 
 ```
-make clean && make test THREADING=multi CXX=clang++
+make clean && make test THREADING=pthread CXX=clang++
 make clean && make test THREADING=single CXX=clang++
 ```
 

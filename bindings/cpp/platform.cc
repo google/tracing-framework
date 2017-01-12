@@ -11,8 +11,8 @@
 // Select threading library.
 #if defined(WTF_SINGLE_THREADED)
 #include "wtf/platform/platform_aux_single_threaded_impl.h"
-#elif defined(WIN32)
-#include "wtf/platform/platform_aux_std_threaded_impl.h"
-#else
+#elif defined(WTF_PTHREAD_THREADED)
 #include "wtf/platform/platform_aux_pthreads_threaded_impl.h"
+#else
+#include "wtf/platform/platform_aux_std_threaded_impl.h"
 #endif
