@@ -103,7 +103,50 @@ Runtime* Runtime::GetInstance() {
   return &runtime;
 }
 
-void Runtime::ResetForTesting() { thread_event_buffers_.clear(); }
+void Runtime::ResetForTesting() {
+  platform::lock_guard<platform::mutex> lock{mu_};
+  thread_event_buffers_.clear();
+  tasks_.clear();
+}
+
+EventBuffer* Runtime::PopTaskEventBuffer(const std::string& name) {
+  int unique_id;
+  EventBuffer* created;
+  {
+    platform::lock_guard<platform::mutex> lock{mu_};
+    auto& task = tasks_[name];
+    if (!task.idle_event_buffers.empty()) {
+      EventBuffer* existing = task.idle_event_buffers.front();
+      task.idle_event_buffers.pop_front();
+      return existing;
+    }
+    unique_id = task.next_instance_id++;
+    created = CreateThreadEventBuffer();
+  }
+
+  // Add uniquifier to the provided task name to make sure that
+  // different threads don't get attributed to the same zone.
+  std::ostringstream ss;
+  ss << name << ":" << unique_id;
+  std::string unique_name = ss.str();
+  int zone_id =
+      ZoneRegistry::GetInstance()->CreateZone(unique_name.c_str(), "TASK", "");
+  StandardEvents::SetZone(created, zone_id);
+  created->FreezePrefixSlots();
+
+  return created;
+}
+
+void Runtime::PushTaskEventBuffer(const std::string& name,
+                                  EventBuffer* event_buffer) {
+  if (!event_buffer) {
+    return;
+  }
+
+  platform::lock_guard<platform::mutex> lock{mu_};
+  auto& task = tasks_[name];
+  task.idle_event_buffers.push_front(event_buffer);
+}
 
 EventBuffer* Runtime::CreateThreadEventBuffer() {
   EventBuffer* r;

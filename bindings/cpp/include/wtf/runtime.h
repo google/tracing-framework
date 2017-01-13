@@ -176,7 +176,18 @@ class Runtime {
   // or cause crashes if called when asynchronous logging is not quiesced.
   void ResetForTesting();
 
+  // Pops an idle EventBuffer for the given task and then returns it when
+  // done. Typically used via the ScopedTask class.
+  EventBuffer* PopTaskEventBuffer(const std::string& name);
+  void PushTaskEventBuffer(const std::string& name, EventBuffer* event_buffer);
+
  private:
+  // Each named task has an info descriptor with the idle event buffers.
+  struct TaskDefinition {
+    int next_instance_id = 0;
+    std::deque<EventBuffer*> idle_event_buffers;
+  };
+
   Runtime();
   Runtime(const Runtime&) = delete;
   void operator=(const Runtime&) = delete;
@@ -187,8 +198,47 @@ class Runtime {
 
   platform::mutex mu_;
   std::vector<std::unique_ptr<EventBuffer>> thread_event_buffers_;
+  std::unordered_map<std::string, TaskDefinition> tasks_;
   int uniquifier_ = 0;
 };
+
+// Represents a temporary assignment of an EventBuffer to a thread.
+// The previous state is restored when the ScopedTask goes out of
+// scope.
+template <bool kEnable>
+class ScopedTaskIf {
+ public:
+  explicit ScopedTaskIf(std::string name)
+      : name_(std::move(name)),
+        previous_event_buffer_(PlatformGetThreadLocalEventBuffer()) {
+    PlatformSetThreadLocalEventBuffer(
+        Runtime::GetInstance()->PopTaskEventBuffer(name_));
+  }
+  ~ScopedTaskIf() {
+    Runtime::GetInstance()->PushTaskEventBuffer(
+        name_, PlatformGetThreadLocalEventBuffer());
+    PlatformSetThreadLocalEventBuffer(previous_event_buffer_);
+  }
+  ScopedTaskIf(const ScopedTaskIf&) = delete;
+  void operator=(const ScopedTaskIf&) = delete;
+
+ private:
+  std::string name_;
+  EventBuffer* previous_event_buffer_;
+};
+
+// Explicit disabled instantiation of ScopedTaskIf.
+template <>
+class ScopedTaskIf<false> {
+ public:
+  explicit ScopedTaskIf(std::string name) {}
+  ~ScopedTaskIf() = default;
+  ScopedTaskIf(const ScopedTaskIf&) = delete;
+  void operator=(const ScopedTaskIf&) = delete;
+};
+
+using ScopedTask = ScopedTaskIf<kMasterEnable>;
+using ScopedTaskEnabled = ScopedTaskIf<true>;
 
 }  // namespace wtf
 

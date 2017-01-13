@@ -21,6 +21,8 @@ void PlatformSetThreadLocalEventBuffer(EventBuffer* new_event_buffer) {
   wtf::internal::event_buffer = new_event_buffer;
 }
 
+std::string PlatformGetThreadName() { return "Main"; }
+
 }  // namespace wtf
 
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_SINGLE_THREADED_IMPL_H_

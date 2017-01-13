@@ -31,10 +31,14 @@
 #define WTF_NAMESPACE_DISABLE() \
   static constexpr bool kWtfEnabledForNamespace = false
 
-// Enables WTF tracing for a thread based on a condition.
+// Enables WTF tracing for a thread based on a condition. If the thread
+// is already enabled for WTF, then this is a no-op. Enabling multiple
+// threads with the same name will cause different WTF zones with a machine
+// generated suffix to be produced.
 // Allowed Scopes: Within a function.
 #define WTF_THREAD_ENABLE_IF(condition, name)                              \
-  if (condition) {                                                         \
+  if (condition &&                                                         \
+      !__INTERNAL_WTF_NAMESPACE::PlatformGetThreadLocalEventBuffer()) {    \
     __INTERNAL_WTF_NAMESPACE::Runtime::GetInstance()->EnableCurrentThread( \
         name, nullptr, __FILE__);                                          \
   }
@@ -43,6 +47,17 @@
 // is enabled.
 #define WTF_THREAD_ENABLE(name) \
   WTF_THREAD_ENABLE_IF(kWtfEnabledForNamespace, name)
+
+// Same as WTF_THREAD_ENABLE_IF but uses a platform specific mechanism for
+// deriving the thread name for the current thread.
+#define WTF_AUTO_THREAD_ENABLE_IF(condition) \
+  WTF_THREAD_ENABLE_IF(                      \
+      condition, __INTERNAL_WTF_NAMESPACE::PlatformGetThreadName().c_str())
+
+// Same as WTF_THREAD_ENABLE_IF conditioned on whether the current namespace
+// is enabled.
+#define WTF_AUTO_THREAD_ENABLE() \
+  WTF_AUTO_THREAD_ENABLE_IF(kWtfEnabledForNamespace)
 
 // Shortcut to trace a no-arg event.
 // Allowed Scopes: Within a function.
@@ -101,5 +116,18 @@
       __WTF_INTERNAL_UNIQUE(__wtf_scopen_){                                   \
           __WTF_INTERNAL_UNIQUE(__wtf_scope_eventn_)};                        \
   __WTF_INTERNAL_UNIQUE(__wtf_scopen_).Enter
+
+// Creates a scoped "Task" zone that will be in effect until scope exit.
+// This is ideal for thread pools and such which execute many workers where
+// you want a specific zone for each type of task the worker is performing
+// (versus a zone for each worker thread).
+#define WTF_TASK_IF(cond, name)                                       \
+  __INTERNAL_WTF_NAMESPACE::ScopedTaskIf<cond> __WTF_INTERNAL_UNIQUE( \
+      __wtf_taskn_) {                                                 \
+    name                                                              \
+  }
+
+// Same as WTF_TASK_IF conditioned on the current namespace.
+#define WTF_TASK(name) WTF_TASK_IF(kWtfEnabledForNamespace, name)
 
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_MACROS_H_
