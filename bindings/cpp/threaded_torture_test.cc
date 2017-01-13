@@ -12,8 +12,6 @@
 std::atomic<bool> had_error;
 std::atomic<bool> stop;
 
-std::vector<std::string> thread_names;
-
 void SaveThread() {
   WTF_AUTO_THREAD_ENABLE();
   wtf::Runtime::SaveCheckpoint checkpoint;
@@ -46,8 +44,9 @@ void SaveThread() {
 }
 
 void NoiseMaker1(int thread_number) {
-  WTF_THREAD_ENABLE(thread_names[thread_number].c_str());
   for (int i = 0;; i++) {
+    WTF_TASK("NoiseMaker");
+
     WTF_EVENT("NoiseMaker1#Loop: thread_number, i", int32_t, int32_t)
     (thread_number, i);
     std::this_thread::sleep_for(std::chrono::microseconds(5));
@@ -82,9 +81,6 @@ extern "C" int main(int argc, char** argv) {
   }
   std::cerr << "Running with " << thread_count << " threads." << std::endl;
   for (int i = 0; i < thread_count; i++) {
-    std::stringstream thread_name;
-    thread_name << "NoiseMaker" << i;
-    thread_names.push_back(thread_name.str());
     threads.emplace_back(NoiseMaker1, i);
   }
 

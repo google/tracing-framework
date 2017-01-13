@@ -117,4 +117,17 @@
           __WTF_INTERNAL_UNIQUE(__wtf_scope_eventn_)};                        \
   __WTF_INTERNAL_UNIQUE(__wtf_scopen_).Enter
 
+// Creates a scoped "Task" zone that will be in effect until scope exit.
+// This is ideal for thread pools and such which execute many workers where
+// you want a specific zone for each type of task the worker is performing
+// (versus a zone for each worker thread).
+#define WTF_TASK_IF(cond, name)                                       \
+  __INTERNAL_WTF_NAMESPACE::ScopedTaskIf<cond> __WTF_INTERNAL_UNIQUE( \
+      __wtf_taskn_) {                                                 \
+    name                                                              \
+  }
+
+// Same as WTF_TASK_IF conditioned on the current namespace.
+#define WTF_TASK(name) WTF_TASK_IF(kWtfEnabledForNamespace, name)
+
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_MACROS_H_
