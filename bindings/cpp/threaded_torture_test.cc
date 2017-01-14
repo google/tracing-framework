@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <atomic>
 #include <iostream>
 #include <sstream>
 #include <thread>
