@@ -2,6 +2,8 @@
 #define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_MACROS_H_
 
 #include "wtf/runtime.h"
+#include <string>
+#include <algorithm>
 
 #define __INTERNAL_WTF_NAMESPACE ::wtf
 
@@ -116,6 +118,28 @@
       __WTF_INTERNAL_UNIQUE(__wtf_scopen_){                                   \
           __WTF_INTERNAL_UNIQUE(__wtf_scope_eventn_)};                        \
   __WTF_INTERNAL_UNIQUE(__wtf_scopen_).Enter
+
+// Shortcut to trace a function in case you don't care really much about
+// the performance. Might add some insignificant overhead.
+// It will also replace colon ":" with hash sign "#" in function names
+// (see https://github.com/google/tracing-framework/issues/581)
+// Allowed Scopes: Within a function.
+// Usually you will place this at the very start of a function.
+//
+// Example:
+//   WTF_AUTO_FUNCTION();
+#define WTF_AUTO_FUNCTION()                                             \
+    static std::string                                                  \
+    __WTF_INTERNAL_UNIQUE(__wtf_func_name_) {__PRETTY_FUNCTION__};      \
+    do {                                                                \
+        __INTERNAL_WTF_NAMESPACE::platform::once_flag __WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_); \
+        __INTERNAL_WTF_NAMESPACE::platform::call_once(__WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_), []() { \
+                std::replace(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).begin(), \
+                             __WTF_INTERNAL_UNIQUE(__wtf_func_name_).end(), ':', '#'); \
+            });                                                         \
+        WTF_AUTO_THREAD_ENABLE();                                       \
+    } while (0);                                                        \
+    WTF_SCOPE0(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).c_str())
 
 // Creates a scoped "Task" zone that will be in effect until scope exit.
 // This is ideal for thread pools and such which execute many workers where

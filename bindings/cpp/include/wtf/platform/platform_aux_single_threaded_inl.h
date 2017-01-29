@@ -45,6 +45,18 @@ struct atomic {
   // Implicit cast to T.
   operator T() { return value; }
 };
+
+using once_flag = struct {
+    bool flag {false};
+};
+template <class T>
+void call_once(once_flag& once, T func) {
+    if (!once.flag) {
+        once.flag = true;
+        func();
+    }
+}
+
 }  // namespace platform
 
 namespace internal {

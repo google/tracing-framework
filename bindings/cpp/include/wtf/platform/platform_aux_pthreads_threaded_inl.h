@@ -29,6 +29,16 @@ using std::memory_order_acquire;
 using std::memory_order_release;
 using std::memory_order_acq_rel;
 using std::memory_order_seq_cst;
+
+using once_flag = struct {
+    pthread_once_t flag {PTHREAD_ONCE_INIT};
+};
+
+template <class T>
+void call_once(once_flag& once, T func) {
+    pthread_once(&once.flag, func);
+}
+
 }  // namespace platform
 
 namespace internal {

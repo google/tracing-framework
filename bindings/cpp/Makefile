@@ -130,18 +130,18 @@ gtest.o: $(GTEST_ALL_CC)
 		-iquote $(GTEST_DIR) -o $@ -c $+
 
 buffer_test: buffer_test.o gtest.o libwtf.a
-	$(CXX) -o $@ $+ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 
 macros_test: macros_test.o gtest.o libwtf.a
-	$(CXX) -o $@ $+ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 
 runtime_test: runtime_test.o gtest.o libwtf.a
-	$(CXX) -o $@ $+ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 
 ### THREADED TORTURE TEST
 ifneq "$(THREADING)" "single"
 threaded_torture_test: threaded_torture_test.o libwtf.a
-	$(CXX) -o $@ $+ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 endif
 
 ### INSTALL.

@@ -50,6 +50,30 @@ TEST_F(MacrosTest, AssertMasterEnabled) {
 namespace disabled {
 WTF_NAMESPACE_DISABLE();
 
+class AutoFunctionTestClassDisabled {
+public:
+    static void f() {
+        WTF_AUTO_FUNCTION();
+        const int32_t kLimit = 10;
+        for (int32_t i = 0; i < kLimit; i++) {
+            usleep(10);
+        }
+    }
+};
+
+TEST_F(MacrosTest, AutoFunctionTestShouldBeDisabled) {
+    ClearEventBuffer();
+    const int32_t kLimit = 10;
+
+    for (int32_t i = 0; i < kLimit; i++) {
+        AutoFunctionTestClassDisabled::f();
+        usleep(1);
+    }
+    EXPECT_FALSE(EventsHaveBeenLogged());
+
+    ClearEventBuffer();
+}
+
 TEST_F(MacrosTest, ThreadShouldBeDisabled) {
   WTF_THREAD_ENABLE("ShouldBeDisabled");
   // Enabling a thread scribbles into the buffer.
@@ -80,8 +104,36 @@ TEST_F(MacrosTest, EventsShouldBeDisabled) {
 }
 
 namespace enabled {
-
 WTF_NAMESPACE_ENABLE();
+
+class AutoFunctionTestClass {
+public:
+    static void f() {
+        WTF_AUTO_FUNCTION();
+        const int32_t kLimit = 10;
+        for (int32_t i = 0; i < kLimit; i++) {
+            usleep(10);
+        }
+    }
+};
+
+TEST_F(MacrosTest, AutoFunctionTest) {
+    Runtime::GetInstance()->DisableCurrentThread();
+    ClearEventBuffer();
+
+    const int32_t kLimit = 10;
+
+    for (int32_t i = 0; i < kLimit; i++) {
+        AutoFunctionTestClass::f();
+        usleep(1);
+    }
+    EXPECT_TRUE(EventsHaveBeenLogged());
+
+    EXPECT_TRUE(
+        Runtime::GetInstance()->SaveToFile(TMP_PREFIX "tmpautofuncbuf.wtf-trace"));
+    ClearEventBuffer();
+}
+
 TEST_F(MacrosTest, ThreadShouldBeEnabled) {
   WTF_THREAD_ENABLE("ShouldBeEnabled");
   // Enabling a thread scribbles into the buffer.

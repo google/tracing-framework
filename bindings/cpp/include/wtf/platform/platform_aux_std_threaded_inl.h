@@ -20,6 +20,12 @@ using lock_guard = std::lock_guard<T>;
 template <typename T>
 using atomic = std::atomic<T>;
 
+using once_flag = std::once_flag;
+template <class Callable>
+void call_once(once_flag& flag, Callable&& f) {
+    std::call_once(flag, std::move(f));
+}
+
 // Since memory_order is an old-school enum, it needs to be imported
 // individually.
 using std::memory_order;
