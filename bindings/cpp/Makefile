@@ -52,14 +52,19 @@ LIBRARY_HEADERS := \
 	include/wtf/macros.h \
 	include/wtf/platform.h \
 	include/wtf/runtime.h \
+	include/wtf/argtypes.h
 
 PLATFORM_HEADERS := \
-  include/wtf/platform/platform_aux_pthread_impl.h \
-	include/wtf/platform/platform_aux_pthread_inl.h \
+	include/wtf/platform/platform_aux_pthreads_threaded_impl.h \
+	include/wtf/platform/platform_aux_pthreads_threaded_inl.h \
+	include/wtf/platform/platform_aux_single_threaded_impl.h \
+	include/wtf/platform/platform_aux_single_threaded_inl.h \
+	include/wtf/platform/platform_aux_std_threaded_impl.h \
+	include/wtf/platform/platform_aux_std_threaded_inl.h \
 	include/wtf/platform/platform_default_impl.h \
 	include/wtf/platform/platform_default_inl.h \
-	include/wtf/platform/platform_myriad2_impl.h \
-	include/wtf/platform/platform_myriad2_inl.h
+	include/wtf/platform/platform_myriad2sparc_impl.h \
+	include/wtf/platform/platform_myriad2sparc_inl.h
 
 ALL_HEADERS := $(LIBRARY_HEADERS) $(PLATFORM_HEADERS)
 
