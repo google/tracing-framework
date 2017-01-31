@@ -4,7 +4,7 @@
 
 Two documents of interest:
 
-* [Google JavaScript Style Guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)
+* [Google JavaScript Style Guide](https://google.github.io/styleguide/javascriptguide.xml)
 * [Annotating JavaScript for the Closure Compiler](https://developers.google.com/closure/compiler/docs/js-for-compiler)
 
 Settings for your editor:
