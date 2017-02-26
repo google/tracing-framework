@@ -99,8 +99,12 @@ Runtime::Runtime() {
 }
 
 Runtime* Runtime::GetInstance() {
-  static Runtime runtime;
-  return &runtime;
+  // Note that we use a dynamically allocated Runtime in order to avoid
+  // it ever being destructed. There is just no sane way to guarantee that
+  // anything that uses the Runtime has shut down cleanly prior to global
+  // destruction.
+  static Runtime* runtime = new Runtime();
+  return runtime;
 }
 
 void Runtime::ResetForTesting() {
