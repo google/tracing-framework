@@ -45,6 +45,11 @@ std::string PlatformGetThreadName();
 #include "wtf/platform/platform_default_inl.h"
 #endif
 
+#if !defined(WTF_SINGLE_THREADED) && !defined(WTF_PTHREAD_THREADED) && !defined(WTF_STD_THREADED)
+#warning "Neither of WTF_SINGLE_THREADED, WTF_PTHREAD_THREADED, WTF_STD_THREADED was defined, defaulting to pthread"
+#define WTF_PTHREAD_THREADED
+#endif
+
 // Select threading library.
 #if defined(WTF_SINGLE_THREADED)
 // Process is single threaded so avoid TLS.
@@ -52,9 +57,11 @@ std::string PlatformGetThreadName();
 #elif defined(WTF_PTHREAD_THREADED)
 // Explicitly use pthreads instead of std::thread.
 #include "wtf/platform/platform_aux_pthreads_threaded_inl.h"
-#else
-// Default to std::thread and friends.
+#elif defined(WTF_STD_THREADED)
+// Use std::thread and friends.
 #include "wtf/platform/platform_aux_std_threaded_inl.h"
+#else
+#error "No threading platform is defined. This should never happen."
 #endif
 
 #endif  // TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_PLATFORM_H_

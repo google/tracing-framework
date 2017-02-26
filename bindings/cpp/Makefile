@@ -30,7 +30,7 @@ ifeq "$(THREADING)" "pthread"
 override CPPFLAGS += -DGTEST_HAS_PTHREAD=1 -DWTF_PTHREAD_THREADED
 override LDLIBS += -pthread
 else ifeq "$(THREADING)" "std"
-override CPPFLAGS += -DGTEST_HAS_PTHREAD=1
+override CPPFLAGS += -DGTEST_HAS_PTHREAD=1 -DWTF_STD_THREADED
 override LDLIBS += -pthread
 else ifeq "$(THREADING)" "single"
 override CPPFLAGS += -DGTEST_HAS_PTHREAD=0
