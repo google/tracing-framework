@@ -9,6 +9,7 @@ notifications:
     recipients:
       - benvanik@google.com
       - rsturgell@google.com
+      - laurenzo@google.com
     on_success: change
     on_failure: change
 
@@ -32,6 +33,8 @@ env:
 # Fetch submodules and install all dependencies.
 before_script:
   - "./scripts/setup.sh"
+  # cpp-bindings dependencies
+  - sudo apt-get install -qq g++-4.8 clang++-3.8 libgtest-dev
 
 script:
   # Do a full build to ensure things all work.
@@ -41,3 +44,11 @@ script:
   - "./scripts/run-tests.sh"
   # Run a full sauce test, if we have a key.
   #- "./scripts/run-saucelabs.sh"
+  # Test the cpp-bindings on gcc in all threading scenarios.
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=std make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=pthread make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=single make clean test)
+  # Test the cpp-bindings on clang in all threading scenarios.
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=std make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=pthread make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=single make clean test)
