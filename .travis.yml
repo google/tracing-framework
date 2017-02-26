@@ -34,7 +34,7 @@ env:
 before_script:
   - "./scripts/setup.sh"
   # cpp-bindings dependencies
-  - sudo apt-get install -qq g++-4.8 clang++-3.8 libgtest-dev
+  - sudo apt-get install -qq g++-4.8 clang-3.8 libgtest-dev
 
 script:
   # Do a full build to ensure things all work.
@@ -49,6 +49,6 @@ script:
   - (cd bindings/cpp && CXX=g++-4.8 THREADING=pthread make clean test)
   - (cd bindings/cpp && CXX=g++-4.8 THREADING=single make clean test)
   # Test the cpp-bindings on clang in all threading scenarios.
-  - (cd bindings/cpp && CXX=g++-4.8 THREADING=std make clean test)
-  - (cd bindings/cpp && CXX=g++-4.8 THREADING=pthread make clean test)
-  - (cd bindings/cpp && CXX=g++-4.8 THREADING=single make clean test)
+  - (cd bindings/cpp && CXX=clang++-3.8 THREADING=std make clean test)
+  - (cd bindings/cpp && CXX=clang++-3.8 THREADING=pthread make clean test)
+  - (cd bindings/cpp && CXX=clang++-3.8 THREADING=single make clean test)
