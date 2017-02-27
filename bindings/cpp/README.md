@@ -67,7 +67,7 @@ required:
 
 ```
 # Install library prerequisites.
-sudo apt-get install libjsoncpp-dev libgtest-dev
+sudo apt-get install libgtest-dev
 
 # Install clang.
 sudo apt-get install clang
@@ -110,8 +110,6 @@ make test CXX=clang++
 
 ### Testing
 
-TODO: Automate more of this.
-
 #### Linux/GCC:
 
 ```
@@ -134,6 +132,47 @@ works.
 * If running a threaded build, load the largest of the
 tmp_threaded_torture_test*.wtf-trace files you can and verify that the
 SaveToFile scope looks reasonable.
+
+### Threading
+
+By default, the library builds with threading enabled, using the C++11 std::thread
+facilities. If this works for your target platform, it is the preferred setting.
+This should work on modern:
+
+* Windows
+* Linux
+* OSX/iOS (needs further verification)
+
+As of February 2017, it is known to not work on:
+
+* Android (specifically, C++11 thread local support is severely limited/broken)
+* Myriad2 (with vendor provided libraries)
+
+The threading library can be changed when building via the makefile by passing:
+
+* ```THREADING=pthread``` : Compiles with support for vanilla pthread. Does not use
+  any threading extensions added as part of the C++11 standard. Corresponds to
+  ```-DWTF_PTHREAD_THREADED``` in sources.
+* ```THREADING=single``` : Disables threading. No synchronization is done. There must
+  never be more than one concurrent stream of execution. Suitable for some embedded
+  scenarios. Corresponds to ```-DWTF_SINGLE_THREADED``` in sources.
+* ```THREADING=std``` : Default. Uses the C++11 standard threading facilities.
+
+### Integrations
+
+The bindings have no dependencies outside of the standard library, and the Makefile
+should be taken as the canonical way to integrate it into your project. For simple
+integrations, it should be sufficient to simple include all of the ```LIBRARY_SOURCES```
+files in whatever you are compiling and add a ```-I``` include directory to
+include ```bindings/cpp/include```. If building with a non-standard threading
+library, you must make sure that the appropriate macro is defined for anything that
+includes the headers (```-DWTF_PTHREAD_THREADED``` or ```-DWTF_SINGLE_THREADED```).
+Failing to do this part will result in undefined symbols at link time.
+
+You are also free to use the Makefile as-is if it suits your needs. We are open to
+contributions which add a real build system, but honestly, everywhere that the authors
+use WTF, the build system is different and it has been more expedient to keep the sources
+so simple as to not require anything exotic.
 
 #### Myriad2 (compile only - still a work in progress):
 
