@@ -33,8 +33,9 @@ env:
 # Fetch submodules and install all dependencies.
 before_script:
   - "./scripts/setup.sh"
+  - sudo apt-get -qq update
   # cpp-bindings dependencies
-  - sudo apt-get install -qq g++-4.8 clang-3.8 libgtest-dev
+  - sudo apt-get install -y g++-4.8 clang-3.8 libgtest-dev
 
 script:
   # Do a full build to ensure things all work.
