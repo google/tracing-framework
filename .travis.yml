@@ -1,3 +1,7 @@
+# Modern g++/clang required from >= trusty.
+dist: trusty
+sudo: required
+
 # Only run against master branch
 branches:
   only:
@@ -32,10 +36,11 @@ env:
 
 # Fetch submodules and install all dependencies.
 before_script:
-  - "./scripts/setup.sh"
   - sudo apt-get -qq update
   # cpp-bindings dependencies
-  - sudo apt-get install -y g++ clang libgtest-dev
+  - sudo apt-get install -y g++-4.8 clang-3.8 libgtest-dev
+  # JavaScript dependencies.
+  - "./scripts/setup.sh"
 
 script:
   # Do a full build to ensure things all work.
@@ -46,10 +51,10 @@ script:
   # Run a full sauce test, if we have a key.
   #- "./scripts/run-saucelabs.sh"
   # Test the cpp-bindings on gcc in all threading scenarios.
-  - (cd bindings/cpp && CXX=g++ THREADING=std make clean test)
-  - (cd bindings/cpp && CXX=g++ THREADING=pthread make clean test)
-  - (cd bindings/cpp && CXX=g++ THREADING=single make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=std make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=pthread make clean test)
+  - (cd bindings/cpp && CXX=g++-4.8 THREADING=single make clean test)
   # Test the cpp-bindings on clang in all threading scenarios.
-  - (cd bindings/cpp && CXX=clang++ THREADING=std make clean test)
-  - (cd bindings/cpp && CXX=clang++ THREADING=pthread make clean test)
-  - (cd bindings/cpp && CXX=clang++ THREADING=single make clean test)
+  - (cd bindings/cpp && CXX=clang++-3.8 THREADING=std make clean test)
+  - (cd bindings/cpp && CXX=clang++-3.8 THREADING=pthread make clean test)
+  - (cd bindings/cpp && CXX=clang++-3.8 THREADING=single make clean test)
