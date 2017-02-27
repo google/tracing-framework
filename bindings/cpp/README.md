@@ -162,7 +162,7 @@ The threading library can be changed when building via the makefile by passing:
 
 The bindings have no dependencies outside of the standard library, and the Makefile
 should be taken as the canonical way to integrate it into your project. For simple
-integrations, it should be sufficient to simple include all of the ```LIBRARY_SOURCES```
+integrations, it should be sufficient to simply include all of the ```LIBRARY_SOURCES```
 files in whatever you are compiling and add a ```-I``` include directory to
 include ```bindings/cpp/include```. If building with a non-standard threading
 library, you must make sure that the appropriate macro is defined for anything that
