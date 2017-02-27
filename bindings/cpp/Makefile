@@ -10,13 +10,14 @@
 #
 # Note that the threading library can be defined via:
 #   THREADING=pthread|std|single
-# It defaults to pthread, which is lowest-common-denominator for non Windows.
-# In theory on platforms that implement it well, std can be more efficient.
-# However, many platforms silently don't implement std threading or support
-# it badly (cough. Android).
+# It defaults to "std", which assumes that your C++11 standard library is
+# sane. This should work on modern Windows, Linux, and others. It is
+# known (as of Feb-2017) to not work properly on Android NDK, in which
+# case you should use "pthread" (and arrange to pass the 
+# -DWTF_PTHREAD_THREADED define to anything that includes WTF headers).
 
 # Flag defaults. Can be overriden.
-THREADING ?= pthread
+THREADING ?= std
 CXXFLAGS = -std=c++11 -Wall -Werror -O3 -fPIC
 LDLIBS =
 SOEXT = so
@@ -26,11 +27,11 @@ PREFIX=/usr/local
 INSTALL=install
 
 # Threading customizations.
-ifeq "$(THREADING)" "pthread"
-override CPPFLAGS += -DGTEST_HAS_PTHREAD=1 -DWTF_PTHREAD_THREADED
-override LDLIBS += -pthread
-else ifeq "$(THREADING)" "std"
+ifeq "$(THREADING)" "std"
 override CPPFLAGS += -DGTEST_HAS_PTHREAD=1
+override LDLIBS += -pthread
+else ifeq "$(THREADING)" "pthread"
+override CPPFLAGS += -DGTEST_HAS_PTHREAD=1 -DWTF_PTHREAD_THREADED
 override LDLIBS += -pthread
 else ifeq "$(THREADING)" "single"
 override CPPFLAGS += -DGTEST_HAS_PTHREAD=0
