@@ -132,7 +132,7 @@
     static std::string                                                  \
     __WTF_INTERNAL_UNIQUE(__wtf_func_name_) {__PRETTY_FUNCTION__};      \
     do {                                                                \
-        __INTERNAL_WTF_NAMESPACE::platform::once_flag __WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_); \
+        static __INTERNAL_WTF_NAMESPACE::platform::once_flag __WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_); \
         __INTERNAL_WTF_NAMESPACE::platform::call_once(__WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_), []() { \
                 std::replace(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).begin(), \
                              __WTF_INTERNAL_UNIQUE(__wtf_func_name_).end(), ':', '#'); \

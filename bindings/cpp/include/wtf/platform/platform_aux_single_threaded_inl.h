@@ -50,7 +50,7 @@ using once_flag = struct {
     bool flag {false};
 };
 template <class T>
-void call_once(once_flag& once, T func) {
+inline void call_once(once_flag& once, T func) {
     if (!once.flag) {
         once.flag = true;
         func();

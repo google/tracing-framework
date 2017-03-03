@@ -35,7 +35,7 @@ using once_flag = struct {
 };
 
 template <class T>
-void call_once(once_flag& once, T func) {
+inline void call_once(once_flag& once, T func) {
     pthread_once(&once.flag, func);
 }
 

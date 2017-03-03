@@ -22,7 +22,7 @@ using atomic = std::atomic<T>;
 
 using once_flag = std::once_flag;
 template <class Callable>
-void call_once(once_flag& flag, Callable&& f) {
+inline void call_once(once_flag& flag, Callable&& f) {
     std::call_once(flag, std::move(f));
 }
 
