@@ -3,7 +3,7 @@
 fs = require('fs');
 http = require('http');
 os = require('os');
-optimist = require('optimist')
+optimist = require('optimist');
 
 main(optimist.default('port', 8000).argv);
 

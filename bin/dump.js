@@ -14,6 +14,7 @@
  */
 
 var toolRunner = require('./tool-runner');
+var optimist = require('optimist').boolean(['allzones']);
 var util = toolRunner.util;
 toolRunner.launch(runTool);
 
@@ -24,10 +25,13 @@ toolRunner.launch(runTool);
  * @param {!Array.<string>} args Command line arguments.
  * @param {function(number)} done Call to end the program with a return code.
  */
-function runTool(platform, args, done) {
-  var inputFile = args[0];
+function runTool(platform, args_, done) {
+  var args = optimist.argv;
+  var allzones = args['allzones'];
+
+  var inputFile = args['_'][0];
   if (!inputFile) {
-    console.log('usage: dump.js file.wtf-trace');
+    console.log('usage: dump.js [--allzones] file.wtf-trace');
     done(1);
     return;
   }
@@ -39,7 +43,7 @@ function runTool(platform, args, done) {
       console.log('ERROR: unable to open ' + inputFile, db, db.stack);
       done(1);
     } else {
-      done(dumpDatabase(db));
+      done(dumpDatabase(db, allzones));
     }
   });
 };
@@ -48,9 +52,10 @@ function runTool(platform, args, done) {
 /**
  * Dump the database.
  * @param {!wtf.db.Database} db Database.
+ * @param {!boolean} allzones Whether it's needed to dump all the zones or just the first one
  * @return {number} Return code.
  */
-function dumpDatabase(db) {
+function dumpDatabase(db, allzones) {
   var sources = db.getSources();
   for (var n = 0; n < sources.length; n++) {
     util.logContextInfo(sources[n].getContextInfo());
@@ -62,12 +67,15 @@ function dumpDatabase(db) {
     return 0;
   }
 
-  var zone = zones[0];
-  var eventList = zone.getEventList();
-  var it = eventList.begin();
-  for (; !it.done(); it.next()) {
-    util.logEvent(it, zone);
-  }
+  var count = allzones ? zones.length : 1;
+  for (var i = 0; i < count; ++i) {
+    var zone = zones[i];
+    var eventList = zone.getEventList();
+    var it = eventList.begin();
+    for (; !it.done(); it.next()) {
+      util.logEvent(it, zone);
+    }
 
+  }
   return 0;
 };
