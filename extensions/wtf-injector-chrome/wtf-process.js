@@ -80,8 +80,10 @@ global['wtfi']['process'] = function(
     }
 
     // {foo: function() {}}
+    // {"foo": function() {}}
+    // {1: function() {}}
     if (node.parent.type == 'Property') {
-      return cleanupName(node.parent.key.name);
+      return cleanupName(node.parent.key.name || ''+node.parent.key.value);
     }
 
     // foo = function() {};
