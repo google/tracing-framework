@@ -134,7 +134,7 @@ list of length part count
 
 ## Chunk Types
 
-### Chunk Type 0x0/file_header: File Header
+### Chunk Type 0x1/file_header: File Header
 
 The header chunk must be the first chunk in the file and contains the header
 data part used to describe the file.
@@ -143,7 +143,7 @@ Contains the following parts:
 
 * File Header (required, only one)
 
-### Chunk Type 0x1/event_data: Event Data
+### Chunk Type 0x2/event_data: Event Data
 
 Event data chunks contain an optional string table used by the actual event
 data buffer, optional binary resources referenced used by the event data, and
