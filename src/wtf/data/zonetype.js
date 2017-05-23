@@ -22,14 +22,14 @@ goog.provide('wtf.data.ZoneType');
 wtf.data.ZoneType = {
   /**
    * Primary script context.
-   * Usually just user Javascript scopes. This is the default scope created for
+   * Usually just user JavaScript scopes. This is the default scope created for
    * all traces.
    */
   SCRIPT: 'script',
 
   /**
    * Native script context.
-   * Native runtime scopes, such as the C++ calls above the Javascript.
+   * Native runtime scopes, such as the C++ calls above the JavaScript.
    */
   NATIVE_SCRIPT: 'native_script',
 

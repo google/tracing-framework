@@ -101,7 +101,7 @@ goog.asserts.assert(wtf.io.HAS_TYPED_ARRAYS);
 
 /**
  * Creates a byte array.
- * This will either be a Uint8Array (if supported) or a zeroed Javascript
+ * This will either be a Uint8Array (if supported) or a zeroed JavaScript
  * Array.
  * @param {number} size Size, in bytes.
  * @return {!wtf.io.ByteArray} The new array.

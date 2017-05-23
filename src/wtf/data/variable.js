@@ -30,7 +30,7 @@ wtf.data.VariableFlag = {
  * Variable.
  *
  * @param {string} name A machine-friendly name used to uniquely identify
- *     the variable. It should be a valid Javascript literal (no spaces/etc).
+ *     the variable. It should be a valid JavaScript literal (no spaces/etc).
  * @param {string} typeName Variable type name used in signatures.
  * @param {number=} opt_flags Bitmask of {@see wtf.data.VariableFlag} values.
  * @constructor
@@ -38,7 +38,7 @@ wtf.data.VariableFlag = {
 wtf.data.Variable = function(name, typeName, opt_flags) {
   /**
    * Machine-friendly name used to uniquely identify the variable. It should be
-   * a valid Javascript literal (no spaces/etc).
+   * a valid JavaScript literal (no spaces/etc).
    * @type {string}
    */
   this.name = name;

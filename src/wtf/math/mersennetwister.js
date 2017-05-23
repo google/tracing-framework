@@ -6,7 +6,7 @@
  */
 
 /**
- * @fileoverview A Javascript port of Merseene Twister algorithm.
+ * @fileoverview A JavaScript port of Merseene Twister algorithm.
  * Adapted from https://gist.github.com/banksean/300494
  * by Sean McCullough (banksean@gmail.com).
  *

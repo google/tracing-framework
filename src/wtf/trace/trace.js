@@ -687,7 +687,7 @@ wtf.trace.nextTimeRange_ = 0;
 /**
  * Begins an async time range.
  * This tracks time outside of normal scope flow control, and should be limited
- * to only those events that span frames or Javascript ticks.
+ * to only those events that span frames or JavaScript ticks.
  * If you're trying to track call flow instead use {@see #traceMethods}.
  *
  * A limited number of active timers will be displayed in the UI. Do not abuse

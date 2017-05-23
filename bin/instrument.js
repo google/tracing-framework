@@ -47,7 +47,7 @@ var processScript = ctx['wtfi']['process'];
 
 
 /**
- * Transforms Javascript source code into a instrumented version.
+ * Transforms JavaScript source code into a instrumented version.
  * @param {number} moduleId Module ID, [0-126].
  * @param {string} url URL of the source code.
  * @param {string} sourceCode Source code.
@@ -553,7 +553,7 @@ function main(argv) {
 
 
 main(optimist
-    .usage('Instrument Javascript for tracing.\nUsage: $0 source.js [source.instrumented.js]\n       $0 --server')
+    .usage('Instrument JavaScript for tracing.\nUsage: $0 source.js [source.instrumented.js]\n       $0 --server')
     .options('s', {
       alias: 'server',
       type: 'boolean',
