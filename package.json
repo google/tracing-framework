@@ -8,7 +8,7 @@
     "tracing",
     "performance"
   ],
-  "license": "BSD",
+  "license": "BSD-3-Clause",
   "homepage": "https://google.github.io/tracing-framework",
   "bugs": "https://github.com/google/tracing-framework/issues",
   "repository": {
@@ -36,7 +36,7 @@
     "wd": "0.0.32"
   },
   "optionalDependencies": {
-    "microtime": "1.4.2"
+    "microtime": "2.1.2"
   },
   "files": [
     "build-out/wtf_node_js_compiled.js",
