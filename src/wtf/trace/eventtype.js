@@ -90,7 +90,7 @@ wtf.trace.EventType = function(name, eventClass, flags, opt_args) {
  * @type {number}
  * @private
  */
-wtf.trace.EventType.MAX_EVENT_WIRE_ID_ = 0xFFFF;
+wtf.trace.EventType.MAX_EVENT_WIRE_ID_ = 0xFFFFFFFF;
 
 
 /**

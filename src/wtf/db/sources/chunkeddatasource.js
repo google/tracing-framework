@@ -233,7 +233,7 @@ wtf.db.sources.ChunkedDataSource.prototype.setupBinaryDispatchTable_ =
 
   // Add builtin events.
   eventTypeTable.defineType(wtf.db.EventType.createInstance(
-      'wtf.event#define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
+      'wtf.event#define(uint32 wireId, uint16 eventClass, uint32 flags, ' +
       'ascii name, ascii args)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL));
   this.eventWireTable_[1] = eventTypeTable.getByName('wtf.event#define');
@@ -370,7 +370,11 @@ wtf.db.sources.ChunkedDataSource.prototype.processLegacyEventBuffer_ =
   while (buffer.offset < buffer.capacity) {
     // Read common event header.
     var offset = buffer.offset;
-    var eventWireId = (data[offset++] << 8) | data[offset++];
+    var eventWireId =
+        (((data[offset++] << 24) >>> 0) |
+        (data[offset++] << 16) |
+        (data[offset++] << 8) |
+        data[offset++]) >>> 0;
     var time =
         (((data[offset++] << 24) >>> 0) |
         (data[offset++] << 16) |

@@ -166,10 +166,10 @@ StandardEvents::CreateZoneEventType& StandardEvents::GetCreateZoneEvent() {
   return event;
 }
 
-void StandardEvents::DefineEvent(EventBuffer* event_buffer, uint16_t wire_id,
+void StandardEvents::DefineEvent(EventBuffer* event_buffer, uint32_t wire_id,
                                  uint16_t event_class, uint32_t flags,
                                  const char* name, const char* args) {
-  static EventEnabled<uint16_t, uint16_t, uint32_t, const char*, const char*>
+  static EventEnabled<uint32_t, uint16_t, uint32_t, const char*, const char*>
       event{1, EventClass::kInstance,
             EventFlags::kBuiltin | EventFlags::kInternal,
             "wtf.event#define:wireId,eventClass,flags,name,args"};

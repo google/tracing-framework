@@ -27,7 +27,7 @@ wtf.trace.BuiltinEvents = {
    * This can occur multiple times in a stream and duplicates should be ignored.
    */
   defineEvent: wtf.trace.events.createInstance(
-      'wtf.event#define(uint16 wireId, uint16 eventClass, uint32 flags, ' +
+      'wtf.event#define(uint32 wireId, uint16 eventClass, uint32 flags, ' +
           'ascii name, ascii args)',
       wtf.data.EventFlag.BUILTIN | wtf.data.EventFlag.INTERNAL),
 

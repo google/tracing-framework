@@ -355,7 +355,7 @@ class StandardEvents {
   static ScopeLeaveEventType& GetScopeLeaveEvent();
   static CreateZoneEventType& GetCreateZoneEvent();
 
-  static void DefineEvent(EventBuffer* event_buffer, uint16_t wire_id,
+  static void DefineEvent(EventBuffer* event_buffer, uint32_t wire_id,
                           uint16_t event_class, uint32_t flags,
                           const char* name, const char* args);
   static void ScopeLeave(EventBuffer* event_buffer);
