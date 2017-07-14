@@ -388,6 +388,8 @@ class ScopedEventIf : private EventIf<kEnable, ArgTypes...> {
   ScopedEventIf(const ScopedEventIf&) = delete;
   void operator=(const ScopedEventIf&) = delete;
 
+  using EventIf<kEnable, ArgTypes...>::wire_id;
+
   explicit ScopedEventIf(const char* name_spec)
       : Event<ArgTypes...>(EventClass::kScoped, 0, name_spec) {}
 
