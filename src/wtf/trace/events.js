@@ -13,6 +13,7 @@
 
 goog.provide('wtf.trace.events');
 
+goog.require('goog.asserts');
 goog.require('wtf.data.EventClass');
 goog.require('wtf.data.Variable');
 goog.require('wtf.trace.EventRegistry');
@@ -24,7 +25,7 @@ goog.require('wtf.trace.EventType');
  * @param {string} signature Event signature.
  * @param {wtf.data.EventClass} eventClass Event class.
  * @param {number} flags A bitmask of {@see wtf.data.EventFlag} values.
- * @return {wtf.trace.EventType} New event type.
+ * @return {!wtf.trace.EventType} New event type.
  * @private
  */
 wtf.trace.events.create_ = function(signature, eventClass, flags) {
@@ -89,6 +90,7 @@ wtf.trace.events.create_ = function(signature, eventClass, flags) {
 wtf.trace.events.createInstance = function(signature, opt_flags) {
   var eventType = wtf.trace.events.create_(
       signature, wtf.data.EventClass.INSTANCE, opt_flags || 0);
+  goog.asserts.assert(eventType.append);
   return eventType.append;
 };
 
@@ -129,5 +131,6 @@ wtf.trace.events.createInstance = function(signature, opt_flags) {
 wtf.trace.events.createScope = function(signature, opt_flags) {
   var eventType = wtf.trace.events.create_(
       signature, wtf.data.EventClass.SCOPE, opt_flags || 0);
+  goog.asserts.assert(eventType.append);
   return eventType.append;
 };

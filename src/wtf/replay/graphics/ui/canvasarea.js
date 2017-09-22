@@ -301,7 +301,7 @@ wtf.replay.graphics.ui.CanvasesArea.prototype.removeContext_ = function(
 
 
 /**
- * Lays out the area where the canvases are displayed.
+ * @override
  */
 wtf.replay.graphics.ui.CanvasesArea.prototype.layout = function() {
   if (this.resizeCanvasesToFit_) {

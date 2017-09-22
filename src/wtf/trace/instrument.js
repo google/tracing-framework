@@ -41,7 +41,7 @@ goog.require('wtf.util');
  *     event type.
  * @param {(function())=} opt_pre Code to execute before the scope is entered.
  *     This is only called if {@code opt_generator} is not provided.
- * @return {Function} The instrumented input value.
+ * @return {!Function} The instrumented input value.
  */
 wtf.trace.instrument = function(value, signature, opt_namePrefix,
     opt_generator, opt_pre) {
@@ -128,14 +128,14 @@ wtf.trace.instrument = function(value, signature, opt_namePrefix,
  * @param {Object|!Object.<string>} methodMap A map of translated method names
  *     to method signatures. Only the methods in this map will be
  *     auto-instrumented.
- * @return {Function} The instrumented input value.
+ * @return {!Function} The instrumented input value.
  */
 wtf.trace.instrumentType = function(value, constructorSignature, methodMap) {
   // Rewrite constructor. This requires changing the entire type, which is why
   // we return the result.
   var newValue = wtf.trace.instrument(value, constructorSignature);
   /** @constructor */
-  function tempCtor() {};
+  function tempCtor() {}
   tempCtor.prototype = value.prototype;
   newValue.superClass_ = value.prototype;
   newValue.prototype = new tempCtor();

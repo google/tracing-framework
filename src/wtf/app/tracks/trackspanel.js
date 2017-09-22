@@ -293,7 +293,7 @@ wtf.app.tracks.TracksPanel.prototype.setupKeyboardShortcuts_ = function() {
         commandManager.execute('goto_frame', this, null, newFrame);
       }
     }
-  };
+  }
   keyboardScope.addShortcut('z', function() {
     moveFrames(-1, true);
   }, this);

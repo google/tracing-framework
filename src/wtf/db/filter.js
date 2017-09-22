@@ -203,8 +203,7 @@ wtf.db.Filter.prototype.setFromString = function(value) {
 
 
 /**
- * Gets a string representing this filter.
- * @return {string} Filter string. May be the empty string.
+ * @override
  */
 wtf.db.Filter.prototype.toString = function() {
   return this.sourceString_;
@@ -368,9 +367,9 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
       } else {
         return findArgumentName(access.base);
       }
-    };
+    }
     return findArgumentName(exprValue.value);
-  };
+  }
   function stringifyExpressionValue(exprValue) {
     switch (exprValue.type) {
       case 'number':
@@ -397,7 +396,7 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
       default:
         throw new Error('Unknown expression value type: ' + exprValue.type);
     }
-  };
+  }
   function stringifyReferenceAccess(access) {
     if (goog.isString(access)) {
       if (access[0] == '@') {
@@ -423,7 +422,7 @@ wtf.db.Filter.prototype.generateArgumentFilter_ = function(expr) {
           '"' + access.name + '"' : access.name;
       return stringifyReferenceAccess(access.base) + '[' + name + ']';
     }
-  };
+  }
 };
 
 

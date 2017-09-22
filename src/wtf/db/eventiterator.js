@@ -607,7 +607,7 @@ wtf.db.EventIterator.prototype.buildArgumentString_ = function(
       // TODO(benvanik): better handling of objects/other types?
       s.push(value);
     }
-  };
+  }
 };
 
 

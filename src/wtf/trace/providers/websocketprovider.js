@@ -141,6 +141,7 @@ wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
   ProxyWebSocket.prototype['CLOSED'] = 3;
 
   // Event tracking.
+  /** @override */
   ProxyWebSocket.prototype.beginTrackingEvent = function(type) {
     var self = this;
     var tracker = function(e) {
@@ -149,6 +150,7 @@ wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
     this.trackers_[type] = tracker;
     this.handle_.addEventListener(type, tracker, false);
   };
+  /** @override */
   ProxyWebSocket.prototype.endTrackingEvent = function(type) {
     this.handle_.removeEventListener(type, this.trackers_[type], false);
     delete this.trackers_[type];
@@ -187,7 +189,7 @@ wtf.trace.providers.WebSocketProvider.prototype.injectWs_ = function() {
         this.handle_[name] = value;
       }
     });
-  };
+  }
 
   setupProxyProperty('url', true);
   setupProxyProperty('readyState');

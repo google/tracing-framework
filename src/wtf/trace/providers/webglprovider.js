@@ -350,7 +350,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
           getHandle(ctx),
           ctx.drawingBufferWidth, ctx.drawingBufferHeight);
     }
-  };
+  }
 
   // Stash off functions that let us quickly restore the context prototype
   // to its original state.
@@ -410,7 +410,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     contextRestoreFns.push(function() {
       target[methodName] = rawFn;
     });
-  };
+  }
 
   /**
    * @param {string} signature Event signature.
@@ -420,7 +420,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     wrapMethod(
         WebGLRenderingContext.prototype, 'WebGLRenderingContext',
         signature, opt_generator);
-  };
+  }
 
   function coercePixelTypeToUint8(source) {
     if (!(source instanceof Uint8Array)) {
@@ -433,7 +433,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
     } else {
       return source;
     }
-  };
+  }
 
   /**
    * Wraps the ANGLEInstancedArrays extension object.
@@ -449,7 +449,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       wrapMethod(
           proto, 'ANGLEInstancedArrays',
           signature, opt_generator);
-    };
+    }
 
     wrapInstancedArraysMethod(
         'drawArraysInstancedANGLE(uint32 mode, uint32 first, int32 count, ' +
@@ -480,7 +480,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
             return leaveScope(scope, fn.apply(this, arguments));
           };
         });
-  };
+  }
 
   /**
    * Wraps the OESVertexArrayObject extension object.
@@ -496,7 +496,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       wrapMethod(
           proto, 'OESVertexArrayObject',
           signature, opt_generator);
-    };
+    }
 
     // http://www.khronos.org/registry/webgl/extensions/OES_vertex_array_object/
 
@@ -541,7 +541,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
             return leaveScope(scope, fn.apply(this, arguments));
           };
         });
-  };
+  }
 
   /**
    * Wraps the WebGLLoseContext extension object.
@@ -557,7 +557,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       wrapMethod(
           proto, 'WebGLLoseContext',
           signature, opt_generator);
-    };
+    }
 
     // http://www.khronos.org/registry/webgl/extensions/WEBGL_lose_context/
 
@@ -579,7 +579,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
             return leaveScope(scope, fn.apply(this, arguments));
           };
         });
-  };
+  }
 
   /**
    * Wraps an extension object.
@@ -608,7 +608,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         delete proto['__gl_wrapped__'];
       });
       return true;
-    };
+    }
 
     switch (name) {
       case 'ANGLE_instanced_arrays':
@@ -637,7 +637,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
       default:
         return true;
     }
-  };
+  }
 
   wrapContextMethod(
       'getContextAttributes()');
@@ -861,7 +861,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         return obj;
       };
     });
-  };
+  }
   wrapCreateMethod(
       'createBuffer', 'buffer');
   wrapCreateMethod(
@@ -885,7 +885,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         return leaveScope(scope, fn.apply(this, arguments));
       };
     });
-  };
+  }
   wrapDeleteMethod(
       'deleteBuffer', 'buffer');
   wrapDeleteMethod(
@@ -1096,7 +1096,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         return leaveScope(scope, fn.apply(this, arguments));
       };
     });
-  };
+  }
   wrapIsMethod('isBuffer');
   wrapIsMethod('isFramebuffer');
   wrapIsMethod('isProgram');
@@ -1332,7 +1332,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         });
         break;
     }
-  };
+  }
   function wrapUniformArrayMethod(name, type, count) {
     var signature = name + '(uint32 location, ' + type + '[] v)';
     wrapContextMethod(signature, function(fn, eventType) {
@@ -1342,7 +1342,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         return leaveScope(scope, fn.apply(this, arguments));
       };
     });
-  };
+  }
   function wrapUniformMatrixMethod(name, type, count) {
     var signature =
         name + '(uint32 location, uint8 transpose, ' + type + '[] value)';
@@ -1353,7 +1353,7 @@ wtf.trace.providers.WebGLProvider.prototype.injectContextType_ = function() {
         return leaveScope(scope, fn.apply(this, arguments));
       };
     });
-  };
+  }
   wrapUniformMethod(
       'uniform1f', 'float', 1);
   wrapUniformMethod(

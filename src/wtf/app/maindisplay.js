@@ -193,13 +193,13 @@ wtf.app.MainDisplay.prototype.createDom = function(dom) {
 wtf.app.MainDisplay.prototype.setupDragDropLoading_ = function() {
   var doc = this.getDom().getDocument();
   var eh = this.getHandler();
-  eh.listen(doc.body, goog.events.EventType.DRAGENTER, function(e) {
+  eh.listenWithScope(doc.body, goog.events.EventType.DRAGENTER, function(e) {
     e.preventDefault();
   }, false, this);
-  eh.listen(doc.body, goog.events.EventType.DRAGOVER, function(e) {
+  eh.listenWithScope(doc.body, goog.events.EventType.DRAGOVER, function(e) {
     e.preventDefault();
   }, false, this);
-  eh.listen(doc.body, goog.events.EventType.DROP, function(e) {
+  eh.listenWithScope(doc.body, goog.events.EventType.DROP, function(e) {
     var browserEvent = e.getBrowserEvent();
     if (browserEvent.dataTransfer && browserEvent.dataTransfer.files &&
         browserEvent.dataTransfer.files.length) {

@@ -79,7 +79,7 @@ wtf.ui.color.RgbColor = function(r, g, b) {
 
 /**
  * Gets the #RRGGBB string.
- * @return {string} Value.
+ * @override
  */
 wtf.ui.color.RgbColor.prototype.toString = function() {
   return this.string_;

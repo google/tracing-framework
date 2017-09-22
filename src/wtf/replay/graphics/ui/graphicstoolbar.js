@@ -153,23 +153,23 @@ wtf.replay.graphics.ui.GraphicsToolbar.prototype.setReady_ =
 
   // Handle button clicks.
   var eh = this.getHandler();
-  eh.listen(
+  eh.listenWithScope(
       this.resetButton_,
       goog.events.EventType.CLICK,
       this.resetClickHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.backButton_,
       goog.events.EventType.CLICK,
       this.backClickHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.playButton_,
       goog.events.EventType.CLICK,
       this.playClickHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.forwardButton_,
       goog.events.EventType.CLICK,
       this.forwardClickHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.resetVisualizersButton_,
       goog.events.EventType.CLICK,
       this.resetVisualizersClickHandler_, false, this);

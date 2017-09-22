@@ -581,7 +581,7 @@ wtf.app.DocumentView.prototype.saveLocalTrace_ = function() {
           self.getDom());
     };
     xhr.send();
-  };
+  }
 };
 
 

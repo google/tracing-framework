@@ -13,14 +13,6 @@
  */
 
 
-/**
- * @typedef {{
- *   addListener: function(!Function),
- *   removeListener: function(!Function)
- * }}
- */
-var ChromeEvent;
-
 
 // var chrome;
 
@@ -59,6 +51,10 @@ chrome.app.runtime.onLaunched;
  * }}
  */
 var ChromeAppWindow;
+
+
+/** @type {!ChromeAppWindow} */
+chrome.app.window;
 
 
 /**

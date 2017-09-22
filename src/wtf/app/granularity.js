@@ -27,10 +27,11 @@ wtf.app.Granularity = {
   CENTISECOND: 10,
   /** ms */
   MILLISECOND: 1,
-
-  // TODO(benvanik): make this a setting on the summary index instead?
-  /**
-   * The finest granularity to work with.
-   */
-  FINEST: 100
 };
+
+// TODO(benvanik): make this a setting on the summary index instead?
+/**
+ * The finest granularity to work with.
+ * @const {wtf.app.Granularity}
+ */
+wtf.app.Granularity.FINEST = wtf.app.Granularity.DECISECOND;

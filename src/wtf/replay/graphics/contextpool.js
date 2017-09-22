@@ -128,7 +128,8 @@ wtf.replay.graphics.ContextPool.prototype.getContext =
   } else {
     // Create a new context.
     var newCanvas = this.dom_.createElement(goog.dom.TagName.CANVAS);
-    retrievedContext = newCanvas.getContext(contextType, opt_attributes);
+    retrievedContext = /** @type {WebGLRenderingContext} */ (
+        newCanvas.getContext(contextType, opt_attributes));
 
     // If context type is unsupported, return null.
     if (!retrievedContext) {

@@ -18,7 +18,6 @@ goog.require('goog.Disposable');
 goog.require('goog.Uri');
 goog.require('goog.asserts');
 goog.require('goog.dom');
-goog.require('goog.dom.TagName');
 goog.require('goog.dom.classes');
 goog.require('goog.style');
 goog.require('wtf.addon');
@@ -61,7 +60,7 @@ wtf.app.AddonManager = function(documentView) {
    * @type {!Element}
    * @private
    */
-  this.addonsEl_ = dom.createElement(goog.dom.TagName.DIV);
+  this.addonsEl_ = dom.createElement('div');
   this.addonsEl_.id = 'wtfAppAddons';
   dom.getDocument().body.appendChild(this.addonsEl_);
 
@@ -124,13 +123,13 @@ wtf.app.AddonManager.prototype.loadAddon = function(addon) {
 
   // Create iframe container.
   var iframe = /** @type {!HTMLIFrameElement} */ (
-      dom.createElement(goog.dom.TagName.IFRAME));
+      dom.createElement('iframe'));
   this.addonsEl_.appendChild(iframe);
 
   // Set base.
   var idoc = iframe.contentDocument;
   var baseUri = goog.Uri.resolve(window.location.href, manifest.getUrl());
-  var baseEl = idoc.createElement(goog.dom.TagName.BASE);
+  var baseEl = idoc.createElement('base');
   baseEl.href = baseUri.toString();
   idoc.head.appendChild(baseEl);
 
@@ -141,7 +140,7 @@ wtf.app.AddonManager.prototype.loadAddon = function(addon) {
 
   // Add scripts.
   for (var n = 0; n < info.scripts.length; n++) {
-    var script = idoc.createElement(goog.dom.TagName.SCRIPT);
+    var script = idoc.createElement('script');
     script.src = info.scripts[n];
     idoc.body.appendChild(script);
   }
@@ -183,7 +182,7 @@ wtf.app.AddonManager.prototype.setupAddonApi_ = function(
   function createTabPanel(path, name, options, callback) {
     tabbar.addPanel(new wtf.app.AddonTabPanel(
         addon, documentView, path, name, options, callback));
-  };
+  }
 };
 
 
@@ -267,7 +266,7 @@ wtf.app.AddonTabPanel.Callback;
  * @override
  */
 wtf.app.AddonTabPanel.prototype.createDom = function(dom) {
-  var el = dom.createElement(goog.dom.TagName.DIV);
+  var el = dom.createElement('div');
   goog.dom.classes.add(el, goog.getCssName('appUiTabPanel'));
   return el;
 };
@@ -287,13 +286,13 @@ wtf.app.AddonTabPanel.prototype.setupIframe_ = function() {
   // renamed CSS. Better would be to insert a default stylesheet with some
   // common styles (buttons/etc).
   var iframe = /** @type {!HTMLIFrameElement} */ (
-      this.getDom().createElement(goog.dom.TagName.IFRAME));
+      this.getDom().createElement('iframe'));
   this.getRootElement().appendChild(iframe);
 
   // Set base.
   var idoc = iframe.contentDocument;
   var baseUri = goog.Uri.resolve(window.location.href, manifest.getUrl());
-  var baseEl = idoc.createElement(goog.dom.TagName.BASE);
+  var baseEl = idoc.createElement('base');
   baseEl.href = baseUri.toString();
   idoc.head.appendChild(baseEl);
 
@@ -306,7 +305,7 @@ wtf.app.AddonTabPanel.prototype.setupIframe_ = function() {
   // Add scripts.
   var scripts = this.options_['scripts'] || [];
   for (var n = 0; n < scripts.length; n++) {
-    var script = idoc.createElement(goog.dom.TagName.SCRIPT);
+    var script = idoc.createElement('script');
     script.src = scripts[n];
     idoc.body.appendChild(script);
   }
@@ -314,7 +313,7 @@ wtf.app.AddonTabPanel.prototype.setupIframe_ = function() {
   // Add stylesheets.
   var stylesheets = this.options_['stylesheets'] || [];
   for (var n = 0; n < stylesheets.length; n++) {
-    var link = idoc.createElement(goog.dom.TagName.LINK);
+    var link = idoc.createElement('link');
     link.rel = 'stylesheet';
     link.href = stylesheets[n];
     link.type = 'text/css';

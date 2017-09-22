@@ -41,10 +41,7 @@ goog.inherits(wtf.replay.graphics.HighlightVisualizer,
 
 
 /**
- * Returns whether the visualization for a target substep is stored.
- * @param {number} targetSubStepIndex Target substep.
- * @return {boolean} Whether the visualization is stored for a target substep.
- * @protected
+ * @override
  */
 wtf.replay.graphics.HighlightVisualizer.prototype.visualizationStored =
     function(targetSubStepIndex) {

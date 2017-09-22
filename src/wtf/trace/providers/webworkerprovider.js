@@ -311,7 +311,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     var shimScriptUrl = goog.fs.createObjectUrl(shimBlob);
 
     return shimScriptUrl;
-  };
+  }
 
   /**
    * Worker shim.
@@ -397,6 +397,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
   goog.inherits(ProxyWorker, wtf.trace.eventtarget.BaseEventTarget);
 
   // Event tracking.
+  /** @override */
   ProxyWorker.prototype.beginTrackingEvent = function(type) {
     var self = this;
     var tracker = function(e) {
@@ -405,6 +406,7 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectBrowserShim_ =
     this.trackers_[type] = tracker;
     this.handle_.addEventListener(type, tracker, false);
   };
+  /** @override */
   ProxyWorker.prototype.endTrackingEvent = function(type) {
     this.handle_.removeEventListener(type, this.trackers_[type], false);
     delete this.trackers_[type];
@@ -645,5 +647,5 @@ wtf.trace.providers.WebWorkerProvider.prototype.injectProxyWorker_ =
       'command': command,
       'value': opt_value || null
     }, []);
-  };
+  }
 };

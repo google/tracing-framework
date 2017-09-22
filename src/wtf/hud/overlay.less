@@ -9,6 +9,8 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+ @import "wtf/ui/styles/css3.less";
+
 .hudOuter {
   position: fixed;
   height: 40px;
@@ -52,12 +54,7 @@
   border-left: 1px solid #C1C1C1;
   text-align: center;
   color: #444;
-  background-color: #f5f5f5;
-  background-image: -webkit-linear-gradient(top,#f5f5f5,#f1f1f1);
-  background-image: -moz-linear-gradient(top,#f5f5f5,#f1f1f1);
-  background-image: -ms-linear-gradient(top,#f5f5f5,#f1f1f1);
-  background-image: -o-linear-gradient(top,#f5f5f5,#f1f1f1);
-  background-image: linear-gradient(top,#f5f5f5,#f1f1f1);
+  .backgroundGradient(#f5f5f5, #f1f1f1);
 
   -webkit-transition: all 0.218s;
   -moz-transition: all 0.218s;
@@ -66,25 +63,13 @@
 }
 .hudButton:hover {
   color: #222;
-  background-color: #f8f8f8;
-  background-image: -webkit-linear-gradient(top,#f8f8f8,#f1f1f1);
-  background-image: -moz-linear-gradient(top,#f8f8f8,#f1f1f1);
-  background-image: -ms-linear-gradient(top,#f8f8f8,#f1f1f1);
-  background-image: -o-linear-gradient(top,#f8f8f8,#f1f1f1);
-  background-image: linear-gradient(top,#f8f8f8,#f1f1f1);
-  -webkit-box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
-  box-shadow: inset 0px 1px 2px rgba(0,0,0,0.2);
+  .backgroundGradient(#f8f8f8 ,#f1f1f1);
+  .insetBoxShadow(0px, 1px, 2px, rgba(0,0,0,0.2));
 }
 .hudButton:active {
   color: #333;
-  background-color: #f6f6f6;
-  background-image: -webkit-linear-gradient(top,#f6f6f6,#f1f1f1);
-  background-image: -moz-linear-gradient(top,#f6f6f6,#f1f1f1);
-  background-image: -ms-linear-gradient(top,#f6f6f6,#f1f1f1);
-  background-image: -o-linear-gradient(top,#f6f6f6,#f1f1f1);
-  background-image: linear-gradient(top,#f6f6f6,#f1f1f1);
-  -webkit-box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
-  box-shadow: inset 0px 1px 3px rgba(0,0,0,0.4);
+  .backgroundGradient(#f6f6f6, #f1f1f1);
+  .insetBoxShadow(0px, 1px, 3px, rgba(0,0,0,0.4));
 }
 .hudButton img {
   position: relative;

@@ -112,7 +112,7 @@ Buffer.byteLength = function(value) {};
 
 
 /**
- * @return {string}
+ * @override
  */
 Buffer.prototype.toString = function() {};
 

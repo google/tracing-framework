@@ -132,8 +132,7 @@ wtf.replay.graphics.SkipCallsVisualizer.prototype.getState = function() {
 
 
 /**
- * Sets playback-affecting state.
- * @param {wtf.replay.graphics.Visualizer.State} state The new state.
+ * @override
  */
 wtf.replay.graphics.SkipCallsVisualizer.prototype.setState = function(state) {
   for (var i = 0; i < this.skippedProgramHandles_.length; ++i) {

@@ -118,9 +118,7 @@ wtf.replay.graphics.OverdrawSurface.prototype.getThresholdDrawColor =
 
 
 /**
- * Creates framebuffer, texture, drawTextureProgram, and buffers.
- * @return {boolean} Whether initialization succeeded.
- * @protected
+ * @override
  */
 wtf.replay.graphics.OverdrawSurface.prototype.initialize = function() {
   if (!goog.base(this, 'initialize')) {
@@ -222,7 +220,7 @@ wtf.replay.graphics.OverdrawSurface.prototype.initialize = function() {
 wtf.replay.graphics.OffscreenSurface.prototype.drawOverdraw = function(
     opt_blend) {
   this.ensureInitialized();
-  this.drawTextureInternal(this.texture_, this.drawOverdrawProgram_, opt_blend);
+  this.drawTextureInternal(this.texture, this.drawOverdrawProgram_, opt_blend);
 };
 
 
@@ -248,7 +246,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawQuad = function() {
   // Update vertex attrib settings.
   var vertexAttribLocation = gl.getAttribLocation(this.drawQuadProgram_,
       'aVertexPosition');
-  gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer_);
+  gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer);
   gl.enableVertexAttribArray(vertexAttribLocation);
   gl.vertexAttribPointer(vertexAttribLocation, 2, goog.webgl.FLOAT, false,
       0, 0);

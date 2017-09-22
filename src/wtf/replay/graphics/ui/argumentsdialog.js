@@ -121,9 +121,9 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createForm_ = function() {
 
   // Save the new arguments when either the update button is clicked or Enter
   // is hit.
-  eventHandler.listen(saveButton, goog.events.EventType.CLICK,
+  eventHandler.listenWithScope(saveButton, goog.events.EventType.CLICK,
       saveFunction, false, this);
-  eventHandler.listen(form, goog.events.EventType.SUBMIT,
+  eventHandler.listenWithScope(form, goog.events.EventType.SUBMIT,
       saveFunction, false, this);
 
   // Create label/input pair elements based on the type of value.
@@ -138,7 +138,7 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createForm_ = function() {
   // Create the reset arguments button.
   var resetArgumentsElement = domHelper.getElementByClass(
       goog.getCssName('resetArgumentsButton'));
-  eventHandler.listen(resetArgumentsElement,
+  eventHandler.listenWithScope(resetArgumentsElement,
       goog.events.EventType.CLICK, function() {
         this.resetArguments_();
       }, false, this);
@@ -146,7 +146,7 @@ wtf.replay.graphics.ui.ArgumentsDialog.prototype.createForm_ = function() {
   // Create the cancel button.
   var cancelButton = domHelper.getElementByClass(
       goog.getCssName('cancelButton'), this.getRootElement());
-  eventHandler.listen(cancelButton,
+  eventHandler.listenWithScope(cancelButton,
       goog.events.EventType.CLICK, function() {
         this.close();
       }, false, this);

@@ -189,6 +189,7 @@ wtf.app.Loader.prototype.requestLocalOpenDialog = function(
           opt_selectCallback.call(opt_scope);
         }
         _gaq.push(['_trackEvent', 'app', 'open_local_files']);
+        goog.asserts.assert(inputElement.files);
         this.loadFiles(inputElement.files);
       }, false, this);
   inputElement.click();
@@ -269,7 +270,7 @@ wtf.app.Loader.prototype.requestDriveOpenDialog = function(
       }
 
       this.loadDataSources_(sourceInfos);
-    };
+    }
   }, this);
 };
 
@@ -277,7 +278,7 @@ wtf.app.Loader.prototype.requestDriveOpenDialog = function(
 /**
  * Begins loading a set of HTML5 File objects.
  * These can be from the filesystem, dragged in, etc.
- * @param {!Array.<!File>} files File objects.
+ * @param {!Array.<!File>|!FileList} files File objects.
  */
 wtf.app.Loader.prototype.loadFiles = function(files) {
   var sourceInfos = [];
@@ -439,7 +440,7 @@ wtf.app.Loader.prototype.loadSucceeded_ = function(doc, entries, opt_title) {
     wtf.timing.setTimeout(50, function() {
       documentView.zoomToFit();
     }, this);
-  };
+  }
 };
 
 

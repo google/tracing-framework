@@ -151,7 +151,7 @@ wtf.db.QueryResult.prototype.dump = function(format) {
 
 /**
  * Dumps the results into a blob formatted by RFC 4180 (CSV).
- * @return {string?} Results.
+ * @return {string} Results.
  * @private
  */
 wtf.db.QueryResult.prototype.dumpCsv_ = function() {

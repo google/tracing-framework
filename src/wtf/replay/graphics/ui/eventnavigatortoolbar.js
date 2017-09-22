@@ -224,23 +224,23 @@ wtf.replay.graphics.ui.EventNavigatorToolbar.prototype.setReady = function() {
 
   // Handle button clicks.
   var eh = this.getHandler();
-  eh.listen(
+  eh.listenWithScope(
       this.firstCallButton_,
       goog.events.EventType.CLICK,
       this.firstCallHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.previousDrawCallButton_,
       goog.events.EventType.CLICK,
       this.previousDrawCallHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.nextDrawCallButton_,
       goog.events.EventType.CLICK,
       this.nextDrawCallHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.lastCallButton_,
       goog.events.EventType.CLICK,
       this.lastCallHandler_, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.toggleOverdrawButton_,
       goog.events.EventType.CLICK,
       this.toggleOverdrawHandler_, false, this);

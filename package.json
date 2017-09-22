@@ -1,6 +1,6 @@
 {
   "name": "tracing-framework",
-  "version": "2015.7.15-1",
+  "version": "2017.10.19-1",
   "description": "Web Tracing Framework instrumentation and analysis library.",
   "keywords": [
     "javascript",
@@ -20,23 +20,23 @@
   },
   "scripts": {},
   "dependencies": {
-    "falafel": "0.1.4",
-    "mkdirp": "0.3.5",
-    "optimist": "0.3.5",
-    "ws": "0.4.25",
-    "string-hash": "~1.1.0",
-    "temporary": "0.0.7"
+    "falafel": "2.1.0",
+    "mkdirp": "0.5.1",
+    "optimist": "0.6.1",
+    "ws": "3.2.0",
+    "string-hash": "~1.1.3",
+    "temporary": "0.0.8"
   },
   "devDependencies": {
-    "benchmark": "1.0.0",
-    "chai": "1.2.0",
-    "less": "1.4.2",
-    "mocha": "1.4.2",
-    "pegjs": "~0.7.0",
-    "wd": "0.0.32"
+    "benchmark": "2.1.4",
+    "chai": "4.1.2",
+    "less": "2.7.2",
+    "mocha": "3.5.3",
+    "pegjs": "~0.10.0",
+    "wd": "1.4.1"
   },
   "optionalDependencies": {
-    "microtime": "2.1.2"
+    "microtime": "2.1.6"
   },
   "files": [
     "build-out/wtf_node_js_compiled.js",

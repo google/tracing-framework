@@ -22,15 +22,15 @@
 
 .backgroundGradient(@topColor, @bottomColor) {
   background-color: @topColor;
-  background-image: -webkit-linear-gradient(top,@topColor,@bottomColor);
-  background-image: -moz-linear-gradient(top,@topColor,@bottomColor);
-  background-image: -ms-linear-gradient(top,@topColor,@bottomColor);
-  background-image: -o-linear-gradient(top,@topColor,@bottomColor);
-  background-image: linear-gradient(top,@topColor,@bottomColor);
+  /* @alternate */ background-image: -webkit-linear-gradient(top,@topColor,@bottomColor);
+  /* @alternate */ background-image: -moz-linear-gradient(top,@topColor,@bottomColor);
+  /* @alternate */ background-image: -ms-linear-gradient(top,@topColor,@bottomColor);
+  /* @alternate */ background-image: -o-linear-gradient(top,@topColor,@bottomColor);
+  /* @alternate */ background-image: linear-gradient(top,@topColor,@bottomColor);
   // IE8+:
   -ms-filter: %("progid:DXImageTransform.Microsoft.gradient(startColorstr=%d, endColorstr=%d)", @topColor, @bottomColor);
   // IE10:
-  background-image: -ms-linear-gradient(top,@topColor, @bottomColor);
+  /* @alternate */ background-image: -ms-linear-gradient(top,@topColor, @bottomColor);
 }
 
 .boxSizing(@sizing: border-box) {

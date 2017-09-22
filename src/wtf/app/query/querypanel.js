@@ -72,7 +72,8 @@ wtf.app.query.QueryPanel = function(documentView) {
    */
   this.zoneSelect_ = this.getChildElement(goog.getCssName('zoneSelect'));
   this.updateZoneList_();
-  this.getHandler().listen(this.zoneSelect_, goog.events.EventType.CHANGE,
+  this.getHandler().listenWithScope(
+      this.zoneSelect_, goog.events.EventType.CHANGE,
       this.reissueQuery_, false, this);
 
   /**

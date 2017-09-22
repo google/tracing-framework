@@ -81,14 +81,14 @@ wtf.ui.SettingsDialog = function(options, title, parentElement, opt_dom) {
   dom.setTextContent(titleEl, title);
 
   var eh = this.getHandler();
-  eh.listen(
+  eh.listenWithScope(
       this.getChildElement(goog.getCssName('buttonSave')),
       goog.events.EventType.CLICK,
       function() {
         this.saveSettings();
         this.close();
       }, false, this);
-  eh.listen(
+  eh.listenWithScope(
       this.getChildElement(goog.getCssName('buttonCancel')),
       goog.events.EventType.CLICK, function() {
         this.close();

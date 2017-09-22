@@ -49,7 +49,7 @@ wtf.ui.ErrorDialog = function(message, detail, opt_dom) {
   }, body, dom);
 
   var eh = this.getHandler();
-  eh.listen(
+  eh.listenWithScope(
       this.getChildElement(goog.getCssName('buttonClose')),
       goog.events.EventType.CLICK, function() {
         this.close();

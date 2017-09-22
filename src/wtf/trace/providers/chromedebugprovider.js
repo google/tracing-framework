@@ -642,7 +642,7 @@ wtf.trace.providers.ChromeDebugProvider.prototype.toggleCapture_ = function() {
     consoleTimeEnd.call(goog.global.console, syncName);
 
     wtf.trace.leaveScope(tracingScope);
-  };
+  }
 
   if (!this.isCapturingTracing_) {
     // Start tracing.

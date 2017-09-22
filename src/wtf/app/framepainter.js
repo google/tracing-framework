@@ -237,7 +237,7 @@ wtf.app.FramePainter.prototype.getInfoStringInternal =
  * @param {number} x X coordinate, relative to canvas.
  * @param {number} y Y coordinate, relative to canvas.
  * @param {!goog.math.Rect} bounds Draw bounds.
- * @return {wtf.db.Frame|Array.<wtf.db.Frame>} Frame or an array
+ * @return {!wtf.db.Frame|!Array.<wtf.db.Frame>} Frame or an array
  *     containing the two frames on either side of the time.
  * @private
  */

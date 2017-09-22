@@ -1,8 +1,0 @@
-# Copyright 2012 Google Inc. All Rights Reserved.
-
-# Bash aliases
-
-alias anvil='./third_party/anvil-build/anvil-local.sh'
-
-alias deployext='anvil deploy -o build-bin/ extensions/wtf-injector-chrome:deploy extensions/wtf-injector-firefox:deploy'
-alias deployzip='anvil deploy -o build-bin/ :injector'

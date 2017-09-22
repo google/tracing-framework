@@ -331,7 +331,7 @@ wtf.ui.Control.prototype.toggleInputEvents_ = function(value) {
       modifiers |= wtf.ui.ModifierKey.META;
     }
     return modifiers;
-  };
+  }
 
   eh.listen(
       canvas,

@@ -46,7 +46,7 @@ wtf.app.Tabbar = function(documentView, parentElement) {
 
   /**
    * A map of panels by panel path.
-   * @type {!Object.<!wtf.app.TabPanel>}
+   * @type {!Object.<wtf.app.TabPanel>}
    * @private
    */
   this.panelsByPath_ = {};
@@ -114,7 +114,7 @@ wtf.app.Tabbar.prototype.addPanel = function(panel) {
   dom.appendChild(
       this.getChildElement(goog.getCssName('kTabHeaderTabs')),
       tabElement);
-  this.getHandler().listen(
+  this.getHandler().listenWithScope(
       tabElement,
       goog.events.EventType.CLICK,
       function(e) {
@@ -281,8 +281,7 @@ wtf.app.Tabbar.prototype.getTabForPanel_ = function(panel) {
 
 
 /**
- * Handles sizing/layout.
- * This is called by the document view when the control size changes.
+ * @override
  */
 wtf.app.Tabbar.prototype.layout = function() {
   if (this.selectedTab_) {

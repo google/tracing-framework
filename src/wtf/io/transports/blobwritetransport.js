@@ -71,7 +71,7 @@ wtf.io.transports.BlobWriteTransport.prototype.disposeInternal = function() {
 wtf.io.transports.BlobWriteTransport.prototype.write = function(data) {
   if (wtf.io.Blob.isBlob(data)) {
     // Blobs are immutable, so store off our input.
-    this.blobParts_.push(data);
+    this.blobParts_.push(/** @type {!wtf.io.Blob} */ (data));
   } else {
     // Wrap in a blob. This allows the browser to page the data out if needed.
     this.blobParts_.push(wtf.io.Blob.create([data]));

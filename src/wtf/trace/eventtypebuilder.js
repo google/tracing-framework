@@ -46,7 +46,7 @@ goog.inherits(wtf.trace.EventTypeBuilder, wtf.util.FunctionBuilder);
  * Generates an event tracing function.
  * @param {!wtf.trace.EventSessionContextType} context Event session context.
  * @param {!wtf.trace.EventType} eventType Event type.
- * @return {Function} Generated function based on class.
+ * @return {!Function} Generated function based on class.
  */
 wtf.trace.EventTypeBuilder.prototype.generate = function(context, eventType) {
   var writers = wtf.trace.EventTypeBuilder.WRITERS_;

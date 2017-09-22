@@ -83,7 +83,7 @@ wtf.ui.zoom.Element = function(el, zoomTarget) {
   this.elementOffset_ = goog.style.getPageOffset(this.el);
 
   // Relayout as required.
-  this.listen(
+  this.listenWithScope(
       this.viewportSizeMonitor_,
       goog.events.EventType.RESIZE,
       function() {

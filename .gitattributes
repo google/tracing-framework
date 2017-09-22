@@ -1,0 +1,4 @@
+*           text=auto whitespace=blank-at-eol,tab-in-indent,trailing-space,tabwidth=2
+
+*.bat       text eol=crlf
+*.sh        text eol=lf
