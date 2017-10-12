@@ -41,6 +41,10 @@ else
 $(error Expected value of THREADING to be single/pthread/std)
 endif
 
+ifneq "$(THREADING)" "std"
+override POSIX_SUPPORT = "0"
+endif
+
 # Required flag customizations.
 override CPPFLAGS += -Iinclude
 override CPPFLAGS += -I$(GTEST_DIR)/include
@@ -67,6 +71,10 @@ PLATFORM_HEADERS := \
 	include/wtf/platform/platform_myriad2sparc_impl.h \
 	include/wtf/platform/platform_myriad2sparc_inl.h
 
+ifeq "$(POSIX_SUPPORT)" "1"
+LIBRARY_HEADERS += include/wtf/posix_utils.h
+endif
+
 ALL_HEADERS := $(LIBRARY_HEADERS) $(PLATFORM_HEADERS)
 
 LIBRARY_SOURCES := \
@@ -80,6 +88,11 @@ TEST_SOURCES := \
 	macros_test.cc \
 	runtime_test.cc \
 	threaded_torture_test.cc
+
+ifeq "$(POSIX_SUPPORT)" "1"
+LIBRARY_SOURCES += posix_utils.cc
+TEST_SOURCES += posix_utils_test.cc
+endif
 
 LIBRARY_OBJECTS := $(LIBRARY_SOURCES:%.cc=%.o)
 
@@ -113,7 +126,13 @@ clean:
 		$(wildcard tmp*.wtf-trace)
 
 ### TESTING.
+ifneq "$(POSIX_SUPPORT)" "1"
 test: buffer_test macros_test runtime_test threaded_torture_test
+else
+test: buffer_test macros_test runtime_test threaded_torture_test posix_utils_test
+	@echo "Running posix_utils_test"
+	./posix_utils_test
+endif
 	@echo "Running buffer_test"
 	./buffer_test
 	@echo "Running macros_test"
@@ -136,6 +155,9 @@ macros_test: macros_test.o gtest.o libwtf.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 
 runtime_test: runtime_test.o gtest.o libwtf.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
+
+posix_utils_test: posix_utils_test.o gtest.o libwtf.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 
 ### THREADED TORTURE TEST
