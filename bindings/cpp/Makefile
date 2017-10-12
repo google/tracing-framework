@@ -77,6 +77,7 @@ LIBRARY_SOURCES := \
 
 TEST_SOURCES := \
 	buffer_test.cc \
+	event_test.cc \
 	macros_test.cc \
 	runtime_test.cc \
 	threaded_torture_test.cc
@@ -113,9 +114,11 @@ clean:
 		$(wildcard tmp*.wtf-trace)
 
 ### TESTING.
-test: buffer_test macros_test runtime_test threaded_torture_test
+test: buffer_test event_test macros_test runtime_test threaded_torture_test
 	@echo "Running buffer_test"
 	./buffer_test
+	@echo "Running event_test"
+	./event_test
 	@echo "Running macros_test"
 	./macros_test
 	@echo "Running runtime_test"
@@ -130,6 +133,9 @@ gtest.o: $(GTEST_ALL_CC)
 		-iquote $(GTEST_DIR) -o $@ -c $+
 
 buffer_test: buffer_test.o gtest.o libwtf.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
+
+event_test: event_test.o gtest.o libwtf.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $+ $(LDLIBS)
 
 macros_test: macros_test.o gtest.o libwtf.a
