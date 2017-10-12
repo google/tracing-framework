@@ -109,7 +109,7 @@
 // is defined and will exit when it goes out of scope.
 //
 // Example:
-//   WTF_SCOPE0("MyClass#MyMethod", int, uint32_t)(1, 2);
+//   WTF_SCOPE("MyClass#MyMethod", int, uint32_t)(1, 2);
 #define WTF_SCOPE(name_spec, ...)                                             \
   static __INTERNAL_WTF_NAMESPACE::ScopedEventIf<kWtfEnabledForNamespace,     \
                                                  __VA_ARGS__>                 \
