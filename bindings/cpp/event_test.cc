@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "testing/base/public/gunit.h"
+#include "gtest/gtest.h"
 
 namespace wtf {
 namespace {
