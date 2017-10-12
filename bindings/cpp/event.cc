@@ -51,20 +51,44 @@ bool PeelArgName(const char** arg_names, const char** out_arg_name,
 }  // namespace
 
 void EventDefinition::AppendName(std::string* output) const {
-  const char* colon = strchr(name_spec_, ':');
-  if (colon) {
-    output->append(name_spec_, (colon - name_spec_));
-  } else {
-    output->append(name_spec_);
+  // Colons are used as separators in WTF's binary format so can't be part of
+  // identifiers, but '::' commonly appears in auto-generated C++ identifier
+  // names, as with the __PRETTY_FUNCTION__ built-in macro.
+  // Replace double colons with '#', which is WTF's class/namespace separator.
+  //
+  // A single : in a name_spec separates the name part from arguments.
+  const char *src = name_spec_;
+  const char* colon = strchr(src, ':');
+  while (colon) {
+    output->append(src, (colon - src));
+    src = colon + 1;
+    if (*src == ':') {
+      // Double colon, replace with # and continue.
+      output->append("#");
+      src += 1;
+      colon = strchr(src, ':');
+    } else {
+      // This was a single colon.  Output no more.
+      return;
+    }
   }
+  // Append anything remaining in src.
+  output->append(src);
 }
 
 void EventDefinition::AppendArguments(std::string* output) const {
   if (argument_zipper_ && name_spec_) {
     const char* arg_names = strchr(name_spec_, ':');
-    if (arg_names) {
+    while (arg_names) {
       // Colon found - advance.
       arg_names += 1;
+      if (*arg_names == ':') {
+        // Actually a '::' namespace separator, keep looking.
+        arg_names += 1;
+        arg_names = strchr(arg_names, ':');
+      } else {
+        break;
+      }
     }
     argument_zipper_(output, arg_names);
   }
