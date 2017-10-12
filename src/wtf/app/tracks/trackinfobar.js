@@ -155,7 +155,7 @@ wtf.app.tracks.TrackInfoBar = function(tracksPanel, parentElement) {
           // TODO(benvanik): escape other characters?
           filterString =
               '/^' +
-              filterString.replace(/([\.\$\-\*\+])/g, '\\$1') +
+              filterString.replace(/([\.\$\-\*\+\[\]\(\)\{\}])/g, '\\$1') +
               '$/';
         }
         var parsed = this.selection_.setFilterExpression(filterString);
