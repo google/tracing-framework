@@ -59,7 +59,7 @@ TEST_F(BufferTest, Serialization_StringTable0) {
   OutputBuffer output_buffer(&stream);
   output_buffer.StartChunk(kDefaultChunkHeader, &header, 1);
   EXPECT_TRUE(st.WriteTo(&header, &output_buffer));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
                 1, 2,  // Chunk header fields.
@@ -86,7 +86,7 @@ TEST_F(BufferTest, Serialization_StringTable1) {
   OutputBuffer output_buffer(&stream);
   output_buffer.StartChunk(kDefaultChunkHeader, &header, 1);
   EXPECT_TRUE(st.WriteTo(&header, &output_buffer));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
                 1, 2,  // Chunk header fields.
@@ -122,7 +122,7 @@ TEST_F(BufferTest, Serialization_StringTable1_EmptyEventBuffer) {
   output_buffer.StartChunk(kDefaultChunkHeader, headers, 2);
   EXPECT_TRUE(st.WriteTo(&st_header, &output_buffer));
   EXPECT_TRUE(eb.WriteTo(&eb_header, &output_buffer, false));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
                 1, 2,  // Chunk header fields.
@@ -169,7 +169,7 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferFlushed) {
   output_buffer.StartChunk(kDefaultChunkHeader, headers, 2);
   EXPECT_TRUE(st.WriteTo(&st_header, &output_buffer));
   EXPECT_TRUE(eb.WriteTo(&eb_header, &output_buffer, false));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{1, 2,  // Chunk header fields.
                                    68,    // Chunk length.
@@ -227,7 +227,7 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearAppend) {
   output_buffer.StartChunk(kDefaultChunkHeader, headers, 2);
   EXPECT_TRUE(st.WriteTo(&st_header, &output_buffer));
   EXPECT_TRUE(eb.WriteTo(&eb_header, &output_buffer, false));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
                 1, 2,  // Chunk header fields.
@@ -287,7 +287,7 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearUnflushed) {
   output_buffer.StartChunk(kDefaultChunkHeader, headers, 2);
   EXPECT_TRUE(st.WriteTo(&st_header, &output_buffer));
   EXPECT_TRUE(eb.WriteTo(&eb_header, &output_buffer, false));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
                 1, 2,  // Chunk header fields.
@@ -311,7 +311,7 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearUnflushed) {
 }
 
 TEST_F(BufferTest, EventBufferExpandAndClear) {
-  const int kChunkSlots = 512;
+  const uint32_t kChunkSlots = 512;
   EventBuffer eb(kChunkSlots * sizeof(uint32_t));
 
   // Commit a prefix.
@@ -325,7 +325,7 @@ TEST_F(BufferTest, EventBufferExpandAndClear) {
 
   // Write 2 slots under the limit.
   eb_slots = eb.AddSlots(kChunkSlots - 2);
-  for (int i = 0; i < kChunkSlots - 2; i++) {
+  for (uint32_t i = 0; i < kChunkSlots - 2; i++) {
     eb_slots[i] = i;
   }
   eb.Flush();
@@ -346,22 +346,22 @@ TEST_F(BufferTest, EventBufferExpandAndClear) {
   std::stringstream stream;
   OutputBuffer output_buffer(&stream);
   EXPECT_TRUE(eb.WriteTo(&eb_header, &output_buffer, true));
-  ASSERT_EQ(0, stream.str().size() % 4);
+  ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
 
   // Verify.
   int i = 0;
-  EXPECT_EQ(44, slots[i++]);
-  EXPECT_EQ(45, slots[i++]);
-  EXPECT_EQ(46, slots[i++]);
-  EXPECT_EQ(47, slots[i++]);
-  for (int count = 0; count < kChunkSlots - 2; count++) {
+  EXPECT_EQ(44U, slots[i++]);
+  EXPECT_EQ(45U, slots[i++]);
+  EXPECT_EQ(46U, slots[i++]);
+  EXPECT_EQ(47U, slots[i++]);
+  for (uint32_t count = 0; count < kChunkSlots - 2; count++) {
     EXPECT_EQ(count, slots[i++]);
   }
-  EXPECT_EQ(54, slots[i++]);
-  EXPECT_EQ(55, slots[i++]);
-  EXPECT_EQ(56, slots[i++]);
-  EXPECT_EQ(57, slots[i++]);
+  EXPECT_EQ(54U, slots[i++]);
+  EXPECT_EQ(55U, slots[i++]);
+  EXPECT_EQ(56U, slots[i++]);
+  EXPECT_EQ(57U, slots[i++]);
 
   // Now that it is cleared, write a bit more and verify.
   eb_slots = eb.AddSlots(4);
@@ -376,18 +376,18 @@ TEST_F(BufferTest, EventBufferExpandAndClear) {
   std::stringstream stream2;
   OutputBuffer output_buffer2(&stream2);
   EXPECT_TRUE(eb.WriteTo(&eb_header, &output_buffer2, true));
-  ASSERT_EQ(0, stream2.str().size() % 4);
+  ASSERT_EQ(0U, stream2.str().size() % 4);
   slots = ExtractSlots(stream2.str());
 
   i = 0;
-  EXPECT_EQ(44, slots[i++]);
-  EXPECT_EQ(45, slots[i++]);
-  EXPECT_EQ(46, slots[i++]);
-  EXPECT_EQ(47, slots[i++]);
-  EXPECT_EQ(64, slots[i++]);
-  EXPECT_EQ(65, slots[i++]);
-  EXPECT_EQ(66, slots[i++]);
-  EXPECT_EQ(67, slots[i++]);
+  EXPECT_EQ(44U, slots[i++]);
+  EXPECT_EQ(45U, slots[i++]);
+  EXPECT_EQ(46U, slots[i++]);
+  EXPECT_EQ(47U, slots[i++]);
+  EXPECT_EQ(64U, slots[i++]);
+  EXPECT_EQ(65U, slots[i++]);
+  EXPECT_EQ(66U, slots[i++]);
+  EXPECT_EQ(67U, slots[i++]);
 }
 
 }  // namespace

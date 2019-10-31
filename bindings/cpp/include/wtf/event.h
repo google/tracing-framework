@@ -24,6 +24,7 @@ enum class EventClass {
 struct EventFlags {
   // Flags passed to built-in events. Omitted the ones we don't use.
   static constexpr int kInternal = 1 << 3;
+  static constexpr int kAppendScopeData = 1 << 4;
   static constexpr int kBuiltin = 1 << 5;
 };
 
@@ -427,6 +428,43 @@ class ScopedEventIf : private EventIf<kEnable, ArgTypes...> {
     }
   }
 };
+
+// Appends arguments to the currently active scope.
+template <bool kEnable, typename... ArgTypes>
+class AppendScopeIf : private EventIf<kEnable, ArgTypes...> {
+ public:
+  // Disallow copy and assign.
+  AppendScopeIf(const AppendScopeIf&) = delete;
+  void operator=(const AppendScopeIf&) = delete;
+
+  explicit AppendScopeIf(const char* name_spec)
+      : Event<ArgTypes...>(EventClass::kInstance,
+                           EventFlags::kInternal | EventFlags::kAppendScopeData,
+                           name_spec) {}
+
+  using EventIf<kEnable, ArgTypes...>::Invoke;
+};
+
+// Explicit specialization for when kEnable == false.
+// This must have the same public surface area as the generic version but no-op.
+template <typename... ArgTypes>
+class AppendScopeIf<false, ArgTypes...> {
+ public:
+  // Disallow copy and assign.
+  AppendScopeIf(const AppendScopeIf&) = delete;
+  void operator=(const AppendScopeIf&) = delete;
+
+  explicit AppendScopeIf(const char* name_spec) {}  // NOLINT
+
+  void Invoke(ArgTypes... args) {}
+};
+
+// Default instantiation of AppendScopeIf that is enabled if kMasterEnable.
+template <typename... ArgTypes>
+using AppendScope = AppendScopeIf<kMasterEnable, ArgTypes...>;
+
+template <typename... ArgTypes>
+using AppendScopeEnabled = AppendScopeIf<true, ArgTypes...>;
 
 // RAII wrapper around a static ScopedEvent.
 template <bool kEnable, typename... ArgTypes>
