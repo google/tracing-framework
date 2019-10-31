@@ -100,6 +100,12 @@ TEST_F(MacrosTest, EventsShouldBeDisabled) {
   WTF_EVENT("ShouldBeDisalbed#E1", int32_t)(0);
   { WTF_SCOPE0("ShouldBeDisabled#InnerLoop0"); }
   { WTF_SCOPE("ShouldBeDisabled#InnerLoop1", int32_t)(1); }
+
+  {
+    WTF_SCOPE0("ShouldBeDisabled#InnerLoop2");
+    WTF_APPEND_SCOPE("arg", int32_t)(1);
+  }
+
   EXPECT_FALSE(EventsHaveBeenLogged());
 }
 
@@ -214,12 +220,14 @@ TEST_F(MacrosTest, BasicEndToEnd) {
       }
 
       for (int32_t j = 0; j < 5; j++) {
-        WTF_SCOPE0("MacrosTest#InnerLoop");
+        WTF_SCOPE("MacrosTest#InnerLoop: i", int32_t)(i);
         usleep(25);
         if ((j % 2) == 0) {
           WTF_EVENT0("MacrosTest#InnerEveryOther");
         }
         usleep(25);
+        WTF_APPEND_SCOPE("j", int32_t)(j);
+        WTF_APPEND_SCOPE("j2", int32_t)(j * 2);
       }
 
       usleep(5);

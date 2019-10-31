@@ -12,6 +12,11 @@
 #define __WTF_INTERNAL_PASTE1(str, line) __WTF_INTERNAL_PASTE2(str, line)
 #define __WTF_INTERNAL_UNIQUE(str) __WTF_INTERNAL_PASTE1(str, __LINE__)
 
+#define __WTF_INTERNAL_STRINGIFY2(tok) #tok
+#define __WTF_INTERNAL_STRINGIFY1(tok) __WTF_INTERNAL_STRINGIFY2(tok)
+#define __WTF_INTERNAL_UNIQUE_STRING(tok) \
+    __WTF_INTERNAL_STRINGIFY1(__WTF_INTERNAL_UNIQUE(tok))
+
 // Enables and disables WTF tracing macros for the current namespace.
 // There can be at most one of these in a namespace and its definition must
 // be visible at the point where macros are invoked. It is recommended to
@@ -79,7 +84,7 @@
 // code where it is referenced and invokes it.
 //
 // Example:
-//   WTF_EVENT("MyClass#stuff", int, uint32_t)(1, 2);
+//   WTF_EVENT("MyClass#stuff: arg_name_1, arg_name_2", int, uint32_t)(1, 2);
 #define WTF_EVENT(name_spec, ...)                                   \
   static __INTERNAL_WTF_NAMESPACE::EventIf<kWtfEnabledForNamespace, \
                                            __VA_ARGS__>             \
@@ -109,7 +114,7 @@
 // is defined and will exit when it goes out of scope.
 //
 // Example:
-//   WTF_SCOPE("MyClass#MyMethod", int, uint32_t)(1, 2);
+//   WTF_SCOPE("MyClass#MyMethod: arg_name_1, arg_name_2", int, uint32_t)(1, 2);
 #define WTF_SCOPE(name_spec, ...)                                             \
   static __INTERNAL_WTF_NAMESPACE::ScopedEventIf<kWtfEnabledForNamespace,     \
                                                  __VA_ARGS__>                 \
@@ -118,6 +123,20 @@
       __WTF_INTERNAL_UNIQUE(__wtf_scopen_){                                   \
           __WTF_INTERNAL_UNIQUE(__wtf_scope_eventn_)};                        \
   __WTF_INTERNAL_UNIQUE(__wtf_scopen_).Enter
+
+// Shortcut to append arguments to the currently active scope.
+// Allowed Scopes: Within a function.
+// This is useful when the arguments from the scope aren't known on entry.
+//
+// Example:
+//   WTF_SCOPE0("MyClass#MyMethod");
+//   WTF_APPEND_SCOPE("arg_name_1, arg_name_2", int, uint32_t)(1, 2)
+#define WTF_APPEND_SCOPE(arg_spec, ...)                                     \
+  static __INTERNAL_WTF_NAMESPACE::AppendScopeIf<kWtfEnabledForNamespace,   \
+                                                 __VA_ARGS__>               \
+      __WTF_INTERNAL_UNIQUE(__wtf_append_scopen_){                          \
+          __WTF_INTERNAL_UNIQUE_STRING(__wtf_append_scope_) ": " arg_spec}; \
+      __WTF_INTERNAL_UNIQUE(__wtf_append_scopen_).Invoke
 
 // Shortcut to trace a function in case you don't care really much about
 // the performance. Might add some insignificant overhead.
