@@ -15,6 +15,11 @@ class EventTest : public ::testing::Test {
     return EventDefinition::Create<int, const char*>(
         /*wire_id=*/0, EventClass::kScoped, /*flags=*/0, name_spec);
   }
+
+  EventDefinition CreateEventDefinition0(const char *name_spec) {
+    return EventDefinition::Create(
+        /*wire_id=*/0, EventClass::kScoped, /*flags=*/0, name_spec);
+  }
 };
 
 
@@ -31,7 +36,7 @@ TEST_F(EventTest, CheckNameSpecParsing) {
   output.clear();
   event = CreateEventDefinition("MyNamespace::MyClass::MyFunc");
   event.AppendName(&output);
-  EXPECT_EQ(output, "MyNamespace#MyClass#MyFunc");
+  EXPECT_EQ(output, "MyNamespace::MyClass::MyFunc");
   output.clear();
   event.AppendArguments(&output);
   EXPECT_EQ(output, "int32 a0, ascii a1");
@@ -39,7 +44,7 @@ TEST_F(EventTest, CheckNameSpecParsing) {
   output.clear();
   event = CreateEventDefinition("MyClass::MyFunc2:  arg1 , arg2");
   event.AppendName(&output);
-  EXPECT_EQ(output, "MyClass#MyFunc2");
+  EXPECT_EQ(output, "MyClass::MyFunc2");
   output.clear();
   event.AppendArguments(&output);
   EXPECT_EQ(output, "int32 arg1, ascii arg2");
@@ -59,6 +64,22 @@ TEST_F(EventTest, CheckNameSpecParsing) {
   output.clear();
   event.AppendArguments(&output);
   EXPECT_EQ(output, "int32 arg1, ascii a1");
+
+  output.clear();
+  event = CreateEventDefinition0("MyMethodNoArgs");
+  event.AppendName(&output);
+  EXPECT_EQ(output, "MyMethodNoArgs");
+  output.clear();
+  event.AppendArguments(&output);
+  EXPECT_EQ(output, "");
+
+  output.clear();
+  event = CreateEventDefinition0("-[MyMethod looksLikeObjC:hasColons:]");
+  event.AppendName(&output);
+  EXPECT_EQ(output, "-[MyMethod looksLikeObjC:hasColons:]");
+  output.clear();
+  event.AppendArguments(&output);
+  EXPECT_EQ(output, "");
 }
 
 }  // namespace

@@ -184,6 +184,14 @@ class EventDefinition {
   ArgumentZipperCallback argument_zipper_ = nullptr;
 };
 
+// Explicit EventDefinition::Create() specialization for zero ArgTypes.
+// It creates an EventDefinition with a nullptr ArgumentZipper.
+template <>
+inline EventDefinition EventDefinition::Create(
+    int wire_id, EventClass event_class, int flags, const char* name_spec) {
+  return EventDefinition{wire_id, event_class, flags, name_spec, nullptr};
+}
+
 // Singleton registry of all EventDefinitions.
 // The registry is thread safe.
 class EventRegistry {

@@ -56,20 +56,23 @@ void EventDefinition::AppendName(std::string* output) const {
   // names, as with the __PRETTY_FUNCTION__ built-in macro.
   // Replace double colons with '#', which is WTF's class/namespace separator.
   //
-  // A single : in a name_spec separates the name part from arguments.
+  // A single : in a name_spec separates the name part from arguments,
+  // if there are arguments.
   const char *src = name_spec_;
-  const char* colon = strchr(src, ':');
-  while (colon) {
-    output->append(src, (colon - src));
-    src = colon + 1;
-    if (*src == ':') {
-      // Double colon, replace with # and continue.
-      output->append("#");
-      src += 1;
-      colon = strchr(src, ':');
-    } else {
-      // This was a single colon.  Output no more.
-      return;
+  if (argument_zipper_) {
+    const char* colon = strchr(src, ':');
+    while (colon) {
+      output->append(src, (colon - src));
+      src = colon + 1;
+      if (*src == ':') {
+        // Double colon, just output it and continue.
+        output->append("::");
+        src += 1;
+        colon = strchr(src, ':');
+      } else {
+        // This was a single colon.  Output no more.
+        return;
+      }
     }
   }
   // Append anything remaining in src.
