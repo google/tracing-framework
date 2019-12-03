@@ -11,12 +11,11 @@ class EventTest : public ::testing::Test {
  protected:
   void TearDown() override {}
 
-  EventDefinition CreateEventDefinition(const char *name_spec) {
+  EventDefinition CreateEventDefinition(const char* name_spec) {
     return EventDefinition::Create<int, const char*>(
         /*wire_id=*/0, EventClass::kScoped, /*flags=*/0, name_spec);
   }
 };
-
 
 TEST_F(EventTest, CheckNameSpecParsing) {
   std::string output;

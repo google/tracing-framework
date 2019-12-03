@@ -230,10 +230,12 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearAppend) {
   ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
-                1, 2,  // Chunk header fields.
-                76,    // Chunk length.
-                3, 4,  // Chunk header fields.
-                2,     // Part count.
+                1,
+                2,   // Chunk header fields.
+                76,  // Chunk length.
+                3,
+                4,  // Chunk header fields.
+                2,  // Part count.
                 // -- String table part header.
                 0x30000,  // String table part type.
                 0,        // Part offset.
@@ -245,7 +247,12 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearAppend) {
                 // -- String table payload.
                 0x00ee,  // String char ee + nul (LE).
                 // -- Event buffer payload.
-                44, 45, 46, 47, 50, 51,
+                44,
+                45,
+                46,
+                47,
+                50,
+                51,
             }),
             slots);
 }
@@ -290,10 +297,12 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearUnflushed) {
   ASSERT_EQ(0U, stream.str().size() % 4);
   auto slots = ExtractSlots(stream.str());
   EXPECT_EQ((std::vector<uint32_t>{
-                1, 2,  // Chunk header fields.
-                68,    // Chunk length.
-                3, 4,  // Chunk header fields.
-                2,     // Part count.
+                1,
+                2,   // Chunk header fields.
+                68,  // Chunk length.
+                3,
+                4,  // Chunk header fields.
+                2,  // Part count.
                 // -- String table part header.
                 0x30000,  // String table part type.
                 0,        // Part offset.
@@ -305,7 +314,10 @@ TEST_F(BufferTest, Serialization_StringTable1_EventBufferClearUnflushed) {
                 // -- String table payload.
                 0x00ee,  // String char ee + nul (LE).
                 // -- Event buffer payload.
-                44, 45, 46, 47,
+                44,
+                45,
+                46,
+                47,
             }),
             slots);
 }

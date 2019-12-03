@@ -477,8 +477,7 @@ class AutoScopeIf {
   void operator=(const AutoScopeIf&) = delete;
 
   explicit AutoScopeIf(EventType& event)  // NOLINT
-      : event_(event),
-        event_buffer_(nullptr) {}
+      : event_(event), event_buffer_(nullptr) {}
 
   // Even though it makes the API a bit fragile, having a separate Enter()
   // function is more compatible with macro invocation.

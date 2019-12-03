@@ -46,15 +46,13 @@ struct atomic {
   operator T() { return value; }
 };
 
-using once_flag = struct {
-    bool flag {false};
-};
+using once_flag = struct { bool flag{false}; };
 template <class T>
 inline void call_once(once_flag& once, T func) {
-    if (!once.flag) {
-        once.flag = true;
-        func();
-    }
+  if (!once.flag) {
+    once.flag = true;
+    func();
+  }
 }
 
 }  // namespace platform

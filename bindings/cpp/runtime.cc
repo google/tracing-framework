@@ -62,7 +62,8 @@ bool WriteEventChunk(OutputBuffer* output_buffer, EventSnapshot* snapshot,
   // a merged combination of the meta event + each thread event.
   const size_t kPartCount = 2;
   OutputBuffer::PartHeader part_headers[kPartCount] = {
-      snapshot->string_table_header, snapshot->event_buffer_header,
+      snapshot->string_table_header,
+      snapshot->event_buffer_header,
   };
 
   // Setup the chunk.
@@ -197,7 +198,8 @@ void Runtime::DisableCurrentThread() {
 bool Runtime::SaveToFile(const std::string& file_name,
                          const SaveOptions& save_options) {
   std::fstream out;
-  auto mode = save_options.open_mode | std::ios_base::out;
+  auto mode =
+      save_options.open_mode | std::ios_base::out | std::ios_base::binary;
   out.open(file_name, mode);
   if (out.fail()) {
     return false;

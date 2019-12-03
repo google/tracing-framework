@@ -57,7 +57,7 @@ void EventDefinition::AppendName(std::string* output) const {
   // Replace double colons with '#', which is WTF's class/namespace separator.
   //
   // A single : in a name_spec separates the name part from arguments.
-  const char *src = name_spec_;
+  const char* src = name_spec_;
   const char* colon = strchr(src, ':');
   while (colon) {
     output->append(src, (colon - src));

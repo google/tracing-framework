@@ -23,17 +23,17 @@ using atomic = std::atomic<T>;
 using once_flag = std::once_flag;
 template <class Callable>
 inline void call_once(once_flag& flag, Callable&& f) {
-    std::call_once(flag, std::move(f));
+  std::call_once(flag, std::move(f));
 }
 
 // Since memory_order is an old-school enum, it needs to be imported
 // individually.
 using std::memory_order;
-using std::memory_order_relaxed;
-using std::memory_order_consume;
-using std::memory_order_acquire;
-using std::memory_order_release;
 using std::memory_order_acq_rel;
+using std::memory_order_acquire;
+using std::memory_order_consume;
+using std::memory_order_relaxed;
+using std::memory_order_release;
 using std::memory_order_seq_cst;
 }  // namespace platform
 

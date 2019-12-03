@@ -51,27 +51,27 @@ namespace disabled {
 WTF_NAMESPACE_DISABLE();
 
 class AutoFunctionTestClassDisabled {
-public:
-    static void f() {
-        WTF_AUTO_FUNCTION();
-        const int32_t kLimit = 10;
-        for (int32_t i = 0; i < kLimit; i++) {
-            usleep(10);
-        }
+ public:
+  static void f() {
+    WTF_AUTO_FUNCTION();
+    const int32_t kLimit = 10;
+    for (int32_t i = 0; i < kLimit; i++) {
+      usleep(10);
     }
+  }
 };
 
 TEST_F(MacrosTest, AutoFunctionTestShouldBeDisabled) {
-    ClearEventBuffer();
-    const int32_t kLimit = 10;
+  ClearEventBuffer();
+  const int32_t kLimit = 10;
 
-    for (int32_t i = 0; i < kLimit; i++) {
-        AutoFunctionTestClassDisabled::f();
-        usleep(1);
-    }
-    EXPECT_FALSE(EventsHaveBeenLogged());
+  for (int32_t i = 0; i < kLimit; i++) {
+    AutoFunctionTestClassDisabled::f();
+    usleep(1);
+  }
+  EXPECT_FALSE(EventsHaveBeenLogged());
 
-    ClearEventBuffer();
+  ClearEventBuffer();
 }
 
 TEST_F(MacrosTest, ThreadShouldBeDisabled) {
@@ -113,31 +113,31 @@ namespace enabled {
 WTF_NAMESPACE_ENABLE();
 
 class AutoFunctionTestClass {
-public:
-    static void f() {
-        WTF_AUTO_FUNCTION();
-        const int32_t kLimit = 10;
-        for (int32_t i = 0; i < kLimit; i++) {
-            usleep(10);
-        }
+ public:
+  static void f() {
+    WTF_AUTO_FUNCTION();
+    const int32_t kLimit = 10;
+    for (int32_t i = 0; i < kLimit; i++) {
+      usleep(10);
     }
+  }
 };
 
 TEST_F(MacrosTest, AutoFunctionTest) {
-    Runtime::GetInstance()->DisableCurrentThread();
-    ClearEventBuffer();
+  Runtime::GetInstance()->DisableCurrentThread();
+  ClearEventBuffer();
 
-    const int32_t kLimit = 10;
+  const int32_t kLimit = 10;
 
-    for (int32_t i = 0; i < kLimit; i++) {
-        AutoFunctionTestClass::f();
-        usleep(1);
-    }
-    EXPECT_TRUE(EventsHaveBeenLogged());
+  for (int32_t i = 0; i < kLimit; i++) {
+    AutoFunctionTestClass::f();
+    usleep(1);
+  }
+  EXPECT_TRUE(EventsHaveBeenLogged());
 
-    EXPECT_TRUE(
-        Runtime::GetInstance()->SaveToFile(TMP_PREFIX "tmpautofuncbuf.wtf-trace"));
-    ClearEventBuffer();
+  EXPECT_TRUE(Runtime::GetInstance()->SaveToFile(TMP_PREFIX
+                                                 "tmpautofuncbuf.wtf-trace"));
+  ClearEventBuffer();
 }
 
 TEST_F(MacrosTest, ThreadShouldBeEnabled) {
@@ -203,7 +203,9 @@ TEST_F(MacrosTest, TypeAliases) {
 
 TEST_F(MacrosTest, BasicEndToEnd) {
   static const char* kThreadNames[] = {
-      "TestThread", "TestThread2", "TestThread3",
+      "TestThread",
+      "TestThread2",
+      "TestThread3",
   };
 
   for (int k = 0; k < 3; k++) {
