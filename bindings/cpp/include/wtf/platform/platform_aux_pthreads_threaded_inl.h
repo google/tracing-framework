@@ -23,20 +23,18 @@ using atomic = std::atomic<T>;
 // Since memory_order is an old-school enum, it needs to be imported
 // individually.
 using std::memory_order;
-using std::memory_order_relaxed;
-using std::memory_order_consume;
-using std::memory_order_acquire;
-using std::memory_order_release;
 using std::memory_order_acq_rel;
+using std::memory_order_acquire;
+using std::memory_order_consume;
+using std::memory_order_relaxed;
+using std::memory_order_release;
 using std::memory_order_seq_cst;
 
-using once_flag = struct {
-    pthread_once_t flag {PTHREAD_ONCE_INIT};
-};
+using once_flag = struct { pthread_once_t flag{PTHREAD_ONCE_INIT}; };
 
 template <class T>
 inline void call_once(once_flag& once, T func) {
-    pthread_once(&once.flag, func);
+  pthread_once(&once.flag, func);
 }
 
 }  // namespace platform

@@ -2,8 +2,8 @@
 #define TRACING_FRAMEWORK_BINDINGS_CPP_INCLUDE_WTF_MACROS_H_
 
 #include "wtf/runtime.h"
-#include <string>
 #include <algorithm>
+#include <string>
 
 #define __INTERNAL_WTF_NAMESPACE ::wtf
 
@@ -15,7 +15,7 @@
 #define __WTF_INTERNAL_STRINGIFY2(tok) #tok
 #define __WTF_INTERNAL_STRINGIFY1(tok) __WTF_INTERNAL_STRINGIFY2(tok)
 #define __WTF_INTERNAL_UNIQUE_STRING(tok) \
-    __WTF_INTERNAL_STRINGIFY1(__WTF_INTERNAL_UNIQUE(tok))
+  __WTF_INTERNAL_STRINGIFY1(__WTF_INTERNAL_UNIQUE(tok))
 
 // Enables and disables WTF tracing macros for the current namespace.
 // There can be at most one of these in a namespace and its definition must
@@ -136,7 +136,7 @@
                                                  __VA_ARGS__>               \
       __WTF_INTERNAL_UNIQUE(__wtf_append_scopen_){                          \
           __WTF_INTERNAL_UNIQUE_STRING(__wtf_append_scope_) ": " arg_spec}; \
-      __WTF_INTERNAL_UNIQUE(__wtf_append_scopen_).Invoke
+  __WTF_INTERNAL_UNIQUE(__wtf_append_scopen_).Invoke
 
 // Shortcut to trace a function in case you don't care really much about
 // the performance. Might add some insignificant overhead.
@@ -147,18 +147,21 @@
 //
 // Example:
 //   WTF_AUTO_FUNCTION();
-#define WTF_AUTO_FUNCTION()                                             \
-    static std::string                                                  \
-    __WTF_INTERNAL_UNIQUE(__wtf_func_name_) {__PRETTY_FUNCTION__};      \
-    do {                                                                \
-        static __INTERNAL_WTF_NAMESPACE::platform::once_flag __WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_); \
-        __INTERNAL_WTF_NAMESPACE::platform::call_once(__WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_), []() { \
-                std::replace(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).begin(), \
-                             __WTF_INTERNAL_UNIQUE(__wtf_func_name_).end(), ':', '#'); \
-            });                                                         \
-        WTF_AUTO_THREAD_ENABLE();                                       \
-    } while (0);                                                        \
-    WTF_SCOPE0(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).c_str())
+#define WTF_AUTO_FUNCTION()                                                \
+  static std::string __WTF_INTERNAL_UNIQUE(__wtf_func_name_){              \
+      __PRETTY_FUNCTION__};                                                \
+  do {                                                                     \
+    static __INTERNAL_WTF_NAMESPACE::platform::once_flag                   \
+        __WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_);                       \
+    __INTERNAL_WTF_NAMESPACE::platform::call_once(                         \
+        __WTF_INTERNAL_UNIQUE(__wtf_replaced_flag_), []() {                \
+          std::replace(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).begin(),    \
+                       __WTF_INTERNAL_UNIQUE(__wtf_func_name_).end(), ':', \
+                       '#');                                               \
+        });                                                                \
+    WTF_AUTO_THREAD_ENABLE();                                              \
+  } while (0);                                                             \
+  WTF_SCOPE0(__WTF_INTERNAL_UNIQUE(__wtf_func_name_).c_str())
 
 // Creates a scoped "Task" zone that will be in effect until scope exit.
 // This is ideal for thread pools and such which execute many workers where

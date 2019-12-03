@@ -42,8 +42,8 @@ std::string PlatformGetThreadName() {
   uintptr_t result = 0;
   std::memcpy(&result, &current, std::min(sizeof(current), sizeof(result)));
 
-  // Note that as of Jan 2017, std::to_string is missing on some platforms 
-  // and we take the coward's way out and just use an ostringstream. If this 
+  // Note that as of Jan 2017, std::to_string is missing on some platforms
+  // and we take the coward's way out and just use an ostringstream. If this
   // ever improves, switch to to_string.
   std::ostringstream sout;
   sout << result;

@@ -124,8 +124,8 @@ class Runtime {
 
     // The open mode to use if a file is being opened. Defaults to trunc.
     // out is implied.
-    std::ios_base::openmode open_mode = std::ios_base::trunc |
-                                        std::ios_base::binary;
+    std::ios_base::openmode open_mode =
+        std::ios_base::trunc | std::ios_base::binary;
   };
 
   // Gets the singleton instance.
