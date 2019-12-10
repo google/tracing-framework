@@ -30,7 +30,7 @@ using std::memory_order_relaxed;
 using std::memory_order_release;
 using std::memory_order_seq_cst;
 
-using once_flag = struct { pthread_once_t flag{PTHREAD_ONCE_INIT}; };
+using once_flag = struct { pthread_once_t flag = PTHREAD_ONCE_INIT; };
 
 template <class T>
 inline void call_once(once_flag& once, T func) {
