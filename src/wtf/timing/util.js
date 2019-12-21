@@ -87,10 +87,11 @@ wtf.timing.util.getRequestAnimationFrame = function(opt_enableFallback) {
      * @param {Function} callback Callback to issue on tick.
      * @return {number} Cancellation handle.
      */
-    return function(callback) {
+    function setTimeoutShim(callback) {
       return setTimeout.call(
           goog.global, callback, 1000 / wtf.timing.util.FRAMERATE);
-    };
+    }
+    return setTimeoutShim;
   }
 
   return null;
@@ -128,9 +129,10 @@ wtf.timing.util.getCancelAnimationFrame =
      * @param {number} id The result of a previous {@code requestAnimationFrame}
      *     call.
      */
-    return function(id) {
+    function clearTimeoutShim(id) {
       clearTimeout(id);
-    };
+    }
+    return clearTimeoutShim;
   }
 
   return null;

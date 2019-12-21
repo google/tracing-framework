@@ -9,6 +9,9 @@
  * @author benvanik@google.com (Ben Vanik)
  */
 
+@import "wtf/ui/styles/reset.less";
+@import "wtf/ui/styles/css3.less";
+
 .k {
   font-family: "Arial", "Helvetica", sans-serif;
   color: #222222;
@@ -125,7 +128,6 @@
     text-decoration: none;
     display: inline-block;
     min-width: 54px;
-    border: 1px solid #DCDCDC;
     border: 1px solid rgba(0,0,0,0.1);
     text-align: center;
     color: #444;
@@ -183,7 +185,6 @@
     &.kDisabled, &.kDisabled:hover, &.kDisabled:active {
       background: none;
       color: #b8b8b8;
-      border: 1px solid #f3f3f3;
       border: 1px solid rgba(0,0,0,0.05);
       cursor: default;
       pointer-events: none;
@@ -232,12 +233,9 @@
     }
 
     &.kDisabled, &.kDisabled:hover, &.kDisabled:active {
-      border: 1px solid #505050;
-      background-color: #666;
-      opacity: 0.5;
-
-      border-color: #b0281a;
+      border: 1px solid #b0281a;
       background-color: #d14836;
+      opacity: 0.5;
     }
   }
 
@@ -354,7 +352,7 @@
     display: inline-block;
     width: 7px;
     height: 7px;
-    background: url('app/icons/arrow_dropdown.svg') center no-repeat;
+    background: url('icons/arrow_dropdown.svg') center no-repeat;
     .transition(all, 0.218s);
   }
   .kDisabled .kButtonDisclosure {
@@ -482,15 +480,15 @@
     padding-top:100px;
     background-clip:padding-box;
     background-color: rgba(0,0,0,0.2);
-    -webkit-box-shadow: inset 1px 1px 0px rgba(0,0,0,0.10),
-                        inset 0px -1px 0px rgba(0,0,0,0.07);
+    .insetBoxShadow2(1px, 1px, 0px, rgba(0,0,0,0.10),
+                     0px, -1px, 0px, rgba(0,0,0,0.07));
   }
   ::-webkit-scrollbar-thumb:hover {
+    .insetBoxShadow(1px, 1px, 1px, rgba(0,0,0,0.25));
     background-color: rgba(0,0,0,0.4);
-    -webkit-box-shadow: inset 1px 1px 1px rgba(0,0,0,0.25);
   }
   ::-webkit-scrollbar-thumb:active {
-    -webkit-box-shadow: inset 1px 1px 3px rgba(0,0,0,0.35);
+    .insetBoxShadow(1px, 1px, 3px, rgba(0,0,0,0.35));
     background-color: rgba(0,0,0,0.5);
   }
   ::-webkit-scrollbar-thumb:vertical {
@@ -507,12 +505,12 @@
   }
   ::-webkit-scrollbar-track:hover {
     background-color:rgba(0,0,0,0.05);
-    -webkit-box-shadow: inset 1px 0px 0px rgba(0,0,0,0.10);
+    .insetBoxShadow(1px, 0px, 0px, rgba(0,0,0,0.10));
   }
   ::-webkit-scrollbar-track:active {
     background-color:rgba(0,0,0,0.05);
-    -webkit-box-shadow: inset 1px 0px 0px rgba(0,0,0,0.14),
-                        inset -1px -1px 0px rgba(0,0,0,0.07);
+    .insetBoxShadow2(1px, 0px, 0px, rgba(0,0,0,0.14),
+                     -1px, -1px, 0px, rgba(0,0,0,0.07));
   }
   .kScrollBarInner::-webkit-scrollbar-track:vertical {
     border-left: 6px solid transparent;
@@ -656,7 +654,7 @@
     padding-left: 30px;
   }
   .goog-option-selected {
-    background-image: url('app/icons/checkmark.svg');
+    background-image: url('icons/checkmark.svg');
     background-position: left center;
     background-repeat: no-repeat;
     background-position-x: 5px;
@@ -677,11 +675,11 @@
       background-size: 20px 10px;
 
       background-color: rgba(0,0,0,0.12);
-      background-image: -webkit-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
-      background-image: -moz-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
-      background-image: -ms-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
-      background-image: -o-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
-      background-image: linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      /* @alternate */ background-image: -webkit-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      /* @alternate */ background-image: -moz-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      /* @alternate */ background-image: -ms-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      /* @alternate */ background-image: -o-linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
+      /* @alternate */ background-image: linear-gradient(315deg, transparent, transparent 33%, rgba(0,0,0,0.12) 33%, rgba(0,0,0,0.12) 66%, transparent 66%, transparent);
 
       .animation(kProgressBarAnimation, 0.8s, linear, infinite);
     }

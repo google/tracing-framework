@@ -171,7 +171,7 @@ wtf.replay.graphics.Program.prototype.deleteVariants = function() {
 
 /**
  * Returns the original program.
- * @return {WebGLProgram}
+ * @return {!WebGLProgram}
  */
 wtf.replay.graphics.Program.prototype.getOriginalProgram = function() {
   return this.originalProgram_;

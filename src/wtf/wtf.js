@@ -215,8 +215,12 @@ wtf.now = (function() {
  * @return {number} Estimated overhead, in nanoseconds (1/1000 us).
  */
 wtf.computeNowOverhead = function() {
-  // This is in a function so that v8 can JIT it easier.
-  // We then run it a few times to try to factor out the JIT time.
+  /**
+   * This is in a function so that v8 can JIT it easier.
+   * We then run it a few times to try to factor out the JIT time.
+   * @param {number} iterations
+   * @return {number}
+   */
   function computeInner(iterations) {
     var dummy = 0;
     for (var n = 0; n < iterations; n++) {
@@ -225,7 +229,7 @@ wtf.computeNowOverhead = function() {
       dummy += wtf.now();
     }
     return dummy;
-  };
+  }
 
   var iterations = 100000;
   var dummy = 0;

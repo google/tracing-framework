@@ -57,7 +57,8 @@ wtf.hud.prepare = function(opt_options, opt_parentElement) {
     var provider = providers[n];
     var buttons = provider.getHudButtons();
     for (var m = 0; m < buttons.length; m++) {
-      wtf.hud.buttons_.push(buttons[m]);
+      wtf.hud.buttons_.push(
+          /** @type {!wtf.hud.Overlay.ButtonInfo} */ (buttons[m]));
     }
   }
 

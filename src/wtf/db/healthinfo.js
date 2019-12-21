@@ -416,8 +416,7 @@ wtf.db.HealthWarning.prototype.getLink = function() {
 
 
 /**
- * Gets a human-readable string for this warning.
- * @return {string} Warning string.
+ * @override
  */
 wtf.db.HealthWarning.prototype.toString = function() {
   return this.title_ + ' (' + this.suggestion_ + ')';

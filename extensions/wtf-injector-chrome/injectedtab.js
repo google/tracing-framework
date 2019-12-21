@@ -69,7 +69,9 @@ var InjectedTab = function(extension, tab, pageStatus, pageOptions, port) {
    */
   this.debugger_ = null;
 
-  if (pageStatus == PageStatus.WHITELISTED &&
+  // Chrome debugger support is disabled until it's updated.
+  if (false &&
+      pageStatus == PageStatus.WHITELISTED &&
       pageOptions['wtf.trace.provider.chromeDebug'] !== false) {
     var timelineEnabled =
         pageOptions['wtf.trace.provider.chromeDebug.timeline'] !== false;

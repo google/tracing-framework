@@ -26,27 +26,33 @@ See [building](https://github.com/google/tracing-framework/blob/master/docs/buil
 
 ## Quickstart
 
-Just want the extension as fast as possible?
-
-```bash
-umask 0022
-git clone https://github.com/google/tracing-framework.git
-cd tracing-framework/
-./scripts/setup.sh # or setup.bat on Windows
-source wtfrc && deployext
-# At chrome://extensions load unpacked extension from
-# build-bin/wtf-injector-chrome
-```
-
-If you pull new changes, just redeploy:
-
-```bash
-git pull && git submodule update
-deployext
-# Reload from chrome://extensions
-```
-
 For more information and other build options, see [building](https://github.com/google/tracing-framework/blob/master/docs/building.md).
+
+### Setup
+
+```bash
+$ git clone --recursive https://github.com/google/tracing-framework.git && cd tracing-framework/
+$ bazel run @yarn//:yarn
+```
+
+### Chrome Extension
+
+This builds and copies the unpacked extension to
+`bazel-bin/extensions/wtf-injector-chrome/wtf-injector-chrome_pkg`, which can
+then be loaded from chrome://extensions.
+
+```bash
+$ bazel build -c opt //extensions/wtf-injector-chrome
+```
+
+### Embedded Tracing Library
+
+This produces `bazel-bin/bindings/js/wtf_trace_web_js_compiled.js`, which can be
+copied and included via script tags on any page.
+
+```bash
+$ bazel build -c opt //bindings/js:wtf_trace_web_js
+```
 
 ## License
 

@@ -77,8 +77,7 @@ wtf.data.ContextInfo.prototype.serialize = goog.abstractMethod;
 
 
 /**
- * Gets a human-readable version of the context info.
- * @return {string} String version.
+ * @override
  */
 wtf.data.ContextInfo.prototype.toString = goog.abstractMethod;
 

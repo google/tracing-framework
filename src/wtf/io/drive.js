@@ -215,7 +215,7 @@ wtf.io.drive.showFilePicker = function(options) {
       });
     }
     goog.result.wait(wtf.io.drive.filePickerLoadResult_, show);
-  };
+  }
 
   function show() {
     var mimeTypes = [
@@ -253,7 +253,7 @@ wtf.io.drive.showFilePicker = function(options) {
     }
     var builtPicker = picker.build();
     builtPicker.setVisible(true);
-  };
+  }
 
   return result;
 };
@@ -309,7 +309,7 @@ wtf.io.drive.queryFile = function(fileId) {
       });
     }
     goog.result.wait(wtf.io.drive.downloadFileLoadResult_, getMetadata);
-  };
+  }
 
   function getMetadata() {
     var token = gapi.auth.getToken();
@@ -343,7 +343,7 @@ wtf.io.drive.queryFile = function(fileId) {
       result.setError();
     };
     xhr.send(null);
-  };
+  }
 
   return result;
 };
@@ -379,7 +379,7 @@ wtf.io.drive.downloadFile = function(driveFile) {
       });
     }
     goog.result.wait(wtf.io.drive.downloadFileLoadResult_, download);
-  };
+  }
 
   function download() {
     var token = gapi.auth.getToken();
@@ -402,7 +402,7 @@ wtf.io.drive.downloadFile = function(driveFile) {
     // We don't send here, as we let the caller do it.
     // xhr.send(null);
     result.setValue(xhr);
-  };
+  }
 
   return result;
 };

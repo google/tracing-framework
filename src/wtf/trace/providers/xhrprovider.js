@@ -206,6 +206,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
   ProxyXMLHttpRequest.prototype['DONE'] = 4;
 
   // Event tracking.
+  /** @override */
   ProxyXMLHttpRequest.prototype.beginTrackingEvent = function(type) {
     var self = this;
     var tracker = function(e) {
@@ -224,6 +225,7 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
     this.trackers_[type] = tracker;
     this.handle_.addEventListener(type, tracker, false);
   };
+  /** @override */
   ProxyXMLHttpRequest.prototype.endTrackingEvent = function(type) {
     this.handle_.removeEventListener(type, this.trackers_[type], false);
     delete this.trackers_[type];
@@ -262,18 +264,20 @@ wtf.trace.providers.XhrProvider.prototype.injectXhr_ = function() {
         this.handle_[name] = value;
       }
     });
-  };
+  }
 
   setupProxyProperty('readyState');
   setupProxyProperty('timeout', true);
   setupProxyProperty('withCredentials', true);
   setupProxyProperty('upload');
+  /** @override */
   ProxyXMLHttpRequest.prototype['setRequestHeader'] = function(
       header, value) {
     var props = this.props_;
     props['headers'][header] = value;
     return this.handle_.setRequestHeader.apply(this.handle_, arguments);
   };
+  /** @override */
   ProxyXMLHttpRequest.prototype['overrideMimeType'] = function(mime) {
     var props = this.props_;
     props['overrideMimeType'] = mime;

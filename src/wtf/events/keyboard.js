@@ -315,7 +315,7 @@ wtf.events.KeyboardScope.prototype.addCommandShortcut = function(
     if (commandManager) {
       commandManager.execute(commandName, this, null);
     }
-  };
+  }
   this.listeners_.push([shortcut, callback, this]);
   if (this.enabled_) {
     this.keyboard_.addShortcut_(shortcut, callback, this);

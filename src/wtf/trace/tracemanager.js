@@ -461,7 +461,7 @@ wtf.trace.TraceManager.prototype.requestSnapshots = function(
     goog.dispose(streamTarget);
     goog.dispose(transport);
     callback.call(opt_scope, allBuffers.length ? allBuffers : null);
-  };
+  }
 
   // Snapshot self.
   session.snapshot(streamTarget);
@@ -481,7 +481,7 @@ wtf.trace.TraceManager.prototype.requestSnapshots = function(
     if (!pendingSnapshots) {
       complete();
     }
-  };
+  }
   for (var n = 0; n < this.listeners_.length; n++) {
     var requested = this.listeners_[n].requestSnapshots(
         session, listenerCallback);

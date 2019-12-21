@@ -107,7 +107,7 @@ wtf.replay.graphics.ui.EventNavigator.prototype.setReady = function() {
 
 
 /**
- * Changes the layout of elements to fit the container.
+ * @override
  */
 wtf.replay.graphics.ui.EventNavigator.prototype.layout = function() {
   this.table_.layout();

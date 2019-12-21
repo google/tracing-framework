@@ -13,6 +13,7 @@
 
 goog.provide('wtf.replay.graphics.ui.ReplayFramePainter');
 
+goog.require('goog.asserts');
 goog.require('goog.dom.classes');
 goog.require('wtf.events');
 goog.require('wtf.math');
@@ -318,6 +319,7 @@ wtf.replay.graphics.ui.ReplayFramePainter.prototype.repaintInternal = function(
     var experiment, frames, frame;
 
     // Draw a colored bar graph for the currently selected experiment.
+    goog.asserts.assert(this.selectedExperiment_ !== null);
     experiment = experiments[this.selectedExperiment_];
     if (experiment && experiment.getFrames()) {
       frames = experiment.getFrames();

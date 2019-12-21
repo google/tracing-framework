@@ -66,7 +66,7 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
    * @private
    */
   this.viewportSizeMonitor_ = wtf.events.acquireViewportSizeMonitor();
-  this.getHandler().listen(
+  this.getHandler().listenWithScope(
       this.viewportSizeMonitor_,
       goog.events.EventType.RESIZE, this.layout, false, this);
 
@@ -138,7 +138,7 @@ wtf.replay.graphics.ui.GraphicsPanel = function(
    */
   this.toggleResizeCanvasesButton_ = this.getChildElement(
       goog.getCssName('resizeCanvasesToFitButton'));
-  this.getHandler().listen(
+  this.getHandler().listenWithScope(
       this.toggleResizeCanvasesButton_,
       goog.events.EventType.CLICK,
       this.toggleResizeCanvases_, false, this);

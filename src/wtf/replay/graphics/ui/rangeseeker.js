@@ -197,7 +197,7 @@ wtf.replay.graphics.ui.RangeSeeker.prototype.createValueDisplayer_ =
   valueDisplayer.type = 'text';
 
   // Update the seeker if displayer changes.
-  this.getHandler().listen(valueDisplayer,
+  this.getHandler().listenWithScope(valueDisplayer,
       goog.events.EventType.CHANGE, function() {
         var newValue = goog.string.parseInt(valueDisplayer.value);
 

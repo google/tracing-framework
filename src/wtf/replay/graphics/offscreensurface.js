@@ -121,9 +121,9 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
    * Internal texture. Used as a render target for this.framebuffer_.
    * Used by drawTexture and captureTexture.
    * @type {WebGLTexture}
-   * @private
+   * @protected
    */
-  this.texture_ = null;
+  this.texture = null;
 
   /**
    * Renderbuffer used for depth/stencil information in the framebuffer.
@@ -159,9 +159,9 @@ wtf.replay.graphics.OffscreenSurface = function(gl, width, height, opt_args) {
   /**
    * A buffer containing vertex positions arranged in a square.
    * @type {WebGLBuffer}
-   * @private
+   * @protected
    */
-  this.squareVertexPositionBuffer_ = null;
+  this.squareVertexPositionBuffer = null;
 
   /**
    * A buffer containing texture coordinates arranged for a square.
@@ -198,10 +198,10 @@ wtf.replay.graphics.OffscreenSurface.prototype.clearWebGLObjects = function() {
   var gl = this.context;
 
   gl.deleteFramebuffer(this.framebuffer_);
-  gl.deleteTexture(this.texture_);
+  gl.deleteTexture(this.texture);
   gl.deleteProgram(this.drawTextureProgram_);
   gl.deleteRenderbuffer(this.depthStencilBuffer_);
-  gl.deleteBuffer(this.squareVertexPositionBuffer_);
+  gl.deleteBuffer(this.squareVertexPositionBuffer);
   gl.deleteBuffer(this.squareTextureCoordBuffer_);
 };
 
@@ -234,8 +234,8 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize = function() {
   gl.bindFramebuffer(goog.webgl.FRAMEBUFFER, this.framebuffer_);
 
   // Create the texture and set it as a render target for the framebuffer.
-  this.texture_ = gl.createTexture();
-  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture_);
+  this.texture = gl.createTexture();
+  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture);
   gl.texParameteri(goog.webgl.TEXTURE_2D, goog.webgl.TEXTURE_MAG_FILTER,
       goog.webgl.LINEAR);
   gl.texParameteri(goog.webgl.TEXTURE_2D, goog.webgl.TEXTURE_MIN_FILTER,
@@ -247,7 +247,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize = function() {
   gl.texImage2D(goog.webgl.TEXTURE_2D, 0, goog.webgl.RGBA, this.width,
       this.height, 0, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE, null);
   gl.framebufferTexture2D(goog.webgl.FRAMEBUFFER,
-      goog.webgl.COLOR_ATTACHMENT0, goog.webgl.TEXTURE_2D, this.texture_, 0);
+      goog.webgl.COLOR_ATTACHMENT0, goog.webgl.TEXTURE_2D, this.texture, 0);
 
   // Set renderbuffer attachment and storage formats.
   if (this.depth_ && this.stencil_) {
@@ -309,8 +309,8 @@ wtf.replay.graphics.OffscreenSurface.prototype.initialize = function() {
   gl.deleteShader(drawTextureFragmentShader);
 
   // Setup attributes aVertexPosition and aTextureCoord.
-  this.squareVertexPositionBuffer_ = gl.createBuffer();
-  gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer_);
+  this.squareVertexPositionBuffer = gl.createBuffer();
+  gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer);
   var vertices = [
     -1.0, -1.0,
     1.0, -1.0,
@@ -399,7 +399,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.resize = function(
 
   this.webGLState.backup();
 
-  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture_);
+  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture);
   gl.texImage2D(goog.webgl.TEXTURE_2D, 0, goog.webgl.RGBA, this.width,
       this.height, 0, goog.webgl.RGBA, goog.webgl.UNSIGNED_BYTE, null);
 
@@ -432,7 +432,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.captureTexture = function() {
   var originalTextureBinding = /** @type {!WebGLTexture} */ (
       gl.getParameter(goog.webgl.TEXTURE_BINDING_2D));
 
-  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture_);
+  gl.bindTexture(goog.webgl.TEXTURE_2D, this.texture);
   var alpha = this.contextAttributes_['alpha'];
   var format = alpha ? goog.webgl.RGBA : goog.webgl.RGB;
   gl.copyTexImage2D(goog.webgl.TEXTURE_2D, 0, format, 0, 0,
@@ -478,7 +478,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.clear = function(opt_color) {
 wtf.replay.graphics.OffscreenSurface.prototype.drawTexture = function(
     opt_blend) {
   this.ensureInitialized();
-  this.drawTextureInternal(this.texture_, this.drawTextureProgram_, opt_blend);
+  this.drawTextureInternal(this.texture, this.drawTextureProgram_, opt_blend);
 };
 
 
@@ -510,7 +510,7 @@ wtf.replay.graphics.OffscreenSurface.prototype.drawTextureInternal = function(
 
   // Update vertex attrib settings.
   var vertexAttribLocation = gl.getAttribLocation(program, 'aVertexPosition');
-  gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer_);
+  gl.bindBuffer(goog.webgl.ARRAY_BUFFER, this.squareVertexPositionBuffer);
   gl.enableVertexAttribArray(vertexAttribLocation);
   gl.vertexAttribPointer(vertexAttribLocation, 2, goog.webgl.FLOAT, false,
       0, 0);

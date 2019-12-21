@@ -662,7 +662,7 @@ wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.playbackToCurrent_ =
  * Gets the context handle of the given event.
  * This is slow and should be used sparingly.
  * @param {!wtf.db.EventIterator} it Iterator.
- * @return {string?} Context handle, if any.
+ * @return {string} Context handle, if any.
  * @private
  */
 wtf.replay.graphics.ui.EventNavigatorTableSource.prototype.getContextOfEvent_ =

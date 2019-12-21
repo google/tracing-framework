@@ -103,8 +103,7 @@ wtf.trace.EventType.nextEventWireId_ = 1;
 
 
 /**
- * Gets a pretty-formatted name for the event.
- * @return {string} Pretty-formatted name.
+ * @override
  */
 wtf.trace.EventType.prototype.toString = function() {
   return this.name;

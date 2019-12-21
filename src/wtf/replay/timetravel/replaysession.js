@@ -290,7 +290,7 @@ wtf.replay.timeTravel.ReplaySession.prototype.neuterPageEvents_ = function() {
     e.preventDefault();
     e.stopPropagation();
     return false;
-  };
+  }
   for (var eventName in allEventTypes) {
     pageGlobal.addEventListener(eventName, eventDisabler, true);
   }

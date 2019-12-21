@@ -139,8 +139,7 @@ wtf.db.Zone.prototype.resetInfo = function(name, type, location) {
 
 
 /**
- * Gets a string representation of the zone.
- * @return {string} String representation of the zone.
+ * @override
  */
 wtf.db.Zone.prototype.toString = function() {
   return this.name_;
@@ -265,7 +264,7 @@ wtf.db.Zone.prototype.getSharedIndex = function(eventNames) {
  * Queries the zone.
  * Throws errors if the expression could not be parsed.
  * @param {string} expr Query string.
- * @return {wtf.db.QueryResult} Result.
+ * @return {!wtf.db.QueryResult} Result.
  */
 wtf.db.Zone.prototype.query = function(expr) {
   var startTime = wtf.now();

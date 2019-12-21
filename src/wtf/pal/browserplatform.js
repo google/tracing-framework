@@ -14,7 +14,6 @@
 goog.provide('wtf.pal.BrowserPlatform');
 
 goog.require('goog.dom');
-goog.require('goog.dom.TagName');
 goog.require('goog.events.EventType');
 goog.require('goog.fs');
 goog.require('wtf.pal.IPlatform');
@@ -95,7 +94,7 @@ wtf.pal.BrowserPlatform.prototype.downloadBlob_ = function(filename, blob) {
 
   // Download file. Wow.
   var doc = goog.dom.getDocument();
-  var a = doc.createElement(goog.dom.TagName.A);
+  var a = doc.createElement('a');
   a['download'] = filename;
   a.href = goog.fs.createObjectUrl(blob);
   var e = doc.createEvent('MouseEvents');

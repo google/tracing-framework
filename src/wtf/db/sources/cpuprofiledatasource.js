@@ -60,7 +60,7 @@ wtf.db.sources.CpuProfileDataSource = function(db, sourceInfo, transport) {
   /**
    * All received blob parts.
    * They'll be stitched up at the end.
-   * @type {!Array.<!wtf.io.Blob>}
+   * @type {!Array.<!wtf.io.BlobData>}
    * @private
    */
   this.blobParts_ = [];

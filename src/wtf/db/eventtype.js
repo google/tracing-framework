@@ -106,8 +106,7 @@ wtf.db.EventType.LegacyParseFunction;
 
 
 /**
- * Gets a pretty-formatted name for the event.
- * @return {string} Pretty-formatted name.
+ * @override
  */
 wtf.db.EventType.prototype.toString = function() {
   return this.name;
